@@ -25,8 +25,8 @@ export default function Home() {
             Scaffold inițial. Modulele (Calendar, Facturare SmartBill, EHR,
             Notificări) urmează a fi activate la cerere.
           </p>
-          <Link href="/login" className="block">
-            <Button className="w-full">Autentificare</Button>
+          <Link href="/dashboard" className="block">
+            <Button className="w-full">Deschide dashboard-ul</Button>
           </Link>
         </CardContent>
       </Card>

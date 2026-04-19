@@ -1,11 +1,15 @@
-"use client";
+import { LogOut, Lock, Plus, Search, TriangleAlert } from "lucide-react";
 
-import { Lock, Plus, Search } from "lucide-react";
-
+import { signOut } from "@/app/login/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
-export function DashboardTopbar() {
+interface DashboardTopbarProps {
+  userEmail: string | null;
+  demoMode: boolean;
+}
+
+export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
   return (
     <header className="flex h-16 shrink-0 items-center gap-4 border-b bg-background px-4 md:px-6">
       <div className="relative hidden flex-1 md:block">
@@ -18,18 +22,40 @@ export function DashboardTopbar() {
       </div>
 
       <div className="ml-auto flex items-center gap-3">
-        <Badge variant="warning" className="gap-1">
-          <Lock className="h-3 w-3" />
-          Note criptate
-        </Badge>
-        <Button size="sm" variant="outline">
+        {demoMode ? (
+          <Badge variant="warning" className="gap-1">
+            <TriangleAlert className="h-3 w-3" />
+            Mod demo · Supabase neconfigurat
+          </Badge>
+        ) : (
+          <Badge variant="warning" className="gap-1">
+            <Lock className="h-3 w-3" />
+            Note criptate
+          </Badge>
+        )}
+
+        <Button size="sm" variant="outline" disabled={demoMode}>
           <Lock className="h-4 w-4" />
           Deblochează cu PIN
         </Button>
+
         <Button size="sm">
           <Plus className="h-4 w-4" />
           Programare nouă
         </Button>
+
+        {userEmail ? (
+          <div className="flex items-center gap-2 border-l pl-3">
+            <span className="hidden text-xs text-muted-foreground lg:inline">
+              {userEmail}
+            </span>
+            <form action={signOut}>
+              <Button type="submit" size="icon" variant="ghost" aria-label="Delogare">
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </form>
+          </div>
+        ) : null}
       </div>
     </header>
   );

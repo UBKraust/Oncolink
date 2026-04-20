@@ -30,6 +30,9 @@ function parseForm(formData: FormData) {
     billing_type: billing_type || "INDIVIDUAL",
     company_name: billing_type === "B2B_COMPANY" ? String(formData.get("company_name") ?? "").trim() : null,
     session_price: String(formData.get("session_price") ?? "").trim() || null,
+    session_frequency: String(formData.get("session_frequency") ?? "SAPTAMANAL"),
+    report_frequency: String(formData.get("report_frequency") ?? "NICIODATA"),
+    send_report_to_parent: formData.get("send_report_to_parent") === "on",
   };
 }
 
@@ -98,6 +101,9 @@ export async function createClient(
       billing_type: payload.billing_type,
       company_name: payload.company_name,
       session_price: payload.session_price ? Number(payload.session_price) : null,
+      session_frequency: payload.session_frequency,
+      report_frequency: payload.report_frequency,
+      send_report_to_parent: payload.send_report_to_parent,
     })
     .select("id")
     .single();
@@ -141,6 +147,9 @@ export async function updateClient(
       billing_type: payload.billing_type,
       company_name: payload.company_name,
       session_price: payload.session_price ? Number(payload.session_price) : null,
+      session_frequency: payload.session_frequency,
+      report_frequency: payload.report_frequency,
+      send_report_to_parent: payload.send_report_to_parent,
     })
     .eq("id", id);
 

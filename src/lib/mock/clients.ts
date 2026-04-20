@@ -16,6 +16,9 @@ export interface MockClient {
   billing_type: "INDIVIDUAL" | "B2B_COMPANY" | null;
   company_name: string | null;
   session_price: string | null;
+  session_frequency: "SAPTAMANAL" | "BILUNAR" | "LUNAR" | "OCAZIONAL" | null;
+  report_frequency: "LUNAR" | "LA_CERERE" | "NICIODATA" | null;
+  send_report_to_parent: boolean;
 }
 
 const daysAgo = (n: number) => {
@@ -42,6 +45,9 @@ export const mockClients: MockClient[] = [
     billing_type: "INDIVIDUAL",
     company_name: null,
     session_price: "250.00",
+    session_frequency: "SAPTAMANAL",
+    report_frequency: "NICIODATA",
+    send_report_to_parent: false,
   },
   {
     id: "c-002",
@@ -61,6 +67,9 @@ export const mockClients: MockClient[] = [
     billing_type: "B2B_COMPANY",
     company_name: "Tech Solutions SRL",
     session_price: "300.00",
+    session_frequency: "BILUNAR",
+    report_frequency: "LUNAR",
+    send_report_to_parent: false,
   },
   {
     id: "c-003",
@@ -80,6 +89,9 @@ export const mockClients: MockClient[] = [
     billing_type: "INDIVIDUAL",
     company_name: null,
     session_price: "200.00",
+    session_frequency: "SAPTAMANAL",
+    report_frequency: "LUNAR",
+    send_report_to_parent: true,
   },
   {
     id: "c-004",
@@ -99,6 +111,9 @@ export const mockClients: MockClient[] = [
     billing_type: "INDIVIDUAL",
     company_name: null,
     session_price: null, // Poate fi negociat per programare
+    session_frequency: "OCAZIONAL",
+    report_frequency: "LA_CERERE",
+    send_report_to_parent: false,
   },
   {
     id: "c-005",
@@ -118,6 +133,9 @@ export const mockClients: MockClient[] = [
     billing_type: "B2B_COMPANY",
     company_name: "Creative Agency SA",
     session_price: "350.00",
+    session_frequency: "SAPTAMANAL",
+    report_frequency: "NICIODATA",
+    send_report_to_parent: false,
   },
   {
     id: "c-006",
@@ -137,5 +155,8 @@ export const mockClients: MockClient[] = [
     billing_type: "INDIVIDUAL",
     company_name: null,
     session_price: null,
+    session_frequency: "OCAZIONAL",
+    report_frequency: "NICIODATA",
+    send_report_to_parent: false,
   },
 ];

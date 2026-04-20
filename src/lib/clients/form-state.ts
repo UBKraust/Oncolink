@@ -11,7 +11,10 @@ export interface ClientFormState {
       | "parent_name"
       | "parent_phone"
       | "company_name"
-      | "session_price",
+      | "session_price"
+      | "session_frequency"
+      | "report_frequency"
+      | "send_report_to_parent",
       string
     >
   >;

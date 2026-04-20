@@ -15,8 +15,13 @@ import {
   CreditCard,
   Building,
   Baby,
-  Wallet
+  Wallet,
+  FileText,
+  Brain,
+  Plus
 } from "lucide-react";
+
+import { mockAssessments } from "@/lib/mock/assessments";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,6 +48,7 @@ export default async function ClientDetailPage({
   if (!client) notFound();
 
   const anonymized = Boolean(client.notes_anonymized_at);
+  const assessments = mockAssessments.filter(a => a.client_id === id);
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-5">
@@ -214,6 +220,79 @@ export default async function ClientDetailPage({
             ) : null}
           </CardContent>
         </Card>
+      </div>
+
+      {/* Evaluări Psihologice Segment */}
+      <div className="mt-8 space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold tracking-tight">Evaluări & Scoruri Psihologice</h2>
+          {!anonymized ? (
+            <Button variant="outline" size="sm">
+              <Plus className="mr-1 h-4 w-4" />
+              Adaugă Raport
+            </Button>
+          ) : null}
+        </div>
+
+        {assessments.length === 0 ? (
+          <div className="rounded-md border p-8 text-center text-sm text-muted-foreground">
+            Nu există evaluări înregistrate pentru acest pacient.
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {assessments.map(acc => (
+              <Card key={acc.id} className="flex flex-col">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <Badge variant="secondary" className="text-[10px] uppercase">{acc.assessment_type.replace('_', ' ')}</Badge>
+                    <span className="text-xs text-muted-foreground">
+                      {format(new Date(acc.created_at), "d MMM yyyy", { locale: ro })}
+                    </span>
+                  </div>
+                </CardHeader>
+                <CardContent className="flex-1 space-y-4">
+                  {Object.keys(acc.scoring_data).length > 0 && (
+                    <div className="rounded bg-muted/30 p-3 text-sm">
+                      <div className="font-medium mb-2 flex items-center gap-1.5 border-b pb-2">
+                        <Brain className="h-4 w-4 text-primary" />
+                        Rezultate Test
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        {Object.entries(acc.scoring_data).map(([k, v]) => (
+                          <div key={k} className="flex flex-col">
+                            <span className="text-muted-foreground capitalize">{k.replace('_', ' ')}</span>
+                            <span className="font-medium">{String(v)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {acc.content_summary && (
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Concluzie / Sumar</p>
+                      <p className="text-sm text-muted-foreground">{acc.content_summary}</p>
+                    </div>
+                  )}
+                </CardContent>
+                <div className="mt-auto border-t p-4 text-xs">
+                  {acc.sent_to_parent_at ? (
+                    <span className="flex items-center gap-1 text-emerald-600 font-medium">
+                      <CheckCircle2 className="h-3 w-3" /> Trimis Părintelui pe {format(new Date(acc.sent_to_parent_at), "d MMM", { locale: ro })}
+                    </span>
+                  ) : (client as any).is_minor && (client as any).send_report_to_parent ? (
+                    <button className="flex items-center gap-1 text-amber-600 hover:text-amber-700 font-medium cursor-pointer transition-colors">
+                      <Mail className="h-3 w-3" /> Generează Email Părinte
+                    </button>
+                  ) : (
+                    <span className="flex items-center gap-1 text-muted-foreground">
+                      <FileText className="h-3 w-3" /> Doar intern
+                    </span>
+                  )}
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

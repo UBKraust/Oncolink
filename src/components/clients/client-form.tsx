@@ -23,6 +23,9 @@ type Defaults = Partial<{
   billing_type: string;
   company_name: string;
   session_price: string;
+  session_frequency: string;
+  report_frequency: string;
+  send_report_to_parent: boolean;
 }>;
 
 interface ClientFormProps {
@@ -182,6 +185,55 @@ export function ClientForm({ action, defaults = {}, submitLabel, cancelHref }: C
               </div>
             )}
           </div>
+        </div>
+
+        <div className="mt-5 border-t pt-5">
+          <h4 className="mb-4 text-sm font-medium">Frecvență & Raportare</h4>
+          <div className="grid gap-5 md:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label>Frecvență Ședințe</Label>
+              <select
+                name="session_frequency"
+                defaultValue={defaults.session_frequency ?? "SAPTAMANAL"}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="SAPTAMANAL">Săptămânal</option>
+                <option value="BILUNAR">Bilunar (O dată la 2 săptămâni)</option>
+                <option value="LUNAR">Lunar</option>
+                <option value="OCAZIONAL">Ocazional (La cerere)</option>
+              </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Generare Raport Evaluare</Label>
+              <select
+                name="report_frequency"
+                defaultValue={defaults.report_frequency ?? "NICIODATA"}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="LUNAR">Lunar</option>
+                <option value="LA_CERERE">Doar la cerere</option>
+                <option value="NICIODATA">Niciodată</option>
+              </select>
+            </div>
+          </div>
+
+          {isMinor && (
+            <label className="mt-4 flex items-start gap-3 rounded-md border border-primary/20 bg-primary/5 p-3 text-sm">
+              <input
+                type="checkbox"
+                name="send_report_to_parent"
+                defaultChecked={defaults.send_report_to_parent ?? false}
+                className="mt-0.5 h-4 w-4 rounded border-input"
+              />
+              <span>
+                <span className="font-medium">Trimite Raport Lunar Părintelui</span>
+                <span className="mt-0.5 block text-xs text-muted-foreground">
+                  Dacă e bifat, părintele va primi un email cu raportul și evoluția scorului, conform frecvenței de raportare alese.
+                </span>
+              </span>
+            </label>
+          )}
         </div>
       </div>
 

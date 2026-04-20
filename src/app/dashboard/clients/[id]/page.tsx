@@ -22,8 +22,14 @@ import {
 } from "lucide-react";
 
 import { mockAssessments } from "@/lib/mock/assessments";
+import { mockPayments } from "@/lib/mock/payments";
+import { mockPatientDocuments, mockMedication } from "@/lib/mock/patientFiles";
 import { ClientEvolutionChart } from "@/components/clients/ClientEvolutionChart";
 import { ClientDriveDocuments } from "@/components/clients/ClientDriveDocuments";
+import { ClientFinancialHistory } from "@/components/clients/ClientFinancialHistory";
+import { ClientAiAssistant } from "@/components/clients/ClientAiAssistant";
+import { PatientDocuments } from "@/components/clients/PatientDocuments";
+import { MedicationTracker } from "@/components/clients/MedicationTracker";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -51,6 +57,30 @@ export default async function ClientDetailPage({
 
   const anonymized = Boolean(client.notes_anonymized_at);
   const assessments = mockAssessments.filter(a => a.client_id === id);
+  const payments = mockPayments.filter(p => p.client_id === id);
+
+  // Build AI context (no CNP/raw identifiers sent)
+  const aiClientContext = {
+    name: anonymized ? null : client.full_name,
+    isMinor: (client as any).is_minor ?? false,
+    parentName: (client as any).parent_name ?? null,
+    billingType: (client as any).billing_type ?? null,
+    companyName: (client as any).company_name ?? null,
+    sessionFrequency: (client as any).session_frequency ?? null,
+    sessionPrice: (client as any).session_price ?? null,
+    totalSessions: payments.length,
+    totalAmount: payments.reduce((s, p) => s + p.amount, 0),
+    gdprSigned: client.gdpr_consent_signed,
+    lastAssessments: assessments.slice(0, 3).map(a => ({
+      type: a.assessment_type,
+      date: new Date(a.created_at).toLocaleDateString("ro-RO"),
+      scores: a.scoring_data,
+    })),
+  };
+
+  const clientDocs = mockPatientDocuments.filter(d => d.client_id === id);
+  const clientMeds = mockMedication.filter(m => m.client_id === id);
+  const isMinor = (client as any).is_minor ?? false;
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-5">
@@ -238,6 +268,34 @@ export default async function ClientDetailPage({
           ].filter(() => client.id === "c-003" || !anonymized)} 
         />
       </div>
+
+      {/* Istoric Financiar */}
+      <ClientFinancialHistory payments={payments} clientName={client.full_name ?? "Client"} />
+
+      {/* Asistent AI contextual */}
+      {!anonymized && <ClientAiAssistant clientContext={aiClientContext} />}
+
+      {/* Dosar Medical — Documente & Medicație */}
+      {!anonymized && (
+        <div className="grid gap-5 lg:grid-cols-2">
+          <div className="space-y-3">
+            <h2 className="text-xl font-semibold tracking-tight">Arhivă Documente</h2>
+            <PatientDocuments
+              clientId={id}
+              isMinor={isMinor}
+              documents={clientDocs}
+            />
+          </div>
+          <div className="space-y-3">
+            <h2 className="text-xl font-semibold tracking-tight">Medicație</h2>
+            <MedicationTracker
+              clientId={id}
+              clientName={client.full_name ?? "Client"}
+              medications={clientMeds}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Evaluări Psihologice Segment */}
       <div className="mt-8 space-y-4">

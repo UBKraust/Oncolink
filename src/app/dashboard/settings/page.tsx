@@ -3,7 +3,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Shield, Smartphone, Globe, UserCircle, KeyRound, CheckCircle2, Lock } from "lucide-react";
+import { Shield, Smartphone, Globe, UserCircle, KeyRound, CheckCircle2, Lock, Hospital } from "lucide-react";
+import Link from "next/link";
 
 export default function SettingsPage() {
   return (
@@ -14,10 +15,11 @@ export default function SettingsPage() {
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="mb-4 grid w-full grid-cols-3 md:w-[400px]">
+        <TabsList className="mb-4 grid w-full grid-cols-4 md:w-[540px]">
           <TabsTrigger value="profile">Profil & Tarife</TabsTrigger>
           <TabsTrigger value="integrations">Integrări</TabsTrigger>
           <TabsTrigger value="security">Securitate</TabsTrigger>
+          <TabsTrigger value="cas">Modul CAS</TabsTrigger>
         </TabsList>
 
         {/* PROFIL & TARIFE */}
@@ -218,6 +220,47 @@ export default function SettingsPage() {
                 </div>
               </div>
             </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* MODUL CAS */}
+        <TabsContent value="cas" className="space-y-4 animate-in fade-in duration-500">
+          <Card className="border-blue-200 bg-blue-50/30 dark:border-blue-900/40 dark:bg-blue-950/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-blue-800 dark:text-blue-400">
+                <Hospital className="h-5 w-5" />
+                Contract CAS — Servicii Conexe Psihologie
+              </CardTitle>
+              <CardDescription className="text-blue-700/80 dark:text-blue-500/80">
+                Activează dacă ai contract activ cu Casa de Asigurări de Sănătate pentru servicii conexe actului medical.
+                Modulul afișează evidența ședințelor decontate și permite exportul CSV lunar pentru raportare SIUI.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-3 p-4 rounded-md bg-background border">
+                <input type="checkbox" id="cas_active" defaultChecked className="rounded h-4 w-4 accent-primary" />
+                <Label htmlFor="cas_active" className="cursor-pointer">
+                  <span className="font-medium">Contract CAS activ în cabinet</span>
+                  <p className="text-xs text-muted-foreground mt-0.5">Activează modulul de evidență și export SIUI</p>
+                </Label>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Număr Contract CAS</Label>
+                  <Input placeholder="ex: 3456/2024" defaultValue="3456/2024" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Județ / CAS</Label>
+                  <Input placeholder="ex: B (București)" defaultValue="B" />
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter className="border-t pt-4 flex gap-2 flex-wrap">
+              <Button>Salvează Configurație CAS</Button>
+              <Button variant="outline" asChild>
+                <Link href="/dashboard/cas">Deschide Modul CAS</Link>
+              </Button>
+            </CardFooter>
           </Card>
         </TabsContent>
 

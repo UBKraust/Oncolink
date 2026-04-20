@@ -1,63 +1,78 @@
-import { Plus, Settings2, FileText } from "lucide-react";
+import { Plus, FileText, Settings2, FlaskConical } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { mockPsychologicalTests } from "@/lib/mock/psychological_tests";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { seededTests } from "@/lib/assessments/seededTests";
 
 export default function TestsCatalogPage() {
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-5">
+    <div className="mx-auto w-full max-w-5xl space-y-6 pb-10">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Catalog Teste Psihologice</h1>
-          <p className="text-sm text-muted-foreground mt-1">Gestionează inventarele de evaluare și metricile de calcul.</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Administrează inventarele standardizate și creează teste proprii.
+          </p>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Creare Test Nou
+        <Button asChild>
+          <Link href="/dashboard/tests/new">
+            <Plus className="mr-2 h-4 w-4" />
+            Test Nou (Custom)
+          </Link>
         </Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        {mockPsychologicalTests.map((test) => (
-          <Card key={test.id} className="flex flex-col">
-            <CardHeader className="pb-3">
-              <div className="flex justify-between items-start">
-                <CardTitle className="text-lg">{test.name}</CardTitle>
-                <Badge variant="outline" className="bg-primary/5">JSONB</Badge>
-              </div>
-              <CardDescription className="line-clamp-2 mt-2">{test.description}</CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1">
-              <div className="space-y-2 text-sm text-muted-foreground">
+        {seededTests.map((test) => {
+          const hasSubscales =
+            test.scoring_logic.type === "SUBSCALES" &&
+            (test.scoring_logic.subscales?.length ?? 0) > 0;
+
+          return (
+            <Card key={test.id} className="flex flex-col">
+              <CardHeader className="pb-3">
+                <div className="flex justify-between items-start gap-2">
+                  <CardTitle className="text-base leading-snug">{test.name}</CardTitle>
+                  <Badge variant="secondary" className="shrink-0 text-[10px] uppercase">
+                    Open-Source
+                  </Badge>
+                </div>
+                <CardDescription className="line-clamp-2 mt-1">{test.description}</CardDescription>
+              </CardHeader>
+
+              <CardContent className="flex-1 space-y-2 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <FileText className="h-4 w-4" />
-                  <span>{test.questions.length} Întrebări (simulat pt. demo)</span>
+                  <span>{test.questions.length} întrebări</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Settings2 className="h-4 w-4" />
-                  <span>
-                    Logică Scoring: <strong>{test.scoring_logic.type}</strong>
-                  </span>
+                  <span>Scoring: <strong>{test.scoring_logic.type}</strong></span>
                 </div>
-              </div>
-              
-              {test.scoring_logic.subscales && (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {Object.keys(test.scoring_logic.subscales).map(sub => (
-                    <Badge key={sub} variant="secondary" className="text-[10px] uppercase font-medium">Subscală: {sub}</Badge>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-            <CardFooter className="border-t pt-4 bg-muted/20">
-              <div className="flex w-full justify-between items-center">
-                <Button variant="ghost" size="sm" className="text-xs">Editează JSON Schema</Button>
-                <Button variant="outline" size="sm" className="text-xs">Preview Formular</Button>
-              </div>
-            </CardFooter>
-          </Card>
-        ))}
+
+                {hasSubscales && (
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {test.scoring_logic.subscales!.map((s) => (
+                      <Badge key={s.name} variant="outline" className="text-[10px]">
+                        {s.name}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+
+              <CardFooter className="border-t pt-4 gap-2">
+                <Button variant="outline" size="sm" className="flex-1" asChild>
+                  <Link href={`/dashboard/assessments/new?testId=${test.id}`}>
+                    <FlaskConical className="mr-1.5 h-3.5 w-3.5" />
+                    Administrează
+                  </Link>
+                </Button>
+              </CardFooter>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );

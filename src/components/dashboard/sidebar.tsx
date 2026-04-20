@@ -4,9 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Activity,
+  BotMessageSquare,
   CalendarCheck,
   CalendarDays,
   FileText,
+  Hospital,
   LayoutDashboard,
   NotebookPen,
   Receipt,
@@ -23,8 +25,10 @@ const nav = [
   { href: "/dashboard/clients", label: "Clienți", icon: Users },
   { href: "/dashboard/notes", label: "Note clinice", icon: NotebookPen },
   { href: "/dashboard/invoices", label: "Facturi", icon: Receipt },
+  { href: "/dashboard/cas", label: "Modul CAS", icon: Hospital },
   { href: "/dashboard/documents", label: "Documente", icon: FileText },
   { href: "/dashboard/activity", label: "Registru", icon: Activity },
+  { href: "/dashboard/ai", label: "Asistent AI", icon: BotMessageSquare },
   { href: "/dashboard/settings", label: "Setări", icon: Settings },
 ];
 

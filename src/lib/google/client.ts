@@ -170,6 +170,42 @@ export async function registerWebhook(
   return res.json() as Promise<{ id: string; resourceId: string; expiration: string }>;
 }
 
+export interface FreeBusyPeriod {
+  start: string;
+  end: string;
+}
+
+/**
+ * Calls Google Calendar FreeBusy API to check if the therapist's primary
+ * calendar has any events in the given time window.
+ * Returns an array of busy periods (empty = free).
+ */
+export async function getFreeBusy(
+  accessToken: string,
+  calendarId: string,
+  timeMin: string,
+  timeMax: string,
+): Promise<FreeBusyPeriod[]> {
+  const res = await fetch(`${GCAL_BASE}/freeBusy`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      timeMin,
+      timeMax,
+      timeZone: "Europe/Bucharest",
+      items: [{ id: calendarId }],
+    }),
+  });
+  if (!res.ok) throw new Error(`GCal freeBusy failed: ${res.status}`);
+  const data = (await res.json()) as {
+    calendars?: Record<string, { busy?: FreeBusyPeriod[] }>;
+  };
+  return data.calendars?.[calendarId]?.busy ?? [];
+}
+
 export async function listRecentEvents(
   accessToken: string,
   calendarId: string,

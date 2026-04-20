@@ -117,7 +117,8 @@ export async function deleteAppointmentFromGoogle(
 
 /**
  * Reconcile after a Google Calendar webhook fires.
- * Pulls events updated since `updatedMin` and syncs meet_link back.
+ * - Updates meet_link when a conference link is present.
+ * - Sets status = 'ANULAT' when the therapist deletes the event in Google Calendar.
  */
 export async function reconcileFromGoogle(updatedMin: string): Promise<void> {
   const accessToken = await getValidAccessToken();
@@ -130,6 +131,20 @@ export async function reconcileFromGoogle(updatedMin: string): Promise<void> {
 
   for (const ev of events) {
     if (!ev.id) continue;
+
+    const evWithStatus = ev as GCalEvent & { status?: string };
+
+    // Event deleted or cancelled in Google Calendar → mark appointment ANULAT
+    if (evWithStatus.status === "cancelled") {
+      await supabase
+        .from("appointments")
+        .update({ status: "ANULAT" })
+        .eq("google_event_id", ev.id)
+        .in("status", ["PROGRAMAT", "CONFIRMAT"]);
+      continue;
+    }
+
+    // Update meet_link if a video conference link is present
     const meetLink =
       ev.conferenceData?.entryPoints?.find(
         (e) => e.entryPointType === "video",

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
-import { Pill, Plus, Pencil, X, CheckCircle2, Clock, AlertCircle, Loader2, Brain } from "lucide-react";
+import { Pill, Plus, Pencil, Trash2, X, CheckCircle2, Clock, AlertCircle, Loader2, Brain } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

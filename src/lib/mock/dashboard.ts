@@ -3,6 +3,8 @@
  * calendar/billing modules are wired. Keep shapes aligned with the DB schema.
  */
 
+import { clientStats } from "@/lib/mock/clients";
+
 export type AppointmentStatus =
   | "PROGRAMAT"
   | "CONFIRMAT"
@@ -172,17 +174,17 @@ export interface DashboardStats {
 
 export const mockStats: DashboardStats = {
   appointmentsToday: mockToday.filter((a) => !a.isExternalDuty).length,
-  activeClients: 28,
+  activeClients: clientStats.total,
   unpaidInvoicesCount: mockUnpaidInvoices.length,
   unpaidInvoicesTotal: mockUnpaidInvoices.reduce((sum, i) => sum + i.amount, 0),
   revenueMonth: 6250,
   totalSessions: 145,
   totalHours: 120.5,
   totalRevenue: 34500,
-  totalPatients: 57,
-  privatePatients: 33,
-  clinicPatients: 24,
-  minorPatients: 41,
-  adultPatients: 16,
-  b2bPatients: 6,
+  totalPatients:   clientStats.total,    // 57
+  privatePatients: clientStats.cabinet,  // 33
+  clinicPatients:  clientStats.clinica,  // 24
+  minorPatients:   clientStats.minori,   // 41
+  adultPatients:   clientStats.adulti,   // 16
+  b2bPatients:     clientStats.b2b,      // 6
 };

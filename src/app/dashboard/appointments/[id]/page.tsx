@@ -10,6 +10,7 @@ import {
   Home,
   NotebookPen,
   Pencil,
+  Receipt,
   Video,
 } from "lucide-react";
 
@@ -23,13 +24,13 @@ import {
 } from "@/components/ui/card";
 import { getAppointment } from "@/lib/appointments/queries";
 import {
-  APPOINTMENT_STATUSES,
   deriveLocation,
   locationLabel,
   statusLabel,
   statusVariant,
 } from "@/lib/appointments/helpers";
 import { updateAppointmentStatus } from "@/app/dashboard/appointments/actions";
+import { getInvoiceByAppointment } from "@/lib/invoices/queries";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 const locationIcon = { PRIVAT: Home, POLICLINIC: Building2, ONLINE: Video } as const;
@@ -51,7 +52,10 @@ export default async function AppointmentDetailPage({
 }) {
   const { id } = await params;
   const { demo } = await searchParams;
-  const appointment = await getAppointment(id);
+  const [appointment, existingInvoice] = await Promise.all([
+    getAppointment(id),
+    getInvoiceByAppointment(id),
+  ]);
   if (!appointment) notFound();
 
   const location = deriveLocation(appointment);
@@ -192,7 +196,7 @@ export default async function AppointmentDetailPage({
               </CardHeader>
               <CardContent>
                 <Button asChild variant="outline" size="sm" className="w-full">
-                  <Link href={`/dashboard/notes?appointmentId=${id}`}>
+                  <Link href={`/dashboard/notes/${id}`}>
                     <NotebookPen className="h-4 w-4" />
                     Deschide nota
                   </Link>
@@ -200,6 +204,39 @@ export default async function AppointmentDetailPage({
                 <p className="mt-2 text-xs text-muted-foreground">
                   Nota este criptată end-to-end și necesită PIN pentru acces.
                 </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Invoice */}
+          {!appointment.is_external_duty && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Factură</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {existingInvoice ? (
+                  <>
+                    <Button asChild variant="outline" size="sm" className="w-full">
+                      <Link href={`/dashboard/invoices/${existingInvoice.id}`}>
+                        <Receipt className="h-4 w-4" />
+                        {existingInvoice.smartbill_series}/{existingInvoice.smartbill_number} · {existingInvoice.status}
+                      </Link>
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button asChild variant="outline" size="sm" className="w-full">
+                      <Link href={`/dashboard/invoices/new?appointmentId=${id}`}>
+                        <Receipt className="h-4 w-4" />
+                        Emite factură
+                      </Link>
+                    </Button>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Nicio factură emisă pentru această ședință.
+                    </p>
+                  </>
+                )}
               </CardContent>
             </Card>
           )}

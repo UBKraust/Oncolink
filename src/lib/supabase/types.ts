@@ -121,31 +121,40 @@ export type Database = {
         Row: {
           id: string;
           appointment_id: string | null;
+          client_name: string | null;
           smartbill_series: string | null;
           smartbill_number: string | null;
           amount: number | null;
           status: string;
           smartbill_id: string | null;
+          payment_link: string | null;
+          pdf_url: string | null;
           issued_at: string;
         };
         Insert: {
           id?: string;
           appointment_id?: string | null;
+          client_name?: string | null;
           smartbill_series?: string | null;
           smartbill_number?: string | null;
           amount?: number | null;
           status?: string;
           smartbill_id?: string | null;
+          payment_link?: string | null;
+          pdf_url?: string | null;
           issued_at?: string;
         };
         Update: {
           id?: string;
           appointment_id?: string | null;
+          client_name?: string | null;
           smartbill_series?: string | null;
           smartbill_number?: string | null;
           amount?: number | null;
           status?: string;
           smartbill_id?: string | null;
+          payment_link?: string | null;
+          pdf_url?: string | null;
           issued_at?: string;
         };
         Relationships: [];

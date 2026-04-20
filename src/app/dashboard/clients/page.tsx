@@ -2,6 +2,7 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
 import { Plus, ShieldCheck, ShieldOff, UserX, Building, Baby, MapPin } from "lucide-react";
+import { CrisisNoteButton } from "@/components/clients/CrisisNoteButton";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -178,9 +179,14 @@ export default async function ClientsPage({
                         {format(new Date(c.created_at), "d MMM yyyy", { locale: ro })}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button asChild variant="ghost" size="sm">
-                          <Link href={`/dashboard/clients/${c.id}`}>Deschide</Link>
-                        </Button>
+                        <div className="flex items-center justify-end gap-1">
+                          {!anonymized && (
+                            <CrisisNoteButton clientId={c.id} clientName={c.full_name ?? "Client"} />
+                          )}
+                          <Button asChild variant="ghost" size="sm">
+                            <Link href={`/dashboard/clients/${c.id}`}>Deschide</Link>
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );

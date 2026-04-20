@@ -30,6 +30,8 @@ import { ClientFinancialHistory } from "@/components/clients/ClientFinancialHist
 import { ClientAiAssistant } from "@/components/clients/ClientAiAssistant";
 import { PatientDocuments } from "@/components/clients/PatientDocuments";
 import { MedicationTracker } from "@/components/clients/MedicationTracker";
+import { CrisisNotesList } from "@/components/clients/CrisisNotesList";
+import { listCrisisNotes } from "@/app/dashboard/clients/crisis-notes-actions";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -81,6 +83,7 @@ export default async function ClientDetailPage({
   const clientDocs = mockPatientDocuments.filter(d => d.client_id === id);
   const clientMeds = mockMedication.filter(m => m.client_id === id);
   const isMinor = (client as any).is_minor ?? false;
+  const crisisNotes = anonymized ? [] : await listCrisisNotes(id);
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-5">
@@ -295,6 +298,15 @@ export default async function ClientDetailPage({
             />
           </div>
         </div>
+      )}
+
+      {/* Note de Criză */}
+      {!anonymized && (
+        <CrisisNotesList
+          clientId={id}
+          clientName={client.full_name ?? "Client"}
+          initialNotes={crisisNotes}
+        />
       )}
 
       {/* Evaluări Psihologice Segment */}

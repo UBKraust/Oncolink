@@ -91,7 +91,8 @@ export async function runOllama(
     }
   }
 
-  return full.trim();
+  // deepseek-r1 wraps chain-of-thought in <think>…</think> — strip it
+  return full.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
 }
 
 export type AiAction = "SOAP" | "PROGRES" | "TEME";

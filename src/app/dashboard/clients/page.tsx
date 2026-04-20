@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
-import { Plus, ShieldCheck, ShieldOff, UserX } from "lucide-react";
+import { Plus, ShieldCheck, ShieldOff, UserX, Building, Baby, MapPin } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -96,6 +96,7 @@ export default async function ClientsPage({
                 <TableRow>
                   <TableHead>Client</TableHead>
                   <TableHead>Contact</TableHead>
+                  <TableHead>Profil</TableHead>
                   <TableHead>CNP / CIF</TableHead>
                   <TableHead>GDPR</TableHead>
                   <TableHead>Înregistrat</TableHead>
@@ -136,6 +137,26 @@ export default async function ClientsPage({
                             <span className="text-xs">{c.phone ?? "—"}</span>
                           </div>
                         )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1 items-start">
+                          {(c as any).is_minor && (
+                            <Badge variant="secondary" className="gap-1 text-[10px]">
+                              <Baby className="h-3 w-3" /> Minor
+                            </Badge>
+                          )}
+                          {(c as any).billing_type === "B2B_COMPANY" && (
+                            <Badge variant="outline" className="gap-1 text-[10px] bg-slate-50">
+                              <Building className="h-3 w-3" /> B2B
+                            </Badge>
+                          )}
+                          {(c as any).location && (
+                            <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground mt-1">
+                              <MapPin className="h-3 w-3" /> 
+                              {(c as any).location === "CLINICA" ? "Clinică" : "Cabinet"}
+                            </span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="font-mono text-xs text-muted-foreground">
                         {c.cnp_cif ?? "—"}

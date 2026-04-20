@@ -12,6 +12,10 @@ import {
   Phone,
   ShieldOff,
   UserX,
+  CreditCard,
+  Building,
+  Baby,
+  Wallet
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -102,7 +106,7 @@ export default async function ClientDetailPage({
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
+        <Card className="lg:col-span-1">
           <CardHeader>
             <CardTitle>Date de contact</CardTitle>
             {anonymized ? (
@@ -111,7 +115,7 @@ export default async function ClientDetailPage({
               </CardDescription>
             ) : null}
           </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
+          <CardContent className="grid gap-4 sm:grid-cols-1">
             <InfoRow icon={Mail} label="Email" value={client.email} />
             <InfoRow icon={Phone} label="Telefon" value={client.phone} />
             <InfoRow
@@ -124,7 +128,50 @@ export default async function ClientDetailPage({
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="lg:col-span-1">
+          <CardHeader>
+            <CardTitle>Profil & Facturare</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-col gap-3">
+              <InfoRow 
+                icon={MapPin} 
+                label="Locație Consultații" 
+                value={(client as any).location === "CLINICA" ? "Clinică" : "Cabinet Particular"} 
+              />
+              <InfoRow 
+                icon={Wallet} 
+                label="Preț bază per ședință" 
+                value={(client as any).session_price ? `${(client as any).session_price} RON` : "Nespecificat"} 
+              />
+              {(client as any).is_minor ? (
+                <div className="rounded-md border p-3 bg-muted/20 space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-medium mb-1">
+                    <Baby className="h-4 w-4" /> Pacient Minor
+                  </div>
+                  <InfoRow label="Părinte / Tutore" value={(client as any).parent_name} />
+                  <InfoRow label="Telefon Părinte" value={(client as any).parent_phone} />
+                </div>
+              ) : null}
+              {(client as any).billing_type === "B2B_COMPANY" ? (
+                <div className="rounded-md border p-3 bg-muted/20 space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-medium mb-1">
+                    <Building className="h-4 w-4" /> Decontare B2B
+                  </div>
+                  <InfoRow label="Companie" value={(client as any).company_name} />
+                </div>
+              ) : (
+                <div className="rounded-md border p-3 bg-muted/20">
+                  <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <CreditCard className="h-4 w-4" /> Facturare Individuală
+                  </span>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-1">
           <CardHeader>
             <CardTitle>Status GDPR &amp; CPR</CardTitle>
           </CardHeader>

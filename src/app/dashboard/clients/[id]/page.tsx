@@ -244,9 +244,11 @@ export default async function ClientDetailPage({
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold tracking-tight">Evaluări & Scoruri Psihologice</h2>
           {!anonymized ? (
-            <Button variant="outline" size="sm">
-              <Plus className="mr-1 h-4 w-4" />
-              Adaugă Raport
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/dashboard/assessments/new">
+                <Plus className="mr-1 h-4 w-4" />
+                Adaugă Evaluare
+              </Link>
             </Button>
           ) : null}
         </div>

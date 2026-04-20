@@ -26,6 +26,7 @@ export function buildAuthUrl(state?: string): string {
     scope: [
       "https://www.googleapis.com/auth/calendar.events",
       "https://www.googleapis.com/auth/calendar.readonly",
+      "https://www.googleapis.com/auth/drive.file",
     ].join(" "),
     access_type: "offline",
     prompt: "consent",

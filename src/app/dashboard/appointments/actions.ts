@@ -7,6 +7,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { AppointmentFormState } from "@/lib/appointments/form-state";
 import type { AppointmentStatus } from "@/lib/appointments/helpers";
+import { pushAppointmentToGoogle } from "@/lib/google/sync";
 
 function parseForm(formData: FormData) {
   const location = String(formData.get("location") ?? "PRIVAT");
@@ -74,6 +75,11 @@ export async function createAppointment(
 
   if (error) return { error: error.message, fieldErrors: {} };
 
+  // Fire-and-forget: sync to Google Calendar (safe if not connected)
+  pushAppointmentToGoogle(data.id).catch((e) =>
+    console.warn("[GCal] sync skipped:", e)
+  );
+
   revalidatePath("/dashboard/appointments");
   redirect(`/dashboard/appointments/${data.id}`);
 }
@@ -108,6 +114,11 @@ export async function updateAppointment(
     .eq("id", id);
 
   if (error) return { error: error.message, fieldErrors: {} };
+
+  // Fire-and-forget: sync any changes to Google Calendar
+  pushAppointmentToGoogle(id).catch((e) =>
+    console.warn("[GCal] sync skipped:", e)
+  );
 
   revalidatePath("/dashboard/appointments");
   revalidatePath(`/dashboard/appointments/${id}`);

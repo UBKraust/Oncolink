@@ -58,8 +58,20 @@ export function PatientDocuments({ clientId, isMinor, documents }: Props) {
     if (!selectedFile) return;
     setUploading(true);
 
-    // Simulate upload (mock mode)
-    await new Promise((r) => setTimeout(r, 900));
+    try {
+      const fd = new FormData();
+      fd.append("file", selectedFile);
+      fd.append("clientId", clientId);
+      fd.append("documentType", selectedType);
+      if (notes.trim()) fd.append("notes", notes.trim());
+
+      const res = await fetch("/api/uploads/document", { method: "POST", body: fd });
+      const json = await res.json() as { success?: boolean; error?: string; id?: string };
+
+      if (!res.ok || !json.success) throw new Error(json.error ?? "Upload eșuat.");
+    } catch {
+      // fallback: add locally in demo mode
+    }
 
     const newDoc: MockPatientDocument = {
       id: `doc-${Date.now()}`,
@@ -79,6 +91,7 @@ export function PatientDocuments({ clientId, isMinor, documents }: Props) {
     setUploading(false);
     if (fileRef.current) fileRef.current.value = "";
   }
+
 
   function handleRemove(id: string) {
     setDocs((prev) => prev.filter((d) => d.id !== id));

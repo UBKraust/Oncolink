@@ -6,6 +6,7 @@ import { AppointmentsToday } from "@/components/dashboard/appointments-today";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { UnpaidInvoices } from "@/components/dashboard/unpaid-invoices";
 import { UpcomingAppointments } from "@/components/dashboard/upcoming-appointments";
+import { CompliancePanel } from "@/components/compliance/CompliancePanel";
 import {
   mockStats,
   mockToday,
@@ -92,7 +93,14 @@ export default function DashboardPage() {
         <UnpaidInvoices invoices={mockUnpaidInvoices} />
       </div>
 
-      <UpcomingAppointments appointments={mockUpcoming} />
+      <div className="grid gap-4 lg:grid-cols-5">
+        <div className="lg:col-span-3">
+          <UpcomingAppointments appointments={mockUpcoming} />
+        </div>
+        <div className="lg:col-span-2">
+          <CompliancePanel compact />
+        </div>
+      </div>
     </div>
   );
 }

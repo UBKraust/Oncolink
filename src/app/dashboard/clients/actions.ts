@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getValidAccessToken } from "@/lib/google/sync";
+import { provisionClientDriveFolder } from "@/lib/google/drive";
 import {
   isValidEmail,
   isValidRomanianPhone,
@@ -109,6 +111,28 @@ export async function createClient(
     .single();
 
   if (error) return { error: error.message, fieldErrors: {} };
+
+  // ── Provision Google Drive folder (fire-and-forget) ──────────────────────
+  // Runs async — client creation never blocks on Drive availability.
+  void (async () => {
+    try {
+      const accessToken = await getValidAccessToken();
+      if (accessToken && payload.full_name) {
+        const { folderUrl } = await provisionClientDriveFolder(
+          accessToken,
+          payload.full_name,
+          data.id
+        );
+        // Save folder URL as contract_url for easy reference
+        await supabase
+          .from("clients")
+          .update({ contract_url: folderUrl })
+          .eq("id", data.id);
+      }
+    } catch (driveErr) {
+      console.warn("[Drive] Could not provision client folder:", driveErr);
+    }
+  })();
 
   revalidatePath("/dashboard/clients");
   redirect(`/dashboard/clients/${data.id}`);

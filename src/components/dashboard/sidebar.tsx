@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Activity,
+  BarChart3,
   BotMessageSquare,
   CalendarCheck,
   CalendarDays,
@@ -12,6 +13,7 @@ import {
   LayoutDashboard,
   NotebookPen,
   Receipt,
+  Scale,
   Settings,
   Users,
 } from "lucide-react";
@@ -25,10 +27,12 @@ const nav = [
   { href: "/dashboard/clients", label: "Clienți", icon: Users },
   { href: "/dashboard/notes", label: "Note clinice", icon: NotebookPen },
   { href: "/dashboard/invoices", label: "Facturi", icon: Receipt },
+  { href: "/dashboard/billing", label: "Raportare Lună", icon: BarChart3 },
   { href: "/dashboard/cas", label: "Modul CAS", icon: Hospital },
   { href: "/dashboard/documents", label: "Documente", icon: FileText },
   { href: "/dashboard/activity", label: "Registru", icon: Activity },
   { href: "/dashboard/ai", label: "Asistent AI", icon: BotMessageSquare },
+  { href: "/dashboard/compliance", label: "Conformitate", icon: Scale },
   { href: "/dashboard/settings", label: "Setări", icon: Settings },
 ];
 

@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { CalendarPlus, LogOut, Lock, Search, TriangleAlert } from "lucide-react";
+import { CalendarPlus, LogOut, Search } from "lucide-react";
 
 import { signOut } from "@/app/login/actions";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { VaultIndicator } from "@/components/notes/vault-indicator";
 
 interface DashboardTopbarProps {
   userEmail: string | null;
@@ -23,22 +23,7 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
       </div>
 
       <div className="ml-auto flex items-center gap-3">
-        {demoMode ? (
-          <Badge variant="warning" className="gap-1">
-            <TriangleAlert className="h-3 w-3" />
-            Mod demo · Supabase neconfigurat
-          </Badge>
-        ) : (
-          <Badge variant="warning" className="gap-1">
-            <Lock className="h-3 w-3" />
-            Note criptate
-          </Badge>
-        )}
-
-        <Button size="sm" variant="outline" disabled={demoMode}>
-          <Lock className="h-4 w-4" />
-          Deblochează cu PIN
-        </Button>
+        <VaultIndicator demoMode={demoMode} />
 
         <Button asChild size="sm">
           <Link href="/dashboard/appointments/new">

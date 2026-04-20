@@ -22,6 +22,8 @@ import {
 } from "lucide-react";
 
 import { mockAssessments } from "@/lib/mock/assessments";
+import { ClientEvolutionChart } from "@/components/clients/ClientEvolutionChart";
+import { ClientDriveDocuments } from "@/components/clients/ClientDriveDocuments";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -220,6 +222,21 @@ export default async function ClientDetailPage({
             ) : null}
           </CardContent>
         </Card>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <ClientEvolutionChart assessments={assessments} />
+        <ClientDriveDocuments 
+          documents={[
+            {
+              id: "d-001",
+              file_name: "Adeverință_Medicală.pdf",
+              document_type: "ADEVERINTA",
+              drive_link: "https://drive.google.com/",
+              created_at: new Date().toISOString()
+            }
+          ].filter(() => client.id === "c-003" || !anonymized)} 
+        />
       </div>
 
       {/* Evaluări Psihologice Segment */}

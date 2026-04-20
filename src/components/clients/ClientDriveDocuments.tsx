@@ -1,0 +1,77 @@
+"use client";
+
+import { UploadCloud, File, FileText, Download, ExternalLink, ImageIcon } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+
+interface DriveDocument {
+  id: string;
+  file_name: string;
+  document_type: string;
+  drive_link: string;
+  created_at: string;
+}
+
+export function ClientDriveDocuments({ documents = [] }: { documents?: DriveDocument[] }) {
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-base font-medium flex items-center gap-2">
+              <UploadCloud className="h-4 w-4 text-blue-500" />
+              Documente (Google Drive)
+            </CardTitle>
+            <CardDescription>Fișiere atașate & analize medicale</CardDescription>
+          </div>
+          <Button variant="outline" size="sm">
+            <UploadCloud className="mr-2 h-4 w-4" />
+            Upload
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {documents.length === 0 ? (
+          <div className="mt-2 flex flex-col items-center justify-center rounded-md border border-dashed p-6 text-center">
+            <div className="rounded-full bg-primary/10 p-3">
+              <FileText className="h-6 w-6 text-primary" />
+            </div>
+            <h3 className="mt-4 text-sm font-semibold">Niciun document</h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Documentele încărcate vor fi salvate securizat în contul tău de Google Drive.
+            </p>
+            <Button variant="secondary" size="sm" className="mt-4">
+              Încarcă Primul Fișier
+            </Button>
+          </div>
+        ) : (
+          <div className="mt-2 space-y-3">
+            {documents.map((doc) => (
+              <div
+                key={doc.id}
+                className="flex items-center justify-between rounded-md border p-3 hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex items-center gap-3 overflow-hidden">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-blue-100 dark:bg-blue-900/40">
+                    <File className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium leading-none">{doc.file_name}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Adăugat la {new Date(doc.created_at).toLocaleDateString("ro-RO")} • {doc.document_type.replace('_', ' ')}
+                    </p>
+                  </div>
+                </div>
+                <Button variant="ghost" size="icon" asChild className="shrink-0 h-8 w-8">
+                  <a href={doc.drive_link} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                  </a>
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}

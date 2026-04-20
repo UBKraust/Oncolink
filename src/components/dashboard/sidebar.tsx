@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Activity,
+  CalendarCheck,
   CalendarDays,
   FileText,
   LayoutDashboard,
@@ -10,13 +12,13 @@ import {
   Receipt,
   Settings,
   Users,
-  Activity,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 const nav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard/appointments", label: "Programări", icon: CalendarCheck },
   { href: "/dashboard/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/dashboard/clients", label: "Clienți", icon: Users },
   { href: "/dashboard/notes", label: "Note clinice", icon: NotebookPen },

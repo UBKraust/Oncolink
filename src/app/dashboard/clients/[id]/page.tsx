@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
 import {
+  CalendarPlus,
   CheckCircle2,
   ChevronLeft,
   Mail,
@@ -72,7 +73,15 @@ export default async function ClientDetailPage({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {!anonymized ? (
+            <Button asChild variant="outline">
+              <Link href={`/dashboard/appointments/new?clientId=${client.id}`}>
+                <CalendarPlus className="h-4 w-4" />
+                Programare nouă
+              </Link>
+            </Button>
+          ) : null}
           {!anonymized ? (
             <Button asChild variant="outline">
               <Link href={`/dashboard/clients/${client.id}/edit`}>

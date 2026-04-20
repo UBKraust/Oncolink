@@ -1,4 +1,5 @@
-import { LogOut, Lock, Plus, Search, TriangleAlert } from "lucide-react";
+import Link from "next/link";
+import { CalendarPlus, LogOut, Lock, Search, TriangleAlert } from "lucide-react";
 
 import { signOut } from "@/app/login/actions";
 import { Badge } from "@/components/ui/badge";
@@ -39,9 +40,11 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
           Deblochează cu PIN
         </Button>
 
-        <Button size="sm">
-          <Plus className="h-4 w-4" />
-          Programare nouă
+        <Button asChild size="sm">
+          <Link href="/dashboard/appointments/new">
+            <CalendarPlus className="h-4 w-4" />
+            Programare nouă
+          </Link>
         </Button>
 
         {userEmail ? (

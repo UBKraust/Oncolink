@@ -22,6 +22,7 @@ export interface DashboardAppointment {
   location: LocationKind;
   meetLink?: string;
   isExternalDuty?: boolean;
+  price?: number;
 }
 
 export interface UnpaidInvoice {
@@ -56,6 +57,7 @@ export const mockToday: DashboardAppointment[] = [
     durationMinutes: 50,
     status: "CONFIRMAT",
     location: "PRIVAT",
+    price: 200,
   },
   {
     id: "a2",
@@ -66,6 +68,7 @@ export const mockToday: DashboardAppointment[] = [
     status: "CONFIRMAT",
     location: "ONLINE",
     meetLink: "https://meet.google.com/abc-defg-hij",
+    price: 300,
   },
   {
     id: "a3",
@@ -85,6 +88,7 @@ export const mockToday: DashboardAppointment[] = [
     durationMinutes: 50,
     status: "PROGRAMAT",
     location: "PRIVAT",
+    price: 250,
   },
 ];
 
@@ -155,6 +159,15 @@ export interface DashboardStats {
   unpaidInvoicesCount: number;
   unpaidInvoicesTotal: number;
   revenueMonth: number;
+  totalSessions: number;
+  totalHours: number;
+  totalRevenue: number;
+  totalPatients: number;
+  privatePatients: number;
+  clinicPatients: number;
+  minorPatients: number;
+  adultPatients: number;
+  b2bPatients: number;
 }
 
 export const mockStats: DashboardStats = {
@@ -163,4 +176,13 @@ export const mockStats: DashboardStats = {
   unpaidInvoicesCount: mockUnpaidInvoices.length,
   unpaidInvoicesTotal: mockUnpaidInvoices.reduce((sum, i) => sum + i.amount, 0),
   revenueMonth: 6250,
+  totalSessions: 145,
+  totalHours: 120.5,
+  totalRevenue: 34500,
+  totalPatients: 57,
+  privatePatients: 33,
+  clinicPatients: 24,
+  minorPatients: 41,
+  adultPatients: 16,
+  b2bPatients: 6,
 };

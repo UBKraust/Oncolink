@@ -9,6 +9,13 @@ export interface MockClient {
   contract_url: string | null;
   notes_anonymized_at: string | null;
   created_at: string;
+  location: "CABINET_PARTICULAR" | "CLINICA" | null;
+  is_minor: boolean;
+  parent_name: string | null;
+  parent_phone: string | null;
+  billing_type: "INDIVIDUAL" | "B2B_COMPANY" | null;
+  company_name: string | null;
+  session_price: string | null;
 }
 
 const daysAgo = (n: number) => {
@@ -16,7 +23,6 @@ const daysAgo = (n: number) => {
   d.setDate(d.getDate() - n);
   return d.toISOString();
 };
-
 export const mockClients: MockClient[] = [
   {
     id: "c-001",
@@ -29,6 +35,13 @@ export const mockClients: MockClient[] = [
     contract_url: "https://example.supabase.co/storage/v1/object/public/contracts/c-001.pdf",
     notes_anonymized_at: null,
     created_at: daysAgo(120),
+    location: "CABINET_PARTICULAR",
+    is_minor: false,
+    parent_name: null,
+    parent_phone: null,
+    billing_type: "INDIVIDUAL",
+    company_name: null,
+    session_price: "250.00",
   },
   {
     id: "c-002",
@@ -41,18 +54,32 @@ export const mockClients: MockClient[] = [
     contract_url: null,
     notes_anonymized_at: null,
     created_at: daysAgo(64),
+    location: "CABINET_PARTICULAR",
+    is_minor: false,
+    parent_name: null,
+    parent_phone: null,
+    billing_type: "B2B_COMPANY",
+    company_name: "Tech Solutions SRL",
+    session_price: "300.00",
   },
   {
     id: "c-003",
-    full_name: "Elena Dumitrescu",
-    email: "elena.d@example.com",
-    phone: "+40744777888",
-    cnp_cif: "2951118223344",
+    full_name: "Andrei Dumitrescu",
+    email: "andrei.d@example.com",
+    phone: null,
+    cnp_cif: "5151118223344",
     address: "Str. Traian 7, Iași",
     gdpr_consent_signed: false,
     contract_url: null,
     notes_anonymized_at: null,
     created_at: daysAgo(12),
+    location: "CLINICA",
+    is_minor: true,
+    parent_name: "Elena Dumitrescu",
+    parent_phone: "+40744777888",
+    billing_type: "INDIVIDUAL",
+    company_name: null,
+    session_price: "200.00",
   },
   {
     id: "c-004",
@@ -65,6 +92,13 @@ export const mockClients: MockClient[] = [
     contract_url: null,
     notes_anonymized_at: null,
     created_at: daysAgo(180),
+    location: "CLINICA",
+    is_minor: false,
+    parent_name: null,
+    parent_phone: null,
+    billing_type: "INDIVIDUAL",
+    company_name: null,
+    session_price: null, // Poate fi negociat per programare
   },
   {
     id: "c-005",
@@ -77,6 +111,13 @@ export const mockClients: MockClient[] = [
     contract_url: null,
     notes_anonymized_at: null,
     created_at: daysAgo(30),
+    location: "CABINET_PARTICULAR",
+    is_minor: false,
+    parent_name: null,
+    parent_phone: null,
+    billing_type: "B2B_COMPANY",
+    company_name: "Creative Agency SA",
+    session_price: "350.00",
   },
   {
     id: "c-006",
@@ -89,5 +130,12 @@ export const mockClients: MockClient[] = [
     contract_url: null,
     notes_anonymized_at: daysAgo(7),
     created_at: daysAgo(400),
+    location: "CABINET_PARTICULAR",
+    is_minor: false,
+    parent_name: null,
+    parent_phone: null,
+    billing_type: "INDIVIDUAL",
+    company_name: null,
+    session_price: null,
   },
 ];

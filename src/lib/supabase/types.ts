@@ -13,6 +13,13 @@ export type Database = {
           contract_url: string | null;
           notes_anonymized_at: string | null;
           created_at: string;
+          session_price: number | null;
+          location: string | null;
+          is_minor: boolean | null;
+          parent_name: string | null;
+          parent_phone: string | null;
+          billing_type: string | null;
+          company_name: string | null;
         };
         Insert: {
           id?: string;
@@ -25,6 +32,13 @@ export type Database = {
           contract_url?: string | null;
           notes_anonymized_at?: string | null;
           created_at?: string;
+          session_price?: number | null;
+          location?: string | null;
+          is_minor?: boolean | null;
+          parent_name?: string | null;
+          parent_phone?: string | null;
+          billing_type?: string | null;
+          company_name?: string | null;
         };
         Update: {
           id?: string;
@@ -37,6 +51,13 @@ export type Database = {
           contract_url?: string | null;
           notes_anonymized_at?: string | null;
           created_at?: string;
+          session_price?: number | null;
+          location?: string | null;
+          is_minor?: boolean | null;
+          parent_name?: string | null;
+          parent_phone?: string | null;
+          billing_type?: string | null;
+          company_name?: string | null;
         };
         Relationships: [];
       };
@@ -52,6 +73,7 @@ export type Database = {
           payment_link: string | null;
           is_external_duty: boolean;
           created_at: string;
+          price: number | null;
         };
         Insert: {
           id?: string;
@@ -64,6 +86,7 @@ export type Database = {
           payment_link?: string | null;
           is_external_duty?: boolean;
           created_at?: string;
+          price?: number | null;
         };
         Update: {
           id?: string;
@@ -76,6 +99,7 @@ export type Database = {
           payment_link?: string | null;
           is_external_duty?: boolean;
           created_at?: string;
+          price?: number | null;
         };
         Relationships: [
           {

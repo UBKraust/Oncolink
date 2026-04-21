@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getValidAccessToken } from "@/lib/google/sync";
-import { provisionClientDriveFolder } from "@/lib/google/drive";
+import { provisionClientDriveFolder, uploadFileToDriveFolder } from "@/lib/google/drive";
 import {
   isValidEmail,
   isValidRomanianPhone,
@@ -264,4 +264,30 @@ export async function anonymizeClient(id: string, formData: FormData) {
   revalidatePath("/dashboard/clients");
   revalidatePath(`/dashboard/clients/${id}`);
   redirect(`/dashboard/clients/${id}?anonymized=1`);
+}
+
+export async function uploadClientDocument(clientId: string, folderId: string, formData: FormData) {
+  const file = formData.get("file") as File;
+  if (!file) return { error: "Niciun fișier selectat." };
+
+  try {
+    const accessToken = await getValidAccessToken();
+    if (!accessToken) throw new Error("Nu s-a putut obține token-ul Google.");
+
+    const res = await uploadFileToDriveFolder(
+      accessToken,
+      file,
+      file.name,
+      folderId
+    );
+
+    const supabase = await createSupabaseServerClient();
+    // Logic to log this upload if needed or update client metadata
+    
+    revalidatePath(`/dashboard/clients/${clientId}`);
+    return { success: true, webViewLink: res.webViewLink };
+  } catch (err) {
+    console.error("[Drive Upload Error]", err);
+    return { error: err instanceof Error ? err.message : "Eroare la încărcare." };
+  }
 }

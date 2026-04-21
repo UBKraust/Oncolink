@@ -256,7 +256,7 @@ export default function AiChatPage() {
                   className="text-xs underline mt-1 opacity-70 hover:opacity-100"
                   onClick={() => {
                     setOllamaOnline(null);
-                    const ollamaUrl = process.env.NEXT_PUBLIC_OLLAMA_URL ?? "http://localhost:11434";
+                    const ollamaUrl = process.env.NEXT_PUBLIC_OLLAMA_URL || "http://localhost:11434";
                     fetch(`${ollamaUrl}/api/tags`, { signal: AbortSignal.timeout(2000) })
                       .then((r) => setOllamaOnline(r.ok))
                       .catch(() => setOllamaOnline(false));

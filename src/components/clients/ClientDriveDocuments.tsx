@@ -1,8 +1,11 @@
 "use client";
 
-import { UploadCloud, File, FileText, Download, ExternalLink, ImageIcon } from "lucide-react";
+import { useRef, useState } from "react";
+import { UploadCloud, File, FileText, Download, ExternalLink, ImageIcon, Loader2, CheckCircle2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { uploadClientDocument } from "@/app/dashboard/clients/actions";
+import { toast } from "@/components/ui/toast";
 
 interface DriveDocument {
   id: string;
@@ -12,7 +15,41 @@ interface DriveDocument {
   created_at: string;
 }
 
-export function ClientDriveDocuments({ documents = [] }: { documents?: DriveDocument[] }) {
+export function ClientDriveDocuments({ 
+  clientId, 
+  folderId, 
+  documents = [] 
+}: { 
+  clientId: string;
+  folderId?: string;
+  documents?: DriveDocument[] 
+}) {
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !folderId) return;
+
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await uploadClientDocument(clientId, folderId, formData);
+      if (res.success) {
+        toast.success(`Fișierul "${file.name}" a fost încărcat.`);
+      } else {
+        toast.error(res.error || "Eroare la încărcare.");
+      }
+    } catch (err) {
+      toast.error("Eroare neprevăzută la încărcare.");
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -24,10 +61,27 @@ export function ClientDriveDocuments({ documents = [] }: { documents?: DriveDocu
             </CardTitle>
             <CardDescription>Fișiere atașate & analize medicale</CardDescription>
           </div>
-          <Button variant="outline" size="sm">
-            <UploadCloud className="mr-2 h-4 w-4" />
-            Upload
-          </Button>
+          <div className="flex items-center gap-2">
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              onChange={handleUpload}
+            />
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading || !folderId}
+            >
+              {isUploading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <UploadCloud className="mr-2 h-4 w-4" />
+              )}
+              {isUploading ? "Se încarcă..." : "Upload"}
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -40,7 +94,14 @@ export function ClientDriveDocuments({ documents = [] }: { documents?: DriveDocu
             <p className="mt-1 text-xs text-muted-foreground">
               Documentele încărcate vor fi salvate securizat în contul tău de Google Drive.
             </p>
-            <Button variant="secondary" size="sm" className="mt-4">
+            <Button 
+              variant="secondary" 
+              size="sm" 
+              className="mt-4"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading || !folderId}
+            >
+              <UploadCloud className="mr-2 h-4 w-4" />
               Încarcă Primul Fișier
             </Button>
           </div>

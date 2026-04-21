@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
       clientContext?: string; // optional — injected on per-client chat
     };
 
-    const ollamaUrl = process.env.NEXT_PUBLIC_OLLAMA_URL ?? "http://localhost:11434";
+    const ollamaUrl = process.env.OLLAMA_URL || process.env.NEXT_PUBLIC_OLLAMA_URL || "http://localhost:11434";
     const model = body.model ?? process.env.NEXT_PUBLIC_OLLAMA_MODEL ?? "gemma2:9b-instruct";
 
     // Build message array: base system prompt + optional client context

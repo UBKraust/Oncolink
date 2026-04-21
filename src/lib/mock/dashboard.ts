@@ -175,6 +175,7 @@ export interface DashboardStats {
   netProfitMonth: number;
   vaultAlertsCount: number;
   vaultTotalDocs: number;
+  pendingMinorReviews: number;
 }
 
 // Compute current month stats dynamically for demo consistency
@@ -212,4 +213,5 @@ export const mockStats: DashboardStats = {
   netProfitMonth:  monthRevenue - monthExpenses,
   vaultAlertsCount: 2,
   vaultTotalDocs:   12,
+  pendingMinorReviews: 1, // Mock: 1 new minor enrollment needs review
 };

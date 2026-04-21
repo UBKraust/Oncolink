@@ -1,6 +1,7 @@
+import Link from "next/link";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
-import { CalendarDays, CreditCard, Users, TrendingUp, ShieldCheck } from "lucide-react";
+import { CalendarDays, CreditCard, Users, TrendingUp, ShieldCheck, AlertTriangle, ChevronRight } from "lucide-react";
 
 import { AppointmentsToday } from "@/components/dashboard/appointments-today";
 import { StatCard } from "@/components/dashboard/stat-card";
@@ -9,6 +10,15 @@ import { UpcomingAppointments } from "@/components/dashboard/upcoming-appointmen
 import { CompliancePanel } from "@/components/compliance/CompliancePanel";
 import { FinancialSummary } from "@/components/dashboard/financial-summary";
 import { VaultStatusWidget } from "@/components/dashboard/vault-status-widget";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   mockStats,
   mockToday,
@@ -41,6 +51,27 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Critical Legal Alerts */}
+      {stats.pendingMinorReviews > 0 && (
+        <div className="flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50/70 p-4 shadow-sm animate-pulse-subtle">
+          <div className="flex items-center gap-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
+              <AlertTriangle className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm font-black text-amber-900">Validare Juridică Necesară (Minori)</p>
+              <p className="text-xs text-amber-700">Există {stats.pendingMinorReviews}dosar de minor nou cu custodie comună ce necesită verificarea documentelor.</p>
+            </div>
+          </div>
+          <Button asChild variant="outline" size="sm" className="border-amber-200 text-amber-700 hover:bg-amber-100 font-bold group">
+            <Link href="/dashboard/clients?filter=review">
+              Vezi Dosare
+              <ChevronRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+          </Button>
+        </div>
+      )}
 
       {/* Top Layer: Clinical & Business Quick Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import { ro } from "date-fns/locale";
 import {
   FileText, Upload, Trash2, ExternalLink, AlertTriangle,
-  FileImage, FileScan, Plus, ShieldAlert, Baby
+  FileImage, FileScan, Plus, ShieldAlert, X,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,7 @@ export function PatientDocuments({ clientId, isMinor, documents }: Props) {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [previewDoc, setPreviewDoc] = useState<MockPatientDocument | null>(null);
 
   // Check missing minor documents
   const missingMinorDocs = isMinor
@@ -186,6 +187,83 @@ export function PatientDocuments({ clientId, isMinor, documents }: Props) {
       </Card>
 
       {/* Documents by type */}
+      {/* Document preview overlay */}
+      {previewDoc && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px]"
+            onClick={() => setPreviewDoc(null)}
+          />
+          <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col bg-background shadow-2xl">
+            {/* Header */}
+            <div className="flex items-start justify-between border-b px-5 py-4">
+              <div className="space-y-1 min-w-0 pr-3">
+                <p className="font-semibold text-sm truncate">{previewDoc.file_name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {DOCUMENT_TYPE_CONFIG[previewDoc.document_type]?.label}
+                </p>
+              </div>
+              <button
+                onClick={() => setPreviewDoc(null)}
+                className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Inline preview */}
+            <div className="flex-1 overflow-hidden">
+              {previewDoc.document_url ? (
+                previewDoc.mime_type === "application/pdf" ? (
+                  <iframe
+                    src={previewDoc.document_url}
+                    className="h-full w-full"
+                    title={previewDoc.file_name}
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center bg-muted/20 p-4">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={previewDoc.document_url}
+                      alt={previewDoc.file_name}
+                      className="max-h-full max-w-full rounded-md object-contain shadow"
+                    />
+                  </div>
+                )
+              ) : (
+                <div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground">
+                  <FileScan className="h-12 w-12 opacity-30" />
+                  <p className="text-sm">Previzualizare indisponibilă</p>
+                  <p className="text-xs opacity-60">Fișierul nu a fost încărcat în cloud.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer metadata */}
+            <div className="border-t px-5 py-4 space-y-2">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>Încărcat la {format(new Date(previewDoc.uploaded_at), "d MMM yyyy", { locale: ro })}</span>
+                <span>{previewDoc.file_size_kb} KB</span>
+              </div>
+              {previewDoc.notes && (
+                <p className="text-xs text-muted-foreground border-t pt-2">{previewDoc.notes}</p>
+              )}
+              {previewDoc.document_url && (
+                <a
+                  href={previewDoc.document_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-xs text-primary hover:underline"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  Deschide în filă nouă
+                </a>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
       {Object.keys(byType).length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-4">Niciun document încărcat.</p>
       ) : (
@@ -199,7 +277,8 @@ export function PatientDocuments({ clientId, isMinor, documents }: Props) {
               </h4>
               <div className="space-y-1.5">
                 {typeDocs!.map((doc) => (
-                  <div key={doc.id} className="flex items-start gap-3 rounded-lg border bg-card px-3 py-2.5 hover:bg-muted/30 transition-colors group">
+                  <div key={doc.id} className="flex items-start gap-3 rounded-lg border bg-card px-3 py-2.5 hover:bg-muted/30 transition-colors group cursor-pointer"
+                    onClick={() => setPreviewDoc(doc)}>
                     <FileIcon mime={doc.mime_type} />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{doc.file_name}</p>
@@ -211,14 +290,15 @@ export function PatientDocuments({ clientId, isMinor, documents }: Props) {
                     </div>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       {doc.document_url && (
-                        <Button asChild variant="ghost" size="icon" className="h-7 w-7">
+                        <Button asChild variant="ghost" size="icon" className="h-7 w-7"
+                          onClick={(e) => e.stopPropagation()}>
                           <a href={doc.document_url} target="_blank" rel="noopener noreferrer">
                             <ExternalLink className="h-3.5 w-3.5" />
                           </a>
                         </Button>
                       )}
                       <Button variant="ghost" size="icon" className="h-7 w-7 text-rose-500"
-                        onClick={() => handleRemove(doc.id)}>
+                        onClick={(e) => { e.stopPropagation(); handleRemove(doc.id); }}>
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </div>

@@ -6,7 +6,7 @@ import { ro } from "date-fns/locale";
 import {
   Banknote, CreditCard, ArrowLeftRight, FileCheck2,
   Clock, TrendingUp, AlertCircle, CheckCircle2,
-  XCircle, Receipt, Plus
+  XCircle, Receipt, Plus, X, Download, StickyNote,
 } from "lucide-react";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,6 +40,7 @@ export function ClientFinancialHistory({
   clientName: string;
 }) {
   const [filter, setFilter] = useState<"ALL" | "CASH" | "CARD" | "TRANSFER" | "B2B_FACTURA">("ALL");
+  const [selected, setSelected] = useState<MockSessionPayment | null>(null);
 
   const sorted = useMemo(
     () => [...payments].sort((a, b) =>
@@ -119,9 +120,13 @@ export function ClientFinancialHistory({
               const invoice = INVOICE_CONFIG[p.invoice_status];
 
               return (
-                <div key={p.id} className="flex items-center gap-4 px-4 py-3 hover:bg-muted/40 transition-colors">
+                <button
+                  key={p.id}
+                  onClick={() => setSelected(p)}
+                  className="w-full flex items-center gap-4 px-4 py-3 hover:bg-muted/40 transition-colors text-left group"
+                >
                   {/* Date */}
-                  <div className="w-24 shrink-0 text-left">
+                  <div className="w-24 shrink-0">
                     <p className="text-xs font-medium">
                       {format(new Date(p.appointment_date), "d MMM yyyy", { locale: ro })}
                     </p>
@@ -158,8 +163,11 @@ export function ClientFinancialHistory({
                     <p className="text-sm font-semibold">
                       {p.amount.toLocaleString("ro-RO")} <span className="text-xs font-normal text-muted-foreground">RON</span>
                     </p>
+                    <p className="text-[10px] text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                      Detalii →
+                    </p>
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -172,6 +180,107 @@ export function ClientFinancialHistory({
           {cashCount} plăți în numerar (cash) — neincluse automat în facturare digitală.
         </p>
       )}
+
+      {/* Payment detail overlay */}
+      {selected && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px]"
+            onClick={() => setSelected(null)}
+          />
+          <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col bg-background shadow-2xl">
+            {/* Header */}
+            <div className="flex items-start justify-between border-b px-5 py-4">
+              <div className="space-y-1">
+                <p className="font-semibold">Detalii Plată</p>
+                <p className="text-xs text-muted-foreground">
+                  {format(new Date(selected.appointment_date), "d MMMM yyyy, HH:mm", { locale: ro })}
+                </p>
+                <p className="text-xs text-muted-foreground">{clientName}</p>
+              </div>
+              <button
+                onClick={() => setSelected(null)}
+                className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 space-y-5 overflow-y-auto px-5 py-5">
+              {/* Amount hero */}
+              <div className="rounded-lg border bg-muted/20 p-4 text-center">
+                <p className="text-3xl font-bold tabular-nums">
+                  {selected.amount.toLocaleString("ro-RO")}
+                  <span className="text-base font-normal text-muted-foreground ml-1">RON</span>
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">{selected.duration_minutes} minute</p>
+              </div>
+
+              {/* Details grid */}
+              <div className="divide-y rounded-md border">
+                <DetailRow label="Metodă plată">
+                  <span className={`inline-flex items-center gap-1.5 text-xs font-medium rounded-full px-2.5 py-1 ${METHOD_CONFIG[selected.payment_method]?.class}`}>
+                    {METHOD_CONFIG[selected.payment_method]?.icon}
+                    {METHOD_CONFIG[selected.payment_method]?.label}
+                  </span>
+                </DetailRow>
+                <DetailRow label="Status factură">
+                  <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${INVOICE_CONFIG[selected.invoice_status]?.class}`}>
+                    {INVOICE_CONFIG[selected.invoice_status]?.icon}
+                    {INVOICE_CONFIG[selected.invoice_status]?.label}
+                  </span>
+                </DetailRow>
+                {selected.invoice_number && (
+                  <DetailRow label="Număr factură">
+                    <span className="text-sm font-mono">{selected.invoice_number}</span>
+                  </DetailRow>
+                )}
+                <DetailRow label="Dată & oră">
+                  <span className="text-sm">
+                    {format(new Date(selected.appointment_date), "d MMM yyyy, HH:mm", { locale: ro })}
+                  </span>
+                </DetailRow>
+                <DetailRow label="Durată ședință">
+                  <span className="text-sm">{selected.duration_minutes} min</span>
+                </DetailRow>
+              </div>
+
+              {/* Notes */}
+              {selected.notes && (
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                    <StickyNote className="h-3.5 w-3.5" />
+                    Observații
+                  </p>
+                  <div className="rounded-md border bg-muted/20 p-3">
+                    <p className="text-sm leading-relaxed">{selected.notes}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            {selected.invoice_number && (
+              <div className="border-t px-5 py-4">
+                <button className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 font-medium transition-colors">
+                  <Download className="h-4 w-4" />
+                  Descarcă factură {selected.invoice_number}
+                </button>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between px-3 py-2.5">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      {children}
     </div>
   );
 }

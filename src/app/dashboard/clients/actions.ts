@@ -184,7 +184,58 @@ export async function updateClient(
   redirect(`/dashboard/clients/${id}`);
 }
 
+export async function scheduleAnonymization(id: string) {
+  if (!isSupabaseConfigured()) {
+    redirect(`/dashboard/clients?error=demo`);
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const scheduledDate = new Date();
+  scheduledDate.setDate(scheduledDate.getDate() + 15);
+
+  const { error } = await supabase
+    .from("clients")
+    .update({
+      scheduled_anonymization_at: scheduledDate.toISOString(),
+    })
+    .eq("id", id);
+
+  if (error) {
+    console.error("Error scheduling anonymization:", error);
+    return { error: error.message };
+  }
+
+  revalidatePath("/dashboard/clients");
+  revalidatePath(`/dashboard/clients/${id}`);
+  return { success: true };
+}
+
+export async function cancelAnonymization(id: string) {
+  if (!isSupabaseConfigured()) {
+    return { error: "Mod demo" };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from("clients")
+    .update({
+      scheduled_anonymization_at: null,
+    })
+    .eq("id", id);
+
+  if (error) {
+    console.error("Error cancelling anonymization:", error);
+    return { error: error.message };
+  }
+
+  revalidatePath("/dashboard/clients");
+  revalidatePath(`/dashboard/clients/${id}`);
+  return { success: true };
+}
+
 export async function anonymizeClient(id: string, formData: FormData) {
+  // Existing function kept for "Hard Delete" logic if needed, 
+  // but we transition to scheduled logic in UI.
   const confirmation = String(formData.get("confirmation") ?? "");
   if (confirmation !== "ȘTERGE PII") {
     redirect(`/dashboard/clients/${id}/anonymize?error=confirmation`);

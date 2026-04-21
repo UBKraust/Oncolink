@@ -1,0 +1,208 @@
+"use client";
+
+import Link from "next/link";
+import { format } from "date-fns";
+import { ro } from "date-fns/locale";
+import {
+  Brain,
+  CheckCircle2,
+  FileText,
+  Mail,
+  TrendingUp,
+  X,
+} from "lucide-react";
+
+import { Badge } from "@/components/ui/badge";
+import type { MockAssessment } from "@/lib/mock/assessments";
+
+const SEVERITY_CONFIG = {
+  minimal: { label: "Minimal", bar: "bg-emerald-500", text: "text-emerald-700", bg: "bg-emerald-50 dark:bg-emerald-950/30", border: "border-emerald-200 dark:border-emerald-800" },
+  mild: { label: "Ușor", bar: "bg-yellow-400", text: "text-yellow-700", bg: "bg-yellow-50 dark:bg-yellow-950/30", border: "border-yellow-200 dark:border-yellow-800" },
+  moderate: { label: "Moderat", bar: "bg-orange-500", text: "text-orange-700", bg: "bg-orange-50 dark:bg-orange-950/30", border: "border-orange-200 dark:border-orange-800" },
+  severe: { label: "Sever", bar: "bg-red-500", text: "text-red-700", bg: "bg-red-50 dark:bg-red-950/30", border: "border-red-200 dark:border-red-800" },
+};
+
+const TYPE_LABEL: Record<string, string> = {
+  EVALUARE_INITIALA: "Evaluare Inițială",
+  SCORING_ANXIETATE: "Scoring Anxietate",
+  RAPORT_LUNAR: "Raport Lunar",
+};
+
+interface Props {
+  assessment: MockAssessment;
+  clientName: string;
+  isMinor: boolean;
+  sendReportToParent: boolean;
+  closeUrl: string;
+}
+
+export function AssessmentDetailOverlay({
+  assessment,
+  clientName,
+  isMinor,
+  sendReportToParent,
+  closeUrl,
+}: Props) {
+  const scoring = assessment.scoring_data;
+  const severity = scoring.severity?.toLowerCase() as keyof typeof SEVERITY_CONFIG | undefined;
+  const severityCfg = severity ? SEVERITY_CONFIG[severity] : null;
+
+  const hasNumericScore =
+    typeof scoring.score === "number" ||
+    typeof scoring.state_anxiety === "number" ||
+    typeof scoring.trait_anxiety === "number";
+
+  const scoreEntries = Object.entries(scoring).filter(
+    ([k]) => k !== "test_type" && k !== "severity"
+  );
+
+  return (
+    <>
+      {/* Backdrop */}
+      <Link
+        href={closeUrl}
+        className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px]"
+        aria-label="Închide"
+      />
+
+      {/* Drawer panel */}
+      <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col bg-background shadow-2xl">
+        {/* Header */}
+        <div className="flex items-start justify-between border-b px-5 py-4">
+          <div className="space-y-1">
+            <Badge variant="secondary" className="text-[10px] uppercase tracking-wide">
+              {TYPE_LABEL[assessment.assessment_type] ?? assessment.assessment_type.replace(/_/g, " ")}
+            </Badge>
+            <p className="text-xs text-muted-foreground">
+              {format(new Date(assessment.created_at), "d MMMM yyyy, HH:mm", { locale: ro })}
+            </p>
+            <p className="text-sm font-medium">{clientName}</p>
+          </div>
+          <Link
+            href={closeUrl}
+            className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+          >
+            <X className="h-4 w-4" />
+          </Link>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 space-y-5 overflow-y-auto px-5 py-5">
+          {/* Test type badge */}
+          {scoring.test_type && (
+            <div className="flex items-center gap-2 text-sm">
+              <Brain className="h-4 w-4 text-primary" />
+              <span className="font-medium">{scoring.test_type}</span>
+            </div>
+          )}
+
+          {/* Severity card */}
+          {severityCfg && (
+            <div className={`rounded-lg border p-4 ${severityCfg.bg} ${severityCfg.border}`}>
+              <div className="flex items-center justify-between mb-2">
+                <span className={`text-sm font-semibold ${severityCfg.text}`}>
+                  {severityCfg.label}
+                </span>
+                {typeof scoring.score === "number" && (
+                  <span className={`text-2xl font-bold ${severityCfg.text}`}>
+                    {scoring.score}
+                  </span>
+                )}
+              </div>
+              {typeof scoring.score === "number" && (
+                <div className="h-2 w-full rounded-full bg-black/10">
+                  <div
+                    className={`h-2 rounded-full transition-all ${severityCfg.bar}`}
+                    style={{ width: `${Math.min((scoring.score / 27) * 100, 100)}%` }}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Score entries */}
+          {hasNumericScore && scoreEntries.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                <TrendingUp className="h-3.5 w-3.5" />
+                Scoruri detaliate
+              </p>
+              <div className="divide-y rounded-md border">
+                {scoreEntries.map(([key, val]) => (
+                  <div key={key} className="flex items-center justify-between px-3 py-2.5">
+                    <span className="text-sm text-muted-foreground capitalize">
+                      {key.replace(/_/g, " ")}
+                    </span>
+                    <span className="text-sm font-semibold tabular-nums">{String(val)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Subscale visualization for multi-dimension scores */}
+          {typeof scoring.state_anxiety === "number" && typeof scoring.trait_anxiety === "number" && (
+            <div className="space-y-3">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                <TrendingUp className="h-3.5 w-3.5" />
+                Componente
+              </p>
+              {[
+                { label: "Anxietate de stare", value: scoring.state_anxiety, max: 80 },
+                { label: "Anxietate de trăsătură", value: scoring.trait_anxiety, max: 80 },
+              ].map(({ label, value, max }) => {
+                const pct = Math.min((value / max) * 100, 100);
+                const barColor = value < 40 ? "bg-emerald-500" : value < 55 ? "bg-yellow-400" : "bg-red-500";
+                return (
+                  <div key={label} className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">{label}</span>
+                      <span className="font-medium tabular-nums">{value}</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-muted">
+                      <div className={`h-2 rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Content summary */}
+          {assessment.content_summary && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                <FileText className="h-3.5 w-3.5" />
+                Concluzie / Sumar Clinic
+              </p>
+              <div className="rounded-md border bg-muted/20 p-3">
+                <p className="text-sm leading-relaxed">{assessment.content_summary}</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="border-t px-5 py-4">
+          {assessment.sent_to_parent_at ? (
+            <div className="flex items-center gap-2 text-sm text-emerald-600 font-medium">
+              <CheckCircle2 className="h-4 w-4" />
+              Trimis părintelui pe{" "}
+              {format(new Date(assessment.sent_to_parent_at), "d MMM yyyy", { locale: ro })}
+            </div>
+          ) : isMinor && sendReportToParent ? (
+            <button className="flex items-center gap-2 text-sm text-amber-600 hover:text-amber-700 font-medium transition-colors">
+              <Mail className="h-4 w-4" />
+              Generează email pentru părinte
+            </button>
+          ) : (
+            <span className="flex items-center gap-2 text-sm text-muted-foreground">
+              <FileText className="h-4 w-4" />
+              Document intern — nu se trimite
+            </span>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}

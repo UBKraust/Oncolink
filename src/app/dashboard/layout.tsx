@@ -6,6 +6,8 @@ import { NotesVaultProvider } from "@/components/notes/notes-context";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
+import { QuickActionsWheel } from "@/components/dashboard/QuickActionsWheel";
+
 export default async function DashboardLayout({
   children,
 }: {
@@ -30,6 +32,7 @@ export default async function DashboardLayout({
           <div className="flex-1 overflow-auto p-4 md:p-6">{children}</div>
         </div>
       </div>
+      <QuickActionsWheel />
     </NotesVaultProvider>
   );
 }

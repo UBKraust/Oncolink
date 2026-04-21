@@ -35,6 +35,9 @@ function parseForm(formData: FormData) {
     session_frequency: String(formData.get("session_frequency") ?? "SAPTAMANAL"),
     report_frequency: String(formData.get("report_frequency") ?? "NICIODATA"),
     send_report_to_parent: formData.get("send_report_to_parent") === "on",
+    company_representative_name: billing_type === "B2B_COMPANY" ? String(formData.get("company_representative_name") ?? "").trim() : null,
+    company_representative_role: billing_type === "B2B_COMPANY" ? String(formData.get("company_representative_role") ?? "").trim() : null,
+    company_reg_com: billing_type === "B2B_COMPANY" ? String(formData.get("company_reg_com") ?? "").trim() : null,
   };
 }
 
@@ -57,8 +60,10 @@ function validate(payload: ReturnType<typeof parseForm>): ClientFormState {
     else if (!isValidRomanianPhone(payload.parent_phone)) fieldErrors.parent_phone = "Telefon RO invalid.";
   }
 
-  if (payload.billing_type === "B2B_COMPANY" && !payload.company_name) {
-    fieldErrors.company_name = "Numele firmei este obligatoriu pentru abonamente B2B.";
+  if (payload.billing_type === "B2B_COMPANY") {
+    if (!payload.company_name) fieldErrors.company_name = "Numele firmei este obligatoriu.";
+    if (!payload.company_representative_name) fieldErrors.company_representative_name = "Numele reprezentantului este obligatoriu.";
+    if (!payload.company_representative_role) fieldErrors.company_representative_role = "Calitatea reprezentantului este obligatorie.";
   }
 
   if (payload.session_price && isNaN(Number(payload.session_price))) {
@@ -106,6 +111,9 @@ export async function createClient(
       session_frequency: payload.session_frequency,
       report_frequency: payload.report_frequency,
       send_report_to_parent: payload.send_report_to_parent,
+      company_representative_name: payload.company_representative_name,
+      company_representative_role: payload.company_representative_role,
+      company_reg_com: payload.company_reg_com,
     })
     .select("id")
     .single();
@@ -174,6 +182,9 @@ export async function updateClient(
       session_frequency: payload.session_frequency,
       report_frequency: payload.report_frequency,
       send_report_to_parent: payload.send_report_to_parent,
+      company_representative_name: payload.company_representative_name,
+      company_representative_role: payload.company_representative_role,
+      company_reg_com: payload.company_reg_com,
     })
     .eq("id", id);
 

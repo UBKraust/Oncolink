@@ -20,6 +20,7 @@ import {
   Baby,
   Building
 } from "lucide-react";
+import { ContractGenerator } from "./ContractGenerator";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -318,6 +319,11 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
                        </Button>
                     </div>
                  )}
+
+                 {/* NEW: Contract Generator Component */}
+                 <div className="pt-2">
+                    <ContractGenerator client={client} />
+                 </div>
               </div>
            </div>
 

@@ -23,7 +23,7 @@ function header(doc: jsPDF, title: string) {
   doc.text("Oncolink · Cabinet psihoterapie", MARGIN, 12);
 
   doc.setTextColor(40, 40, 40);
-  doc.setFontSize(16);
+  doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
   doc.text(title, MARGIN, 32);
   doc.setDrawColor(220, 220, 220);
@@ -51,12 +51,13 @@ function kv(doc: jsPDF, y: number, label: string, value: string): number {
   doc.text(label + ":", MARGIN, y);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(30, 30, 30);
-  const lines = doc.splitTextToSize(value, CONTENT_W - 50);
-  doc.text(lines, MARGIN + 50, y);
+  const lines = doc.splitTextToSize(value || "—", CONTENT_W - 55);
+  doc.text(lines, MARGIN + 55, y);
   return y + lines.length * 6 + 2;
 }
 
 function section(doc: jsPDF, y: number, title: string): number {
+  if (y > 250) { doc.addPage(); y = 25; }
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(PRIMARY);
@@ -70,144 +71,173 @@ function section(doc: jsPDF, y: number, title: string): number {
 }
 
 function para(doc: jsPDF, y: number, text: string): number {
+  if (y > 260) { doc.addPage(); y = 25; }
   doc.setFontSize(9.5);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(30, 30, 30);
   const lines = doc.splitTextToSize(text, CONTENT_W);
   doc.text(lines, MARGIN, y);
-  return y + lines.length * 5.5 + 3;
+  return y + lines.length * 5.5 + 4;
 }
 
 export interface ContractData {
+  contractNumber: string;
+  startDate: string;
   clientName: string;
   clientCNP: string;
   clientAddress: string;
   therapistName: string;
   therapistCIF: string;
+  therapistIBAN?: string;
   sessionPrice: number;
-  sessionCount?: number;
-  startDate: string;
+
+  // Minor specific
+  isMinor?: boolean;
+  parent1Name?: string;
+  parent2Name?: string;
+  parentsMaritalStatus?: string;
+  courtSentenceNumber?: string;
+
+  // B2B specific
+  isB2B?: boolean;
+  companyName?: string;
+  companyCIF?: string;
+  companyRegCom?: string;
+  representativeName?: string;
+  representativeRole?: string;
+
+  // CAS specific
+  isCas?: boolean;
+  referralNumber?: string;
+  referralDate?: string;
+  referringDoctor?: string;
+}
+
+/**
+ * Common Signature Block with large whitespace for digital signing (reMarkable/Tablet)
+ */
+function signatureBlock(doc: jsPDF, y: number, labelLeft: string, labelRight: string) {
+  if (y > 230) { doc.addPage(); y = 30; }
+  
+  y += 10;
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.text(labelLeft, MARGIN, y);
+  doc.text(labelRight, PAGE_W - MARGIN - 60, y);
+  
+  y += 25; // Large signature whitespace
+  
+  doc.setDrawColor(200, 200, 200);
+  doc.line(MARGIN, y, MARGIN + 60, y);
+  doc.line(PAGE_W - MARGIN - 60, y, PAGE_W - MARGIN, y);
+  
+  y += 5;
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(150, 150, 150);
+  doc.text("(semnătură și parafă)", MARGIN, y);
+  doc.text("(semnătură olografă digitală)", PAGE_W - MARGIN - 60, y);
+  
+  return y;
 }
 
 export async function generateContract(data: ContractData): Promise<void> {
   const JsPDF = await loadJsPDF();
   const doc = new JsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
-  header(doc, "Contract de Prestări Servicii Psihologice");
+  let title = "Contract de Prestări Servicii Psihologice";
+  if (data.isB2B) title = "Contract de servicii de asistență/consultanță psihologică";
+  if (data.isCas) title = "Consimțământ Informat - Servicii Decontate CAS";
+
+  header(doc, title);
+  doc.setFontSize(9);
+  doc.text(`Nr. ${data.contractNumber} / Data: ${data.startDate}`, PAGE_W - MARGIN - 50, 25);
 
   let y = 44;
+
+  // 1. Părți Contractante
   y = section(doc, y, "Părțile contractante");
   y = kv(doc, y, "Prestator", data.therapistName);
   y = kv(doc, y, "CIF", data.therapistCIF);
+  if (data.therapistIBAN) y = kv(doc, y, "IBAN", data.therapistIBAN);
+  
   y += 4;
-  y = kv(doc, y, "Beneficiar", data.clientName);
-  y = kv(doc, y, "CNP", data.clientCNP);
-  y = kv(doc, y, "Adresă", data.clientAddress);
-  y += 6;
+  
+  if (data.isB2B) {
+    y = kv(doc, y, "Beneficiar (Firmă)", data.companyName || "—");
+    y = kv(doc, y, "CUI/CIF", data.companyCIF || "—");
+    y = kv(doc, y, "Reg. Com.", data.companyRegCom || "—");
+    y = kv(doc, y, "Reprezentat prin", `${data.representativeName} (${data.representativeRole})`);
+  } else {
+    y = kv(doc, y, "Beneficiar (Pacient)", data.clientName);
+    y = kv(doc, y, "CNP", data.clientCNP);
+    y = kv(doc, y, "Adresă", data.clientAddress);
+    if (data.isMinor) {
+      y = kv(doc, y, "Reprezentant legal 1", data.parent1Name || "—");
+      if (data.parent2Name) y = kv(doc, y, "Reprezentant legal 2", data.parent2Name);
+    }
+  }
 
+  // 2. Obiectul Contractului
+  y += 4;
   y = section(doc, y, "Obiectul contractului");
-  y = para(doc, y,
-    `Prestatorul se angajează să furnizeze servicii de psihoterapie individuală Beneficiarului, ` +
-    `în cadrul cabinetului propriu sau online, conform Legii nr. 213/2004 și normelor Colegiului ` +
-    `Psihologilor din România.`,
-  );
+  if (data.isCas) {
+    y = para(doc, y, `Prezentul acord reglementează prestarea serviciilor psihologice decontate prin Casa de Asigurări de Sănătate în baza biletului de trimitere nr. ${data.referralNumber || "—"} din data de ${data.referralDate || "—"} emis de Dr. ${data.referringDoctor || "—"}.`);
+    y = para(doc, y, "Beneficiarul declară că a fost informat cu privire la drepturile și obligațiile ce decurg din calitatea de asigurat.");
+  } else {
+    y = para(doc, y, `Prestatorul se angajează să furnizeze servicii de ${data.isB2B ? "consultanță psihologică" : "psihoterapie individuală"} Beneficiarului, conform Legii nr. 213/2004 și Codului Deontologic al profesiei de psiholog cu drept de liberă practică.`);
+  }
 
-  y = section(doc, y, "Tarif și modalitate de plată");
-  y = kv(doc, y, "Tarif / ședință", `${data.sessionPrice.toFixed(2)} RON (TVA 0%, scutit)`);
-  y = kv(doc, y, "U.M.", "ședință — 50 minute");
-  y = para(doc, y,
-    `Plata se efectuează la data emiterii facturii, prin transfer bancar sau link de plată online ` +
-    `furnizat de Prestator (SmartBill). Nu este necesară casă de marcat.`,
-  );
+  // 3. Clauze Speciale (Minor / B2B)
+  if (data.isMinor) {
+    y = section(doc, y, "Consimțământ pentru minori (Legea 272/2004)");
+    y = para(doc, y, "Părinții / Reprezentanții legali declară că dețin autoritatea părintească și își exprimă acordul pentru prestarea serviciilor psihologice minorului conform Legii 272/2004.");
+    if (data.parentsMaritalStatus !== "CASATORITI" && data.courtSentenceNumber) {
+      y = para(doc, y, `Conform sentinței judecătorești nr. ${data.courtSentenceNumber}, custodia este exercitată conform dispozițiilor legale aferente.`);
+    }
+  }
 
+  // 4. Onorariu și Plată
+  if (!data.isCas) {
+    y = section(doc, y, "Tarif și modalitate de plată");
+    y = kv(doc, y, "Tarif", `${data.sessionPrice.toFixed(2)} RON / ședință (scutit TVA)`);
+    y = para(doc, y, "Plata se efectuează la data emiterii facturii prin metodele agreate (Transfer, Card, Numerar).");
+  }
+
+  // 5. Confidențialitate
   y = section(doc, y, "Confidențialitate și GDPR");
-  y = para(doc, y,
-    `Prestatorul prelucrează datele personale ale Beneficiarului în conformitate cu GDPR ` +
-    `(Regulamentul UE 2016/679) și legislația română aplicabilă, exclusiv în scopul furnizării ` +
-    `serviciilor contractate. Notele clinice sunt criptate end-to-end și nu sunt partajate cu ` +
-    `terți. Beneficiarul are dreptul de acces, rectificare, ștergere și portabilitate a datelor.`,
-  );
+  y = para(doc, y, "Datele sunt prelucrate conform Regulamentului UE 2016/679. Notele clinice sunt protejate prin criptare end-to-end. Secretul profesional poate fi ridicat doar cu acordul pacientului sau în condițiile prevăzute de lege (pericol iminent).");
 
-  y = section(doc, y, "Durata contractului");
-  y = kv(doc, y, "Data inițierii", data.startDate);
-  y = para(doc, y,
-    `Contractul este valabil pe perioadă nedeterminată și poate fi reziliat de oricare parte cu ` +
-    `un preaviz de 7 zile.`,
-  );
-
-  y += 12;
-  doc.setFontSize(9.5);
-  doc.setFont("helvetica", "bold");
-  doc.text("Semnătură Prestator", MARGIN, y);
-  doc.text("Semnătură Beneficiar", PAGE_W - MARGIN - 50, y);
-  y += 16;
-  doc.setDrawColor(0);
-  doc.line(MARGIN, y, MARGIN + 50, y);
-  doc.line(PAGE_W - MARGIN - 50, y, PAGE_W - MARGIN, y);
+  // Signatures
+  let leftLabel = "Prestator (Terapeut)";
+  let rightLabel = data.isB2B ? "Beneficiar (Firmă)" : (data.isMinor ? "Reprezentanți Legali" : "Beneficiar (Pacient)");
+  
+  signatureBlock(doc, y, leftLabel, rightLabel);
 
   footer(doc);
-  doc.save(`contract-${data.clientName.replace(/\s+/g, "-").toLowerCase()}.pdf`);
+  const fileName = data.isB2B ? `contract-b2b-${data.companyName}` : `contract-${data.clientName}`;
+  doc.save(`${fileName.replace(/\s+/g, "-").toLowerCase()}.pdf`);
 }
 
-export interface GdprConsentData {
-  clientName: string;
-  clientCNP: string;
-  therapistName: string;
-  date: string;
-}
-
-export async function generateGdprConsent(data: GdprConsentData): Promise<void> {
+/**
+ * Separate GDPR Consent Template
+ */
+export async function generateGdprConsent(data: { clientName: string; clientCNP: string; therapistName: string; date: string }): Promise<void> {
   const JsPDF = await loadJsPDF();
   const doc = new JsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
-  header(doc, "Acord de Prelucrare Date cu Caracter Personal (GDPR)");
+  header(doc, "Acord de Prelucrare Date (GDPR)");
 
   let y = 44;
-  y = section(doc, y, "Identificarea persoanei vizate");
+  y = section(doc, y, "Identificarea persoanei");
   y = kv(doc, y, "Nume", data.clientName);
   y = kv(doc, y, "CNP", data.clientCNP);
-  y += 6;
 
-  y = section(doc, y, "Temeiul legal");
-  y = para(doc, y,
-    `Prelucrarea se realizează în baza articolului 6 alin. (1) lit. (a) — consimțământul explicit ` +
-    `al persoanei vizate — și articolului 9 alin. (2) lit. (h) din GDPR, ` +
-    `privind prelucrarea datelor de sănătate în scop terapeutic.`,
-  );
-
-  y = section(doc, y, "Categorii de date prelucrate");
-  y = para(doc, y,
-    `• Date de identificare: nume, CNP, adresă, email, telefon\n` +
-    `• Date de sănătate: note clinice criptate, istoricul ședințelor\n` +
-    `• Date fiscale: CNP/CIF pentru facturare`,
-  );
-
-  y = section(doc, y, "Scopul și durata prelucrării");
-  y = para(doc, y,
-    `Datele sunt prelucrate exclusiv în scopul furnizării serviciilor de psihoterapie și al ` +
-    `îndeplinirii obligațiilor fiscale și legale. Datele sunt păstrate pe durata relației ` +
-    `contractuale și 5 ani ulterior, conform Codului Fiscal român. La cerere, datele ` +
-    `personale pot fi anonimizate ("Uitat") cu păstrarea istoricului fiscal (facturi).`,
-  );
-
-  y = section(doc, y, "Drepturile tale");
-  y = para(doc, y,
-    `Ai dreptul de: acces (Art. 15), rectificare (Art. 16), ștergere (Art. 17), ` +
-    `restricționare (Art. 18), portabilitate (Art. 20), opoziție (Art. 21). ` +
-    `Poți depune plângere la ANSPDCP (www.dataprotection.ro).`,
-  );
-
-  y += 10;
-  doc.setFontSize(9.5);
-  doc.setFont("helvetica", "bold");
-  doc.text("Declar că am citit și înțeles cele de mai sus și îmi exprim consimțământul.", MARGIN, y);
-  y += 12;
-  doc.setFont("helvetica", "normal");
-  doc.text(`Data: ${data.date}`, MARGIN, y);
-  y += 14;
-  doc.text("Semnătură:", MARGIN, y);
-  doc.line(MARGIN + 28, y, MARGIN + 80, y);
+  y = section(doc, y, "Consimțământ");
+  y = para(doc, y, "Prin prezenta îmi dau acordul ca datele mele cu caracter personal, inclusiv datele de sănătate, să fie prelucrate de către prestator în scopul exclusiv al desfășurării procesului terapeutic.");
+  
+  signatureBlock(doc, y, "Terapeut", "Pacient / Tutore");
 
   footer(doc);
-  doc.save(`gdpr-consent-${data.clientName.replace(/\s+/g, "-").toLowerCase()}.pdf`);
+  doc.save(`gdpr-${data.clientName.replace(/\s+/g, "-").toLowerCase()}.pdf`);
 }

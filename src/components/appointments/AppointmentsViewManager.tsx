@@ -1,0 +1,75 @@
+"use client";
+
+import React, { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ListCharacters, Calendar as CalendarIcon, LayoutList } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { WeeklyCalendar } from "./WeeklyCalendar";
+import type { AppointmentWithClient } from "@/lib/appointments/queries";
+
+interface AppointmentsViewManagerProps {
+  appointments: AppointmentWithClient[];
+  children: React.ReactNode; // This will be the table view
+}
+
+export function AppointmentsViewManager({ appointments, children }: AppointmentsViewManagerProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [view, setView] = useState<"calendar" | "list">("calendar");
+
+  const handleSelectEvent = (id: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("session", id);
+    router.push(`/dashboard/appointments?${params.toString()}`);
+  };
+
+  const handleNewEvent = (date: Date) => {
+    router.push(`/dashboard/appointments/new?date=${date.toISOString()}`);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* View Toggle */}
+      <div className="flex items-center justify-end">
+        <div className="inline-flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200 shadow-inner">
+          <button
+            onClick={() => setView("calendar")}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-tight transition-all",
+              view === "calendar" 
+                ? "bg-white text-primary shadow-sm" 
+                : "text-slate-500 hover:text-slate-700"
+            )}
+          >
+            <CalendarIcon className="h-3.5 w-3.5" /> Calendar
+          </button>
+          <button
+            onClick={() => setView("list")}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-tight transition-all",
+              view === "list" 
+                ? "bg-white text-primary shadow-sm" 
+                : "text-slate-500 hover:text-slate-700"
+            )}
+          >
+            <LayoutList className="h-3.5 w-3.5" /> Listă
+          </button>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="animate-in fade-in duration-500">
+        {view === "calendar" ? (
+          <WeeklyCalendar 
+            appointments={appointments} 
+            onSelectEvent={handleSelectEvent}
+            onNewEvent={handleNewEvent}
+          />
+        ) : (
+          children
+        )}
+      </div>
+    </div>
+  );
+}

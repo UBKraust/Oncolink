@@ -145,3 +145,30 @@ async function tryAutoInvoice(appointmentId: string): Promise<{
 
   return { invoiceId: inserted.id };
 }
+export async function updateAppointmentFields(
+  id: string,
+  data: {
+    location_tag?: string | null;
+    personal_notes?: string | null;
+    reminder_minutes?: number | null;
+    reminders_enabled?: boolean;
+  }
+) {
+  if (!isSupabaseConfigured()) {
+    // In demo mode, we just return success
+    return { ok: true, error: null };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from("appointments")
+    .update(data)
+    .eq("id", id);
+
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath("/dashboard/appointments");
+  revalidatePath(`/dashboard/appointments/${id}`);
+
+  return { ok: true, error: null };
+}

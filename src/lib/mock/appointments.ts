@@ -49,18 +49,20 @@ export const mockAppointments: MockAppointment[] = [
   // Luni: Clinica 10:00 - 20:00
   ...generateDay(0, 10, 20, { tag: "#Clinica", is_external: true }),
   
-  // Marti: Online 9:00 - 21:00
-  ...generateDay(1, 9, 21, { tag: null, online: true }),
+  // Marti: Mix (Online, Clinica, Cabinet) 9:00 - 21:00
+  ...generateDay(1, 9, 13, { tag: "#cabinet" }),
+  ...generateDay(1, 13, 17, { tag: "#Clinica", is_external: true }),
+  ...generateDay(1, 17, 21, { tag: null, online: true }),
   
   // Miercuri: Clinica 9:00 - 20:00
   ...generateDay(2, 9, 20, { tag: "#Clinica", is_external: true }),
   
-  // Joi: Cabinet de la 9:00 la 21:00
+  // Joi: Cabinet 9:00 - 21:00
   ...generateDay(3, 9, 21, { tag: "#cabinet", is_external: false }),
   
-  // Vineri: Cabinet de la 9:00 la 21:00
+  // Vineri: Cabinet 9:00 - 21:00
   ...generateDay(4, 9, 21, { tag: "#cabinet", is_external: false }),
   
-  // Sambata de la 10:00 la 15:00
+  // Sambata: 10:00 - 15:00
   ...generateDay(5, 10, 15, { tag: "#cabinet" }),
 ];

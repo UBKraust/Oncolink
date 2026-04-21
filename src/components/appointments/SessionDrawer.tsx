@@ -18,6 +18,7 @@ import {
   Loader2,
   NotebookPen,
   Receipt,
+  Settings,
   User,
   Video,
   X,
@@ -33,7 +34,7 @@ import {
 } from "@/lib/appointments/helpers";
 import type { AppointmentWithClient } from "@/lib/appointments/queries";
 import type { InvoiceRow } from "@/lib/invoices/queries";
-import { updateStatusInline } from "@/app/dashboard/appointments/session-actions";
+import { updateStatusInline, updateAppointmentFields } from "@/app/dashboard/appointments/session-actions";
 import type { AppointmentStatus } from "@/lib/appointments/helpers";
 
 const STATUS_TRANSITIONS: Record<string, AppointmentStatus[]> = {
@@ -52,7 +53,7 @@ const locationIcon = {
   CLINICA: Building2,
 } as const;
 
-type Tab = "details" | "note" | "invoice";
+type Tab = "details" | "note" | "invoice" | "config";
 
 interface SessionDrawerProps {
   appointment: AppointmentWithClient;
@@ -161,7 +162,9 @@ export function SessionDrawer({
                 ? "Detalii"
                 : tab === "note"
                   ? "Notă"
-                  : "Factură"}
+                  : tab === "invoice"
+                    ? "Factură"
+                    : "Config"}
             </button>
           ))}
         </div>
@@ -361,6 +364,88 @@ export function SessionDrawer({
                   </p>
                 </div>
               )}
+            </div>
+          )}
+          {/* ── CONFIGURARE ── */}
+          {activeTab === "config" && (
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Etichetă Locație</p>
+                  <div className="flex gap-2">
+                    {[null, "#cabinet", "#Clinica"].map((tag) => (
+                      <button
+                        key={String(tag)}
+                        onClick={() => startTransition(() => updateAppointmentFields(appointment.id, { location_tag: tag }))}
+                        className={cn(
+                          "flex-1 py-2 rounded-xl text-[10px] font-black uppercase transition-all border",
+                          appointment.location_tag === tag 
+                            ? "bg-primary text-white border-primary shadow-lg shadow-primary/20" 
+                            : "bg-slate-50 text-slate-500 border-slate-100 hover:bg-white hover:border-slate-300"
+                        )}
+                      >
+                        {tag === null ? "Fără" : tag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Note Personale (Private)</p>
+                  <textarea
+                    defaultValue={appointment.personal_notes || ""}
+                    onBlur={(e) => {
+                      if (e.target.value !== (appointment.personal_notes || "")) {
+                         startTransition(() => updateAppointmentFields(appointment.id, { personal_notes: e.target.value }));
+                      }
+                    }}
+                    placeholder="Note doar pentru tine..."
+                    className="w-full min-h-[100px] rounded-2xl bg-slate-50 border border-slate-100 p-4 text-xs font-medium focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none"
+                  />
+                </div>
+
+                <div className="space-y-4 rounded-2xl bg-slate-50 p-4 border border-slate-100">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Settings className="h-4 w-4 text-slate-400" />
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Notificări App</p>
+                    </div>
+                    <button
+                      onClick={() => startTransition(() => updateAppointmentFields(appointment.id, { reminders_enabled: !appointment.reminders_enabled }))}
+                      className={cn(
+                        "h-5 w-10 rounded-full transition-all relative",
+                        appointment.reminders_enabled ? "bg-emerald-500" : "bg-slate-300"
+                      )}
+                    >
+                      <div className={cn(
+                        "absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all",
+                        appointment.reminders_enabled ? "left-5.5" : "left-0.5"
+                      )} />
+                    </button>
+                  </div>
+                  
+                  {appointment.reminders_enabled && (
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-200">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase">Trimite cu</span>
+                      <div className="flex items-center gap-2">
+                        <input 
+                          type="number"
+                          defaultValue={appointment.reminder_minutes || 60}
+                          onBlur={(e) => startTransition(() => updateAppointmentFields(appointment.id, { reminder_minutes: parseInt(e.target.value) }))}
+                          className="w-12 h-8 rounded-lg bg-white border border-slate-200 text-center text-xs font-bold font-mono outline-none"
+                        />
+                        <span className="text-[10px] font-bold text-slate-400 uppercase">min înainte</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-dashed p-4 bg-slate-50/50">
+                 <p className="text-[10px] font-bold text-slate-400 leading-relaxed italic">
+                   💡 Notele personale și etichetele sunt vizibile doar în calendarul tău și nu sunt partajate cu pacientul sau trimise către Google Calendar.
+                 </p>
+              </div>
             </div>
           )}
         </div>

@@ -32,6 +32,8 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getInvoiceByAppointment } from "@/lib/invoices/queries";
 import { getNoteByAppointment } from "@/lib/notes/queries";
 import { SessionDrawer } from "@/components/appointments/SessionDrawer";
+import { AppointmentsViewManager } from "@/components/appointments/AppointmentsViewManager";
+import { cn } from "@/lib/utils";
 
 const locationIcon = {
   PRIVAT: Home,
@@ -134,141 +136,141 @@ export default async function AppointmentsPage({
         ))}
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Lista programărilor</CardTitle>
-          <CardDescription>
-            Click pe o programare pentru a o deschide rapid. Sortate
-            descrescător după dată.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
-          {appointments.length === 0 ? (
-            <p className="p-6 text-sm text-muted-foreground">
-              Nicio programare găsită.
-            </p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Dată &amp; Oră</TableHead>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Durată</TableHead>
-                  <TableHead>Locație</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Acțiuni</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {appointments.map((a) => {
-                  const location = deriveLocation(a);
-                  const LocIcon = locationIcon[location];
-                  const isPast =
-                    new Date(a.appointment_date) < new Date();
-                  const isActive = session === a.id;
+      {/* View Manager (Calendar/List toggle) */}
+      <AppointmentsViewManager appointments={appointments}>
+        <Card>
+          <CardHeader>
+            <CardTitle>Lista programărilor</CardTitle>
+            <CardDescription>
+              Click pe o programare pentru a o deschide rapid. Sortate
+              descrescător după dată.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            {appointments.length === 0 ? (
+              <p className="p-6 text-sm text-muted-foreground">
+                Nicio programare găsită.
+              </p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Dată &amp; Oră</TableHead>
+                    <TableHead>Client</TableHead>
+                    <TableHead>Durată</TableHead>
+                    <TableHead>Locație</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Acțiuni</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {appointments.map((a) => {
+                    const location = deriveLocation(a);
+                    const LocIcon = locationIcon[location];
+                    const isPastAppt =
+                      new Date(a.appointment_date) < new Date();
+                    const isActive = session === a.id;
 
-                  // Build URL for opening this session in the drawer
-                  const sessionParams = new URLSearchParams();
-                  if (status) sessionParams.set("status", status);
-                  if (from) sessionParams.set("from", from);
-                  if (to) sessionParams.set("to", to);
-                  sessionParams.set("session", a.id);
-                  const sessionUrl = `/dashboard/appointments?${sessionParams}`;
+                    // Build URL for opening this session in the drawer
+                    const sessionParams = new URLSearchParams();
+                    if (status) sessionParams.set("status", status);
+                    if (from) sessionParams.set("from", from);
+                    if (to) sessionParams.set("to", to);
+                    sessionParams.set("session", a.id);
+                    const sessionUrl = `/dashboard/appointments?${sessionParams}`;
 
-                  return (
-                    <TableRow
-                      key={a.id}
-                      className={[
-                        isPast && a.status === "PROGRAMAT"
-                          ? "bg-amber-50/40 dark:bg-amber-950/10"
-                          : "",
-                        isActive ? "bg-primary/5" : "",
-                      ]
-                        .filter(Boolean)
-                        .join(" ")}
-                    >
-                      <TableCell>
-                        <p className="text-sm font-semibold tabular-nums">
-                          {format(new Date(a.appointment_date), "HH:mm")}
-                        </p>
-                        <p className="text-xs capitalize text-muted-foreground">
-                          {format(
-                            new Date(a.appointment_date),
-                            "EEE, d MMM yyyy",
-                            { locale: ro },
+                    return (
+                      <TableRow
+                        key={a.id}
+                        className={cn(
+                          isPastAppt && a.status === "PROGRAMAT" && "bg-amber-50/40 dark:bg-amber-950/10",
+                          isActive && "bg-primary/5"
+                        )}
+                      >
+                        <TableCell>
+                          <p className="text-sm font-semibold tabular-nums">
+                            {format(new Date(a.appointment_date), "HH:mm")}
+                          </p>
+                          <p className="text-xs capitalize text-muted-foreground">
+                            {format(
+                              new Date(a.appointment_date),
+                              "EEE, d MMM yyyy",
+                              { locale: ro },
+                            )}
+                          </p>
+                        </TableCell>
+                        <TableCell>
+                          {a.is_external_duty ? (
+                            <span className="text-sm italic text-muted-foreground">
+                              Gardă externă
+                            </span>
+                          ) : (
+                            <div>
+                              <p className="text-sm font-medium">
+                                {a.client?.full_name ?? "—"}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {a.client?.email ?? ""}
+                              </p>
+                            </div>
                           )}
-                        </p>
-                      </TableCell>
-                      <TableCell>
-                        {a.is_external_duty ? (
-                          <span className="text-sm italic text-muted-foreground">
-                            Gardă externă
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {a.duration_minutes} min
+                        </TableCell>
+                        <TableCell>
+                          <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                            <LocIcon className="h-3.5 w-3.5" />
+                            {locationLabel[location]}
                           </span>
-                        ) : (
-                          <div>
-                            <p className="text-sm font-medium">
-                              {a.client?.full_name ?? "—"}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {a.client?.email ?? ""}
-                            </p>
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {a.duration_minutes} min
-                      </TableCell>
-                      <TableCell>
-                        <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                          <LocIcon className="h-3.5 w-3.5" />
-                          {locationLabel[location]}
-                        </span>
-                        {a.meet_link && (
-                          <a
-                            href={a.meet_link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-primary hover:underline"
+                          {a.meet_link && (
+                            <a
+                              href={a.meet_link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-primary hover:underline"
+                            >
+                              Deschide Meet
+                            </a>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              statusVariant[
+                                a.status as keyof typeof statusVariant
+                              ]
+                            }
                           >
-                            Deschide Meet
-                          </a>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            statusVariant[
-                              a.status as keyof typeof statusVariant
-                            ]
-                          }
-                        >
-                          {statusLabel[
-                            a.status as keyof typeof statusLabel
-                          ] ?? a.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          {/* Open drawer */}
-                          <Button asChild variant="ghost" size="sm">
-                            <Link href={sessionUrl}>Sesiune</Link>
-                          </Button>
-                          {/* Full detail page */}
-                          <Button asChild variant="ghost" size="sm">
-                            <Link href={`/dashboard/appointments/${a.id}`}>
-                              <ExternalLink className="h-3.5 w-3.5" />
-                            </Link>
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                            {statusLabel[
+                              a.status as keyof typeof statusLabel
+                            ] ?? a.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            {/* Open drawer */}
+                            <Button asChild variant="ghost" size="sm">
+                              <Link href={sessionUrl}>Sesiune</Link>
+                            </Button>
+                            {/* Full detail page */}
+                            <Button asChild variant="ghost" size="sm">
+                              <Link href={`/dashboard/appointments/${a.id}`}>
+                                <ExternalLink className="h-3.5 w-3.5" />
+                              </Link>
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      </AppointmentsViewManager>
+
 
       {/* Session Drawer — rendered server-side with pre-fetched data */}
       {sessionAppointment && (

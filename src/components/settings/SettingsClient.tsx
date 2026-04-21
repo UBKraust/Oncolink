@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import {
   Shield, Smartphone, Globe, UserCircle, KeyRound, CheckCircle2,
   Lock, Hospital, Clock, Euro, Plus, Trash2, AlertCircle, Calendar,
+  ArrowRight, History,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -439,6 +440,27 @@ function IntegrationsTab({ s }: { s: TherapistSettings }) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Historical Import Entry */}
+      <Card className="border-primary/20 bg-primary/5">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-bold flex items-center gap-2">
+            <History className="h-4 w-4 text-primary" />
+            Migrare Date Istorice
+          </CardTitle>
+          <CardDescription className="text-xs">
+            Ai lucrat deja în SmartBill? Importă facturile și cheltuielile din lunile trecute pentru a avea rapoarte financiare complete.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button asChild size="sm" variant="outline" className="w-full sm:w-auto gap-2">
+            <Link href="/dashboard/settings/import">
+              Deschide Importator CSV <ArrowRight className="h-3 w-3" />
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
+
 
       {/* Twilio */}
       <Card>

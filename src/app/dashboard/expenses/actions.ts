@@ -13,6 +13,7 @@ export type ExpenseCategory =
   | "CURSURI"
   | "ASIGURARE"
   | "ECHIPAMENTE"
+  | "CONSUMABILE"
   | "ALTE";
 
 export interface Expense {

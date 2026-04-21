@@ -17,6 +17,7 @@ import {
   Receipt,
   Search,
   Shield,
+  ShoppingCart,
   Trash2,
   Upload,
   X,
@@ -69,6 +70,7 @@ const CATEGORIES: {
   { value: "CURSURI", label: "Formare & Cursuri", icon: GraduationCap },
   { value: "ASIGURARE", label: "Asigurare Malpraxis", icon: Shield },
   { value: "ECHIPAMENTE", label: "Echipamente & IT", icon: Laptop },
+  { value: "CONSUMABILE", label: "Consumabile Cabinet", icon: ShoppingCart },
   { value: "ALTE", label: "Alte cheltuieli", icon: Receipt },
 ];
 

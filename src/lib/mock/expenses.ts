@@ -29,6 +29,7 @@ const EXPENSE_TEMPLATES: ExpenseDef[] = [
   { category: "ECHIPAMENTE",    description: "Abonament software cabinet (ERP)",         amount:   79 },
   { category: "UTILITATI",      description: "Telefonie mobilă profesională",            amount:   55 },
   { category: "ALTE",           description: "Materiale birou & papetărie",              amount:   42 },
+  { category: "CONSUMABILE",    description: "Consumabile medicale (mănuși, dezinfectant)", amount: 120 },
   { category: "CURSURI",        description: "Conferință PSIWORLD 2026 — taxă participare", amount: 320 },
   { category: "CHIRIE",         description: "Chirie spațiu clinică — seara",           amount:  400 },
   { category: "ECHIPAMENTE",    description: "Fotoliu terapie nou",                      amount:  890 },

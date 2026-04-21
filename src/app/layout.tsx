@@ -25,8 +25,8 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="ro" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body className="min-h-svh bg-background text-foreground antialiased">
+    <html lang="ro" suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body suppressHydrationWarning className="min-h-svh bg-background text-foreground antialiased">
         {children}
         <ToastProvider />
       </body>

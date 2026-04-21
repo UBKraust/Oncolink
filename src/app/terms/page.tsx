@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { ArrowLeft, Scale, Gavel, FileCheck, AlertTriangle, HelpCircle } from "lucide-react";
+import { ArrowLeft, Scale, Gavel, FileCheck, AlertTriangle, HelpCircle, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function TermsPage() {

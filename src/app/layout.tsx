@@ -19,6 +19,8 @@ export const metadata: Metadata = {
     "ERP privat pentru cabinet de psihoterapie — programări, facturare SmartBill, EHR criptat.",
 };
 
+import { ToastProvider } from "@/components/ui/toast";
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
@@ -26,6 +28,7 @@ export default function RootLayout({
     <html lang="ro" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body className="min-h-svh bg-background text-foreground antialiased">
         {children}
+        <ToastProvider />
       </body>
     </html>
   );

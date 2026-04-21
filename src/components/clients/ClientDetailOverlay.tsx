@@ -28,7 +28,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { initialsFromName } from "@/lib/clients/validation";
 import { cn } from "@/lib/utils";
 import { scheduleAnonymization, cancelAnonymization } from "@/app/dashboard/clients/actions";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/toast";
 import { 
   AlertDialog,
   AlertDialogAction,

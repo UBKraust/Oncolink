@@ -81,8 +81,22 @@ export function DashboardSidebar() {
         })}
       </nav>
 
-      <div className="border-t p-4 text-[11px] text-muted-foreground">
-        GDPR · CPR · ANAF e-Factura
+      <div className="border-t p-4 flex flex-col gap-1.5">
+        <div className="text-[10px] text-muted-foreground uppercase font-black tracking-widest px-2 mb-1">
+          Informații Legale
+        </div>
+        <div className="flex flex-wrap gap-x-2 gap-y-1 px-2">
+          <Link href="/terms" className="text-[11px] text-slate-500 hover:text-primary transition-colors font-medium underline underline-offset-2 decoration-slate-200">
+            Termeni & Condiții
+          </Link>
+          <span className="text-slate-300">•</span>
+          <Link href="/privacy" className="text-[11px] text-slate-500 hover:text-primary transition-colors font-medium underline underline-offset-2 decoration-slate-200">
+            GDPR & Confidențialitate
+          </Link>
+        </div>
+        <div className="mt-2 px-2 text-[9px] text-slate-400 font-bold uppercase tracking-tighter">
+          Oncolink v1.2 · CPR Certified
+        </div>
       </div>
     </aside>
   );

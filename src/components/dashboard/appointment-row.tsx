@@ -30,12 +30,16 @@ const locationIcon: Record<LocationKind, React.ComponentType<{ className?: strin
   PRIVAT: Home,
   POLICLINIC: Building2,
   ONLINE: Video,
+  CABINET: Home,
+  CLINICA: Building2,
 };
 
 const locationLabel: Record<LocationKind, string> = {
   PRIVAT: "Cabinet privat",
   POLICLINIC: "Policlinică",
   ONLINE: "Online",
+  CABINET: "Cabinet",
+  CLINICA: "Clinică",
 };
 
 interface AppointmentRowProps {

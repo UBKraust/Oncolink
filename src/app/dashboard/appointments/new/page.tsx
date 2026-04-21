@@ -48,6 +48,7 @@ export default async function NewAppointmentPage({
             defaults={{ client_id: clientId }}
             submitLabel="Salvează programarea"
             cancelHref="/dashboard/appointments"
+            showRecurring
           />
         </CardContent>
       </Card>

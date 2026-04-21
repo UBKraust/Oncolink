@@ -12,6 +12,7 @@ import {
   FileText,
   Hospital,
   LayoutDashboard,
+  Lock,
   NotebookPen,
   Receipt,
   Scale,
@@ -34,6 +35,7 @@ const nav = [
   { href: "/dashboard/documents", label: "Documente", icon: FileText },
   { href: "/dashboard/activity", label: "Registru", icon: Activity },
   { href: "/dashboard/ai", label: "Asistent AI", icon: BotMessageSquare },
+  { href: "/dashboard/vault", label: "Seif Cabinet", icon: Lock },
   { href: "/dashboard/compliance", label: "Conformitate", icon: Scale },
   { href: "/dashboard/settings", label: "Setări", icon: Settings },
 ];

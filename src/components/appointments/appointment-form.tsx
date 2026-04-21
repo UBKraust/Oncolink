@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
+import { RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +34,8 @@ interface AppointmentFormProps {
   }>;
   submitLabel: string;
   cancelHref: string;
+  /** When true, show the recurring appointment section */
+  showRecurring?: boolean;
 }
 
 const initialState: AppointmentFormState = { error: null, fieldErrors: {} };
@@ -43,9 +46,11 @@ export function AppointmentForm({
   defaults = {},
   submitLabel,
   cancelHref,
+  showRecurring = false,
 }: AppointmentFormProps) {
   const [state, formAction, pending] = useActionState(action, initialState);
   const [location, setLocation] = useState(defaults.location ?? "PRIVAT");
+  const [recurring, setRecurring] = useState(false);
 
   return (
     <form action={formAction} className="space-y-5">
@@ -179,12 +184,70 @@ export function AppointmentForm({
         </div>
       </div>
 
+      {/* Recurring — shown only on new appointment */}
+      {showRecurring && (
+        <div className="rounded-lg border p-4 space-y-3">
+          <label className="flex cursor-pointer items-center gap-2.5">
+            <input
+              type="checkbox"
+              name="recurring"
+              value="true"
+              checked={recurring}
+              onChange={(e) => setRecurring(e.target.checked)}
+              className="h-4 w-4 rounded"
+            />
+            <span className="flex items-center gap-1.5 text-sm font-medium">
+              <RefreshCw className="h-4 w-4 text-muted-foreground" />
+              Programare recurentă (generează automat)
+            </span>
+          </label>
+
+          {recurring && (
+            <div className="grid gap-3 sm:grid-cols-2 pt-1">
+              <div className="space-y-1.5">
+                <Label htmlFor="recurring_frequency">Frecvență</Label>
+                <Select
+                  id="recurring_frequency"
+                  name="recurring_frequency"
+                  defaultValue="weekly"
+                >
+                  <option value="weekly">Săptămânal (la 7 zile)</option>
+                  <option value="biweekly">Bilunar (la 14 zile)</option>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="recurring_count">Număr total ședințe</Label>
+                <Select
+                  id="recurring_count"
+                  name="recurring_count"
+                  defaultValue="8"
+                >
+                  {[4, 8, 12, 16, 24].map((n) => (
+                    <option key={n} value={n}>
+                      {n} ședințe
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <p className="text-xs text-muted-foreground sm:col-span-2">
+                Se va crea prima ședință + cele recurente automat, toate cu
+                status <strong>Programat</strong>.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="flex items-center justify-end gap-3 border-t pt-5">
         <Button type="button" variant="outline" asChild>
           <Link href={cancelHref}>Anulează</Link>
         </Button>
         <Button type="submit" disabled={pending}>
-          {pending ? "Se salvează…" : submitLabel}
+          {pending
+            ? "Se salvează…"
+            : recurring
+              ? `Creează ${document?.querySelector<HTMLSelectElement>('[name="recurring_count"]')?.value ?? "8"} ședințe`
+              : submitLabel}
         </Button>
       </div>
     </form>

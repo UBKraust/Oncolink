@@ -18,10 +18,12 @@ function parseForm(formData: FormData) {
     appointment_date: String(formData.get("appointment_date") ?? "").trim(),
     duration_minutes: parseInt(String(formData.get("duration_minutes") ?? "50"), 10),
     status: String(formData.get("status") ?? "PROGRAMAT").trim(),
-    // derive DB fields from location
     is_external_duty: location === "POLICLINIC",
     meet_link: location === "ONLINE" ? meetLink || null : null,
     location,
+    recurring: formData.get("recurring") === "true",
+    recurring_frequency: String(formData.get("recurring_frequency") ?? "weekly"),
+    recurring_count: parseInt(String(formData.get("recurring_count") ?? "1"), 10),
   };
 }
 
@@ -60,6 +62,49 @@ export async function createAppointment(
   }
 
   const supabase = await createSupabaseServerClient();
+
+  // Handle recurring batch creation
+  if (payload.recurring && payload.recurring_count > 1) {
+    const recurringGroupId = crypto.randomUUID();
+    const dayOffset = payload.recurring_frequency === "biweekly" ? 14 : 7;
+    const baseDate = new Date(payload.appointment_date);
+
+    const rows = Array.from({ length: payload.recurring_count }, (_, i) => {
+      const d = new Date(baseDate);
+      d.setDate(d.getDate() + i * dayOffset);
+      return {
+        client_id: payload.client_id,
+        appointment_date: d.toISOString(),
+        duration_minutes: payload.duration_minutes,
+        status: "PROGRAMAT" as const,
+        is_external_duty: payload.is_external_duty,
+        meet_link: payload.meet_link,
+        recurring_group_id: recurringGroupId,
+        recurring_index: i,
+      };
+    });
+
+    const { data: batch, error: batchError } = await supabase
+      .from("appointments")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .insert(rows as any[])
+      .select("id");
+
+    if (batchError) return { error: batchError.message, fieldErrors: {} };
+
+    // Sync only the first appointment to Google Calendar
+    if (batch?.[0]?.id) {
+      pushAppointmentToGoogle(batch[0].id).catch((e) =>
+        console.warn("[GCal] sync skipped:", e),
+      );
+    }
+
+    revalidatePath("/dashboard/appointments");
+    redirect(
+      `/dashboard/appointments?recurring=${payload.recurring_count}`,
+    );
+  }
+
   const { data, error } = await supabase
     .from("appointments")
     .insert({
@@ -77,7 +122,7 @@ export async function createAppointment(
 
   // Fire-and-forget: sync to Google Calendar (safe if not connected)
   pushAppointmentToGoogle(data.id).catch((e) =>
-    console.warn("[GCal] sync skipped:", e)
+    console.warn("[GCal] sync skipped:", e),
   );
 
   revalidatePath("/dashboard/appointments");

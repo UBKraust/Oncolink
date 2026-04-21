@@ -7,7 +7,7 @@ import { ro } from "date-fns/locale";
 import {
   CalendarPlus, CheckCircle2, ChevronLeft, Mail, Pencil, Phone,
   ShieldOff, Plus, Brain, Wallet, FileText, ArrowRight, Clock,
-  Calendar, MapPin, Video, RefreshCw, TrendingUp,
+  Calendar, MapPin, Video, RefreshCw, TrendingUp, FileCheck,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +22,7 @@ import { FinancialDetailOverlay } from "@/components/clients/FinancialDetailOver
 import { MedicalDetailOverlay } from "@/components/clients/MedicalDetailOverlay";
 import { CrisisNotesDetailOverlay } from "@/components/clients/CrisisNotesDetailOverlay";
 import { AssessmentDetailOverlay } from "@/components/clients/AssessmentDetailOverlay";
+import { ContractGeneratorModal } from "@/components/clients/ContractGeneratorModal";
 
 interface ClientDashboardUIProps {
   client: any;
@@ -59,6 +60,7 @@ export function ClientDashboardUI({
   assessmentParam,
   aiClientContext,
 }: ClientDashboardUIProps) {
+  const [isContractModalOpen, setIsContractModalOpen] = useState(false);
   const id = client.id;
   const isMinor = client.is_minor ?? false;
   const baseUrl = `/dashboard/clients/${id}`;
@@ -153,11 +155,21 @@ export function ClientDashboardUI({
 
         <div className="flex items-center gap-2 shrink-0">
           {!anonymized && (
-            <Button asChild size="lg" className="rounded-2xl font-black shadow-xl shadow-primary/20 gap-2">
-              <Link href={`/dashboard/appointments/new?clientId=${client.id}`}>
-                <Plus className="h-5 w-5" /> Programare Nouă
-              </Link>
-            </Button>
+            <>
+              <Button 
+                variant="outline" 
+                size="lg" 
+                onClick={() => setIsContractModalOpen(true)}
+                className="rounded-2xl font-bold bg-white/50 backdrop-blur-sm border-slate-200 gap-2"
+              >
+                <FileCheck className="h-4 w-4 text-primary" /> Contract
+              </Button>
+              <Button asChild size="lg" className="rounded-2xl font-black shadow-xl shadow-primary/20 gap-2">
+                <Link href={`/dashboard/appointments/new?clientId=${client.id}`}>
+                  <Plus className="h-5 w-5" /> Programare Nouă
+                </Link>
+              </Button>
+            </>
           )}
           <Button asChild variant="outline" size="lg" className="rounded-2xl font-bold bg-white/50 backdrop-blur-sm border-slate-200">
             <Link href={`/dashboard/clients/${client.id}/edit`}>
@@ -363,6 +375,13 @@ export function ClientDashboardUI({
           closeUrl={baseUrl}
         />
       )}
+
+      {/* ── Contract Generator ─────────────────────────────────────────── */}
+      <ContractGeneratorModal
+        isOpen={isContractModalOpen}
+        onClose={() => setIsContractModalOpen(false)}
+        client={client}
+      />
     </div>
   );
 }

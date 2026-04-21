@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select } from "@/components/ui/select";
 import { generateContract } from "@/lib/pdf/templates";
 import { getTherapistSettings, TherapistSettings } from "@/app/dashboard/settings/settings-actions";
 import { cn } from "@/lib/utils";
@@ -130,16 +130,15 @@ export function ContractGenerator({ client, onSuccess }: ContractGeneratorProps)
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Model Contract</Label>
-            <Select value={template} onValueChange={(v) => setTemplate(v as TemplateType)}>
-              <SelectTrigger className="rounded-xl border-slate-200 bg-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl border-slate-200">
-                <SelectItem value="STANDARD" className="gap-2">Standard (Individual)</SelectItem>
-                <SelectItem value="MINOR">Minor (Legea 272/2004)</SelectItem>
-                <SelectItem value="B2B">Business (B2B / Firmă)</SelectItem>
-                <SelectItem value="CAS">Consimțământ CAS</SelectItem>
-              </SelectContent>
+            <Select 
+              value={template} 
+              onChange={(e) => setTemplate(e.target.value as TemplateType)}
+              className="rounded-xl border-slate-200 bg-white"
+            >
+              <option value="STANDARD">Standard (Individual)</option>
+              <option value="MINOR">Minor (Legea 272/2004)</option>
+              <option value="B2B">Business (B2B / Firmă)</option>
+              <option value="CAS">Consimțământ CAS</option>
             </Select>
           </div>
           <div className="space-y-1.5">

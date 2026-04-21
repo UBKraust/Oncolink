@@ -12,7 +12,8 @@ import {
   ChevronRight,
   Filter,
   Users,
-  AlertCircle
+  AlertCircle,
+  FileCheck
 } from "lucide-react";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
@@ -30,6 +31,7 @@ import {
 import { initialsFromName } from "@/lib/clients/validation";
 import { cn } from "@/lib/utils";
 import { ClientDetailOverlay } from "./ClientDetailOverlay";
+import { ContractGeneratorModal } from "./ContractGeneratorModal";
 import Link from "next/link";
 
 interface ClientsClientProps {
@@ -39,6 +41,7 @@ interface ClientsClientProps {
 export function ClientsClient({ initialClients }: ClientsClientProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [contractClientId, setContractClientId] = useState<string | null>(null);
 
   const filteredClients = useMemo(() => {
     if (!searchQuery) return initialClients;
@@ -53,6 +56,10 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
   const selectedClient = useMemo(() => 
     initialClients.find(c => c.id === selectedClientId) || null
   , [initialClients, selectedClientId]);
+
+  const contractClient = useMemo(() => 
+    initialClients.find(c => c.id === contractClientId) || null
+  , [initialClients, contractClientId]);
 
   return (
     <div className="space-y-6">
@@ -167,13 +174,29 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
                        </div>
                     </TableCell>
                     <TableCell className="text-right pr-8">
-                       <Button 
-                         variant="ghost" 
-                         size="icon" 
-                         className="h-9 w-9 rounded-xl text-slate-400 group-hover:text-primary group-hover:bg-primary/5 transition-all"
-                       >
-                          <ChevronRight className="h-5 w-5" />
-                       </Button>
+                       <div className="flex items-center justify-end gap-2">
+                         {!anonymized && (
+                           <Button 
+                             variant="ghost" 
+                             size="icon" 
+                             className="h-9 w-9 rounded-xl text-slate-400 hover:text-primary hover:bg-primary/5 transition-all"
+                             onClick={(e) => {
+                               e.stopPropagation();
+                               setContractClientId(client.id);
+                             }}
+                             title="Generează Contract"
+                           >
+                              <FileCheck className="h-5 w-5" />
+                           </Button>
+                         )}
+                         <Button 
+                           variant="ghost" 
+                           size="icon" 
+                           className="h-9 w-9 rounded-xl text-slate-400 group-hover:text-primary group-hover:bg-primary/5 transition-all"
+                         >
+                            <ChevronRight className="h-5 w-5" />
+                         </Button>
+                       </div>
                     </TableCell>
                   </TableRow>
                 );
@@ -187,6 +210,13 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
       <ClientDetailOverlay 
         client={selectedClient} 
         onClose={() => setSelectedClientId(null)} 
+      />
+
+      {/* Contract Modal */}
+      <ContractGeneratorModal
+        isOpen={!!contractClientId}
+        onClose={() => setContractClientId(null)}
+        client={contractClient}
       />
     </div>
   );

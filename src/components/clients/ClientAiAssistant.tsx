@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Bot, Send, Loader2, Sparkles, Trash2, ChevronDown, ChevronUp, User, AlertCircle } from "lucide-react";
+import { Bot, Send, Loader2, Sparkles, Trash2, ChevronDown, ChevronUp, User, AlertCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { MockSessionPayment } from "@/lib/mock/payments";
@@ -89,7 +89,13 @@ export function ClientAiAssistant({ clientContext }: Props) {
   const contextString = buildClientContext(clientContext);
 
   useEffect(() => {
-    if (open) bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (open) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+    return () => { document.body.style.overflow = "auto"; };
   }, [messages, open]);
 
   useEffect(() => {
@@ -168,54 +174,71 @@ export function ClientAiAssistant({ clientContext }: Props) {
   }
 
   return (
-    <div className="rounded-xl border bg-card overflow-hidden">
-      {/* Toggle header */}
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/40 transition-colors"
+    <>
+      {/* Floating Toggle Button */}
+      <Button
+        onClick={() => setOpen(true)}
+        className={cn(
+          "fixed bottom-6 right-6 z-[100] h-14 w-14 rounded-2xl shadow-2xl transition-all hover:scale-105 active:scale-95",
+          open && "scale-0 opacity-0"
+        )}
       >
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10">
-            <Sparkles className="h-3.5 w-3.5 text-primary" />
-          </div>
-          <div className="text-left">
-            <p className="text-sm font-medium leading-none">Asistent AI — {clientContext.name ?? "Client"}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {messages.length === 0 ? "Context pacient pre-încărcat" : `${messages.length} mesaje`}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {messages.length > 0 && (
-            <span
-              role="button"
-              tabIndex={0}
-              onClick={(e) => { e.stopPropagation(); setMessages([]); setError(null); }}
-              className="text-muted-foreground hover:text-foreground p-1 rounded"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </span>
-          )}
-          {open ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-        </div>
-      </button>
+        <Sparkles className="h-6 w-6" />
+        <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-black text-white ring-2 ring-background">
+          AI
+        </span>
+      </Button>
 
-      {/* Expanded chat */}
-      {open && (
-        <div className="border-t">
+      {/* Drawer Overlay */}
+      <div className={cn(
+        "fixed inset-0 z-[120] flex justify-end transition-opacity duration-300",
+        open ? "opacity-100" : "opacity-0 pointer-events-none"
+      )}>
+        {/* Backdrop */}
+        <div 
+          className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" 
+          onClick={() => setOpen(false)}
+        />
+
+        {/* Panel */}
+        <div className={cn(
+          "relative flex h-full w-full max-w-md flex-col bg-background shadow-2xl transition-transform duration-500 ease-out",
+          open ? "translate-x-0" : "translate-x-full"
+        )}>
+          {/* Header */}
+          <div className="flex items-center justify-between border-b px-5 py-4 bg-slate-50/50">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-white shadow-lg shadow-primary/20">
+                <Sparkles className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-sm font-black text-slate-900 uppercase tracking-tight">Asistent AI Contextual</h2>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{clientContext.name ?? "Pacient"}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setOpen(false)}
+              className="rounded-full p-2 hover:bg-slate-200 transition-colors"
+            >
+              <X className="h-5 w-5 text-slate-500" />
+            </button>
+          </div>
+
           {/* Messages area */}
-          <div className="h-80 overflow-y-auto p-3 space-y-3">
+          <div className="flex-1 overflow-y-auto p-5 space-y-4 custom-scrollbar bg-slate-50/30">
             {messages.length === 0 && (
-              <div className="space-y-2 pt-2">
-                <p className="text-xs text-muted-foreground px-1">
-                  Asistentul cunoaște deja datele pacientului. Poți întreba direct:
-                </p>
-                <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+              <div className="space-y-4 py-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="rounded-2xl bg-white border border-slate-100 p-4 shadow-sm">
+                  <p className="text-xs font-bold text-slate-600 leading-relaxed">
+                    Salut! Am analizat fișa lui <span className="text-primary">{clientContext.name ?? "pacientului"}</span>. Sunt gata să te ajut cu obiective terapeutice, sumarizări de ședințe sau strategii clinice.
+                  </p>
+                </div>
+                <div className="grid gap-2">
                   {CLIENT_QUICK_PROMPTS.map((p) => (
                     <button
                       key={p}
                       onClick={() => handleSend(p)}
-                      className="text-left text-xs border rounded-lg px-2.5 py-2 hover:bg-accent hover:border-primary/30 transition-colors leading-snug"
+                      className="group text-left text-[11px] border bg-white rounded-xl px-4 py-3 hover:bg-primary hover:text-white hover:border-primary transition-all duration-200 font-medium shadow-sm active:scale-[0.98]"
                     >
                       {p}
                     </button>
@@ -225,64 +248,76 @@ export function ClientAiAssistant({ clientContext }: Props) {
             )}
 
             {messages.map((m) => (
-              <div key={m.id} className={cn("flex gap-2", m.role === "user" ? "justify-end" : "justify-start")}>
-                {m.role === "assistant" && (
-                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 mt-0.5">
-                    <Bot className="h-3 w-3 text-primary" />
-                  </div>
-                )}
+              <div key={m.id} className={cn("flex gap-3", m.role === "user" ? "flex-row-reverse" : "flex-row")}>
                 <div className={cn(
-                  "max-w-[85%] rounded-xl px-3 py-2 text-xs whitespace-pre-wrap leading-relaxed",
-                  m.role === "user" ? "bg-primary text-primary-foreground rounded-tr-sm" : "bg-muted rounded-tl-sm"
+                  "flex h-8 w-8 shrink-0 items-center justify-center rounded-xl font-black text-[10px]",
+                  m.role === "assistant" ? "bg-primary text-white" : "bg-slate-200 text-slate-600"
+                )}>
+                  {m.role === "assistant" ? <Bot className="h-4 w-4" /> : <User className="h-4 w-4" />}
+                </div>
+                <div className={cn(
+                  "max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm",
+                  m.role === "user" 
+                    ? "bg-slate-100 text-slate-800 rounded-tr-none" 
+                    : "bg-white border text-slate-800 rounded-tl-none"
                 )}>
                   {m.content}
                   {m.isStreaming && (
-                    <span className="inline-block w-1 h-3.5 ml-0.5 bg-current animate-pulse rounded-sm align-middle" />
+                    <span className="inline-block w-1.5 h-4 ml-1 bg-primary animate-pulse rounded-full align-middle" />
                   )}
                 </div>
-                {m.role === "user" && (
-                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary mt-0.5">
-                    <User className="h-3 w-3 text-primary-foreground" />
-                  </div>
-                )}
               </div>
             ))}
 
             {error && (
-              <div className="flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50/80 px-3 py-2 text-xs text-rose-700 dark:bg-rose-950/30 dark:text-rose-400">
-                <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-                {error}
+              <div className="flex items-start gap-3 rounded-2xl border-2 border-rose-100 bg-rose-50 px-4 py-3 text-xs text-rose-700 shadow-sm animate-in zoom-in-95 duration-200">
+                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                <p className="font-bold leading-relaxed">{error}</p>
               </div>
             )}
 
-            <div ref={bottomRef} />
+            <div ref={bottomRef} className="h-2" />
           </div>
 
-          {/* Input */}
-          <div className="border-t p-3">
-            <div className="flex items-end gap-2 rounded-lg border bg-background px-3 py-2 focus-within:ring-1 focus-within:ring-primary/40">
+          {/* Footer Input */}
+          <div className="p-5 border-t bg-white">
+            <div className="relative flex items-end gap-3 rounded-[2rem] border bg-slate-50 px-4 py-3 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all group">
               <textarea
                 ref={textareaRef}
                 rows={1}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Întreabă ceva despre acest pacient..."
-                className="flex-1 resize-none bg-transparent text-xs outline-none placeholder:text-muted-foreground py-0.5 min-h-[20px] max-h-[120px]"
+                placeholder="Ex: Sugerează obiective terapeutice..."
+                className="flex-1 resize-none bg-transparent text-sm outline-none placeholder:text-slate-400 py-1 min-h-[24px] max-h-[150px] font-medium"
                 disabled={isLoading}
               />
-              <Button
-                size="icon"
-                className="h-7 w-7 shrink-0 rounded-md"
-                onClick={() => handleSend()}
-                disabled={!input.trim() || isLoading}
-              >
-                {isLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-              </Button>
+              <div className="flex items-center gap-2">
+                {messages.length > 0 && (
+                  <button
+                    onClick={() => { setMessages([]); setError(null); }}
+                    className="p-1.5 text-slate-400 hover:text-rose-500 transition-colors"
+                    title="Șterge conversația"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                )}
+                <Button
+                  size="icon"
+                  className="h-10 w-10 shrink-0 rounded-2xl shadow-lg shadow-primary/20 active:scale-90 transition-transform"
+                  onClick={() => handleSend()}
+                  disabled={!input.trim() || isLoading}
+                >
+                  {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+                </Button>
+              </div>
             </div>
+            <p className="mt-3 text-[10px] text-center text-slate-400 font-bold uppercase tracking-widest">
+              Securizat • Date Anonimizate • Powered by AI
+            </p>
           </div>
         </div>
-      )}
-    </div>
+      </div>
+    </>
   );
 }

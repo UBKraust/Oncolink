@@ -1,4 +1,5 @@
-import Link from "next/link";
+export const runtime = "edge";
+
 import { FileText, ShieldCheck } from "lucide-react";
 
 import {

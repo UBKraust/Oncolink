@@ -2,19 +2,14 @@
 
 import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
-import { format, addDays, startOfWeek, isSameDay, isToday } from "date-fns";
+import { format, addDays, startOfWeek, isToday } from "date-fns";
 import { ro } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { AppointmentWithClient } from "@/lib/appointments/queries";
-import {
-  deriveLocation,
-  statusVariant,
-  statusLabel,
-} from "@/lib/appointments/helpers";
+import { deriveLocation, statusLabel } from "@/lib/appointments/helpers";
 
 interface WeekViewProps {
   appointments: AppointmentWithClient[];

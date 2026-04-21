@@ -1,3 +1,5 @@
+export const runtime = "edge";
+
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
 import { Activity } from "lucide-react";

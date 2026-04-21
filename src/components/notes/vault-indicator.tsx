@@ -73,7 +73,7 @@ export function VaultIndicator({ demoMode }: { demoMode: boolean }) {
         )}
         {buttonLabel}
       </Button>
-      <PinDialog open={open} onClose={() => setOpen(false)} />
+      {open ? <PinDialog onClose={() => setOpen(false)} /> : null}
     </>
   );
 }

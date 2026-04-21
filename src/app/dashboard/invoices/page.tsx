@@ -1,3 +1,5 @@
+export const runtime = "edge";
+
 import Link from "next/link";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";

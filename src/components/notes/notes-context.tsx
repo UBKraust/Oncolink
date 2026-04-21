@@ -8,6 +8,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
 } from "react";
 
 import {
@@ -39,15 +40,27 @@ const NotesVaultContext = createContext<NotesVaultValue | null>(null);
 
 const AUTO_LOCK_MS = 15 * 60 * 1000;
 
+function subscribePinStorage(cb: () => void) {
+  window.addEventListener("storage", cb);
+  return () => window.removeEventListener("storage", cb);
+}
+const getHasPinSnapshot = () => readPinState() !== null;
+const getHasPinServerSnapshot = () => false;
+
 export function NotesVaultProvider({ children }: { children: React.ReactNode }) {
-  const [status, setStatus] = useState<VaultStatus>("loading");
+  const hasStoredPin = useSyncExternalStore(
+    subscribePinStorage,
+    getHasPinSnapshot,
+    getHasPinServerSnapshot,
+  );
   const [key, setKey] = useState<CryptoKey | null>(null);
   const autoLockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    const pin = readPinState();
-    setStatus(pin ? "locked" : "needs-setup");
-  }, []);
+  const status: VaultStatus = key
+    ? "unlocked"
+    : hasStoredPin
+      ? "locked"
+      : "needs-setup";
 
   const clearTimer = () => {
     if (autoLockTimer.current) {
@@ -59,7 +72,6 @@ export function NotesVaultProvider({ children }: { children: React.ReactNode }) 
   const lock = useCallback(() => {
     clearTimer();
     setKey(null);
-    setStatus((prev) => (prev === "needs-setup" ? prev : "locked"));
   }, []);
 
   useEffect(() => {
@@ -85,7 +97,6 @@ export function NotesVaultProvider({ children }: { children: React.ReactNode }) 
       const canary = await makeCanary(derived);
       writePinState({ saltB64: saltToBase64(salt), canary });
       setKey(derived);
-      setStatus("unlocked");
       return { ok: true };
     } catch (e) {
       return { ok: false, error: (e as Error).message };
@@ -101,7 +112,6 @@ export function NotesVaultProvider({ children }: { children: React.ReactNode }) 
       const ok = await verifyCanary(state.canary, derived);
       if (!ok) return { ok: false, error: "PIN incorect." };
       setKey(derived);
-      setStatus("unlocked");
       return { ok: true };
     } catch (e) {
       return { ok: false, error: (e as Error).message };
@@ -112,7 +122,6 @@ export function NotesVaultProvider({ children }: { children: React.ReactNode }) 
     clearTimer();
     clearPinState();
     setKey(null);
-    setStatus("needs-setup");
   }, []);
 
   const value = useMemo<NotesVaultValue>(

@@ -1,7 +1,7 @@
 export const runtime = "edge";
 
 import { NextRequest, NextResponse } from "next/server";
-import { format, addHours } from "date-fns";
+import { format } from "date-fns";
 import { ro } from "date-fns/locale";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";

@@ -1,3 +1,5 @@
+export const runtime = "edge";
+
 import { BookingWidget } from "@/components/booking/booking-widget";
 
 export const metadata = {

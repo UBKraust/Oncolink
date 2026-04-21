@@ -10,15 +10,14 @@ import { Label } from "@/components/ui/label";
 import { useNotesVault } from "./notes-context";
 
 interface PinDialogProps {
-  open: boolean;
   onClose: () => void;
 }
 
 /**
- * Mode is derived from vault status: needs-setup → first-time creation,
- * locked → unlock an existing PIN. Unlocked status auto-closes the dialog.
+ * Parent must unmount this component when closed so local state resets
+ * cleanly without a set-state-in-effect pattern.
  */
-export function PinDialog({ open, onClose }: PinDialogProps) {
+export function PinDialog({ onClose }: PinDialogProps) {
   const { status, setup, unlock } = useNotesVault();
   const [pin, setPin] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -26,19 +25,8 @@ export function PinDialog({ open, onClose }: PinDialogProps) {
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
-    if (!open) {
-      setPin("");
-      setConfirm("");
-      setError(null);
-      setPending(false);
-    }
-  }, [open]);
-
-  useEffect(() => {
-    if (status === "unlocked" && open) onClose();
-  }, [status, open, onClose]);
-
-  if (!open) return null;
+    if (status === "unlocked") onClose();
+  }, [status, onClose]);
 
   const isSetup = status === "needs-setup";
 

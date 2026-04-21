@@ -1,3 +1,5 @@
+export const runtime = "edge";
+
 import { CalendarCheck, CalendarX } from "lucide-react";
 
 export const metadata = { title: "Confirmare programare · Oncolink" };

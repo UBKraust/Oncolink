@@ -13,7 +13,7 @@ const BASE = "https://ws.smartbill.ro/SBORO/api";
 function authHeader(): string {
   const user = process.env.SMARTBILL_USERNAME ?? "";
   const token = process.env.SMARTBILL_TOKEN ?? "";
-  return "Basic " + Buffer.from(`${user}:${token}`).toString("base64");
+  return "Basic " + btoa(`${user}:${token}`);
 }
 
 function cif(): string {

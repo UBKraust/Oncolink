@@ -10,9 +10,6 @@ import type { AppointmentStatus } from "@/lib/appointments/helpers";
 import { pushAppointmentToGoogle } from "@/lib/google/sync";
 
 function parseForm(formData: FormData) {
-  const location = String(formData.get("location") ?? "PRIVAT");
-  const meetLink = String(formData.get("meet_link") ?? "").trim();
-
   return {
     client_id: String(formData.get("client_id") ?? "").trim(),
     appointment_date: String(formData.get("appointment_date") ?? "").trim(),
@@ -21,6 +18,10 @@ function parseForm(formData: FormData) {
     is_external_duty: location === "POLICLINIC",
     meet_link: location === "ONLINE" ? meetLink || null : null,
     location,
+    location_tag: String(formData.get("location_tag") ?? "").trim() || null,
+    personal_notes: String(formData.get("personal_notes") ?? "").trim() || null,
+    reminders_enabled: formData.get("reminders_enabled") === "true",
+    reminder_minutes: parseInt(String(formData.get("reminder_minutes") ?? "60"), 10),
     recurring: formData.get("recurring") === "true",
     recurring_frequency: String(formData.get("recurring_frequency") ?? "weekly"),
     recurring_count: parseInt(String(formData.get("recurring_count") ?? "1"), 10),
@@ -79,6 +80,10 @@ export async function createAppointment(
         status: "PROGRAMAT" as const,
         is_external_duty: payload.is_external_duty,
         meet_link: payload.meet_link,
+        location_tag: payload.location_tag,
+        personal_notes: payload.personal_notes,
+        reminders_enabled: payload.reminders_enabled,
+        reminder_minutes: payload.reminder_minutes,
         recurring_group_id: recurringGroupId,
         recurring_index: i,
       };
@@ -114,6 +119,10 @@ export async function createAppointment(
       status: payload.status,
       is_external_duty: payload.is_external_duty,
       meet_link: payload.meet_link,
+      location_tag: payload.location_tag,
+      personal_notes: payload.personal_notes,
+      reminders_enabled: payload.reminders_enabled,
+      reminder_minutes: payload.reminder_minutes,
     })
     .select("id")
     .single();
@@ -155,6 +164,10 @@ export async function updateAppointment(
       status: payload.status,
       is_external_duty: payload.is_external_duty,
       meet_link: payload.meet_link,
+      location_tag: payload.location_tag,
+      personal_notes: payload.personal_notes,
+      reminders_enabled: payload.reminders_enabled,
+      reminder_minutes: payload.reminder_minutes,
     })
     .eq("id", id);
 

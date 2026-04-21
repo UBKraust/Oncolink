@@ -85,6 +85,10 @@ export interface GCalEvent {
   conferenceData?: {
     entryPoints?: Array<{ uri: string; entryPointType: string }>;
   };
+  reminders?: {
+    useDefault: boolean;
+    overrides?: Array<{ method: "email" | "popup"; minutes: number }>;
+  };
 }
 
 export async function createCalendarEvent(

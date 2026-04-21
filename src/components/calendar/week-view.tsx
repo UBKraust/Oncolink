@@ -4,16 +4,18 @@ import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { format, addDays, startOfWeek, isSameDay, isToday } from "date-fns";
 import { ro } from "date-fns/locale";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Activity, Bell, CalendarDays, ChevronLeft, ChevronRight, FileText, MapPin, MoreVertical, Notebook, User } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { AppointmentWithClient } from "@/lib/appointments/queries";
 import {
   deriveLocation,
   statusVariant,
   statusLabel,
+  locationLabel,
 } from "@/lib/appointments/helpers";
 
 interface WeekViewProps {
@@ -27,15 +29,18 @@ const TOTAL_HOURS = HOUR_END - HOUR_START;
 const SLOT_HEIGHT_PX = 64; // px per hour
 
 const LOCATION_COLOR: Record<string, string> = {
-  PRIVAT: "bg-blue-100 border-blue-400 text-blue-900 dark:bg-blue-950 dark:border-blue-700 dark:text-blue-100",
-  POLICLINIC: "bg-violet-100 border-violet-400 text-violet-900 dark:bg-violet-950 dark:border-violet-700 dark:text-violet-100",
-  ONLINE: "bg-emerald-100 border-emerald-400 text-emerald-900 dark:bg-emerald-950 dark:border-emerald-700 dark:text-emerald-100",
+  CABINET: "bg-blue-50/80 border-blue-200 text-blue-900 border-l-blue-600 shadow-sm backdrop-blur-[2px]",
+  CLINICA: "bg-indigo-50/80 border-indigo-200 text-indigo-900 border-l-indigo-600 shadow-sm backdrop-blur-[2px]",
+  PRIVAT: "bg-slate-50/80 border-slate-200 text-slate-900 border-l-slate-500 shadow-sm opacity-80",
+  POLICLINIC: "bg-violet-50/80 border-violet-200 text-violet-900 border-l-violet-600 shadow-sm",
+  ONLINE: "bg-emerald-50/80 border-emerald-200 text-emerald-900 border-l-emerald-600 shadow-sm backdrop-blur-[2px]",
 };
 
 export function WeekView({ appointments, initialDate }: WeekViewProps) {
   const [anchorDate, setAnchorDate] = useState<Date>(
     initialDate ? new Date(initialDate) : new Date(),
   );
+  const [selectedAppt, setSelectedAppt] = useState<AppointmentWithClient | null>(null);
 
   const weekStart = useMemo(
     () => startOfWeek(anchorDate, { weekStartsOn: 1 }),
@@ -171,36 +176,46 @@ export function WeekView({ appointments, initialDate }: WeekViewProps) {
                       return null;
 
                     return (
-                      <Link
+                      <div
                         key={a.id}
-                        href={`/dashboard/appointments/${a.id}`}
                         className={cn(
-                          "absolute inset-x-0.5 overflow-hidden rounded border-l-2 px-1 py-0.5 text-[11px] leading-tight hover:opacity-90 transition-opacity",
+                          "absolute inset-x-0.5 overflow-hidden rounded-lg border-l-[3px] px-2 py-1.5 text-[11px] leading-tight hover:opacity-95 transition-all cursor-pointer group hover:z-20",
                           colorClass,
                         )}
                         style={{
                           top: offsetPx + 1,
-                          height: Math.max(heightPx - 2, 20),
+                          height: Math.max(heightPx - 2, 32),
                         }}
-                        title={
-                          isExternal
-                            ? `Gardă externă · ${a.duration_minutes} min`
-                            : `${a.client?.full_name ?? "—"} · ${a.duration_minutes} min`
-                        }
+                        onClick={() => setSelectedAppt(a)}
                       >
-                        <p className="font-semibold truncate">
-                          {format(start, "HH:mm")}{" "}
-                          {isExternal
-                            ? "Gardă"
-                            : (a.client?.full_name ?? "—")}
-                        </p>
-                        {heightPx > 36 && (
-                          <p className="truncate opacity-70">
-                            {a.duration_minutes} min ·{" "}
-                            {statusLabel[a.status as keyof typeof statusLabel] ?? a.status}
+                        <div className="flex items-start justify-between gap-1">
+                          <p className="font-bold truncate text-[12px]">
+                            {format(start, "HH:mm")}{" "}
+                            {isExternal ? "Gardă" : (a.client?.full_name ?? "—")}
                           </p>
+                          {(a.personal_notes || a.location_tag) && (
+                            <div className="flex gap-0.5 shrink-0">
+                              {a.personal_notes && (
+                                <Notebook className="h-3 w-3 text-current/60" />
+                              )}
+                              {a.location_tag && (
+                                <span className="text-[9px] font-black opacity-60">#</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        {heightPx > 45 && (
+                          <div className="mt-1 flex flex-wrap gap-1 items-center opacity-80">
+                            <span className="font-medium">
+                              {a.duration_minutes} min
+                            </span>
+                            <span className="opacity-50">•</span>
+                            <span className="capitalize">
+                              {statusLabel[a.status as keyof typeof statusLabel] ?? a.status}
+                            </span>
+                          </div>
                         )}
-                      </Link>
+                      </div>
                     );
                   })}
 
@@ -212,6 +227,89 @@ export function WeekView({ appointments, initialDate }: WeekViewProps) {
           })}
         </div>
       </div>
+
+      {/* Appointment Detail Modal/Popover */}
+      {selectedAppt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-[1px] p-4" onClick={() => setSelectedAppt(null)}>
+          <Card 
+            className="w-full max-w-sm shadow-2xl animate-in fade-in zoom-in duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-lg font-black tracking-tight">
+                Detalii Programare
+              </CardTitle>
+              <Button variant="ghost" size="icon" onClick={() => setSelectedAppt(null)}>
+                <ChevronRight className="h-4 w-4 rotate-45" />
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-4 pt-2">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 shrink-0 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                  <User className="h-5 w-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-base font-bold truncate">
+                    {selectedAppt.client?.full_name ?? "Client Extern / Gardă"}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {selectedAppt.client?.email ?? "Fără email înregistrat"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 py-2">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                    <CalendarDays className="h-3 w-3" />
+                    Data & Ora
+                  </div>
+                  <p className="text-sm font-semibold italic">
+                    {format(new Date(selectedAppt.appointment_date), "d MMM, HH:mm", { locale: ro })}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+                    <MapPin className="h-3 w-3" />
+                    Locație
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-black uppercase">
+                      {locationLabel[deriveLocation(selectedAppt)]}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              {selectedAppt.personal_notes && (
+                <div className="rounded-lg bg-amber-50/50 border border-amber-100 p-3 space-y-1.5">
+                  <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-amber-900/60">
+                    <Notebook className="h-3 w-3" />
+                    Note Personale (Private)
+                  </div>
+                  <p className="text-sm text-amber-900 leading-relaxed italic">
+                    "{selectedAppt.personal_notes}"
+                  </p>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2 pt-2 border-t">
+                <Button variant="outline" size="sm" className="flex-1 text-xs gap-1.5" asChild>
+                  <Link href={`/dashboard/appointments/${selectedAppt.id}`}>
+                    <Activity className="h-3.5 w-3.5" />
+                    Vezi Fișă
+                  </Link>
+                </Button>
+                <Button size="sm" className="flex-1 text-xs gap-1.5" asChild>
+                  <Link href={`/dashboard/appointments/${selectedAppt.id}/edit`}>
+                    Editează
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

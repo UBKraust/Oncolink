@@ -97,7 +97,7 @@ export function AppointmentRow({ appointment, showDate = false }: AppointmentRow
         </div>
       </div>
 
-      <Badge variant={statusVariant[appointment.status]} className="shrink-0">
+      <Badge variant={statusVariant[appointment.status] as any} className="shrink-0">
         {statusLabel[appointment.status]}
       </Badge>
     </div>

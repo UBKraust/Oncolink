@@ -33,7 +33,13 @@ import { updateAppointmentStatus } from "@/app/dashboard/appointments/actions";
 import { getInvoiceByAppointment } from "@/lib/invoices/queries";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
-const locationIcon = { PRIVAT: Home, POLICLINIC: Building2, ONLINE: Video } as const;
+const locationIcon = {
+  PRIVAT: Home,
+  POLICLINIC: Building2,
+  ONLINE: Video,
+  CABINET: Home,
+  CLINICA: Building2,
+} as const;
 
 const STATUS_TRANSITIONS: Record<string, string[]> = {
   PROGRAMAT: ["CONFIRMAT", "ANULAT"],

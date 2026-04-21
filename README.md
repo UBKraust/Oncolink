@@ -35,7 +35,6 @@ src/
   lib/
     supabase/         # client browser / server / service
     utils.ts          # cn() helper
-  proxy.ts            # refresh sesiune Supabase (Next 16 proxy convention)
 supabase/migrations/  # schema + RLS
 ```
 

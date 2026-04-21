@@ -2,120 +2,65 @@ import type { Database } from "@/lib/supabase/types";
 
 export type MockAppointment = Database["public"]["Tables"]["appointments"]["Row"];
 
-const iso = (daysFromNow: number, h: number, m = 0) => {
-  const d = new Date();
-  d.setDate(d.getDate() + daysFromNow);
+/**
+ * Utility to generate a specific date for the week of April 20, 2026.
+ */
+const dateAt = (dayIndex: number, h: number, m = 0) => {
+  // 2026-04-20 is a Monday
+  const d = new Date("2026-04-20T00:00:00Z");
+  d.setDate(d.getDate() + dayIndex);
   d.setHours(h, m, 0, 0);
   return d.toISOString();
 };
 
+const clients = ["c-001", "c-002", "c-003", "c-004", "c-005"];
+
+const generateDay = (
+  dayIndex: number,
+  start: number,
+  end: number,
+  options: { tag?: string; is_external?: boolean; online?: boolean } = {}
+): MockAppointment[] => {
+  const result: MockAppointment[] = [];
+  for (let h = start; h < end; h++) {
+    const id = `sim-${dayIndex}-${h}`;
+    const clientId = clients[(dayIndex + h) % clients.length];
+    result.push({
+      id,
+      client_id: clientId,
+      appointment_date: dateAt(dayIndex, h),
+      duration_minutes: 50,
+      status: "PROGRAMAT",
+      google_event_id: null,
+      meet_link: options.online ? "https://meet.google.com/abc-def-ghi" : null,
+      payment_link: null,
+      is_external_duty: options.is_external || false,
+      location_tag: options.tag || null,
+      personal_notes: "Simulare program full.",
+      reminders_enabled: true,
+      reminder_minutes: 60,
+      created_at: new Date().toISOString(),
+    } as any);
+  }
+  return result;
+};
+
 export const mockAppointments: MockAppointment[] = [
-  {
-    id: "ap-1001",
-    client_id: "c-001",
-    appointment_date: iso(0, 9, 0),
-    duration_minutes: 50,
-    status: "CONFIRMAT",
-    google_event_id: null,
-    meet_link: null,
-    payment_link: null,
-    is_external_duty: false,
-    created_at: iso(-2, 12, 0),
-  },
-  {
-    id: "ap-1002",
-    client_id: "c-002",
-    appointment_date: iso(0, 10, 30),
-    duration_minutes: 50,
-    status: "CONFIRMAT",
-    google_event_id: null,
-    meet_link: "https://meet.google.com/abc-defg-hij",
-    payment_link: null,
-    is_external_duty: false,
-    created_at: iso(-3, 9, 0),
-  },
-  {
-    id: "ap-1003",
-    client_id: "c-004",
-    appointment_date: iso(0, 13, 0),
-    duration_minutes: 240,
-    status: "PROGRAMAT",
-    google_event_id: null,
-    meet_link: null,
-    payment_link: null,
-    is_external_duty: true,
-    created_at: iso(-14, 8, 0),
-  },
-  {
-    id: "ap-1004",
-    client_id: "c-003",
-    appointment_date: iso(0, 17, 30),
-    duration_minutes: 50,
-    status: "PROGRAMAT",
-    google_event_id: null,
-    meet_link: null,
-    payment_link: null,
-    is_external_duty: false,
-    created_at: iso(-1, 16, 0),
-  },
-  {
-    id: "ap-1005",
-    client_id: "c-004",
-    appointment_date: iso(1, 11, 0),
-    duration_minutes: 50,
-    status: "PROGRAMAT",
-    google_event_id: null,
-    meet_link: null,
-    payment_link: null,
-    is_external_duty: false,
-    created_at: iso(-7, 10, 0),
-  },
-  {
-    id: "ap-1006",
-    client_id: "c-005",
-    appointment_date: iso(2, 15, 30),
-    duration_minutes: 50,
-    status: "CONFIRMAT",
-    google_event_id: null,
-    meet_link: "https://meet.google.com/xyz-qrst-uvw",
-    payment_link: null,
-    is_external_duty: false,
-    created_at: iso(-4, 11, 0),
-  },
-  {
-    id: "ap-1007",
-    client_id: "c-001",
-    appointment_date: iso(-7, 9, 0),
-    duration_minutes: 50,
-    status: "FINALIZAT",
-    google_event_id: null,
-    meet_link: null,
-    payment_link: null,
-    is_external_duty: false,
-    created_at: iso(-14, 9, 0),
-  },
-  {
-    id: "ap-1008",
-    client_id: "c-002",
-    appointment_date: iso(-3, 10, 30),
-    duration_minutes: 50,
-    status: "LIPSA",
-    google_event_id: null,
-    meet_link: null,
-    payment_link: null,
-    is_external_duty: false,
-    created_at: iso(-10, 9, 0),
-  },
-  {
-    id: "ap-1009",
-    client_id: "c-005",
-    appointment_date: iso(-1, 18, 0),
-    duration_minutes: 50,
-    status: "ANULAT",
-    google_event_id: null,
-    meet_link: null,
-    payment_link: null,
-    is_external_duty: false,
-    created_at: iso(-5, 12, 0),
-  },
+  // Luni: Clinica 10:00 - 20:00
+  ...generateDay(0, 10, 20, { tag: "#Clinica", is_external: true }),
+  
+  // Marti: Online 9:00 - 21:00
+  ...generateDay(1, 9, 21, { tag: null, online: true }),
+  
+  // Miercuri: Clinica 9:00 - 20:00
+  ...generateDay(2, 9, 20, { tag: "#Clinica", is_external: true }),
+  
+  // Joi: Cabinet de la 9:00 la 21:00
+  ...generateDay(3, 9, 21, { tag: "#cabinet", is_external: false }),
+  
+  // Vineri: Cabinet de la 9:00 la 21:00
+  ...generateDay(4, 9, 21, { tag: "#cabinet", is_external: false }),
+  
+  // Sambata de la 10:00 la 15:00
+  ...generateDay(5, 10, 15, { tag: "#cabinet" }),
 ];

@@ -37,6 +37,8 @@ const locationIcon = {
   PRIVAT: Home,
   POLICLINIC: Building2,
   ONLINE: Video,
+  CABINET: Home,
+  CLINICA: Building2,
 } as const;
 
 export default async function AppointmentsPage({

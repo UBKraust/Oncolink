@@ -90,6 +90,12 @@ export async function pushAppointmentToGoogle(
       : `Client: ${client?.full_name ?? "—"}\nEmail: ${client?.email ?? "—"}`,
     start: { dateTime: start.toISOString(), timeZone: TZ },
     end: { dateTime: end.toISOString(), timeZone: TZ },
+    reminders: {
+      useDefault: !a.reminders_enabled,
+      overrides: a.reminders_enabled
+        ? [{ method: "popup", minutes: a.reminder_minutes ?? 60 }]
+        : [],
+    },
   };
 
   if (a.google_event_id) {

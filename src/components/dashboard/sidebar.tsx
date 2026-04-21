@@ -23,23 +23,43 @@ import {
 
 import { cn } from "@/lib/utils";
 
-const nav = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/dashboard/appointments", label: "Programări", icon: CalendarCheck },
-  { href: "/dashboard/calendar", label: "Calendar", icon: CalendarDays },
-  { href: "/dashboard/clients", label: "Clienți", icon: Users },
-  { href: "/dashboard/notes", label: "Note clinice", icon: NotebookPen },
-  { href: "/dashboard/invoices", label: "Facturi", icon: Receipt },
-  { href: "/dashboard/expenses", label: "Cheltuieli", icon: Wallet },
-  { href: "/dashboard/billing", label: "Raportare Lună", icon: BarChart3 },
-  { href: "/dashboard/review", label: "Sumar Lunar", icon: CalendarRange },
-  { href: "/dashboard/cas", label: "Modul CAS", icon: Hospital },
-  { href: "/dashboard/documents", label: "Documente", icon: FileText },
-  { href: "/dashboard/activity", label: "Registru", icon: Activity },
-  { href: "/dashboard/ai", label: "Asistent AI", icon: BotMessageSquare },
-  { href: "/dashboard/vault", label: "Seif Cabinet", icon: Lock },
-  { href: "/dashboard/compliance", label: "Conformitate", icon: Scale },
-  { href: "/dashboard/settings", label: "Setări", icon: Settings },
+const groups = [
+  {
+    title: "Activitate Zilnică",
+    items: [
+      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/dashboard/appointments", label: "Programări", icon: CalendarCheck },
+      { href: "/dashboard/calendar", label: "Calendar", icon: CalendarDays },
+      { href: "/dashboard/notes", label: "Note clinice", icon: NotebookPen },
+      { href: "/dashboard/ai", label: "Asistent AI", icon: BotMessageSquare },
+    ],
+  },
+  {
+    title: "Management Clienți",
+    items: [
+      { href: "/dashboard/clients", label: "Clienți", icon: Users },
+      { href: "/dashboard/documents", label: "Documente", icon: FileText },
+      { href: "/dashboard/vault", label: "Seif Cabinet", icon: Lock },
+    ],
+  },
+  {
+    title: "Financiar & Administrativ",
+    items: [
+      { href: "/dashboard/invoices", label: "Facturi", icon: Receipt },
+      { href: "/dashboard/expenses", label: "Cheltuieli", icon: Wallet },
+      { href: "/dashboard/billing", label: "Raportare Lună", icon: BarChart3 },
+      { href: "/dashboard/review", label: "Sumar Lunar", icon: CalendarRange },
+      { href: "/dashboard/cas", label: "Modul CAS", icon: Hospital },
+    ],
+  },
+  {
+    title: "Legal & Configurare",
+    items: [
+      { href: "/dashboard/activity", label: "Registru", icon: Activity },
+      { href: "/dashboard/compliance", label: "Conformitate", icon: Scale },
+      { href: "/dashboard/settings", label: "Setări", icon: Settings },
+    ],
+  },
 ];
 
 export function DashboardSidebar() {
@@ -59,29 +79,40 @@ export function DashboardSidebar() {
         </div>
       </div>
 
-      <nav className="flex-1 space-y-1 p-3">
-        {nav.map(({ href, label, icon: Icon }) => {
-          const active =
-            href === "/dashboard" ? pathname === href : pathname?.startsWith(href);
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                active
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-              )}
-            >
-              <Icon className="h-4 w-4" />
-              {label}
-            </Link>
-          );
-        })}
-      </nav>
+      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6 custom-scrollbar">
+        {groups.map((group) => (
+          <div key={group.title} className="space-y-1">
+            <h3 className="px-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 mb-2">
+              {group.title}
+            </h3>
+            <nav className="space-y-1">
+              {group.items.map(({ href, label, icon: Icon }) => {
+                const active =
+                  href === "/dashboard"
+                    ? pathname === href
+                    : pathname?.startsWith(href);
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={cn(
+                      "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200",
+                      active
+                        ? "bg-primary/10 text-primary shadow-sm"
+                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                    )}
+                  >
+                    <Icon className={cn("h-4 w-4", active ? "text-primary" : "text-muted-foreground/70")} />
+                    {label}
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+        ))}
+      </div>
 
-      <div className="border-t p-4 flex flex-col gap-1.5">
+      <div className="border-t p-4 flex flex-col gap-1.5 bg-muted/20">
         <div className="text-[10px] text-muted-foreground uppercase font-black tracking-widest px-2 mb-1">
           Informații Legale
         </div>

@@ -36,23 +36,34 @@ export const statusVariant: Record<
   LIPSA: "warning",
 };
 
-export type LocationKind = "PRIVAT" | "POLICLINIC" | "ONLINE";
+export type LocationKind = "PRIVAT" | "POLICLINIC" | "ONLINE" | "CABINET" | "CLINICA";
 
-export const LOCATIONS: LocationKind[] = ["PRIVAT", "POLICLINIC", "ONLINE"];
+export const LOCATIONS: LocationKind[] = [
+  "PRIVAT",
+  "POLICLINIC",
+  "ONLINE",
+  "CABINET",
+  "CLINICA",
+];
 
 export const locationLabel: Record<LocationKind, string> = {
   PRIVAT: "Cabinet privat",
   POLICLINIC: "Policlinică",
   ONLINE: "Online (Google Meet)",
+  CABINET: "#cabinet",
+  CLINICA: "#Clinica",
 };
 
 /**
- * Location is derived, not stored separately: Google Meet link implies ONLINE,
- * the external-duty flag implies POLICLINIC, otherwise PRIVAT.
+ * Location is derived: Tags (#cabinet, #Clinica) take precedence, 
+ * then Google Meet link implies ONLINE, then external-duty flag implies POLICLINIC, 
+ * otherwise fallback to PRIVAT.
  */
 export function deriveLocation(
-  a: Pick<AppointmentRow, "meet_link" | "is_external_duty">,
+  a: Pick<AppointmentRow, "meet_link" | "is_external_duty" | "location_tag">,
 ): LocationKind {
+  if (a.location_tag === "#cabinet") return "CABINET";
+  if (a.location_tag === "#Clinica") return "CLINICA";
   if (a.meet_link) return "ONLINE";
   if (a.is_external_duty) return "POLICLINIC";
   return "PRIVAT";

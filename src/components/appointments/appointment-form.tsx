@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { Bell, RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +30,10 @@ interface AppointmentFormProps {
     duration_minutes: number;
     status: string;
     location: string;
+    location_tag: string;
+    personal_notes: string;
+    reminders_enabled: boolean;
+    reminder_minutes: number;
     meet_link: string;
   }>;
   submitLabel: string;
@@ -141,23 +145,39 @@ export function AppointmentForm({
           </Select>
         </div>
 
-        {/* Location */}
+        {/* Location Tag */}
         <div className="space-y-1.5">
-          <Label htmlFor="location">Locație</Label>
+          <Label htmlFor="location_tag">Etichetă Locație</Label>
+          <Select
+            id="location_tag"
+            name="location_tag"
+            defaultValue={defaults.location_tag ?? ""}
+          >
+            <option value="">— Fără etichetă —</option>
+            <option value="#cabinet">#cabinet</option>
+            <option value="#Clinica">#Clinica</option>
+          </Select>
+        </div>
+
+        {/* Location (Internal Helper) */}
+        <div className="space-y-1.5">
+          <Label htmlFor="location">Tip Locație (Derivat)</Label>
           <Select
             id="location"
             name="location"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
           >
-            {LOCATIONS.map((l) => (
+            {LOCATIONS.filter(l => !["CABINET", "CLINICA"].includes(l)).map((l) => (
               <option key={l} value={l}>
                 {locationLabel[l]}
               </option>
             ))}
           </Select>
+          <p className="text-[10px] text-muted-foreground leading-tight">
+            Notă: Eticheta (ex: #cabinet) are prioritate vizuală în calendar.
+          </p>
         </div>
-
         {/* Meet link (shown only when ONLINE) */}
         <div className="space-y-1.5">
           <Label htmlFor="meet_link">
@@ -181,6 +201,56 @@ export function AppointmentForm({
           ) : state.fieldErrors.meet_link ? (
             <p className="text-xs text-rose-600">{state.fieldErrors.meet_link}</p>
           ) : null}
+        </div>
+      </div>
+
+      {/* Personal Notes */}
+      <div className="space-y-1.5">
+        <Label htmlFor="personal_notes">Note Personale (Private)</Label>
+        <textarea
+          id="personal_notes"
+          name="personal_notes"
+          className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          placeholder="Note despre această ședință, vizibile doar pentru tine..."
+          defaultValue={defaults.personal_notes ?? ""}
+        />
+        <p className="text-[10px] text-muted-foreground italic">
+          Aceste note **NU** sunt partajate cu Google Calendar sau cu clientul.
+        </p>
+      </div>
+
+      {/* Reminders Configuration */}
+      <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+        <label className="flex cursor-pointer items-center gap-2.5">
+          <input
+            type="checkbox"
+            name="reminders_enabled"
+            value="true"
+            defaultChecked={defaults.reminders_enabled ?? true}
+            className="h-4 w-4 rounded"
+          />
+          <span className="flex items-center gap-1.5 text-sm font-medium">
+            <Bell className="h-4 w-4 text-primary" />
+            Activează mementouri (Personal)
+          </span>
+        </label>
+        
+        <div className="pl-6.5 space-y-1.5">
+          <Label htmlFor="reminder_minutes" className="text-xs text-muted-foreground">Anunță-mă cu:</Label>
+          <Select
+            id="reminder_minutes"
+            name="reminder_minutes"
+            defaultValue={String(defaults.reminder_minutes ?? 60)}
+          >
+            <option value="15">15 minute înainte</option>
+            <option value="30">30 minute înainte</option>
+            <option value="60">1 oră înainte</option>
+            <option value="120">2 ore înainte</option>
+            <option value="1440">24 ore înainte</option>
+          </Select>
+          <p className="text-[10px] text-muted-foreground italic">
+            Notificare Google Calendar (Popup/Mobile).
+          </p>
         </div>
       </div>
 

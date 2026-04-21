@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getMockExpenses, addMockExpense, removeMockExpense } from "@/lib/mock/expenses";
 
 export type ExpenseCategory =
   | "CHIRIE"
@@ -33,7 +34,7 @@ export interface ExpenseActionResult {
 }
 
 export async function listExpenses(year: number, month: number): Promise<Expense[]> {
-  if (!isSupabaseConfigured()) return [];
+  if (!isSupabaseConfigured()) return getMockExpenses(year, month);
 
   const supabase = await createSupabaseServerClient();
   const { data: authData } = await supabase.auth.getUser();
@@ -57,7 +58,21 @@ export async function listExpenses(year: number, month: number): Promise<Expense
 
 export async function createExpense(formData: FormData): Promise<ExpenseActionResult> {
   if (!isSupabaseConfigured()) {
-    return { ok: false, error: "Mod demo: configurează Supabase." };
+    const category = formData.get("category") as ExpenseCategory;
+    const description = formData.get("description") as string;
+    const amount = parseFloat(formData.get("amount") as string);
+    const expenseDate = formData.get("expense_date") as string;
+    if (!category || !description || isNaN(amount) || !expenseDate)
+      return { ok: false, error: "Câmpuri obligatorii lipsă." };
+    const expense: Expense = {
+      id: `exp-demo-${Date.now()}`,
+      therapist_id: "mock-therapist",
+      category, description, amount, expense_date: expenseDate,
+      receipt_url: null, receipt_path: null,
+      created_at: new Date().toISOString(),
+    };
+    addMockExpense(expense);
+    return { ok: true, expense };
   }
 
   const supabase = await createSupabaseServerClient();
@@ -135,7 +150,10 @@ export async function createExpense(formData: FormData): Promise<ExpenseActionRe
 }
 
 export async function deleteExpense(id: string): Promise<{ ok: boolean; error?: string }> {
-  if (!isSupabaseConfigured()) return { ok: false, error: "Mod demo." };
+  if (!isSupabaseConfigured()) {
+    removeMockExpense(id);
+    return { ok: true };
+  }
 
   const supabase = await createSupabaseServerClient();
   const { data: authData } = await supabase.auth.getUser();

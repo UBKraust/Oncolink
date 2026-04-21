@@ -110,7 +110,7 @@ export function MedicalDetailOverlay({
                         {doc.file_name}
                       </p>
                       <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-tighter mt-1">
-                        {doc.document_type || "Fișier"} • {format(new Date(doc.created_at), "d MMM yyyy", { locale: ro })}
+                        {doc.document_type || "Fișier"}{doc.created_at ? ` • ${format(new Date(doc.created_at), "d MMM yyyy", { locale: ro })}` : ""}
                       </p>
                     </div>
                   </div>

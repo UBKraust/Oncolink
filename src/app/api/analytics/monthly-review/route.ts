@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { mockClients } from "@/lib/mock/clients";
 import { mockPayments } from "@/lib/mock/payments";
 import { mockPatientDocuments } from "@/lib/mock/patientFiles";
+import { getMockExpenses } from "@/lib/mock/expenses";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -140,7 +141,7 @@ export async function GET(req: NextRequest) {
     };
   }).filter(w => w.sessions > 0 || w.week === "S1");
 
-    const monthExpenses = 2100 + (month % 3) * 400 + (month % 2 === 0 ? 150 : 0);
+    const monthExpenses = getMockExpenses(year, month).reduce((s, e) => s + e.amount, 0);
     const review: MonthlyReview = {
       year, month,
       totalSessions:       monthPayments.length,

@@ -13,7 +13,7 @@ export type AppointmentStatus =
   | "ANULAT"
   | "LIPSA";
 
-export type LocationKind = "PRIVAT" | "POLICLINIC" | "ONLINE";
+export type LocationKind = "PRIVAT" | "POLICLINIC" | "ONLINE" | "CABINET" | "CLINICA";
 
 export interface DashboardAppointment {
   id: string;

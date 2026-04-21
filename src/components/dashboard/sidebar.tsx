@@ -9,6 +9,7 @@ import {
   CalendarCheck,
   CalendarDays,
   CalendarRange,
+  ClipboardList,
   FileText,
   Hospital,
   LayoutDashboard,
@@ -39,6 +40,7 @@ const groups = [
     items: [
       { href: "/dashboard/clients", label: "Clienți", icon: Users },
       { href: "/dashboard/documents", label: "Documente", icon: FileText },
+      { href: "/dashboard/assessments", label: "Evaluări", icon: ClipboardList },
       { href: "/dashboard/vault", label: "Seif Cabinet", icon: Lock },
     ],
   },

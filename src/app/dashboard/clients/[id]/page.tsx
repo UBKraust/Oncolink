@@ -4,6 +4,7 @@ import { mockPayments } from "@/lib/mock/payments";
 import { mockPatientDocuments, mockMedication } from "@/lib/mock/patientFiles";
 import { listCrisisNotes } from "@/app/dashboard/clients/crisis-notes-actions";
 import { getClient } from "@/lib/clients/queries";
+import { listAppointments } from "@/lib/appointments/queries";
 import { ClientDashboardUI } from "@/components/clients/ClientDashboardUI";
 
 export default async function ClientDetailPage({
@@ -11,31 +12,31 @@ export default async function ClientDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ 
-    anonymized?: string; 
+  searchParams: Promise<{
+    anonymized?: string;
     assessment?: string;
     section?: string;
   }>;
 }) {
   const { id } = await params;
-  const { 
-    anonymized: justAnonymized, 
+  const {
+    anonymized: justAnonymized,
     assessment: assessmentParam,
-    section: sectionParam
+    section: sectionParam,
   } = await searchParams;
-  
+
   const client = await getClient(id);
   if (!client) notFound();
 
   const anonymized = Boolean(client.notes_anonymized_at);
-  const assessments = mockAssessments.filter(a => a.client_id === id);
-  const payments = mockPayments.filter(p => p.client_id === id);
-  const clientDocs = mockPatientDocuments.filter(d => d.client_id === id);
-  const clientMeds = mockMedication.filter(m => m.client_id === id);
+  const assessments = mockAssessments.filter((a) => a.client_id === id);
+  const payments = mockPayments.filter((p) => p.client_id === id);
+  const clientDocs = mockPatientDocuments.filter((d) => d.client_id === id);
+  const clientMeds = mockMedication.filter((m) => m.client_id === id);
   const isMinor = (client as any).is_minor ?? false;
   const crisisNotes = anonymized ? [] : await listCrisisNotes(id);
+  const appointments = await listAppointments({ clientId: id });
 
-  // Build AI context
   const aiClientContext = {
     name: anonymized ? null : client.full_name,
     isMinor,
@@ -47,7 +48,7 @@ export default async function ClientDetailPage({
     totalSessions: payments.length,
     totalAmount: payments.reduce((s, p) => s + p.amount, 0),
     gdprSigned: client.gdpr_consent_signed,
-    lastAssessments: assessments.slice(0, 3).map(a => ({
+    lastAssessments: assessments.slice(0, 3).map((a) => ({
       type: a.assessment_type,
       date: new Date(a.created_at).toLocaleDateString("ro-RO"),
       scores: a.scoring_data,
@@ -55,13 +56,14 @@ export default async function ClientDetailPage({
   };
 
   return (
-    <ClientDashboardUI 
+    <ClientDashboardUI
       client={client}
       assessments={assessments}
       payments={payments}
       clientDocs={clientDocs}
       clientMeds={clientMeds}
       crisisNotes={crisisNotes}
+      appointments={appointments}
       anonymized={anonymized}
       justAnonymized={justAnonymized === "true"}
       sectionParam={sectionParam}

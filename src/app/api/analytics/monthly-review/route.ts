@@ -140,24 +140,25 @@ export async function GET(req: NextRequest) {
     };
   }).filter(w => w.sessions > 0 || w.week === "S1");
 
-  const review: MonthlyReview = {
-    year, month,
-    totalSessions:       monthPayments.length,
-    cancelledSessions:   cancelledCount,
-    noShowRate:          monthPayments.length ? Math.round(cancelledCount / (monthPayments.length + cancelledCount) * 100) : 0,
-    uniqueClients:       uniqueClientIds.length,
-    totalHours:          Math.round(totalMin / 60 * 10) / 10,
-    avgSessionsPerClient: uniqueClientIds.length ? Math.round(monthPayments.length / uniqueClientIds.length * 10) / 10 : 0,
-    totalRevenue:        total,
-    collectedRevenue:    collected,
-    outstandingRevenue:  outstanding,
-    avgRevenuePerSession: monthPayments.length ? Math.round(total / monthPayments.length) : 0,
-    totalExpenses:       2450, // Mock fixed expenses
-    netProfit:           collected - 2450,
-    alerts,
-    weeklyBreakdown,
-    isDemo: true,
-  };
+    const monthExpenses = 2100 + (month % 3) * 400 + (month % 2 === 0 ? 150 : 0);
+    const review: MonthlyReview = {
+      year, month,
+      totalSessions:       monthPayments.length,
+      cancelledSessions:   cancelledCount,
+      noShowRate:          monthPayments.length ? Math.round(cancelledCount / (monthPayments.length + cancelledCount) * 100) : 0,
+      uniqueClients:       uniqueClientIds.length,
+      totalHours:          Math.round(totalMin / 60 * 10) / 10,
+      avgSessionsPerClient: uniqueClientIds.length ? Math.round(monthPayments.length / uniqueClientIds.length * 10) / 10 : 0,
+      totalRevenue:        total,
+      collectedRevenue:    collected,
+      outstandingRevenue:  outstanding,
+      avgRevenuePerSession: monthPayments.length ? Math.round(total / monthPayments.length) : 0,
+      totalExpenses:       monthExpenses,
+      netProfit:           collected - monthExpenses,
+      alerts,
+      weeklyBreakdown,
+      isDemo: true,
+    };
 
   return NextResponse.json(review);
 }

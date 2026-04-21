@@ -1,12 +1,14 @@
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
-import { CalendarDays, CreditCard, Receipt, Users } from "lucide-react";
+import { CalendarDays, CreditCard, Users, TrendingUp, ShieldCheck } from "lucide-react";
 
 import { AppointmentsToday } from "@/components/dashboard/appointments-today";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { UnpaidInvoices } from "@/components/dashboard/unpaid-invoices";
 import { UpcomingAppointments } from "@/components/dashboard/upcoming-appointments";
 import { CompliancePanel } from "@/components/compliance/CompliancePanel";
+import { FinancialSummary } from "@/components/dashboard/financial-summary";
+import { VaultStatusWidget } from "@/components/dashboard/vault-status-widget";
 import {
   mockStats,
   mockToday,
@@ -21,71 +23,98 @@ export default function DashboardPage() {
   const stats = mockStats;
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-6">
-      <div className="flex flex-col gap-1">
-        <p className="text-sm capitalize text-muted-foreground">
-          {format(today, "EEEE, d MMMM yyyy", { locale: ro })}
-        </p>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Bună ziua, {THERAPIST_NAME}
-        </h1>
+    <div className="mx-auto w-full max-w-7xl space-y-6 pb-10">
+      {/* Welcome Header */}
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-widest text-primary/70">
+            {format(today, "EEEE, d MMMM yyyy", { locale: ro })}
+          </p>
+          <h1 className="text-3xl font-black tracking-tight mt-1">
+            Bună ziua, {THERAPIST_NAME}
+          </h1>
+        </div>
+        <div className="hidden sm:block">
+          <div className="flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-950/30">
+            <ShieldCheck className="h-3 w-3" />
+            Sistem Online & Securizat
+          </div>
+        </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      {/* Top Layer: Clinical & Business Quick Stats */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          label="Total Ședințe Lună"
-          value={String(stats.totalSessions)}
-          hint="finalizate & programate"
-          icon={CalendarDays}
-          tone="default"
-        />
-        <StatCard
-          label="Total Ore Prestate"
-          value={`${stats.totalHours} ore`}
-          hint="din durata ședințelor"
-          icon={Users}
+          label="Profit Net (Luna)"
+          value={`${stats.netProfitMonth.toLocaleString("ro-RO")} RON`}
+          hint={`După ${stats.expensesMonth} RON cheltuieli`}
+          icon={TrendingUp}
           tone="success"
         />
         <StatCard
-          label="Total Încasări Lunate"
+          label="Încasări Lună"
           value={`${stats.totalRevenue.toLocaleString("ro-RO")} RON`}
-          hint="din preț variabil/client"
+          hint="Venit Brut Facturat"
           icon={CreditCard}
           tone="default"
         />
         <StatCard
-          label="Programări azi"
+          label="Ședințe Azi"
           value={String(stats.appointmentsToday)}
-          hint="sesiuni active (fără gărzi)"
+          hint="din totalul programat"
           icon={CalendarDays}
+          tone="default"
+        />
+        <StatCard
+          label="Ore Prestate"
+          value={`${stats.totalHours}h`}
+          hint="volum clinic lunar"
+          icon={Users}
           tone="default"
         />
       </div>
 
+      {/* Middle Layer: Specialized Business Widgets */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <FinancialSummary 
+            gross={stats.totalRevenue} 
+            expenses={stats.expensesMonth} 
+            net={stats.netProfitMonth} 
+          />
+        </div>
+        <VaultStatusWidget 
+          alerts={stats.vaultAlertsCount} 
+          totalDocs={stats.vaultTotalDocs} 
+        />
+      </div>
+
+      {/* Analytics: Patient Breakdown */}
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard
-          label="Distribuție Pacienți (Locație)"
-          value={`${stats.totalPatients} Total`}
-          hint={`${stats.privatePatients} la Cabinet | ${stats.clinicPatients} la Clinică`}
+          label="Mix Pacienți"
+          value={`${stats.privatePatients} Cabinet / ${stats.clinicPatients} Clinică`}
+          hint="Distribuție locație de lucru"
           icon={Users}
           tone="default"
         />
         <StatCard
-          label="Demografic: Minori vs Adulți"
-          value={`${stats.minorPatients} Copii / ${stats.adultPatients} Adulți`}
-          hint="*Fișa de părinte este activă la copii"
+          label="Demografic Pacienți"
+          value={`${stats.minorPatients} Minori / ${stats.adultPatients} Adulți`}
+          hint="Monitorizare vârstă"
           icon={Users}
           tone="warning"
         />
         <StatCard
-          label="Sesiuni B2B / Decontate"
-          value={`${stats.b2bPatients} Pacienți`}
-          hint="dezvoltare personală prin firmă"
+          label="Sesiuni Decontate / B2B"
+          value={`${stats.b2bPatients} Pacienți active`}
+          hint="Contracte speciale / Companii"
           icon={CreditCard}
-          tone="success"
+          tone="default"
         />
       </div>
 
+      {/* Bottom Layer: Operational Data */}
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <AppointmentsToday appointments={mockToday} />

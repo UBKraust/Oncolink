@@ -4,6 +4,7 @@
  */
 
 import { clientStats } from "@/lib/mock/clients";
+import { mockPayments } from "@/lib/mock/payments";
 
 export type AppointmentStatus =
   | "PROGRAMAT"
@@ -170,21 +171,45 @@ export interface DashboardStats {
   minorPatients: number;
   adultPatients: number;
   b2bPatients: number;
+  expensesMonth: number;
+  netProfitMonth: number;
+  vaultAlertsCount: number;
+  vaultTotalDocs: number;
 }
+
+// Compute current month stats dynamically for demo consistency
+const currentMonth = now.getMonth() + 1;
+const currentYear = now.getFullYear();
+const monthStart = new Date(currentYear, currentMonth - 1, 1);
+const monthEnd = new Date(currentYear, currentMonth, 1);
+
+const monthPayments = mockPayments.filter(p => {
+  const d = new Date(p.appointment_date);
+  return d >= monthStart && d < monthEnd;
+});
+
+const monthRevenue = monthPayments.filter(p => p.invoice_status === "ACHITATĂ").reduce((s, p) => s + p.amount, 0);
+const monthTotalFacturat = monthPayments.reduce((s, p) => s + p.amount, 0);
+const monthTotalHours = Math.round(monthPayments.reduce((s, p) => s + p.duration_minutes, 0) / 60 * 10) / 10;
+const monthExpenses = 2100 + (currentMonth % 3) * 400 + (currentMonth % 2 === 0 ? 150 : 0);
 
 export const mockStats: DashboardStats = {
   appointmentsToday: mockToday.filter((a) => !a.isExternalDuty).length,
   activeClients: clientStats.total,
   unpaidInvoicesCount: mockUnpaidInvoices.length,
   unpaidInvoicesTotal: mockUnpaidInvoices.reduce((sum, i) => sum + i.amount, 0),
-  revenueMonth: 6250,
-  totalSessions: 145,
-  totalHours: 120.5,
-  totalRevenue: 34500,
-  totalPatients:   clientStats.total,    // 57
-  privatePatients: clientStats.cabinet,  // 33
-  clinicPatients:  clientStats.clinica,  // 24
-  minorPatients:   clientStats.minori,   // 41
-  adultPatients:   clientStats.adulti,   // 16
-  b2bPatients:     clientStats.b2b,      // 6
+  revenueMonth: monthTotalFacturat,
+  totalSessions: monthPayments.length,
+  totalHours: monthTotalHours,
+  totalRevenue: monthTotalFacturat,
+  totalPatients:   clientStats.total,
+  privatePatients: clientStats.cabinet,
+  clinicPatients:  clientStats.clinica,
+  minorPatients:   clientStats.minori,
+  adultPatients:   clientStats.adulti,
+  b2bPatients:     clientStats.b2b,
+  expensesMonth:   monthExpenses,
+  netProfitMonth:  monthRevenue - monthExpenses,
+  vaultAlertsCount: 2,
+  vaultTotalDocs:   12,
 };

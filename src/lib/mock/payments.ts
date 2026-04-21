@@ -1,4 +1,7 @@
 // Mock financial history per client: sessions + payments
+// Generated dynamically for 3 months to support demo analytics
+
+import { mockClients } from "./clients";
 
 export type PaymentMethod = "CASH" | "CARD" | "TRANSFER" | "B2B_FACTURA";
 export type InvoiceStatus = "EMISĂ" | "ACHITATĂ" | "ANULATĂ" | "NEEMISĂ";
@@ -16,41 +19,67 @@ export interface MockSessionPayment {
   notes: string | null;
 }
 
-const d = (daysAgo: number, hour = 10) => {
-  const dt = new Date();
-  dt.setDate(dt.getDate() - daysAgo);
-  dt.setHours(hour, 0, 0, 0);
-  return dt.toISOString();
-};
+function generateMockPayments(): MockSessionPayment[] {
+  const payments: MockSessionPayment[] = [];
+  const now = new Date();
+  
+  // Start from 3 months ago (roughly 90 days)
+  const startDate = new Date();
+  startDate.setDate(now.getDate() - 95);
 
-export const mockPayments: MockSessionPayment[] = [
-  // ── Ana Popescu (c-001) — săptămânal, 250 RON, cash ─────────────────────────
-  { id: "p-001", client_id: "c-001", appointment_date: d(7),  duration_minutes: 50, amount: 250, currency: "RON", payment_method: "CASH",      invoice_status: "NEEMISĂ",  invoice_number: null,       notes: null },
-  { id: "p-002", client_id: "c-001", appointment_date: d(14), duration_minutes: 50, amount: 250, currency: "RON", payment_method: "CASH",      invoice_status: "NEEMISĂ",  invoice_number: null,       notes: null },
-  { id: "p-003", client_id: "c-001", appointment_date: d(21), duration_minutes: 50, amount: 250, currency: "RON", payment_method: "CASH",      invoice_status: "NEEMISĂ",  invoice_number: null,       notes: "Ședință recuperare" },
-  { id: "p-004", client_id: "c-001", appointment_date: d(28), duration_minutes: 50, amount: 250, currency: "RON", payment_method: "TRANSFER",  invoice_status: "ACHITATĂ", invoice_number: "SB-2025-041", notes: null },
-  { id: "p-005", client_id: "c-001", appointment_date: d(35), duration_minutes: 50, amount: 250, currency: "RON", payment_method: "CASH",      invoice_status: "NEEMISĂ",  invoice_number: null,       notes: null },
-  { id: "p-006", client_id: "c-001", appointment_date: d(42), duration_minutes: 50, amount: 250, currency: "RON", payment_method: "CASH",      invoice_status: "NEEMISĂ",  invoice_number: null,       notes: null },
+  let idCounter = 1;
 
-  // ── Mihai Ionescu (c-002) — bilunar, 300 RON, B2B facturat lunar ─────────────
-  { id: "p-010", client_id: "c-002", appointment_date: d(5),  duration_minutes: 50, amount: 300, currency: "RON", payment_method: "B2B_FACTURA", invoice_status: "EMISĂ",   invoice_number: "SB-2025-050", notes: null },
-  { id: "p-011", client_id: "c-002", appointment_date: d(19), duration_minutes: 50, amount: 300, currency: "RON", payment_method: "B2B_FACTURA", invoice_status: "ACHITATĂ", invoice_number: "SB-2025-038", notes: null },
-  { id: "p-012", client_id: "c-002", appointment_date: d(33), duration_minutes: 50, amount: 300, currency: "RON", payment_method: "B2B_FACTURA", invoice_status: "ACHITATĂ", invoice_number: "SB-2025-025", notes: "Luna martie / Tech Solutions SRL" },
-  { id: "p-013", client_id: "c-002", appointment_date: d(47), duration_minutes: 50, amount: 300, currency: "RON", payment_method: "B2B_FACTURA", invoice_status: "ACHITATĂ", invoice_number: "SB-2025-010", notes: null },
+  mockClients.forEach((client) => {
+    // Determine frequency
+    let freqDays = 7; // Default SAPTAMANAL
+    if (client.session_frequency === "BILUNAR") freqDays = 14;
+    else if (client.session_frequency === "LUNAR") freqDays = 30;
+    else if (client.session_frequency === "OCAZIONAL") freqDays = 45;
 
-  // ── Andrei Dumitrescu (c-003) — minor, săptămânal, 200 RON ─────────────────
-  { id: "p-020", client_id: "c-003", appointment_date: d(6),  duration_minutes: 50, amount: 200, currency: "RON", payment_method: "CASH",  invoice_status: "NEEMISĂ",  invoice_number: null, notes: "Achitat de mamă" },
-  { id: "p-021", client_id: "c-003", appointment_date: d(13), duration_minutes: 50, amount: 200, currency: "RON", payment_method: "CASH",  invoice_status: "NEEMISĂ",  invoice_number: null, notes: null },
-  { id: "p-022", client_id: "c-003", appointment_date: d(20), duration_minutes: 50, amount: 200, currency: "RON", payment_method: "CARD",  invoice_status: "ACHITATĂ", invoice_number: "SB-2025-048", notes: null },
+    const price = client.session_price ? parseFloat(client.session_price) : 200;
+    
+    // Generate sessions from start date until now
+    let current = new Date(startDate);
+    // Add a random offset for each client so they don't all have sessions on the same day
+    current.setDate(current.getDate() + Math.floor(Math.random() * freqDays));
 
-  // ── Radu Stoica (c-004) — ocazional, preț negociat ────────────────────────
-  { id: "p-030", client_id: "c-004", appointment_date: d(15), duration_minutes: 80, amount: 350, currency: "RON", payment_method: "CARD",     invoice_status: "ACHITATĂ", invoice_number: "SB-2025-040", notes: "Ședință extinsă 80 min" },
-  { id: "p-031", client_id: "c-004", appointment_date: d(45), duration_minutes: 50, amount: 300, currency: "RON", payment_method: "TRANSFER", invoice_status: "ACHITATĂ", invoice_number: "SB-2025-022", notes: null },
-  { id: "p-032", client_id: "c-004", appointment_date: d(90), duration_minutes: 50, amount: 300, currency: "RON", payment_method: "CARD",     invoice_status: "ANULATĂ",  invoice_number: "SB-2025-005", notes: "Factură anulată - rescheduled" },
+    while (current <= now) {
+      // Randomize hour (9 AM - 6 PM)
+      const dateStr = new Date(current);
+      dateStr.setHours(9 + Math.floor(Math.random() * 9), 0, 0, 0);
 
-  // ── Ioana Marin (c-005) — B2B Creative Agency, săptămânal ─────────────────
-  { id: "p-040", client_id: "c-005", appointment_date: d(3),  duration_minutes: 50, amount: 350, currency: "RON", payment_method: "B2B_FACTURA", invoice_status: "EMISĂ",   invoice_number: "SB-2025-052", notes: null },
-  { id: "p-041", client_id: "c-005", appointment_date: d(10), duration_minutes: 50, amount: 350, currency: "RON", payment_method: "B2B_FACTURA", invoice_status: "EMISĂ",   invoice_number: "SB-2025-051", notes: null },
-  { id: "p-042", client_id: "c-005", appointment_date: d(17), duration_minutes: 50, amount: 350, currency: "RON", payment_method: "B2B_FACTURA", invoice_status: "ACHITATĂ", invoice_number: "SB-2025-039", notes: null },
-  { id: "p-043", client_id: "c-005", appointment_date: d(24), duration_minutes: 50, amount: 350, currency: "RON", payment_method: "B2B_FACTURA", invoice_status: "ACHITATĂ", invoice_number: "SB-2025-030", notes: "Facturat lunar - luna martie" },
-];
+      // Randomize status
+      const rand = Math.random();
+      let status: InvoiceStatus = "ACHITATĂ"; // 80%
+      if (rand > 0.8 && rand < 0.95) status = "EMISĂ";
+      else if (rand >= 0.95) status = "NEEMISĂ";
+
+      // Randomize payment method
+      const methods: PaymentMethod[] = ["CASH", "CARD", "TRANSFER"];
+      if (client.billing_type === "B2B_COMPANY") methods.push("B2B_FACTURA");
+      const method = methods[Math.floor(Math.random() * methods.length)];
+
+      payments.push({
+        id: `p-${String(idCounter++).padStart(3, "0")}`,
+        client_id: client.id,
+        appointment_date: dateStr.toISOString(),
+        duration_minutes: 50,
+        amount: price,
+        currency: "RON",
+        payment_method: client.billing_type === "B2B_COMPANY" ? "B2B_FACTURA" : method,
+        invoice_status: status,
+        invoice_number: status === "NEEMISĂ" ? null : `SB-2023-${String(100+idCounter).padStart(3, "0")}`,
+        notes: Math.random() > 0.9 ? "Ședință demo" : null,
+      });
+
+      // Move to next session
+      current.setDate(current.getDate() + freqDays);
+      // Add small jitter (+/- 1 day)
+      current.setDate(current.getDate() + (Math.random() > 0.5 ? 1 : -1));
+    }
+  });
+
+  return payments;
+}
+
+export const mockPayments: MockSessionPayment[] = generateMockPayments();

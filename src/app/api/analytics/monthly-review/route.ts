@@ -26,6 +26,8 @@ export interface MonthlyReview {
   collectedRevenue: number;
   outstandingRevenue: number;
   avgRevenuePerSession: number;
+  totalExpenses: number;
+  netProfit: number;
 
   // Compliance alerts
   alerts: {
@@ -75,9 +77,13 @@ export async function GET(req: NextRequest) {
           .select("id,is_minor,gdpr_consent_signed")
           .gte("created_at", startDate)
           .lt("created_at", endDate),
+        supabase.from("cabinet_expenses")
+          .select("amount")
+          .gte("expense_date", startDate)
+          .lt("expense_date", endDate),
       ]);
 
-      return NextResponse.json(buildReview(appts ?? [], invoices ?? [], newClients ?? [], year, month));
+      return NextResponse.json(buildReview(appts ?? [], invoices ?? [], newClients ?? [], expenseData ?? [], year, month));
     } catch { /* fall to mock */ }
   }
 
@@ -146,6 +152,8 @@ export async function GET(req: NextRequest) {
     collectedRevenue:    collected,
     outstandingRevenue:  outstanding,
     avgRevenuePerSession: monthPayments.length ? Math.round(total / monthPayments.length) : 0,
+    totalExpenses:       2450, // Mock fixed expenses
+    netProfit:           collected - 2450,
     alerts,
     weeklyBreakdown,
     isDemo: true,
@@ -155,7 +163,7 @@ export async function GET(req: NextRequest) {
 }
 
 function buildReview(
-  appts: any[], invoices: any[], newClients: any[],
+  appts: any[], invoices: any[], newClients: any[], expenses: any[],
   year: number, month: number
 ): MonthlyReview {
   const done     = appts.filter(a => a.status === "FINALIZATĂ");
@@ -165,6 +173,7 @@ function buildReview(
   const collected = invoices.filter((i:any) => i.status==="ACHITATĂ").reduce((s:number,i:any)=>s+i.amount,0);
   const outstanding = invoices.filter((i:any) => i.status!=="ACHITATĂ").reduce((s:number,i:any)=>s+i.amount,0);
   const total     = invoices.reduce((s:number,i:any)=>s+i.amount,0);
+  const totalExp  = expenses.reduce((s:number, e:any) => s + Number(e.amount), 0);
 
   const missingGdpr = newClients.filter((c:any)=>!c.gdpr_consent_signed);
   const minorsNoConsent = newClients.filter((c:any)=>c.is_minor);
@@ -186,5 +195,6 @@ function buildReview(
     avgSessionsPerClient:uniqueCl.length?Math.round(done.length/uniqueCl.length*10)/10:0,
     totalRevenue:total, collectedRevenue:collected, outstandingRevenue:outstanding,
     avgRevenuePerSession:done.length?Math.round(total/done.length):0,
+    totalExpenses: totalExp, netProfit: collected - totalExp,
     alerts, weeklyBreakdown, isDemo:false };
 }

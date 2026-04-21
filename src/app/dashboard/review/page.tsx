@@ -57,6 +57,8 @@ Date ${MONTHS_RO[data.month-1]} ${data.year}:
 - ${data.totalSessions} ședințe finalizate, ${data.totalHours}h lucrate cu ${data.uniqueClients} clienți
 - Rata anulări: ${data.noShowRate}%
 - Încasat: ${fmt(data.collectedRevenue)} RON din ${fmt(data.totalRevenue)} RON total
+- Cheltuieli: ${fmt(data.totalExpenses)} RON
+- Profit Net: ${fmt(data.netProfit)} RON
 - Restanțe: ${fmt(data.outstandingRevenue)} RON
 - Venit mediu/ședință: ${fmt(data.avgRevenuePerSession)} RON
 - Alerte conformitate: ${data.alerts.length} item-uri
@@ -168,6 +170,9 @@ Scrie direct rezumatul, fără titlu.`;
               hint={data.noShowRate > 30 ? "⚠ Rată mare — consideră politică de anulare" : undefined} />
             <KpiCard icon={<Banknote className="h-5 w-5" />} label="Venit mediu/șed." value={`${fmt(data.avgRevenuePerSession)} RON`}
               sub="per ședință" accent="teal" />
+            <KpiCard icon={<TrendingUp className="h-5 w-5" />} label="Profit Net" value={`${fmt(data.netProfit)} RON`}
+              sub="Venit efectiv - Cheltuieli" accent="emerald"
+              hint={data.netProfit < 0 ? "⚠ Profit negativ luna aceasta" : undefined} />
           </div>
 
           {/* ── KPI Row 2 — Financial ─────────────────────────────────────── */}
@@ -178,18 +183,22 @@ Scrie direct rezumatul, fără titlu.`;
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div className="text-center p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30">
-                  <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{fmt(data.collectedRevenue)} <span className="text-sm font-normal">RON</span></p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Încasat efectiv</p>
-                </div>
+              <div className="grid gap-3 sm:grid-cols-4">
                 <div className="text-center p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30">
-                  <p className="text-2xl font-bold text-blue-700 dark:text-blue-400">{fmt(data.totalRevenue)} <span className="text-sm font-normal">RON</span></p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Total facturat</p>
+                  <p className="text-xl font-bold text-blue-700 dark:text-blue-400">{fmt(data.totalRevenue)} <span className="text-sm font-normal">RON</span></p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5 uppercase tracking-tighter">Total Facturat</p>
+                </div>
+                <div className="text-center p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30">
+                  <p className="text-xl font-bold text-emerald-700 dark:text-emerald-400">{fmt(data.collectedRevenue)} <span className="text-sm font-normal">RON</span></p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5 uppercase tracking-tighter">Venit Încasat (Brut)</p>
                 </div>
                 <div className="text-center p-3 rounded-lg bg-rose-50 dark:bg-rose-950/30">
-                  <p className="text-2xl font-bold text-rose-600 dark:text-rose-400">{fmt(data.outstandingRevenue)} <span className="text-sm font-normal">RON</span></p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Restanțe</p>
+                  <p className="text-xl font-bold text-rose-600 dark:text-rose-400">{fmt(data.totalExpenses)} <span className="text-sm font-normal">RON</span></p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5 uppercase tracking-tighter">Cheltuieli</p>
+                </div>
+                <div className="text-center p-3 rounded-lg bg-primary/10 border border-primary/20">
+                  <p className="text-xl font-bold text-primary">{fmt(data.netProfit)} <span className="text-sm font-normal">RON</span></p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5 uppercase tracking-tighter font-bold">Profit Net</p>
                 </div>
               </div>
               <div>

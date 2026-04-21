@@ -18,6 +18,7 @@ import {
   Scale,
   Settings,
   Users,
+  Wallet,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -29,6 +30,7 @@ const nav = [
   { href: "/dashboard/clients", label: "Clienți", icon: Users },
   { href: "/dashboard/notes", label: "Note clinice", icon: NotebookPen },
   { href: "/dashboard/invoices", label: "Facturi", icon: Receipt },
+  { href: "/dashboard/expenses", label: "Cheltuieli", icon: Wallet },
   { href: "/dashboard/billing", label: "Raportare Lună", icon: BarChart3 },
   { href: "/dashboard/review", label: "Sumar Lunar", icon: CalendarRange },
   { href: "/dashboard/cas", label: "Modul CAS", icon: Hospital },

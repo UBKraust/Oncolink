@@ -48,10 +48,11 @@ interface ClientDetailOverlayProps {
 
 export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProps) {
   const [isVisible, setIsVisible] = useState(false);
-
   const [isPending, setIsPending] = useState(false);
+  const [overrideScheduledAt, setOverrideScheduledAt] = useState<Date | null>(null);
 
   useEffect(() => {
+    setOverrideScheduledAt(null);
     if (client) {
       setIsVisible(true);
       document.body.style.overflow = "hidden";
@@ -65,21 +66,29 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
   if (!client) return null;
 
   const anonymized = Boolean(client.notes_anonymized_at);
-  const scheduledAt = client.scheduled_anonymization_at ? new Date(client.scheduled_anonymization_at) : null;
+  const actualScheduledAt = client.scheduled_anonymization_at ? new Date(client.scheduled_anonymization_at) : null;
+  const scheduledAt = overrideScheduledAt !== null ? overrideScheduledAt : actualScheduledAt;
   const isScheduled = !!scheduledAt;
   
-  const daysLeft = isScheduled 
+  const daysLeft = isScheduled && scheduledAt.getTime() > 10000
     ? Math.max(0, Math.ceil((scheduledAt.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))
     : null;
+    
+  const showScheduledAlert = isScheduled && scheduledAt.getTime() > 10000;
 
   async function handleSchedule() {
     setIsPending(true);
     const res = await scheduleAnonymization(client.id);
     setIsPending(false);
-    if (res.success) {
+    if (res?.success) {
       toast.success("Anonimizare programată în 15 zile.");
+    } else if (res?.error?.includes("Mod demo")) {
+      const mockDate = new Date();
+      mockDate.setDate(mockDate.getDate() + 15);
+      setOverrideScheduledAt(mockDate);
+      toast.success("Mod Demo: Anonimizare simulată.");
     } else {
-      toast.error("Eroare: " + res.error);
+      toast.error("Eroare: " + res?.error);
     }
   }
 
@@ -87,10 +96,14 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
     setIsPending(true);
     const res = await cancelAnonymization(client.id);
     setIsPending(false);
-    if (res.success) {
+    if (res?.success) {
       toast.success("Anonimizare anulată. Datele au fost recuperate.");
+    } else if (res?.error?.includes("Mod demo")) {
+      // Simulate un-scheduling
+      setOverrideScheduledAt(new Date(0)); // Use epoch to explicitly say "cleared" without matching null
+      toast.success("Mod Demo: Datele au fost recuperate.");
     } else {
-      toast.error("Eroare: " + res.error);
+      toast.error("Eroare: " + res?.error);
     }
   }
 
@@ -172,7 +185,7 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
         {/* Scrollable Content */}
         <div className="flex-1 overflow-auto p-8 space-y-8 custom-scrollbar">
            {/* Section: Anonymization Grace Period Alert */}
-           {isScheduled && !anonymized && (
+           {showScheduledAlert && !anonymized && (
              <div className="p-5 rounded-[2rem] bg-rose-50 border-2 border-rose-100 shadow-lg shadow-rose-200/20 space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
                 <div className="flex items-start gap-4">
                    <div className="h-12 w-12 rounded-2xl bg-rose-500 flex items-center justify-center text-white shadow-xl shadow-rose-500/20 shrink-0">
@@ -337,7 +350,7 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
 
         {/* Sticky Footer Actions */}
         <div className="p-6 bg-slate-50/80 backdrop-blur-sm border-t shrink-0 flex items-center justify-between gap-4 rounded-t-3xl shadow-lg border-slate-100">
-           {!anonymized && !isScheduled ? (
+           {!anonymized && !showScheduledAlert ? (
              <AlertDialog>
                <AlertDialogTrigger asChild>
                  <Button variant="outline" className="flex-1 rounded-2xl border-slate-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 font-bold">
@@ -376,7 +389,7 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
                 {anonymized ? "Pacient Anonimizat" : "Anonimizare în curs..."}
              </Button>
            )}
-           <Button className="flex-1 rounded-2xl font-black shadow-xl shadow-primary/20" disabled={isScheduled || anonymized}>
+           <Button className="flex-1 rounded-2xl font-black shadow-xl shadow-primary/20" disabled={showScheduledAlert || anonymized}>
               <Calendar className="h-4 w-4 mr-2" /> Programare
            </Button>
         </div>

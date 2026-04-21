@@ -186,7 +186,7 @@ export async function updateClient(
 
 export async function scheduleAnonymization(id: string) {
   if (!isSupabaseConfigured()) {
-    redirect(`/dashboard/clients?error=demo`);
+    return { error: "Mod demo: configurati Supabase pentru a salva actiunile." };
   }
 
   const supabase = await createSupabaseServerClient();

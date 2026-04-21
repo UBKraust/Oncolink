@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { 
   Plus, 
   UserPlus, 
@@ -25,6 +26,7 @@ interface QuickAction {
 export function QuickActionsWheel() {
   const [isOpen, setIsOpen] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
+  const router = useRouter();
 
   const showNotification = (text: string) => {
     setNotification(text);
@@ -59,7 +61,8 @@ export function QuickActionsWheel() {
       icon: Calendar,
       color: "bg-emerald-500 shadow-emerald-200",
       action: () => {
-        window.location.href = "/dashboard/appointments/new";
+        router.push("/dashboard/appointments/new");
+        setIsOpen(false);
       },
     },
     {
@@ -68,7 +71,8 @@ export function QuickActionsWheel() {
       icon: Receipt,
       color: "bg-rose-500 shadow-rose-200",
       action: () => {
-        window.location.href = "/dashboard/expenses";
+        router.push("/dashboard/expenses");
+        setIsOpen(false);
       },
     },
   ];

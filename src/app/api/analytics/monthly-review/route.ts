@@ -64,7 +64,7 @@ export async function GET(req: NextRequest) {
       const startDate = `${year}-${String(month).padStart(2,"0")}-01`;
       const endDate   = new Date(year, month, 1).toISOString().slice(0,10);
 
-      const [{ data: appts }, { data: invoices }, { data: newClients }] = await Promise.all([
+      const [{ data: appts }, { data: invoices }, { data: newClients }, { data: expenseData }] = await Promise.all([
         supabase.from("appointments")
           .select("id,client_id,appointment_date,duration_minutes,status")
           .gte("appointment_date", startDate)

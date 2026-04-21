@@ -175,7 +175,7 @@ export function ExpensesClient({
           <CardContent className="flex flex-wrap items-center gap-3">
             <Select
               defaultValue={String(month)}
-              onValueChange={(v) => handleFilterChange(year, parseInt(v))}
+              onChange={(e) => handleFilterChange(year, parseInt(e.target.value))}
               className="w-40"
             >
               {MONTHS_RO.map((m, i) => (
@@ -186,7 +186,7 @@ export function ExpensesClient({
             </Select>
             <Select
               defaultValue={String(year)}
-              onValueChange={(v) => handleFilterChange(parseInt(v), month)}
+              onChange={(e) => handleFilterChange(parseInt(e.target.value), month)}
               className="w-28"
             >
               {[2023, 2024, 2025, 2026].map((y) => (

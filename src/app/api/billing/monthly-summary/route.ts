@@ -7,7 +7,7 @@ import { mockClients } from "@/lib/mock/clients";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);

@@ -9,7 +9,7 @@ import { getMockExpenses } from "@/lib/mock/expenses";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 export interface MonthlyReview {
   year: number; month: number;

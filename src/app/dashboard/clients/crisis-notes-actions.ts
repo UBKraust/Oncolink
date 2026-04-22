@@ -8,6 +8,7 @@ export interface CrisisNote {
   id: string;
   client_id: string;
   note: string;
+  encrypted_content: string | null;
   contact_method: "PHONE" | "SMS" | "EMAIL" | null;
   created_at: string;
 }
@@ -21,6 +22,7 @@ export async function addCrisisNote(
   clientId: string,
   note: string,
   contactMethod: "PHONE" | "SMS" | "EMAIL" | null,
+  encryptedContent?: string,
 ): Promise<ActionResult> {
   if (!isSupabaseConfigured()) {
     return { ok: false, error: "Mod demo: configurează Supabase pentru a persista notele." };
@@ -29,7 +31,8 @@ export async function addCrisisNote(
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from("client_crisis_notes").insert({
     client_id: clientId,
-    note: note.trim(),
+    note: encryptedContent ? "[CONȚINUT CRIPTAT]" : note.trim(),
+    encrypted_content: encryptedContent ?? null,
     contact_method: contactMethod ?? null,
   });
 

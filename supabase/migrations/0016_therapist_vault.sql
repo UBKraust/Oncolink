@@ -1,6 +1,6 @@
 -- Therapist professional document vault
 create table if not exists public.therapist_documents (
-  id            uuid primary key default uuid_generate_v4(),
+  id            uuid primary key default gen_random_uuid(),
   therapist_id  uuid references auth.users(id) on delete cascade,
   name          varchar(255) not null,
   category      varchar(50) not null

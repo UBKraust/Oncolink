@@ -1,6 +1,6 @@
 -- Cabinet deductible expenses tracking
 create table if not exists public.cabinet_expenses (
-  id           uuid primary key default uuid_generate_v4(),
+  id           uuid primary key default gen_random_uuid(),
   therapist_id uuid references auth.users(id) on delete cascade,
   category     varchar(30) not null
                  check (category in (

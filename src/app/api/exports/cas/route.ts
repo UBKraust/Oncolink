@@ -4,7 +4,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { mockCasAppointments } from "@/lib/mock/cas";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);

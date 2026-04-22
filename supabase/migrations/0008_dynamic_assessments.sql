@@ -1,7 +1,7 @@
 -- Migration 0008: Dynamic Psychological Assessments with JSONB
 
 CREATE TABLE IF NOT EXISTS public.psychological_tests (
-    id uuid primary key default uuid_generate_v4(),
+    id uuid primary key default gen_random_uuid(),
     name varchar(255) not null,
     description text,
     scoring_logic jsonb,
@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS public.psychological_tests (
 );
 
 CREATE TABLE IF NOT EXISTS public.client_assessments (
-    id uuid primary key default uuid_generate_v4(),
+    id uuid primary key default gen_random_uuid(),
     client_id uuid references public.clients(id) on delete cascade,
     test_id uuid references public.psychological_tests(id) on delete set null,
     appointment_id uuid references public.appointments(id) on delete set null,

@@ -1,7 +1,7 @@
 -- Migration 0007: Google Drive Documents integration
 
 CREATE TABLE IF NOT EXISTS public.documents (
-    id uuid primary key default uuid_generate_v4(),
+    id uuid primary key default gen_random_uuid(),
     client_id uuid references public.clients(id) on delete cascade,
     file_name varchar(255) not null,
     drive_file_id varchar(255) not null unique,

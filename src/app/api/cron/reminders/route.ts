@@ -164,5 +164,39 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     results.errors.push(`travel job: ${(e as Error).message}`);
   }
 
+  // ─── Job 4: GDPR Anonymization ─────────────────────────────────────────────
+  try {
+    const { data: toAnonymize } = await supabase
+      .from("clients")
+      .select("id")
+      .lte("scheduled_anonymization_at", new Date().toISOString());
+
+    for (const c of toAnonymize ?? []) {
+      try {
+        const { error } = await supabase
+          .from("clients")
+          .update({
+            full_name: "PACIENT ANONIMIZAT",
+            email: null,
+            phone: null,
+            cnp_cif: null,
+            address: null,
+            parent_name: null,
+            parent_phone: null,
+            notes_anonymized_at: new Date().toISOString(),
+            scheduled_anonymization_at: null,
+          })
+          .eq("id", c.id);
+
+        if (error) throw error;
+        results.errors.push(`anonymized client ${c.id}`); // Using errors array to track successes for now in results
+      } catch (e) {
+        results.errors.push(`anonymize ${c.id}: ${(e as Error).message}`);
+      }
+    }
+  } catch (e) {
+    results.errors.push(`anonymization job: ${(e as Error).message}`);
+  }
+
   return NextResponse.json(results);
 }

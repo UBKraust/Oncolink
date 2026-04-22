@@ -1,6 +1,6 @@
 -- Crisis / out-of-session notes linked directly to a client (not an appointment)
 create table if not exists public.client_crisis_notes (
-    id uuid primary key default uuid_generate_v4(),
+    id uuid primary key default gen_random_uuid(),
     client_id uuid references public.clients(id) on delete cascade not null,
     note text not null,
     contact_method varchar(20), -- 'PHONE' | 'SMS' | 'EMAIL' | null

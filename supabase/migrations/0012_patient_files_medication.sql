@@ -2,7 +2,7 @@
 
 -- Document archive (all patient files)
 CREATE TABLE IF NOT EXISTS public.patient_documents (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     client_id UUID REFERENCES public.clients(id) ON DELETE CASCADE,
     file_name VARCHAR(255) NOT NULL,
     file_size_kb INTEGER,
@@ -25,7 +25,7 @@ CREATE INDEX IF NOT EXISTS docs_type_idx ON public.patient_documents (document_t
 
 -- Medication tracker
 CREATE TABLE IF NOT EXISTS public.patient_medication (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     client_id UUID REFERENCES public.clients(id) ON DELETE CASCADE,
     medication_name VARCHAR(255) NOT NULL,
     dosage VARCHAR(100),

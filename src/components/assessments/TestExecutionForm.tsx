@@ -1,14 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { CheckCircle, Cpu, Brain, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { calculateTestScore } from "@/lib/assessments/scoringEngine";
 import type { TestTemplate, RawAnswers, CalculatedScore } from "@/lib/assessments/types";
+import { saveAssessmentAction } from "@/app/dashboard/assessments/actions";
+import { useNotesVault } from "@/components/notes/notes-context";
+import { encryptNote } from "@/lib/crypto/notes";
 
 const SEVERITY_COLORS: Record<string, string> = {
   minimal: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300",
@@ -19,15 +22,20 @@ const SEVERITY_COLORS: Record<string, string> = {
 
 interface Props {
   test: TestTemplate;
+  clientId: string;
   clientName?: string;
 }
 
-export function TestExecutionForm({ test, clientName = "Pacient" }: Props) {
+export function TestExecutionForm({ test, clientId, clientName = "Pacient" }: Props) {
+  const { key, status } = useNotesVault();
   const [answers, setAnswers] = useState<RawAnswers>({});
   const [score, setScore] = useState<CalculatedScore | null>(null);
   const [aiText, setAiText] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   const allAnswered = test.questions.every((q) => answers[q.id] !== undefined);
 
@@ -36,6 +44,8 @@ export function TestExecutionForm({ test, clientName = "Pacient" }: Props) {
     setScore(result);
     setAiText(null);
     setAiError(null);
+    setSaveError(null);
+    setSaveSuccess(false);
   }
 
   async function handleAiInterpret() {
@@ -90,6 +100,41 @@ export function TestExecutionForm({ test, clientName = "Pacient" }: Props) {
     } finally {
       setAiLoading(false);
     }
+  }
+
+  async function handleSave() {
+    if (!score) return;
+    if (status !== "unlocked") {
+      setSaveError("Seiful Digital este închis. Deblochează-l pentru a salva rezultatele.");
+      return;
+    }
+
+    setSaveError(null);
+    startTransition(async () => {
+      try {
+        const fullInterpretation = aiText || score.interpretation || "";
+        let encrypted: string | undefined;
+        if (key) {
+          encrypted = await encryptNote(fullInterpretation, key);
+        }
+
+        const result = await saveAssessmentAction({
+          clientId,
+          assessmentType: test.name,
+          scoringData: score,
+          contentSummary: fullInterpretation,
+          encryptedContent: encrypted,
+        });
+
+        if (result.ok) {
+          setSaveSuccess(true);
+        } else {
+          setSaveError(result.error ?? "Eroare necunoscută la salvare.");
+        }
+      } catch (e) {
+        setSaveError("Eroare la criptare: " + (e as Error).message);
+      }
+    });
   }
 
   // Derive severity badge class
@@ -248,17 +293,31 @@ export function TestExecutionForm({ test, clientName = "Pacient" }: Props) {
                   <textarea
                     className="w-full rounded-md border bg-background p-3 text-sm leading-relaxed resize-none focus-visible:ring-1"
                     rows={5}
-                    defaultValue={aiText}
+                    value={aiText}
+                    onChange={(e) => setAiText(e.target.value)}
                   />
                   <p className="text-xs text-muted-foreground">
                     ⚠️ Revizuiți și ajustați textul înainte de salvare. AI-ul nu înlocuiește judecata clinică.
                   </p>
                 </div>
               )}
+
+              {saveError && (
+                <p className="text-xs text-destructive font-medium">{saveError}</p>
+              )}
+              {saveSuccess && (
+                <p className="text-xs text-emerald-600 font-bold">Rezultat salvat cu succes!</p>
+              )}
             </div>
           </CardContent>
           <CardFooter className="border-t">
-            <Button className="ml-auto">Salvează în Dosarul Clientului</Button>
+            <Button 
+              className="ml-auto" 
+              onClick={handleSave} 
+              disabled={isPending || saveSuccess}
+            >
+              {isPending ? "Se salvează..." : saveSuccess ? "Salvat!" : "Salvează în Dosarul Clientului"}
+            </Button>
           </CardFooter>
         </Card>
       )}

@@ -6,7 +6,7 @@ ADD COLUMN IF NOT EXISTS referral_document_url TEXT;
 
 -- Separate table for tracking uploaded referral documents per patient
 CREATE TABLE IF NOT EXISTS public.referral_documents (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     client_id UUID REFERENCES public.clients(id) ON DELETE CASCADE,
     appointment_id UUID REFERENCES public.appointments(id) ON DELETE SET NULL,
     file_name VARCHAR(255) NOT NULL,

@@ -7,7 +7,7 @@
 create extension if not exists "uuid-ossp";
 
 create table if not exists public.clients (
-    id uuid primary key default uuid_generate_v4(),
+    id uuid primary key default gen_random_uuid(),
     full_name varchar(255),
     email varchar(255) unique,
     phone varchar(20),
@@ -20,7 +20,7 @@ create table if not exists public.clients (
 );
 
 create table if not exists public.appointments (
-    id uuid primary key default uuid_generate_v4(),
+    id uuid primary key default gen_random_uuid(),
     client_id uuid references public.clients(id) on delete cascade,
     appointment_date timestamptz not null,
     duration_minutes int default 50,
@@ -35,7 +35,7 @@ create index if not exists appointments_date_idx on public.appointments (appoint
 create index if not exists appointments_client_idx on public.appointments (client_id);
 
 create table if not exists public.notes (
-    id uuid primary key default uuid_generate_v4(),
+    id uuid primary key default gen_random_uuid(),
     appointment_id uuid references public.appointments(id) on delete cascade unique,
     encrypted_content text,
     created_at timestamptz default now(),
@@ -43,7 +43,7 @@ create table if not exists public.notes (
 );
 
 create table if not exists public.invoices (
-    id uuid primary key default uuid_generate_v4(),
+    id uuid primary key default gen_random_uuid(),
     appointment_id uuid references public.appointments(id) on delete set null,
     smartbill_series varchar(50),
     smartbill_number varchar(50),
@@ -54,7 +54,7 @@ create table if not exists public.invoices (
 );
 
 create table if not exists public.activity_logs (
-    id uuid primary key default uuid_generate_v4(),
+    id uuid primary key default gen_random_uuid(),
     therapist_id uuid,
     action_type varchar(100),
     client_initials varchar(10),

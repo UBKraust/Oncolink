@@ -6,7 +6,7 @@ ADD COLUMN report_frequency varchar(50) DEFAULT 'NICIODATA',
 ADD COLUMN send_report_to_parent boolean DEFAULT false;
 
 CREATE TABLE IF NOT EXISTS public.assessments (
-    id uuid primary key default uuid_generate_v4(),
+    id uuid primary key default gen_random_uuid(),
     client_id uuid references public.clients(id) on delete cascade,
     assessment_type varchar(100) not null,
     scoring_data jsonb,

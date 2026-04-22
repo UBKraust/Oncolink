@@ -5,7 +5,8 @@ import { AlertTriangle, X, Loader2, Phone, MessageSquare, Mail } from "lucide-re
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { addCrisisNote } from "@/app/dashboard/clients/crisis-notes-actions";
+import { useNotesVault } from "@/components/notes/notes-context";
+import { encryptNote } from "@/lib/crypto/notes";
 
 interface Props {
   clientId: string;
@@ -19,6 +20,7 @@ const CONTACT_OPTIONS = [
 ];
 
 export function CrisisNoteButton({ clientId, clientName }: Props) {
+  const { key, status } = useNotesVault();
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState("");
   const [contactMethod, setContactMethod] = useState<"PHONE" | "SMS" | "EMAIL" | null>(null);
@@ -39,22 +41,37 @@ export function CrisisNoteButton({ clientId, clientName }: Props) {
     setOpen(false);
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!note.trim()) {
       setError("Nota nu poate fi goală.");
       return;
     }
+
+    if (status !== "unlocked") {
+      setError("Seiful Digital este închis. Deblochează-l pentru a salva note criptate.");
+      return;
+    }
+
     setError(null);
     startTransition(async () => {
-      const result = await addCrisisNote(clientId, note, contactMethod);
-      if (result.ok) {
-        setSuccess(true);
-        setTimeout(() => {
-          setOpen(false);
-          setSuccess(false);
-        }, 1200);
-      } else {
-        setError(result.error ?? "Eroare necunoscută.");
+      try {
+        let encrypted: string | undefined;
+        if (key) {
+          encrypted = await encryptNote(note.trim(), key);
+        }
+
+        const result = await addCrisisNote(clientId, note, contactMethod, encrypted);
+        if (result.ok) {
+          setSuccess(true);
+          setTimeout(() => {
+            setOpen(false);
+            setSuccess(false);
+          }, 1200);
+        } else {
+          setError(result.error ?? "Eroare necunoscută.");
+        }
+      } catch (e) {
+        setError("Eroare la criptare: " + (e as Error).message);
       }
     });
   }

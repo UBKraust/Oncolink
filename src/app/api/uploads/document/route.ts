@@ -7,7 +7,7 @@ import { uploadFileToDriveFolder } from "@/lib/google/drive";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 export async function POST(req: NextRequest) {
   try {

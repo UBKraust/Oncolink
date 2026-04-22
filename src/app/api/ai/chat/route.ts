@@ -4,7 +4,7 @@
 
 import { NextRequest } from "next/server";
 
-export const runtime = "nodejs"; // needs streaming
+export const runtime = "edge"; // now supports streaming on Edge
 
 const SYSTEM_PROMPT = `Ești un asistent clinic inteligent integrat în sistemul ERP al unui cabinet de psihoterapie din România.
 Rolul tău este să sprijini terapeutul (nu pacientul) cu:

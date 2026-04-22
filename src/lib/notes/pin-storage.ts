@@ -7,8 +7,8 @@
  * If present: user has a PIN; unlock is required.
  */
 
-const KEY_SALT = "oncolink:notes:salt";
-const KEY_CANARY = "oncolink:notes:canary";
+const KEY_SALT = "cepaipatit:notes:salt";
+const KEY_CANARY = "cepaipatit:notes:canary";
 
 export interface PinState {
   saltB64: string;

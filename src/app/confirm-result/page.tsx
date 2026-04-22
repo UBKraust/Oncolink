@@ -1,6 +1,6 @@
 import { CalendarCheck, CalendarX } from "lucide-react";
 
-export const metadata = { title: "Confirmare programare · Oncolink" };
+export const metadata = { title: "Confirmare programare · Ce`ai Pățit?" };
 
 export default async function ConfirmResultPage({
   searchParams,

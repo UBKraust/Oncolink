@@ -97,9 +97,9 @@ export function ClientOnboardingWizard({ clientId, clientName }: ClientOnboardin
           </p>
         </div>
         <div className="rounded-xl border border-primary/10 bg-primary/5 p-6 space-y-4">
-          <p className="text-sm font-medium">Ne vedem curând la Oncolink!</p>
+          <p className="text-sm font-medium">Ne vedem curând la Ce`ai Pățit?!</p>
           <Button asChild variant="outline" className="w-full">
-            <a href="https://oncolink.ro">Vizitează Site-ul Oficial</a>
+            <a href="https://cepaipatit.ro">Vizitează Site-ul Oficial</a>
           </Button>
         </div>
       </div>
@@ -231,7 +231,7 @@ export function ClientOnboardingWizard({ clientId, clientName }: ClientOnboardin
                     Acord prelucrare date (GDPR)
                   </label>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    Sunt de acord cu colectarea și păstrarea datelor mele personale (CNP, istoric clinic) în sistemul securizat Oncolink.
+                    Sunt de acord cu colectarea și păstrarea datelor mele personale (CNP, istoric clinic) în sistemul securizat Ce`ai Pățit?.
                   </p>
                   {errors.gdpr_consent && <p className="text-xs text-rose-500 font-medium mt-1">{errors.gdpr_consent.message}</p>}
                 </div>
@@ -291,7 +291,7 @@ export function ClientOnboardingWizard({ clientId, clientName }: ClientOnboardin
       <div className="flex flex-col items-center gap-1.5 pt-10 text-[10px] text-muted-foreground lowercase opacity-60">
         <div className="flex items-center gap-1 font-bold">
           <ShieldCheck className="h-3 w-3" />
-          Powered by Oncolink encrypted systems
+          Powered by Ce`ai Pățit? encrypted systems
         </div>
         <div>Standarde Colegiul Psihologilor din România</div>
       </div>

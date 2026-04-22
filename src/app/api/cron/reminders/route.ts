@@ -39,7 +39,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
   const results = { reminders: 0, unpaid: 0, travel: 0, errors: [] as string[] };
   const supabase = await createSupabaseServerClient();
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://oncolink.app";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://cepaipatit.app";
 
   // ─── Job 1: 24h appointment reminders ──────────────────────────────────────
   try {

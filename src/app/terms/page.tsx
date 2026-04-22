@@ -20,7 +20,7 @@ export default function TermsPage() {
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-32 -mt-32" />
             <Gavel className="h-12 w-12 text-white mb-4 relative z-10" />
             <h1 className="text-3xl font-black relative z-10">Termeni și Condiții</h1>
-            <p className="text-white/70 mt-2 relative z-10">Acord de utilizare platformă Oncolink</p>
+            <p className="text-white/70 mt-2 relative z-10">Acord de utilizare platformă Ce`ai Pățit?</p>
           </div>
 
           <div className="p-10 prose prose-slate max-w-none">
@@ -29,7 +29,7 @@ export default function TermsPage() {
                 <FileCheck className="h-5 w-5 text-primary" /> 1. Acceptarea Termenilor
               </h2>
               <p className="text-slate-600 leading-relaxed">
-                Utilizarea aplicației <strong>Oncolink</strong> implică acceptarea integrală a prezentelor condiții. Această platformă este destinată exclusiv profesioniștilor din domeniul sănătății mintale pentru managementul cabinetului individual.
+                Utilizarea aplicației <strong>Ce`ai Pățit?</strong> implică acceptarea integrală a prezentelor condiții. Această platformă este destinată exclusiv profesioniștilor din domeniul sănătății mintale pentru managementul cabinetului individual.
               </p>
             </section>
 
@@ -54,7 +54,7 @@ export default function TermsPage() {
                   <div>
                      <h3 className="font-black text-amber-800 text-sm uppercase tracking-tight mb-1">Avertisment Legal Special</h3>
                      <p className="text-xs text-amber-700 leading-relaxed font-medium">
-                        Oncolink nu este un serviciu de urgență. În caz de risc iminent de auto-vătămare sau vătămare a altora, utilizatorul trebuie să apeleze numărul unic de urgență 112 sau serviciile specializate de intervenție în criză.
+                        Ce`ai Pățit? nu este un serviciu de urgență. În caz de risc iminent...
                      </p>
                   </div>
                </div>

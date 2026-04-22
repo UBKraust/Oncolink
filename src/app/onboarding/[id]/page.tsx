@@ -4,7 +4,7 @@ import { ClientOnboardingWizard } from "@/components/onboarding/ClientOnboarding
 import { Heart, Activity } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Onboarding Pacient | Oncolink",
+  title: "Onboarding Pacient | Ce`ai Pățit?",
   description: "Chestionar inițial pentru pacienții noi ai cabinetului de psihologie.",
 };
 
@@ -43,7 +43,7 @@ export default async function OnboardingPage({ params }: { params: Promise<{ id:
             <Heart className="h-6 w-6 fill-current" />
           </div>
           <div className="text-center">
-            <h2 className="text-xl font-black tracking-tighter uppercase">Oncolink</h2>
+            <h2 className="text-xl font-black tracking-tighter uppercase">Ce`ai Pățit?</h2>
             <p className="text-[10px] font-bold tracking-widest text-primary/60 uppercase">Management Clinic Digital</p>
           </div>
         </div>

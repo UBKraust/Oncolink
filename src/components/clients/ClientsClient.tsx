@@ -127,7 +127,7 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
                             {client.full_name}
                           </p>
                           <p className="text-[11px] text-slate-400 font-medium truncate">
-                            {anonymized ? "REDACTED@oncolink.ro" : client.email || "fără email"}
+                            {anonymized ? "REDACTED@cepaipatit.ro" : client.email || "fără email"}
                           </p>
                         </div>
                       </div>

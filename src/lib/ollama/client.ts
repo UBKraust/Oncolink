@@ -3,7 +3,7 @@
  *
  * Runs in the therapist's browser, calls `localhost:11434` directly.
  * Note text is decrypted in-browser and sent only to the local Ollama
- * daemon — it never transits an Oncolink server, never leaves the machine.
+ * daemon — it never transits an Ce`ai Pățit? server, never leaves the machine.
  *
  * Env:
  *   NEXT_PUBLIC_OLLAMA_URL   default http://localhost:11434

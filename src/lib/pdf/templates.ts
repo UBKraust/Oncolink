@@ -20,7 +20,7 @@ function header(doc: jsPDF, title: string) {
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.text("Oncolink · Cabinet psihoterapie", MARGIN, 12);
+  doc.text("Ce`ai Pățit? · Cabinet psihoterapie", MARGIN, 12);
 
   doc.setTextColor(40, 40, 40);
   doc.setFontSize(14);
@@ -37,7 +37,7 @@ function footer(doc: jsPDF) {
     doc.setFontSize(8);
     doc.setTextColor(160, 160, 160);
     doc.text(
-      `Pagina ${i} din ${pages}  ·  Generat de Oncolink  ·  ${new Date().toLocaleDateString("ro-RO")}`,
+      `Pagina ${i} din ${pages}  ·  Generat de Ce`ai Pățit?  ·  ${new Date().toLocaleDateString("ro-RO")}`,
       MARGIN,
       290,
     );

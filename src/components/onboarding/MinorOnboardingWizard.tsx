@@ -120,7 +120,7 @@ export function MinorOnboardingWizard() {
         <div className="rounded-2xl border border-primary/10 bg-primary/5 p-8 flex flex-col gap-4">
           <p className="text-sm font-medium italic">"Siguranța legala a copilului este prioritatea noastră."</p>
           <Button asChild className="w-full font-bold">
-            <a href="https://oncolink.ro">Reveniți la site</a>
+            <a href="https://cepaipatit.ro">Reveniți la site</a>
           </Button>
         </div>
       </div>

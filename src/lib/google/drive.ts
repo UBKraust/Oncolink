@@ -126,10 +126,10 @@ export async function createDriveFolder(
 }
 
 // ── Public: get-or-create the root cabinet folder ─────────────────────────────
-// Looks for a folder named "Cabinet Psihoterapie — Oncolink"; creates if absent.
+// Looks for a folder named "Cabinet Psihoterapie — Ce`ai Pățit?"; creates if absent.
 
 export async function getOrCreateRootFolder(accessToken: string): Promise<string> {
-  const ROOT_NAME = "Cabinet Psihoterapie — Oncolink";
+  const ROOT_NAME = "Cabinet Psihoterapie — Ce`ai Pățit?";
   const query = encodeURIComponent(
     `name='${ROOT_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`
   );

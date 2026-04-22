@@ -19,7 +19,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 })
 
 async function createDevUser() {
-  const email = 'terapeut@oncolink.ro'
+  const email = 'terapeut@cepaipatit.ro'
   const password = 'parola1234'
 
   console.log(`Creating user: ${email}...`)

@@ -18,7 +18,7 @@
 const PBKDF2_ITERATIONS = 200_000;
 const KEY_LENGTH_BITS = 256;
 const IV_LENGTH = 12;
-const CANARY_PLAINTEXT = "oncolink-v1";
+const CANARY_PLAINTEXT = "cepaipatit-v1";
 const SALT_LENGTH = 16;
 
 const textEncoder = new TextEncoder();

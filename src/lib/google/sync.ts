@@ -1,11 +1,11 @@
 /**
- * Google Calendar ↔ Oncolink bidirectional sync helpers.
+ * Google Calendar ↔ Ce`ai Pățit? bidirectional sync helpers.
  *
- * Outbound (Oncolink → Google):
+ * Outbound (Ce`ai Pățit? → Google):
  *   pushAppointmentToGoogle()  — create/update event
  *   deleteAppointmentFromGoogle() — cancel event
  *
- * Inbound (Google → Oncolink):
+ * Inbound (Google → Ce`ai Pățit?):
  *   reconcileFromGoogle()  — called after webhook fires; pulls recent events
  *   and updates appointment meet_link + google_event_id
  */

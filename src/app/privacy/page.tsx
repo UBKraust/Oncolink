@@ -29,7 +29,7 @@ export default function PrivacyPage() {
                 <Lock className="h-5 w-5 text-primary" /> 1. Introducere
               </h2>
               <p className="text-slate-600 leading-relaxed">
-                Prezenta Politică de Confidențialitate descrie modul în care platforma <strong>Oncolink</strong> (gestionată de Cabinet Individual de Psihologie) colectează, utilizează și protejează datele cu caracter personal ale pacienților, în conformitate cu Regulamentul (UE) 2016/679 (GDPR) și legislația română în vigoare.
+                Prezenta Politică de Confidențialitate descrie modul în care platforma <strong>Ce`ai Pățit?</strong> (gestionată de Cabinet Individual de Psihologie) colectează, utilizează și protejează datele cu caracter personal ale pacienților, în conformitate cu Regulamentul (UE) 2016/679 (GDPR) și legislația română în vigoare.
               </p>
             </section>
 
@@ -53,7 +53,7 @@ export default function PrivacyPage() {
                 <Shield className="h-5 w-5 text-primary" /> 3. Securitatea Datelor
               </h2>
               <p className="text-slate-600 leading-relaxed">
-                Siguranța datelor tale este prioritatea noastră absolută. Oncolink utilizează:
+                Siguranța datelor tale este prioritatea noastră absolută. Ce`ai Pățit? utilizează:
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 italic text-sm text-slate-600">
@@ -92,7 +92,7 @@ export default function PrivacyPage() {
             <div className="mt-12 pt-8 border-t border-slate-100 text-center">
               <p className="text-slate-400 text-sm">
                 Pentru orice întrebări legat de datele tale, ne poți contacta la <br/>
-                <span className="font-bold text-slate-600">dpo@oncolink.ro</span>
+                <span className="font-bold text-slate-600">dpo@cepaipatit.ro</span>
               </p>
             </div>
           </div>

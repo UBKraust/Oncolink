@@ -14,7 +14,7 @@ export default function Home() {
     <main className="flex min-h-svh items-center justify-center bg-muted/30 p-6">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Oncolink</CardTitle>
+          <CardTitle>Ce`ai Pățit?</CardTitle>
           <CardDescription>
             Platformă ERP privată pentru cabinet de psihoterapie — GDPR &amp; CPR
             compliant.

@@ -321,7 +321,7 @@ Scrie direct rezumatul, fără titlu.`;
 
           {/* Footer (PDF only) */}
           <p className="text-[10px] text-muted-foreground text-center pt-2">
-            Generat de Oncolink ERP · Cabinet Psihoterapie Ioana Cosmina Terente PFA ·{" "}
+            Generat de Ce`ai Pățit? ERP · Cabinet Psihoterapie Ioana Cosmina Terente PFA ·{" "}
             {new Date().toLocaleDateString("ro-RO")}
           </p>
         </div>

@@ -3,7 +3,7 @@ import { MinorOnboardingWizard } from "@/components/onboarding/MinorOnboardingWi
 import { ShieldCheck, Baby } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Onboarding Minor | Securitate Juridică | Oncolink",
+  title: "Onboarding Minor | Securitate Juridică | Ce`ai Pățit?",
   description: "Formular de înrolare pentru pacienți minori. Obligatoriu conform legii CPR.",
 };
 
@@ -23,7 +23,7 @@ export default function MinorOnboardingPage() {
             <ShieldCheck className="h-7 w-7" />
           </div>
           <div className="text-center">
-            <h2 className="text-2xl font-black tracking-tighter uppercase text-slate-800">Oncolink <span className="text-amber-600">Legal</span></h2>
+            <h2 className="text-2xl font-black tracking-tighter uppercase text-slate-800">Ce`ai Pățit? <span className="text-amber-600">Legal</span></h2>
             <p className="text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase">Protocol de Siguranță Minori</p>
           </div>
         </div>
@@ -48,7 +48,7 @@ export default function MinorOnboardingPage() {
            </p>
            <div className="h-px w-12 bg-slate-200 mx-auto" />
            <p className="text-[9px] text-slate-400 italic">
-             Oncolink este marcă înregistrată. Toate datele medicale sunt procesate conform Legii 190/2018 privind prelucrarea datelor cu caracter personal.
+             Ce`ai Pățit? este marcă înregistrată. Toate datele medicale sunt procesate conform Legii 190/2018 privind prelucrarea datelor cu caracter personal.
            </p>
         </div>
       </div>

@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Oncolink",
+  title: "Ce`ai Pățit?",
   description:
     "ERP privat pentru cabinet de psihoterapie — programări, facturare SmartBill, EHR criptat.",
 };

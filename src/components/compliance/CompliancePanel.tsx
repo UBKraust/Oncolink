@@ -117,14 +117,17 @@ function ClientRow({ result }: { result: ClientComplianceResult }) {
 interface Props {
   /** If compact=true, renders a mini-panel for dashboard; otherwise full page */
   compact?: boolean;
+  initialData?: ComplianceSummary;
 }
 
-export function CompliancePanel({ compact = false }: Props) {
-  const [data, setData] = useState<ComplianceSummary>(() => runComplianceCheck());
+export function CompliancePanel({ compact = false, initialData }: Props) {
+  const [data, setData] = useState<ComplianceSummary>(() => initialData || runComplianceCheck());
   const [showAll, setShowAll] = useState(false);
 
   function refresh() {
-    setData(runComplianceCheck());
+    if (!initialData) {
+      setData(runComplianceCheck());
+    }
   }
 
   const visible = useMemo(() => {

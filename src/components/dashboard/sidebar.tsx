@@ -70,11 +70,11 @@ export function DashboardSidebar() {
   return (
     <aside className="hidden w-64 shrink-0 border-r bg-card md:flex md:flex-col">
       <div className="flex h-16 items-center gap-2 border-b px-6">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-semibold">
-          O
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-black italic">
+          C?
         </div>
         <div className="flex flex-col leading-tight">
-          <span className="text-sm font-semibold">Oncolink</span>
+          <span className="text-sm font-black italic tracking-tighter text-primary">Ce`ai Pățit?</span>
           <span className="text-[11px] text-muted-foreground">
             Cabinet psihoterapie
           </span>
@@ -128,7 +128,7 @@ export function DashboardSidebar() {
           </Link>
         </div>
         <div className="mt-2 px-2 text-[9px] text-slate-400 font-bold uppercase tracking-tighter">
-          Oncolink v1.2 · CPR Certified
+          Ce`ai Pățit? v1.2 · CPR Certified
         </div>
       </div>
     </aside>

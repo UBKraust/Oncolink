@@ -1,0 +1,157 @@
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { startOfMonth, endOfMonth, startOfDay, endOfDay, format } from "date-fns";
+import { ro } from "date-fns/locale";
+
+export interface DashboardStats {
+  totalRevenue: number;
+  expensesMonth: number;
+  netProfitMonth: number;
+  appointmentsToday: number;
+  totalHours: number;
+  pendingMinorReviews: number;
+  privatePatients: number;
+  clinicPatients: number;
+  minorPatients: number;
+  adultPatients: number;
+  b2bPatients: number;
+  vaultAlertsCount: number;
+  vaultTotalDocs: number;
+}
+
+export async function getDashboardStats(): Promise<DashboardStats> {
+  const supabase = await createSupabaseServerClient();
+  const now = new Date();
+  const startMonth = startOfMonth(now).toISOString();
+  const endMonth = endOfMonth(now).toISOString();
+  const startToday = startOfDay(now).toISOString();
+  const endToday = endOfDay(now).toISOString();
+
+  // 1. Total Revenue (Invoiced this month)
+  const { data: invoices } = await supabase
+    .from("invoices")
+    .select("amount")
+    .gte("issued_at", startMonth)
+    .lte("issued_at", endMonth);
+  const totalRevenue = invoices?.reduce((sum, inv) => sum + Number(inv.amount), 0) || 0;
+
+  // 2. Expenses (this month)
+  const { data: expenses } = await supabase
+    .from("cabinet_expenses")
+    .select("amount")
+    .gte("date", startMonth)
+    .lte("date", endMonth);
+  const expensesMonth = expenses?.reduce((sum, exp) => sum + Number(exp.amount), 0) || 0;
+
+  // 3. Appointments Today
+  const { count: appointmentsToday } = await supabase
+    .from("appointments")
+    .select("*", { count: "exact", head: true })
+    .gte("appointment_date", startToday)
+    .lte("appointment_date", endToday);
+
+  // 4. Total Hours (completed this month - assuming 50min sessions as ~0.83h)
+  const { data: monthlyApps } = await supabase
+    .from("appointments")
+    .select("duration_minutes")
+    .gte("appointment_date", startMonth)
+    .lte("appointment_date", endMonth)
+    .eq("status", "FINALIZATĂ");
+  const totalMinutes = monthlyApps?.reduce((sum, app) => sum + (app.duration_minutes || 50), 0) || 0;
+  const totalHours = Math.round(totalMinutes / 60);
+
+  // 5. Pending Minor Reviews
+  const { count: pendingMinorReviews } = await supabase
+    .from("clients")
+    .select("*", { count: "exact", head: true })
+    .eq("is_minor", true)
+    .eq("needs_review", true); // Assuming this column exists based on context
+
+  // 6. Demographics
+  const { data: clients } = await supabase
+    .from("clients")
+    .select("is_minor, is_b2b, cabinet_id");
+  
+  const minorPatients = clients?.filter(c => c.is_minor).length || 0;
+  const adultPatients = (clients?.length || 0) - minorPatients;
+  const b2bPatients = clients?.filter(c => c.is_b2b).length || 0;
+
+  // 7. Vault Stats
+  const { count: vaultTotalDocs } = await supabase
+    .from("patient_documents")
+    .select("*", { count: "exact", head: true });
+
+  return {
+    totalRevenue,
+    expensesMonth,
+    netProfitMonth: totalRevenue - expensesMonth,
+    appointmentsToday: appointmentsToday || 0,
+    totalHours,
+    pendingMinorReviews: pendingMinorReviews || 0,
+    privatePatients: clients?.filter(c => !c.cabinet_id).length || 0, // Placeholder logic
+    clinicPatients: clients?.filter(c => c.cabinet_id).length || 0,
+    minorPatients,
+    adultPatients,
+    b2bPatients,
+    vaultAlertsCount: 0, // Placeholder
+    vaultTotalDocs: vaultTotalDocs || 0,
+  };
+}
+
+export async function getUnpaidInvoices() {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("invoices")
+    .select("*, appointments(clients(full_name))")
+    .neq("status", "PLĂTITĂ")
+    .order("issued_at", { ascending: false })
+    .limit(5);
+  
+  return data?.map(inv => ({
+    id: inv.id,
+    clientName: (inv.appointments as any)?.clients?.full_name || "Client Necunoscut",
+    amount: inv.amount,
+    date: inv.issued_at,
+    status: inv.status
+  })) || [];
+}
+
+export async function getAppointmentsToday() {
+  const supabase = await createSupabaseServerClient();
+  const now = new Date();
+  const { data } = await supabase
+    .from("appointments")
+    .select("*, clients(full_name)")
+    .gte("appointment_date", startOfDay(now).toISOString())
+    .lte("appointment_date", endOfDay(now).toISOString())
+    .order("appointment_date", { ascending: true });
+
+  return data?.map(app => ({
+    id: app.id,
+    time: format(new Date(app.appointment_date), "HH:mm"),
+    clientName: (app.clients as any)?.full_name || "Client",
+    type: app.is_external_duty ? "Clinic" : "Cabinet",
+    status: app.status
+  })) || [];
+}
+
+export async function getUpcomingAppointments() {
+  const supabase = await createSupabaseServerClient();
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const { data } = await supabase
+    .from("appointments")
+    .select("*, clients(full_name)")
+    .gte("appointment_date", startOfDay(tomorrow).toISOString())
+    .order("appointment_date", { ascending: true })
+    .limit(10);
+
+  return data?.map(app => ({
+    id: app.id,
+    date: format(new Date(app.appointment_date), "d MMM", { locale: ro }),
+    time: format(new Date(app.appointment_date), "HH:mm"),
+    clientName: (app.clients as any)?.full_name || "Client",
+    type: app.is_external_duty ? "Clinic" : "Cabinet"
+  })) || [];
+}

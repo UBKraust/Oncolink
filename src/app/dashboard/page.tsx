@@ -12,17 +12,24 @@ import { FinancialSummary } from "@/components/dashboard/financial-summary";
 import { VaultStatusWidget } from "@/components/dashboard/vault-status-widget";
 import { Button } from "@/components/ui/button";
 import {
-  mockStats,
-  mockToday,
-  mockUnpaidInvoices,
-  mockUpcoming,
-} from "@/lib/mock/dashboard";
+  getDashboardStats,
+  getAppointmentsToday,
+  getUnpaidInvoices,
+  getUpcomingAppointments,
+} from "@/lib/dashboard/queries";
+import { runServerComplianceCheck } from "@/lib/compliance/server-engine";
 
 const THERAPIST_NAME = "Psih. Ioana Cosmina Terente PFA";
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
   const today = new Date();
-  const stats = mockStats;
+  const [stats, appointmentsToday, unpaidInvoices, upcomingAppointments, complianceData] = await Promise.all([
+    getDashboardStats(),
+    getAppointmentsToday(),
+    getUnpaidInvoices(),
+    getUpcomingAppointments(),
+    runServerComplianceCheck(),
+  ]);
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 pb-10">
@@ -141,18 +148,18 @@ export default function DashboardPage() {
       {/* ── Appointments + Invoices ──────────────────────────────────────── */}
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <AppointmentsToday appointments={mockToday} />
+          <AppointmentsToday appointments={appointmentsToday} />
         </div>
-        <UnpaidInvoices invoices={mockUnpaidInvoices} />
+        <UnpaidInvoices invoices={unpaidInvoices} />
       </div>
 
       {/* ── Upcoming + Compliance ────────────────────────────────────────── */}
       <div className="grid gap-4 lg:grid-cols-5">
         <div className="lg:col-span-3">
-          <UpcomingAppointments appointments={mockUpcoming} />
+          <UpcomingAppointments appointments={upcomingAppointments} />
         </div>
         <div className="lg:col-span-2">
-          <CompliancePanel compact />
+          <CompliancePanel compact initialData={complianceData} />
         </div>
       </div>
 

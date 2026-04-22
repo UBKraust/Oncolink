@@ -39,7 +39,7 @@ export async function listInvoices(filters: {
   const supabase = await createSupabaseServerClient();
   let query = supabase
     .from("invoices")
-    .select("*")
+    .select("*, appointments(clients(full_name))")
     .order("issued_at", { ascending: false })
     .limit(200);
 
@@ -47,7 +47,11 @@ export async function listInvoices(filters: {
 
   const { data, error } = await query;
   if (error) throw new Error(error.message);
-  return data ?? [];
+  
+  return (data ?? []).map(inv => ({
+    ...inv,
+    client_name: (inv.appointments as any)?.clients?.full_name || "Client Necunoscut"
+  }));
 }
 
 export async function getInvoice(id: string): Promise<InvoiceRow | null> {

@@ -37,7 +37,7 @@ function footer(doc: jsPDF) {
     doc.setFontSize(8);
     doc.setTextColor(160, 160, 160);
     doc.text(
-      `Pagina ${i} din ${pages}  ·  Generat de Ce`ai Pățit?  ·  ${new Date().toLocaleDateString("ro-RO")}`,
+      `Pagina ${i} din ${pages}  ·  Generat de Ce\`ai Pățit?  ·  ${new Date().toLocaleDateString("ro-RO")}`,
       MARGIN,
       290,
     );

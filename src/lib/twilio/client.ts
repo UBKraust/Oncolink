@@ -69,7 +69,7 @@ export function bookingConfirmationMsg(
   return (
     `Bună ziua, ${clientName}!\n\n` +
     `Programarea ta a fost înregistrată pentru *${dateRo}* la ora *${timeRo}*.\n` +
-    `Te așteptăm! 😊\n\n_Cabinet psihoterapie Ce`ai Pățit?_`
+    `Te așteptăm! 😊\n\n_Cabinet psihoterapie Ce\`ai Pățit?_`
   );
 }
 
@@ -85,7 +85,7 @@ export function reminderMsg(
     `Reminder: mâine ai o ședință la ora *${timeRo}* (${dateRo}).\n\n` +
     `✅ Confirmă: ${confirmLink}\n` +
     `❌ Anulează: ${cancelLink}\n\n` +
-    `_Cabinet psihoterapie Ce`ai Pățit?_`
+    `_Cabinet psihoterapie Ce\`ai Pățit?_`
   );
 }
 
@@ -99,7 +99,7 @@ export function unpaidInvoiceMsg(
     `Bună ziua, ${clientName}!\n\n` +
     `Factura *${invoiceRef}* în valoare de *${amountRON.toFixed(2)} RON* este în așteptare.\n` +
     `Plătește online: ${paymentLink}\n\n` +
-    `_Cabinet psihoterapie Ce`ai Pățit?_`
+    `_Cabinet psihoterapie Ce\`ai Pățit?_`
   );
 }
 
@@ -111,6 +111,6 @@ export function travelReminderMsg(
     `🚗 Reminder deplasare:\n` +
     `Ședința la *${location}* este la ora *${appointmentTime}*.\n` +
     `Pleacă cu ~30 min înainte pentru buffer.\n\n` +
-    `_Ce`ai Pățit? — calendar intern_`
+    `_Ce\`ai Pățit? — calendar intern_`
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -312,6 +313,9 @@ export function MinorOnboardingWizard() {
                       <p className="text-[11px] text-rose-800 leading-relaxed font-medium">
                         Prin prezenta declar că datele furnizate cu privire la identitatea minorului și regimul său juridic sunt conforme cu realitatea. Înțeleg că furnizarea de informații false despre custodia copilului poate atrage răspunderea civilă sau penală conform Codului Civil Român.
                       </p>
+                      <Link href="/legal/declaration" target="_blank" className="text-[10px] text-rose-600 font-bold underline flex items-center gap-1 hover:text-rose-700">
+                        <FileText className="h-3 w-3" /> Vezi textul legal complet și printează
+                      </Link>
                    </div>
                 </div>
                 

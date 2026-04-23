@@ -254,3 +254,33 @@ Client: ____________________________    Data: ______________
 Terapeut: __________________________    Data: ______________
 `;
 }
+
+/**
+ * Shares a file or folder with a specific email address.
+ * Role can be 'reader', 'commenter', or 'writer'.
+ */
+export async function shareFile(
+  accessToken: string,
+  fileId: string,
+  emailAddress: string,
+  role: "reader" | "commenter" | "writer" = "reader"
+): Promise<void> {
+  const res = await fetch(`${GDRIVE_BASE}/${fileId}/permissions`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      role,
+      type: "user",
+      emailAddress,
+    }),
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    console.error("[Drive Share Error]", errorData);
+    throw new Error(`Failed to share Drive file: ${res.status} ${res.statusText}`);
+  }
+}

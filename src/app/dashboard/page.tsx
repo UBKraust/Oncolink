@@ -10,6 +10,7 @@ import { UpcomingAppointments } from "@/components/dashboard/upcoming-appointmen
 import { CompliancePanel } from "@/components/compliance/CompliancePanel";
 import { FinancialSummary } from "@/components/dashboard/financial-summary";
 import { VaultStatusWidget } from "@/components/dashboard/vault-status-widget";
+import { RealtimeDashboard } from "@/components/dashboard/realtime-dashboard";
 import { Button } from "@/components/ui/button";
 import {
   getDashboardStats,
@@ -33,6 +34,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 pb-10">
+      <RealtimeDashboard />
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">

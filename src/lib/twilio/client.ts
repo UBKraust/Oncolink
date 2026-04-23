@@ -114,3 +114,15 @@ export function travelReminderMsg(
     `_Ce\`ai Pățit? — calendar intern_`
   );
 }
+
+export function onboardingLinkMsg(
+  clientName: string,
+  onboardingLink: string,
+): string {
+  return (
+    `Bună ziua, ${clientName}!\n\n` +
+    `Te rugăm să completezi formularul de înrolare (GDPR și date administrative) accesând link-ul de mai jos:\n\n` +
+    `🔗 ${onboardingLink}\n\n` +
+    `Îți mulțumim! 😊\n\n_Cabinet psihoterapie Ce\`ai Pățit?_`
+  );
+}

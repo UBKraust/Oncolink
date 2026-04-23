@@ -38,7 +38,7 @@ export async function submitMinorOnboarding(data: OnboardingData, files?: { cust
 
   if (!therapistId) {
     const admin = createSupabaseServiceClient();
-    const { data: first } = await admin
+    const { data: first } = await (admin as any)
       .from("therapist_settings")
       .select("therapist_id")
       .limit(1)

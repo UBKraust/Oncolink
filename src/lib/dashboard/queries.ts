@@ -60,20 +60,24 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   const totalHours = Math.round(totalMinutes / 60);
 
   // 5. Pending Minor Reviews
-  const { count: pendingMinorReviews } = await supabase
+  const { count: pendingMinorReviews, error: minorError } = await supabase
     .from("clients")
     .select("*", { count: "exact", head: true })
     .eq("is_minor", true)
-    .eq("needs_review", true); // Assuming this column exists based on context
+    .eq("needs_legal_review", true);
+
+  if (minorError) console.error("Error fetching pending minor reviews:", minorError);
 
   // 6. Demographics
-  const { data: clients } = await supabase
+  const { data: clients, error: demographicsError } = await supabase
     .from("clients")
-    .select("is_minor, is_b2b, cabinet_id");
+    .select("is_minor, billing_type, company_name");
+  
+  if (demographicsError) console.error("Error fetching demographics:", demographicsError);
   
   const minorPatients = clients?.filter(c => c.is_minor).length || 0;
   const adultPatients = (clients?.length || 0) - minorPatients;
-  const b2bPatients = clients?.filter(c => c.is_b2b).length || 0;
+  const b2bPatients = clients?.filter(c => c.billing_type === "COMPANY" || c.company_name).length || 0;
 
   // 7. Vault Stats
   const { count: vaultTotalDocs } = await supabase
@@ -87,12 +91,12 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     appointmentsToday: appointmentsToday || 0,
     totalHours,
     pendingMinorReviews: pendingMinorReviews || 0,
-    privatePatients: clients?.filter(c => !c.cabinet_id).length || 0, // Placeholder logic
-    clinicPatients: clients?.filter(c => c.cabinet_id).length || 0,
+    privatePatients: clients?.filter(c => c.billing_type !== "COMPANY").length || 0,
+    clinicPatients: 0, // We don't have cabinet_id column yet
     minorPatients,
     adultPatients,
     b2bPatients,
-    vaultAlertsCount: 0, // Placeholder
+    vaultAlertsCount: 0, 
     vaultTotalDocs: vaultTotalDocs || 0,
   };
 }

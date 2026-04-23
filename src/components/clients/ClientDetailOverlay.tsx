@@ -28,7 +28,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { initialsFromName } from "@/lib/clients/validation";
 import { cn } from "@/lib/utils";
-import { scheduleAnonymization, cancelAnonymization } from "@/app/dashboard/clients/actions";
+import { scheduleAnonymization, cancelAnonymization, sendOnboardingNotification } from "@/app/dashboard/clients/actions";
 import { toast } from "@/components/ui/toast";
 import { 
   AlertDialog,
@@ -50,6 +50,7 @@ interface ClientDetailOverlayProps {
 export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [isPending, setIsPending] = useState(false);
+  const [isNotifying, setIsNotifying] = useState(false);
   const [overrideScheduledAt, setOverrideScheduledAt] = useState<Date | null>(null);
 
   useEffect(() => {
@@ -105,6 +106,27 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
       toast.success("Mod Demo: Datele au fost recuperate.");
     } else {
       toast.error("Eroare: " + res?.error);
+    }
+  }
+
+  async function handleSendOnboarding() {
+    if (!client.phone) {
+      toast.error("Clientul nu are un număr de telefon valid.");
+      return;
+    }
+    
+    setIsNotifying(true);
+    try {
+      const res = await sendOnboardingNotification(client.id, client.full_name, client.phone);
+      if (res.success) {
+        toast.success("Link-ul de onboarding a fost trimis pe WhatsApp.");
+      } else {
+        toast.error("Eroare la trimitere: " + res.error);
+      }
+    } catch (err) {
+      toast.error("Eroare neașteptată la trimitere.");
+    } finally {
+      setIsNotifying(false);
     }
   }
 
@@ -297,8 +319,13 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
                        </div>
                     </div>
                     {!client.gdpr_consent_signed && (
-                      <Button size="sm" className="bg-rose-600 hover:bg-rose-700 text-[10px] h-8 rounded-full font-black uppercase px-4 shadow-xl shadow-rose-200">
-                        Trimite Link
+                      <Button 
+                        size="sm" 
+                        onClick={handleSendOnboarding}
+                        disabled={isNotifying}
+                        className="bg-rose-600 hover:bg-rose-700 text-[10px] h-8 rounded-full font-black uppercase px-4 shadow-xl shadow-rose-200"
+                      >
+                        {isNotifying ? "Se trimite..." : "Trimite Link"}
                       </Button>
                     )}
                  </div>
@@ -358,7 +385,7 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
         <div className="p-6 bg-slate-50/80 backdrop-blur-sm border-t shrink-0 flex items-center justify-between gap-4 rounded-t-3xl shadow-lg border-slate-100">
            {!anonymized && !showScheduledAlert ? (
              <AlertDialog>
-               <AlertDialogTrigger asChild>
+               <AlertDialogTrigger>
                  <Button variant="outline" className="flex-1 rounded-2xl border-slate-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 font-bold">
                     <ShieldAlert className="h-4 w-4 mr-2" /> Anonimizare
                  </Button>

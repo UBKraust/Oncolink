@@ -12,6 +12,8 @@ import {
   isValidRomanianPhone,
   validateCnpCif,
 } from "@/lib/clients/validation";
+import { shareFile } from "@/lib/google/drive";
+import { sendMessage, onboardingLinkMsg } from "@/lib/twilio/client";
 import type { ClientFormState } from "@/lib/clients/form-state";
 
 function parseForm(formData: FormData) {
@@ -291,5 +293,52 @@ export async function uploadClientDocument(clientId: string, folderId: string, f
   } catch (err) {
     console.error("[Drive Upload Error]", err);
     return { error: err instanceof Error ? err.message : "Eroare la încărcare." };
+  }
+}
+
+export async function sendOnboardingNotification(clientId: string, clientName: string, phone: string) {
+  if (!phone) return { error: "Clientul nu are număr de telefon setat." };
+
+  try {
+    const supabase = await createSupabaseServerClient();
+    
+    // 1. Fetch latest client data for email and contract_url
+    const { data: client } = await supabase
+      .from("clients")
+      .select("email, contract_url")
+      .eq("id", clientId)
+      .single();
+
+    // 2. Share Drive folder if email exists
+    if (client?.email && client?.contract_url?.includes("folders/")) {
+      try {
+        const folderId = client.contract_url.split("folders/")[1]?.split("?")[0];
+        if (folderId) {
+          const accessToken = await getValidAccessToken();
+          if (accessToken) {
+            await shareFile(accessToken, folderId, client.email, "writer");
+          }
+        }
+      } catch (shareErr) {
+        console.warn("[Onboarding] Folder sharing failed:", shareErr);
+        // We continue even if sharing fails, as the link notification is primary
+      }
+    }
+
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://oncolink.cepaipatit.ro";
+    const onboardingLink = `${baseUrl}/onboarding/${clientId}`;
+    
+    const message = onboardingLinkMsg(clientName, onboardingLink);
+    
+    await sendMessage({
+      to: phone,
+      body: message,
+      channel: "whatsapp"
+    });
+
+    return { success: true };
+  } catch (err) {
+    console.error("[Onboarding Notification Error]", err);
+    return { error: err instanceof Error ? err.message : "Eroare la trimiterea notificării." };
   }
 }

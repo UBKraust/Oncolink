@@ -4,8 +4,23 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 
-const AlertDialog = ({ children }: { children: React.ReactNode }) => {
-  const [open, setOpen] = React.useState(false);
+const AlertDialog = ({ 
+  children, 
+  open: controlledOpen, 
+  onOpenChange 
+}: { 
+  children: React.ReactNode, 
+  open?: boolean, 
+  onOpenChange?: (open: boolean) => void 
+}) => {
+  const [uncontrolledOpen, setUncontrolledOpen] = React.useState(false);
+  
+  const open = controlledOpen ?? uncontrolledOpen;
+  const setOpen = (newOpen: boolean) => {
+    if (controlledOpen === undefined) setUncontrolledOpen(newOpen);
+    onOpenChange?.(newOpen);
+  };
+
   return (
     <AlertDialogContext.Provider value={{ open, setOpen }}>
       {children}
@@ -24,9 +39,9 @@ const useAlertDialog = () => {
   return context;
 };
 
-const AlertDialogTrigger = ({ children, asChild }: { children: React.ReactNode, asChild?: boolean }) => {
+const AlertDialogTrigger = ({ children }: { children: React.ReactNode }) => {
   const { setOpen } = useAlertDialog();
-  return React.cloneElement(children as React.ReactElement, {
+  return React.cloneElement(children as React.ReactElement<{ onClick?: React.MouseEventHandler }>, {
     onClick: () => setOpen(true),
   });
 };

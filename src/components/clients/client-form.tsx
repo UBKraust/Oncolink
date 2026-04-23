@@ -1,12 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useActionState, useState, useEffect } from "react";
+import { CheckCircle2, Copy, ExternalLink, UserPlus, FileCheck, ShieldAlert, ArrowRight } from "lucide-react";
+import { toast } from "@/components/ui/toast";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 import type { ClientFormState } from "@/lib/clients/form-state";
 
 type Defaults = Partial<{
@@ -41,227 +52,318 @@ export function ClientForm({ action, defaults = {}, submitLabel, cancelHref }: C
   const [state, formAction, pending] = useActionState(action, initialState);
   const [isMinor, setIsMinor] = useState(defaults.is_minor ?? false);
   const [billingType, setBillingType] = useState(defaults.billing_type ?? "INDIVIDUAL");
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  useEffect(() => {
+    if (state.success && state.clientId) {
+      setShowSuccess(true);
+    }
+  }, [state.success, state.clientId]);
+
+  const copyOnboardingLink = () => {
+    if (typeof window === "undefined" || !state.clientId) return;
+    const url = `${window.location.origin}/onboarding/${state.clientId}`;
+    navigator.clipboard.writeText(url);
+    toast.success("Link copiat în clipboard!");
+  };
 
   return (
-    <form action={formAction} className="space-y-6">
-      {state.error ? (
-        <div className="rounded-md border border-rose-300 bg-rose-50 p-3 text-sm text-rose-900 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">
-          {state.error}
-        </div>
-      ) : null}
-
-      <div className="grid gap-5 md:grid-cols-2">
-        <Field
-          label="Nume complet"
-          name="full_name"
-          required
-          defaultValue={defaults.full_name}
-          error={state.fieldErrors.full_name}
-        />
-        <Field
-          label="Email"
-          name="email"
-          type="email"
-          required
-          defaultValue={defaults.email}
-          error={state.fieldErrors.email}
-        />
-        <Field
-          label="Telefon"
-          name="phone"
-          placeholder="+40722111222"
-          defaultValue={defaults.phone}
-          error={state.fieldErrors.phone}
-        />
-        <Field
-          label="CNP / CIF"
-          name="cnp_cif"
-          hint="Necesar pentru e-Factura SmartBill."
-          defaultValue={defaults.cnp_cif}
-          error={state.fieldErrors.cnp_cif}
-        />
-      </div>
-
-      <div className="space-y-1.5">
-        <Label htmlFor="address">Adresă</Label>
-        <Textarea
-          id="address"
-          name="address"
-          rows={3}
-          defaultValue={defaults.address ?? ""}
-        />
-        {state.fieldErrors.address ? (
-          <p className="text-xs text-rose-600">{state.fieldErrors.address}</p>
+    <>
+      <form action={formAction} className="space-y-6">
+        {state.error ? (
+          <div className="rounded-md border border-rose-300 bg-rose-50 p-3 text-sm text-rose-900 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">
+            {state.error}
+          </div>
         ) : null}
-      </div>
 
-      <div className="grid gap-5 md:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label htmlFor="location">Locație</Label>
-          <select
-            id="location"
-            name="location"
-            defaultValue={defaults.location ?? "CABINET_PARTICULAR"}
-            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <option value="CABINET_PARTICULAR">Cabinet Particular</option>
-            <option value="CLINICA">Clinică</option>
-          </select>
+        <div className="grid gap-5 md:grid-cols-2">
+          <Field
+            label="Nume complet"
+            name="full_name"
+            required
+            defaultValue={defaults.full_name}
+            error={state.fieldErrors.full_name}
+          />
+          <Field
+            label="Email"
+            name="email"
+            type="email"
+            required
+            defaultValue={defaults.email}
+            error={state.fieldErrors.email}
+          />
+          <Field
+            label="Telefon"
+            name="phone"
+            placeholder="+40722111222"
+            defaultValue={defaults.phone}
+            error={state.fieldErrors.phone}
+          />
+          <Field
+            label="CNP / CIF"
+            name="cnp_cif"
+            hint="Necesar pentru e-Factura SmartBill."
+            defaultValue={defaults.cnp_cif}
+            error={state.fieldErrors.cnp_cif}
+          />
         </div>
 
-        <Field
-          label="Preț ședință (RON)"
-          name="session_price"
-          type="number"
-          placeholder="ex. 250"
-          defaultValue={defaults.session_price}
-          error={state.fieldErrors.session_price}
-          hint="Opțional. Poate fi definit și la programare."
-        />
-      </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="address">Adresă</Label>
+          <Textarea
+            id="address"
+            name="address"
+            rows={3}
+            defaultValue={defaults.address ?? ""}
+          />
+          {state.fieldErrors.address ? (
+            <p className="text-xs text-rose-600">{state.fieldErrors.address}</p>
+          ) : null}
+        </div>
 
-      <div className="space-y-4 rounded-md border p-4 bg-muted/20">
-        <h3 className="text-sm font-medium">Demografice & Facturare</h3>
-        
         <div className="grid gap-5 md:grid-cols-2">
-          {/* Minor Status */}
-          <div className="space-y-4">
-            <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
-              <input
-                type="checkbox"
-                name="is_minor"
-                className="h-4 w-4 rounded border-input"
-                checked={isMinor}
-                onChange={(e) => setIsMinor(e.target.checked)}
-              />
-              Pacientul este minor (sub 18 ani)
-            </label>
+          <div className="space-y-1.5">
+            <Label htmlFor="location">Locație</Label>
+            <select
+              id="location"
+              name="location"
+              defaultValue={defaults.location ?? "CABINET_PARTICULAR"}
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <option value="CABINET_PARTICULAR">Cabinet Particular</option>
+              <option value="CLINICA">Clinică</option>
+            </select>
+          </div>
+
+          <Field
+            label="Preț ședință (RON)"
+            name="session_price"
+            type="number"
+            placeholder="ex. 250"
+            defaultValue={defaults.session_price}
+            error={state.fieldErrors.session_price}
+            hint="Opțional. Poate fi definit și la programare."
+          />
+        </div>
+
+        <div className="space-y-4 rounded-md border p-4 bg-muted/20">
+          <h3 className="text-sm font-medium">Demografice & Facturare</h3>
+          
+          <div className="grid gap-5 md:grid-cols-2">
+            <div className="space-y-4">
+              <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="is_minor"
+                  className="h-4 w-4 rounded border-input"
+                  checked={isMinor}
+                  onChange={(e) => setIsMinor(e.target.checked)}
+                />
+                Pacientul este minor (sub 18 ani)
+              </label>
+
+              {isMinor && (
+                <div className="space-y-4 rounded bg-background p-3 border">
+                  <Field
+                    label="Nume Părinte / Tutore"
+                    name="parent_name"
+                    required
+                    defaultValue={defaults.parent_name}
+                    error={state.fieldErrors.parent_name}
+                  />
+                  <Field
+                    label="Telefon Părinte"
+                    name="parent_phone"
+                    required
+                    defaultValue={defaults.parent_phone}
+                    error={state.fieldErrors.parent_phone}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label>Tip Facturare</Label>
+                <select
+                  name="billing_type"
+                  value={billingType}
+                  onChange={(e) => setBillingType(e.target.value)}
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="INDIVIDUAL">Individual (Persoană Fizică)</option>
+                  <option value="B2B_COMPANY">B2B (Decontare pe Firmă)</option>
+                </select>
+              </div>
+
+              {billingType === "B2B_COMPANY" && (
+                <div className="space-y-4 rounded bg-background p-3 border">
+                  <Field
+                    label="Nume Companie (Plătitor)"
+                    name="company_name"
+                    required
+                    defaultValue={defaults.company_name}
+                    error={state.fieldErrors.company_name}
+                    hint="Firma va achita direct ședințele sau va oferi un buget."
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-5 border-t pt-5">
+            <h4 className="mb-4 text-sm font-medium">Frecvență & Raportare</h4>
+            <div className="grid gap-5 md:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label>Frecvență Ședințe</Label>
+                <select
+                  name="session_frequency"
+                  defaultValue={defaults.session_frequency ?? "SAPTAMANAL"}
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="SAPTAMANAL">Săptămânal</option>
+                  <option value="BILUNAR">Bilunar (O dată la 2 săptămâni)</option>
+                  <option value="LUNAR">Lunar</option>
+                  <option value="OCAZIONAL">Ocazional (La cerere)</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Generare Raport Evaluare</Label>
+                <select
+                  name="report_frequency"
+                  defaultValue={defaults.report_frequency ?? "NICIODATA"}
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="LUNAR">Lunar</option>
+                  <option value="LA_CERERE">Doar la cerere</option>
+                  <option value="NICIODATA">Niciodată</option>
+                </select>
+              </div>
+            </div>
 
             {isMinor && (
-              <div className="space-y-4 rounded bg-background p-3 border">
-                <Field
-                  label="Nume Părinte / Tutore"
-                  name="parent_name"
-                  required
-                  defaultValue={defaults.parent_name}
-                  error={state.fieldErrors.parent_name}
+              <label className="mt-4 flex items-start gap-3 rounded-md border border-primary/20 bg-primary/5 p-3 text-sm">
+                <input
+                  type="checkbox"
+                  name="send_report_to_parent"
+                  defaultChecked={defaults.send_report_to_parent ?? false}
+                  className="mt-0.5 h-4 w-4 rounded border-input"
                 />
-                <Field
-                  label="Telefon Părinte"
-                  name="parent_phone"
-                  required
-                  defaultValue={defaults.parent_phone}
-                  error={state.fieldErrors.parent_phone}
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Billing Type */}
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <Label>Tip Facturare</Label>
-              <select
-                name="billing_type"
-                value={billingType}
-                onChange={(e) => setBillingType(e.target.value)}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <option value="INDIVIDUAL">Individual (Persoană Fizică)</option>
-                <option value="B2B_COMPANY">B2B (Decontare pe Firmă)</option>
-              </select>
-            </div>
-
-            {billingType === "B2B_COMPANY" && (
-              <div className="space-y-4 rounded bg-background p-3 border">
-                <Field
-                  label="Nume Companie (Plătitor)"
-                  name="company_name"
-                  required
-                  defaultValue={defaults.company_name}
-                  error={state.fieldErrors.company_name}
-                  hint="Firma va achita direct ședințele sau va oferi un buget."
-                />
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="mt-5 border-t pt-5">
-          <h4 className="mb-4 text-sm font-medium">Frecvență & Raportare</h4>
-          <div className="grid gap-5 md:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label>Frecvență Ședințe</Label>
-              <select
-                name="session_frequency"
-                defaultValue={defaults.session_frequency ?? "SAPTAMANAL"}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <option value="SAPTAMANAL">Săptămânal</option>
-                <option value="BILUNAR">Bilunar (O dată la 2 săptămâni)</option>
-                <option value="LUNAR">Lunar</option>
-                <option value="OCAZIONAL">Ocazional (La cerere)</option>
-              </select>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label>Generare Raport Evaluare</Label>
-              <select
-                name="report_frequency"
-                defaultValue={defaults.report_frequency ?? "NICIODATA"}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <option value="LUNAR">Lunar</option>
-                <option value="LA_CERERE">Doar la cerere</option>
-                <option value="NICIODATA">Niciodată</option>
-              </select>
-            </div>
-          </div>
-
-          {isMinor && (
-            <label className="mt-4 flex items-start gap-3 rounded-md border border-primary/20 bg-primary/5 p-3 text-sm">
-              <input
-                type="checkbox"
-                name="send_report_to_parent"
-                defaultChecked={defaults.send_report_to_parent ?? false}
-                className="mt-0.5 h-4 w-4 rounded border-input"
-              />
-              <span>
-                <span className="font-medium">Trimite Raport Lunar Părintelui</span>
-                <span className="mt-0.5 block text-xs text-muted-foreground">
-                  Dacă e bifat, părintele va primi un email cu raportul și evoluția scorului, conform frecvenței de raportare alese.
+                <span>
+                  <span className="font-medium">Trimite Raport Lunar Părintelui</span>
+                  <span className="mt-0.5 block text-xs text-muted-foreground">
+                    Dacă e bifat, părintele va primi un email cu raportul și evoluția scorului, conform frecvenței de raportare alese.
+                  </span>
                 </span>
-              </span>
-            </label>
-          )}
+              </label>
+            )}
+          </div>
         </div>
-      </div>
 
-      <label className="flex items-start gap-3 rounded-md border bg-muted/40 p-3 text-sm">
-        <input
-          type="checkbox"
-          name="gdpr_consent_signed"
-          defaultChecked={defaults.gdpr_consent_signed ?? false}
-          className="mt-0.5 h-4 w-4 rounded border-input"
-        />
-        <span>
-          <span className="font-medium">Consimțământ GDPR semnat</span>
-          <span className="mt-0.5 block text-xs text-muted-foreground">
-            Bifează doar după ce clientul a semnat formularul. Textul PDF poate fi
-            generat din fișă.
+        <label className="flex items-start gap-3 rounded-md border bg-muted/40 p-3 text-sm">
+          <input
+            type="checkbox"
+            name="gdpr_consent_signed"
+            defaultChecked={defaults.gdpr_consent_signed ?? false}
+            className="mt-0.5 h-4 w-4 rounded border-input"
+          />
+          <span>
+            <span className="font-medium">Consimțământ GDPR semnat</span>
+            <span className="mt-0.5 block text-xs text-muted-foreground">
+              Bifează doar după ce clientul a semnat formularul. Textul PDF poate fi
+              generat din fișă.
+            </span>
           </span>
-        </span>
-      </label>
+        </label>
 
-      <div className="flex items-center justify-end gap-3 border-t pt-5">
-        <Button type="button" variant="outline" asChild>
-          <Link href={cancelHref}>Anulează</Link>
-        </Button>
-        <Button type="submit" disabled={pending}>
-          {pending ? "Se salvează…" : submitLabel}
-        </Button>
-      </div>
-    </form>
+        <div className="flex items-center justify-end gap-3 border-t pt-5">
+          <Button type="button" variant="outline" asChild>
+            <Link href={cancelHref}>Anulează</Link>
+          </Button>
+          <Button type="submit" disabled={pending}>
+            {pending ? "Se salvează…" : submitLabel}
+          </Button>
+        </div>
+      </form>
+
+      {/* Success Modal */}
+      <AlertDialog open={showSuccess} onOpenChange={setShowSuccess}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <div className="mx-auto w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-500 mb-4 animate-in zoom-in-50 duration-500">
+              <CheckCircle2 className="h-10 w-10" />
+            </div>
+            <AlertDialogTitle className="text-center text-2xl font-black">Client salvat!</AlertDialogTitle>
+            <AlertDialogDescription className="text-center mt-2">
+              Fișa pacientului a fost actualizată cu succes în baza de date.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="p-6 pt-0 space-y-4">
+            <div className="rounded-2xl border bg-slate-50 p-4 space-y-3">
+              <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">Verificări & Status</h4>
+              
+              <div className="flex items-center gap-3 text-sm">
+                <FileCheck className="h-4 w-4 text-emerald-500" />
+                <span className="text-slate-700">Date de identificare salvate</span>
+              </div>
+
+              {!defaults.gdpr_consent_signed && (
+                <div className="flex items-center gap-3 text-sm">
+                  <ShieldAlert className="h-4 w-4 text-amber-500" />
+                  <span className="text-slate-700">Lipsă semnătură GDPR</span>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Button 
+                variant="outline" 
+                className="w-full justify-start h-12 px-4 rounded-xl gap-3 border-slate-200 hover:bg-primary/5 hover:border-primary/30 transition-all"
+                onClick={copyOnboardingLink}
+              >
+                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                  <Copy className="h-4 w-4" />
+                </div>
+                <div className="text-left">
+                  <p className="text-xs font-bold leading-none">Copiază Link Onboarding</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">Trimite link-ul pentru completare date</p>
+                </div>
+              </Button>
+
+              <Button 
+                asChild
+                className="w-full justify-start h-12 px-4 rounded-xl gap-3 bg-primary text-white shadow-lg shadow-primary/20 hover:shadow-xl transition-all"
+              >
+                <Link href={`/dashboard/clients/${state.clientId}`}>
+                  <div className="h-8 w-8 rounded-lg bg-white/20 flex items-center justify-center">
+                    <ExternalLink className="h-4 w-4" />
+                  </div>
+                  <div className="text-left flex-1">
+                    <p className="text-xs font-bold leading-none">Vezi Fișa Clientului</p>
+                    <p className="text-[10px] text-white/70 mt-1">Accesează dosarul complet</p>
+                  </div>
+                  <ArrowRight className="h-4 w-4 opacity-50" />
+                </Link>
+              </Button>
+
+              <Button 
+                variant="ghost" 
+                className="w-full justify-center h-10 text-xs font-bold gap-2"
+                onClick={() => {
+                  setShowSuccess(false);
+                  window.location.href = "/dashboard/clients/new";
+                }}
+              >
+                <UserPlus className="h-4 w-4" />
+                Adaugă un alt client
+              </Button>
+            </div>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 

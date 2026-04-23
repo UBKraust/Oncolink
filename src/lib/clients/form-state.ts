@@ -14,8 +14,13 @@ export interface ClientFormState {
       | "session_price"
       | "session_frequency"
       | "report_frequency"
-      | "send_report_to_parent",
+      | "send_report_to_parent"
+      | "company_representative_name"
+      | "company_representative_role"
+      | "company_reg_com",
       string
     >
   >;
+  success?: boolean;
+  clientId?: string;
 }

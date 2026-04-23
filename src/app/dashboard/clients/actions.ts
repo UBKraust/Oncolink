@@ -84,14 +84,15 @@ export async function createClient(
   const validation = validate(payload);
   if (validation.error) return validation;
 
-  if (!isSupabaseConfigured()) {
-    return {
-      error: "Mod demo: configurează Supabase pentru a salva clienții.",
-      fieldErrors: {},
-    };
-  }
 
   const supabase = await createSupabaseServerClient();
+  const { data: authData } = await supabase.auth.getUser();
+  const user = authData.user;
+
+  if (!user) {
+    return { error: "Sesiune neautorizată. Te rugăm să te autentifici din nou.", fieldErrors: {} };
+  }
+
   const { data, error } = await supabase
     .from("clients")
     .insert({
@@ -114,6 +115,7 @@ export async function createClient(
       company_representative_name: payload.company_representative_name,
       company_representative_role: payload.company_representative_role,
       company_reg_com: payload.company_reg_com,
+      therapist_id: user.id, // Explicitly set to pass RLS
     })
     .select("id")
     .single();
@@ -143,7 +145,7 @@ export async function createClient(
   })();
 
   revalidatePath("/dashboard/clients");
-  redirect(`/dashboard/clients/${data.id}`);
+  return { success: true, clientId: data.id, error: null, fieldErrors: {} };
 }
 
 export async function updateClient(
@@ -155,14 +157,12 @@ export async function updateClient(
   const validation = validate(payload);
   if (validation.error) return validation;
 
-  if (!isSupabaseConfigured()) {
-    return {
-      error: "Mod demo: configurează Supabase pentru a salva modificările.",
-      fieldErrors: {},
-    };
+  const supabase = await createSupabaseServerClient();
+  const { data: authData } = await supabase.auth.getUser();
+  if (!authData.user) {
+    return { error: "Sesiune neautorizată. Te rugăm să te autentifici din nou.", fieldErrors: {} };
   }
 
-  const supabase = await createSupabaseServerClient();
   const { error } = await supabase
     .from("clients")
     .update({
@@ -192,13 +192,10 @@ export async function updateClient(
 
   revalidatePath(`/dashboard/clients/${id}`);
   revalidatePath("/dashboard/clients");
-  redirect(`/dashboard/clients/${id}`);
+  return { success: true, clientId: id, error: null, fieldErrors: {} };
 }
 
 export async function scheduleAnonymization(id: string) {
-  if (!isSupabaseConfigured()) {
-    return { error: "Mod demo: configurati Supabase pentru a salva actiunile." };
-  }
 
   const supabase = await createSupabaseServerClient();
   const scheduledDate = new Date();
@@ -222,9 +219,6 @@ export async function scheduleAnonymization(id: string) {
 }
 
 export async function cancelAnonymization(id: string) {
-  if (!isSupabaseConfigured()) {
-    return { error: "Mod demo" };
-  }
 
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase
@@ -252,9 +246,6 @@ export async function anonymizeClient(id: string, formData: FormData) {
     redirect(`/dashboard/clients/${id}/anonymize?error=confirmation`);
   }
 
-  if (!isSupabaseConfigured()) {
-    redirect(`/dashboard/clients/${id}/anonymize?error=demo`);
-  }
 
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase

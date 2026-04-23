@@ -31,10 +31,6 @@ export interface OnboardingData {
 }
 
 export async function submitMinorOnboarding(data: OnboardingData, files?: { custody?: File }) {
-  if (!isSupabaseConfigured()) {
-    console.log("Demo Mode: Submitted minor onboarding", data);
-    return { success: true, id: "mock-minor-id" };
-  }
 
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -122,10 +118,6 @@ export async function submitMinorOnboarding(data: OnboardingData, files?: { cust
 }
 
 export async function submitClientOnboarding(data: OnboardingData) {
-  if (!isSupabaseConfigured()) {
-    console.log("Demo Mode: Submitted onboarding for", data.id, data);
-    return { success: true };
-  }
 
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase
@@ -152,11 +144,6 @@ export async function submitClientOnboarding(data: OnboardingData) {
 }
 
 export async function getClientForOnboarding(id: string) {
-  if (!isSupabaseConfigured()) {
-    const client = mockClients.find(c => c.id === id);
-    if (!client) return { error: "Client not found in mock data" };
-    return { data: client };
-  }
 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase

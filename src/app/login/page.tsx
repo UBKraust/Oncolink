@@ -40,18 +40,6 @@ export default async function LoginPage({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {!configured ? (
-            <div className="mb-4 rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-              Mod demo activ — Supabase nu este încă legat. Autentificarea va fi
-              activată după ce populezi <code>.env.local</code>. Poți deschide
-              oricum{" "}
-              <Link href="/dashboard" className="font-medium underline">
-                /dashboard
-              </Link>{" "}
-              pentru preview.
-            </div>
-          ) : null}
-
           {errorText ? (
             <div className="mb-4 rounded-md border border-rose-300 bg-rose-50 p-3 text-xs text-rose-900 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">
               {errorText}

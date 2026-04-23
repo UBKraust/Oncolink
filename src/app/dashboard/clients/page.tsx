@@ -79,12 +79,6 @@ export default async function ClientsPage() {
         ))}
       </div>
 
-      {!configured && (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-4 flex items-center gap-3 text-sm text-amber-800">
-          <AlertCircle className="h-5 w-5 shrink-0" />
-          <p className="font-medium">Mod demo: afișez date de mostră. Configurează Supabase pentru persistență.</p>
-        </div>
-      )}
 
       {/* Main Content Area */}
       <ClientsClient initialClients={clients} />

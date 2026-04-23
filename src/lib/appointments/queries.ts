@@ -1,7 +1,4 @@
-import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { mockAppointments } from "@/lib/mock/appointments";
-import { mockClients } from "@/lib/mock/clients";
 import type { AppointmentRow } from "@/lib/appointments/helpers";
 import type { ClientRow } from "@/lib/clients/queries";
 
@@ -21,32 +18,6 @@ export interface ListAppointmentsFilters {
 export async function listAppointments(
   filters: ListAppointmentsFilters = {},
 ): Promise<AppointmentWithClient[]> {
-  if (!isSupabaseConfigured()) {
-    let rows = [...mockAppointments].sort(
-      (a, b) =>
-        new Date(b.appointment_date).getTime() -
-        new Date(a.appointment_date).getTime(),
-    );
-
-    if (filters.status) rows = rows.filter((r) => r.status === filters.status);
-    if (filters.clientId)
-      rows = rows.filter((r) => r.client_id === filters.clientId);
-    if (filters.from)
-      rows = rows.filter(
-        (r) => new Date(r.appointment_date) >= new Date(filters.from!),
-      );
-    if (filters.to)
-      rows = rows.filter(
-        (r) => new Date(r.appointment_date) <= new Date(filters.to!),
-      );
-
-    return rows.map((r) => ({
-      ...r,
-      client:
-        mockClients.find((c) => c.id === r.client_id) ?? null,
-    })) as AppointmentWithClient[];
-  }
-
   const supabase = await createSupabaseServerClient();
   let query = supabase
     .from("appointments")
@@ -67,16 +38,6 @@ export async function listAppointments(
 export async function getAppointment(
   id: string,
 ): Promise<AppointmentWithClient | null> {
-  if (!isSupabaseConfigured()) {
-    const row = mockAppointments.find((a) => a.id === id);
-    if (!row) return null;
-    return {
-      ...row,
-      client:
-        mockClients.find((c) => c.id === row.client_id) ?? null,
-    } as AppointmentWithClient;
-  }
-
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("appointments")
@@ -86,4 +47,27 @@ export async function getAppointment(
 
   if (error) throw new Error(error.message);
   return data as unknown as AppointmentWithClient | null;
+}
+
+export async function listCasAppointments() {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("appointments")
+    .select("*, clients(full_name, cnp_cif)")
+    .eq("is_cas_subsidized", true)
+    .order("appointment_date", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return (data || []).map(a => ({
+    id: a.id,
+    client_id: a.client_id,
+    client_name: (a.clients as any)?.full_name || "Necunoscut",
+    cnp: (a.clients as any)?.cnp_cif || "---",
+    appointment_date: a.appointment_date,
+    diagnosis_code_cim10: a.diagnosis_code_cim10,
+    diagnosis_label: "Diagnostic CAS",
+    referral_number: a.referral_number,
+    referral_date: a.referral_date,
+    referring_doctor_code: a.referring_doctor_code,
+  }));
 }

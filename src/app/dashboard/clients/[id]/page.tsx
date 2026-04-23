@@ -1,11 +1,9 @@
 import { notFound } from "next/navigation";
-import { mockAssessments } from "@/lib/mock/assessments";
-import { mockPayments } from "@/lib/mock/payments";
-import { mockPatientDocuments, mockMedication } from "@/lib/mock/patientFiles";
 import { listCrisisNotes } from "@/app/dashboard/clients/crisis-notes-actions";
 import { getClient } from "@/lib/clients/queries";
 import { listAppointments } from "@/lib/appointments/queries";
 import { ClientDashboardUI } from "@/components/clients/ClientDashboardUI";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export default async function ClientDetailPage({
   params,
@@ -28,13 +26,29 @@ export default async function ClientDetailPage({
   const client = await getClient(id);
   if (!client) notFound();
 
+  const supabase = await createSupabaseServerClient();
   const anonymized = Boolean(client.notes_anonymized_at);
-  const assessments = mockAssessments.filter((a) => a.client_id === id);
-  const payments = mockPayments.filter((p) => p.client_id === id);
-  const clientDocs = mockPatientDocuments.filter((d) => d.client_id === id);
-  const clientMeds = mockMedication.filter((m) => m.client_id === id);
+
+  // Fetch real data from Supabase
+  const [
+    { data: assessmentsData },
+    { data: paymentsData },
+    { data: docsData },
+    { data: medsData },
+    crisisNotes
+  ] = await Promise.all([
+    supabase.from("client_assessments").select("*").eq("client_id", id),
+    supabase.from("invoices").select("*").eq("appointment_id", id), // appointment_id or client_id? invoices table has appointment_id
+    supabase.from("patient_documents").select("*").eq("client_id", id),
+    supabase.from("patient_medication").select("*").eq("client_id", id),
+    anonymized ? Promise.resolve([]) : listCrisisNotes(id)
+  ]);
+
+  const assessments = (assessmentsData || []) as any[];
+  const payments = (paymentsData || []) as any[];
+  const clientDocs = (docsData || []) as any[];
+  const clientMeds = (medsData || []) as any[];
   const isMinor = (client as any).is_minor ?? false;
-  const crisisNotes = anonymized ? [] : await listCrisisNotes(id);
   const appointments = await listAppointments({ clientId: id });
 
   const aiClientContext = {

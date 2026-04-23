@@ -16,7 +16,7 @@ import { signInWithPassword } from "./actions";
 
 const errorMessages: Record<string, string> = {
   not_configured:
-    "Supabase nu este configurat. Completează .env.local cu NEXT_PUBLIC_SUPABASE_URL și ANON_KEY.",
+    "Supabase nu este configurat. Completează .env.local cu NEXT_PUBLIC_SUPABASE_URL și PUBLISHABLE_KEY.",
   missing_fields: "Introdu email și parolă.",
 };
 

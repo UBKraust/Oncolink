@@ -5,6 +5,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getAvailableSlots } from "@/lib/availability/engine";
 import type { AppointmentRow } from "@/lib/appointments/helpers";
+import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
 /**
  * GET  /api/book          — returns available slots for the next 14 days
@@ -19,9 +20,29 @@ export async function GET(): Promise<NextResponse> {
   }
 
   const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  let therapistId: string | null = user?.id || null;
+
+  // Fallback for public: find the first therapist (single-tenant MVP mode)
+  if (!therapistId) {
+    const admin = createSupabaseServiceClient();
+    const { data: first } = await admin
+      .from("therapist_settings")
+      .select("therapist_id")
+      .limit(1)
+      .maybeSingle();
+    therapistId = first?.therapist_id || null;
+  }
+
+  if (!therapistId) {
+    return NextResponse.json({ slots: [] });
+  }
+
   const { data } = await supabase
     .from("appointments")
     .select("*")
+    .eq("therapist_id", therapistId)
     .gte(
       "appointment_date",
       new Date(Date.now() - 86_400_000).toISOString(),
@@ -69,11 +90,28 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  let therapistId: string | null = user?.id || null;
+
+  if (!therapistId) {
+    const admin = createSupabaseServiceClient();
+    const { data: first } = await admin
+      .from("therapist_settings")
+      .select("therapist_id")
+      .limit(1)
+      .maybeSingle();
+    therapistId = first?.therapist_id || null;
+  }
+
+  if (!therapistId) {
+    return NextResponse.json({ error: "Nu am găsit niciun terapeut configurat." }, { status: 500 });
+  }
 
   // Check slot is still free
   const { data: conflicts } = await supabase
     .from("appointments")
     .select("id")
+    .eq("therapist_id", therapistId)
     .gte("appointment_date", new Date(start.getTime() - 60 * 60_000).toISOString())
     .lte("appointment_date", new Date(start.getTime() + 60 * 60_000).toISOString())
     .in("status", ["PROGRAMAT", "CONFIRMAT"]);
@@ -90,6 +128,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const { data: existing } = await supabase
     .from("clients")
     .select("id")
+    .eq("therapist_id", therapistId)
     .eq("email", email)
     .maybeSingle();
 
@@ -102,7 +141,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   } else {
     const { data: created, error } = await supabase
       .from("clients")
-      .insert({ full_name, email, phone: phone ?? null, cnp_cif: cnp_cif ?? null, address: address ?? null })
+      .insert({ 
+        therapist_id: therapistId, 
+        full_name, 
+        email, 
+        phone: phone ?? null, 
+        cnp_cif: cnp_cif ?? null, 
+        address: address ?? null 
+      })
       .select("id")
       .single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -112,6 +158,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const { data: appt, error: apptError } = await supabase
     .from("appointments")
     .insert({
+      therapist_id: therapistId,
       client_id: clientId,
       appointment_date: start.toISOString(),
       duration_minutes: 50,

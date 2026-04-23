@@ -51,13 +51,16 @@ export async function getValidAccessToken(): Promise<string | null> {
   const refreshed = await refreshAccessToken(data.google_refresh_token);
   const newExpiry = new Date(Date.now() + refreshed.expires_in * 1000);
 
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
   await supabase
     .from("therapist_settings" as never)
     .update({
       google_access_token: refreshed.access_token,
       google_token_expires_at: newExpiry.toISOString(),
     } as never)
-    .eq("id" as never, 1 as never);
+    .eq("therapist_id" as never, user.id as never);
 
   return refreshed.access_token;
 }

@@ -1,6 +1,7 @@
 "use server";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { revalidatePath } from "next/cache";
 
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -36,11 +37,28 @@ export async function submitMinorOnboarding(data: OnboardingData, files?: { cust
   }
 
   const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  let therapistId: string | null = user?.id || null;
+
+  if (!therapistId) {
+    const admin = createSupabaseServiceClient();
+    const { data: first } = await admin
+      .from("therapist_settings")
+      .select("therapist_id")
+      .limit(1)
+      .maybeSingle();
+    therapistId = first?.therapist_id || null;
+  }
+
+  if (!therapistId) {
+    return { success: false, error: "Nu am găsit niciun terapeut configurat." };
+  }
 
   // 1. Create the client record
   const { data: newClient, error: clientError } = await (supabase as any)
     .from("clients")
     .insert({
+      therapist_id: therapistId,
       is_minor: true,
       full_name: data.full_name,
       parent_1_name: data.parent_1_name,
@@ -88,6 +106,7 @@ export async function submitMinorOnboarding(data: OnboardingData, files?: { cust
 
       // Create doc record
       await (supabase as any).from("patient_documents").insert({
+        therapist_id: therapistId,
         client_id: clientId,
         file_name: file.name,
         storage_path: filePath,

@@ -3,6 +3,7 @@ export const runtime = "edge";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { checkOverlap, OverlapError } from "@/lib/availability/overlapCheck";
 import { pushAppointmentToGoogle } from "@/lib/google/sync";
@@ -66,6 +67,22 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  let therapistId: string | null = user?.id || null;
+
+  if (!therapistId) {
+    const admin = createSupabaseServiceClient();
+    const { data: first } = await admin
+      .from("therapist_settings")
+      .select("therapist_id")
+      .limit(1)
+      .maybeSingle();
+    therapistId = first?.therapist_id || null;
+  }
+
+  if (!therapistId) {
+    return NextResponse.json({ error: "Nu am găsit niciun terapeut configurat." }, { status: 500 });
+  }
 
   // --- Step 3: Atomic client upsert + appointment insert ---
   // Upsert client (match by email or phone)
@@ -74,6 +91,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const { data: byEmail } = await supabase
     .from("clients")
     .select("id")
+    .eq("therapist_id", therapistId)
     .eq("email", payload.email)
     .maybeSingle();
 
@@ -81,6 +99,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     ? await supabase
         .from("clients")
         .select("id")
+        .eq("therapist_id", therapistId)
         .eq("phone", payload.phone)
         .maybeSingle()
     : { data: null };
@@ -102,6 +121,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const { data: created, error: clientError } = await supabase
       .from("clients")
       .insert({
+        therapist_id: therapistId,
         full_name: payload.full_name,
         email: payload.email,
         phone: payload.phone,
@@ -121,6 +141,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const { data: appt, error: apptError } = await supabase
     .from("appointments")
     .insert({
+      therapist_id: therapistId,
       client_id: clientId,
       appointment_date: new Date(startISO).toISOString(),
       duration_minutes: payload.duration_minutes,

@@ -20,14 +20,17 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     const expiresAt = new Date(Date.now() + tokens.expires_in * 1000);
 
     const supabase = await createSupabaseServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Unauthorized");
+
     await supabase.from("therapist_settings" as never).upsert(
       {
-        id: 1,
+        therapist_id: user.id,
         google_access_token: tokens.access_token,
         google_refresh_token: tokens.refresh_token ?? null,
         google_token_expires_at: expiresAt.toISOString(),
       } as never,
-      { onConflict: "id" },
+      { onConflict: "therapist_id" },
     );
   } catch {
     return NextResponse.redirect(

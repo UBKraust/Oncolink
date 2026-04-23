@@ -76,11 +76,14 @@ export async function getTherapistSettings(): Promise<TherapistSettings> {
   if (!isSupabaseConfigured()) return MOCK_SETTINGS;
 
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
   const { data } = await (supabase as any)
     .from("therapist_settings")
     .select("*")
-    .eq("id", 1)
-    .single();
+    .eq("therapist_id", user.id)
+    .maybeSingle();
 
   if (!data) return MOCK_SETTINGS;
 
@@ -114,9 +117,12 @@ export async function updateProfileSettings(data: {
   if (!isSupabaseConfigured()) return { success: true };
 
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Unauthorized" };
+
   const { error } = await (supabase as any)
     .from("therapist_settings")
-    .upsert({ id: 1, ...data, updated_at: new Date().toISOString() });
+    .upsert({ therapist_id: user.id, ...data, updated_at: new Date().toISOString() });
 
   if (error) return { success: false, error: error.message };
   return { success: true };
@@ -130,9 +136,12 @@ export async function updatePricingSettings(data: {
   if (!isSupabaseConfigured()) return { success: true };
 
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Unauthorized" };
+
   const { error } = await (supabase as any)
     .from("therapist_settings")
-    .upsert({ id: 1, ...data, updated_at: new Date().toISOString() });
+    .upsert({ therapist_id: user.id, ...data, updated_at: new Date().toISOString() });
 
   if (error) return { success: false, error: error.message };
   return { success: true };
@@ -144,9 +153,12 @@ export async function updateScheduleSettings(
   if (!isSupabaseConfigured()) return { success: true };
 
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Unauthorized" };
+
   const { error } = await (supabase as any)
     .from("therapist_settings")
-    .upsert({ id: 1, work_schedule, updated_at: new Date().toISOString() });
+    .upsert({ therapist_id: user.id, work_schedule, updated_at: new Date().toISOString() });
 
   if (error) return { success: false, error: error.message };
   return { success: true };
@@ -171,9 +183,12 @@ export async function updateIntegrationsSettings(data: {
   if (data.twilio_auth_token !== undefined) patch.twilio_auth_token = data.twilio_auth_token;
   if (data.twilio_phone_number !== undefined) patch.twilio_phone_number = data.twilio_phone_number;
 
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Unauthorized" };
+
   const { error } = await (supabase as any)
     .from("therapist_settings")
-    .upsert({ id: 1, ...patch });
+    .upsert({ therapist_id: user.id, ...patch });
 
   if (error) return { success: false, error: error.message };
   return { success: true };
@@ -187,9 +202,12 @@ export async function updateCasSettings(data: {
   if (!isSupabaseConfigured()) return { success: true };
 
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Unauthorized" };
+
   const { error } = await (supabase as any)
     .from("therapist_settings")
-    .upsert({ id: 1, ...data, updated_at: new Date().toISOString() });
+    .upsert({ therapist_id: user.id, ...data, updated_at: new Date().toISOString() });
 
   if (error) return { success: false, error: error.message };
   return { success: true };
@@ -202,11 +220,14 @@ export async function updatePinSettings(
   if (!isSupabaseConfigured()) return { success: true };
 
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Unauthorized" };
+
   const { data: row } = await (supabase as any)
     .from("therapist_settings")
     .select("clinical_notes_pin_hash")
-    .eq("id", 1)
-    .single();
+    .eq("therapist_id", user.id)
+    .maybeSingle();
 
   const currentHash = createHash("sha256").update(currentPin).digest("hex");
   if (row?.clinical_notes_pin_hash && row.clinical_notes_pin_hash !== currentHash) {
@@ -216,7 +237,7 @@ export async function updatePinSettings(
   const newHash = createHash("sha256").update(newPin).digest("hex");
   const { error } = await (supabase as any)
     .from("therapist_settings")
-    .upsert({ id: 1, clinical_notes_pin_hash: newHash, updated_at: new Date().toISOString() });
+    .upsert({ therapist_id: user.id, clinical_notes_pin_hash: newHash, updated_at: new Date().toISOString() });
 
   if (error) return { success: false, error: error.message };
   return { success: true };

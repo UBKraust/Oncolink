@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSignedObjectUrl } from "@/lib/storage/private-urls";
 
 export type VaultCategory =
   | "DIPLOME"
@@ -46,7 +47,19 @@ export async function listVaultDocuments(): Promise<VaultDoc[]> {
     .order("uploaded_at", { ascending: false });
 
   if (error) return [];
-  return (data ?? []) as VaultDoc[];
+
+  const docs = ((data ?? []) as VaultDoc[]);
+  return Promise.all(
+    docs.map(async (doc) => ({
+      ...doc,
+      file_url:
+        (await createSignedObjectUrl(
+          supabase,
+          "therapist-vault",
+          doc.file_path,
+        )) ?? doc.file_url,
+    })),
+  );
 }
 
 export async function uploadVaultDocument(
@@ -89,11 +102,8 @@ export async function uploadVaultDocument(
 
   if (storageError) return { ok: false, error: storageError.message };
 
-  const { data: urlData } = supabase.storage
-    .from("therapist-vault")
-    .getPublicUrl(filePath);
-
-  const fileUrl = urlData.publicUrl;
+  const fileUrl =
+    (await createSignedObjectUrl(supabase, "therapist-vault", filePath)) ?? "";
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: inserted, error: dbError } = await (supabase as any)

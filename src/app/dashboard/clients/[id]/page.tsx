@@ -4,6 +4,7 @@ import { getClient } from "@/lib/clients/queries";
 import { listAppointments } from "@/lib/appointments/queries";
 import { ClientDashboardUI } from "@/components/clients/ClientDashboardUI";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSignedObjectUrl } from "@/lib/storage/private-urls";
 
 export default async function ClientDetailPage({
   params,
@@ -46,7 +47,18 @@ export default async function ClientDetailPage({
 
   const assessments = (assessmentsData || []) as any[];
   const payments = (paymentsData || []) as any[];
-  const clientDocs = (docsData || []) as any[];
+  const clientDocs = await Promise.all(
+    ((docsData || []) as Array<Record<string, unknown>>).map(async (doc) => ({
+      ...doc,
+      document_url:
+        (await createSignedObjectUrl(
+          supabase,
+          "patient-documents",
+          typeof doc.storage_path === "string" ? doc.storage_path : null,
+        )) ??
+        (typeof doc.document_url === "string" ? doc.document_url : null),
+    })),
+  );
   const clientMeds = (medsData || []) as any[];
   const isMinor = (client as any).is_minor ?? false;
   const appointments = await listAppointments({ clientId: id });

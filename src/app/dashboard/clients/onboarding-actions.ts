@@ -18,6 +18,7 @@ import {
   getClientIp,
   isHoneypotTriggered,
 } from "@/lib/security/public-rate-limit";
+import { createSignedObjectUrl } from "@/lib/storage/private-urls";
 
 export interface OnboardingData {
   id?: string;
@@ -127,17 +128,20 @@ export async function submitMinorOnboarding(data: OnboardingData, files?: { cust
       .upload(filePath, file);
 
     if (!uploadError) {
-      const { data: urlData } = storageClient.storage
-        .from("patient-documents")
-        .getPublicUrl(filePath);
-
       // Create doc record
       await db.from("patient_documents").insert({
         therapist_id: therapistId,
         client_id: clientId,
         file_name: file.name,
         storage_path: filePath,
-        document_url: urlData.publicUrl,
+        document_url:
+          user
+            ? await createSignedObjectUrl(
+                supabase,
+                "patient-documents",
+                filePath,
+              )
+            : null,
         document_type: data.parents_marital_status === "DIVORTATI_CUSTODIE_EXCLUSIVA" ? "SENTINTA_CUSTODIE" : "ACORD_PARINTI",
         mime_type: file.type,
       });

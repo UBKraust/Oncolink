@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMockExpenses, addMockExpense, removeMockExpense } from "@/lib/mock/expenses";
+import { createSignedObjectUrl } from "@/lib/storage/private-urls";
 
 export type ExpenseCategory =
   | "CHIRIE"
@@ -54,7 +55,19 @@ export async function listExpenses(year: number, month: number): Promise<Expense
     .order("expense_date", { ascending: false });
 
   if (error) return [];
-  return (data ?? []) as Expense[];
+
+  const expenses = (data ?? []) as Expense[];
+  return Promise.all(
+    expenses.map(async (expense) => ({
+      ...expense,
+      receipt_url:
+        (await createSignedObjectUrl(
+          supabase,
+          "therapist-vault",
+          expense.receipt_path,
+        )) ?? expense.receipt_url,
+    })),
+  );
 }
 
 export async function createExpense(formData: FormData): Promise<ExpenseActionResult> {
@@ -116,11 +129,11 @@ export async function createExpense(formData: FormData): Promise<ExpenseActionRe
 
     if (storageError) return { ok: false, error: `Eroare upload: ${storageError.message}` };
 
-    const { data: urlData } = supabase.storage
-      .from("therapist-vault")
-      .getPublicUrl(receiptPath);
-    
-    receiptUrl = urlData.publicUrl;
+    receiptUrl = await createSignedObjectUrl(
+      supabase,
+      "therapist-vault",
+      receiptPath,
+    );
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -3,6 +3,7 @@
 import { createSupabaseServerClient as createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createHash } from "crypto";
+import { EMPTY_REMOTE_SETTINGS } from "./settings-defaults";
 
 export interface WorkDaySchedule {
   enabled: boolean;
@@ -80,31 +81,6 @@ const MOCK_SETTINGS: TherapistSettings = {
   cas_contract_number: "3456/2024",
   cas_county: "B",
   has_pin: true,
-};
-
-const EMPTY_REMOTE_SETTINGS: TherapistSettings = {
-  full_name: null,
-  cif: null,
-  cpr_code: null,
-  iban: null,
-  practice_name: null,
-  practice_address: null,
-  practice_phone: null,
-  practice_email: null,
-  practice_caen: null,
-  default_session_price: 250,
-  default_session_duration_minutes: 50,
-  session_types_pricing: { "Ședință Individuală": 250 },
-  currency: "RON",
-  work_schedule: DEFAULT_SCHEDULE,
-  smartbill_username: null,
-  smartbill_cif: null,
-  twilio_account_sid: null,
-  twilio_phone_number: null,
-  cas_active: false,
-  cas_contract_number: null,
-  cas_county: null,
-  has_pin: false,
 };
 
 function mergeWithDefaultSettings(

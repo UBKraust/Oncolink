@@ -69,6 +69,7 @@ export function ContractGenerator({ client, onSuccess }: ContractGeneratorProps)
   const [loading, setLoading] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [settings, setSettings] = useState<TherapistSettings | null>(null);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
   const [latestReferral, setLatestReferral] = useState<Pick<
     ReferralDocumentRow,
     "id" | "referral_number" | "referral_date" | "referring_doctor_code" | "uploaded_at"
@@ -91,18 +92,29 @@ export function ContractGenerator({ client, onSuccess }: ContractGeneratorProps)
     let active = true;
 
     async function load() {
-      const [therapistSettings, latestReferralDocument] = await Promise.all([
-        getTherapistSettings(),
-        getLatestReferralDocument(client.id),
-      ]);
+      try {
+        setSettingsError(null);
+        const [therapistSettings, latestReferralDocument] = await Promise.all([
+          getTherapistSettings(),
+          getLatestReferralDocument(client.id),
+        ]);
 
-      if (!active) return;
+        if (!active) return;
 
-      setSettings(therapistSettings);
-      setLatestReferral(latestReferralDocument);
-      setReferralNumber(latestReferralDocument?.referral_number || "");
-      setReferralDate(formatDateForInput(latestReferralDocument?.referral_date) || "");
-      setReferringDoctor(latestReferralDocument?.referring_doctor_code || "");
+        setSettings(therapistSettings);
+        setLatestReferral(latestReferralDocument);
+        setReferralNumber(latestReferralDocument?.referral_number || "");
+        setReferralDate(formatDateForInput(latestReferralDocument?.referral_date) || "");
+        setReferringDoctor(latestReferralDocument?.referring_doctor_code || "");
+      } catch (error) {
+        if (!active) return;
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Nu am putut încărca setările terapeutului din Supabase.";
+        setSettings(null);
+        setSettingsError(message);
+      }
     }
     load();
 
@@ -394,6 +406,20 @@ export function ContractGenerator({ client, onSuccess }: ContractGeneratorProps)
             </div>
           </div>
         )}
+
+        {settingsError ? (
+          <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 border border-amber-100">
+            <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="text-[10px] text-amber-700 font-black uppercase tracking-wider">
+                Setările terapeutului nu au putut fi încărcate
+              </p>
+              <p className="text-[10px] text-amber-700 font-medium leading-tight">
+                {settingsError}
+              </p>
+            </div>
+          </div>
+        ) : null}
       </CardContent>
       <CardFooter className="bg-white border-t p-4 flex flex-col gap-3">
          <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 italic">

@@ -138,7 +138,7 @@ export function MedicalDetailOverlay({
             <div className="space-y-1">
               <p className="text-sm font-black text-white uppercase tracking-tight">Sănătate & Confidențialitate</p>
               <p className="text-[11px] font-bold text-slate-400 leading-relaxed italic">
-                Toate documentele sunt stocate în Seiful Digital criptat (AES-256). Accesul la fișiere este jurnalizat și monitorizat conform normelor GDPR și Legii 272/2004.
+                Documentele încărcate în Seiful Digital sunt tratate ca informații sensibile. Accesul și păstrarea lor trebuie configurate în acord cu procedurile interne și obligațiile legale ale cabinetului.
               </p>
             </div>
           </div>

@@ -74,7 +74,7 @@ export default function TermsPage() {
                 <HelpCircle className="h-5 w-5 text-primary" /> 4. Suport și Disponibilitate
               </h2>
               <p className="text-slate-600 leading-relaxed">
-                Ne străduim să oferim o disponibilitate a serviciului de 99.9%. Mentenanța programată va fi anunțată cu cel puțin 24 de ore înainte și va fi efectuată în afara orelor obișnuite de program (08:00 - 20:00).
+                Platforma este în curs de dezvoltare și poate include mentenanță, actualizări sau limitări temporare. Utilizatorul este responsabil să evalueze dacă nivelul actual al serviciului este adecvat pentru utilizarea în cabinetul propriu.
               </p>
             </section>
 

@@ -16,8 +16,8 @@ export default function Home() {
         <CardHeader>
           <CardTitle>Ce`ai Pățit?</CardTitle>
           <CardDescription>
-            Platformă ERP privată pentru cabinet de psihoterapie — GDPR &amp; CPR
-            compliant.
+            Platformă ERP privată pentru cabinet de psihoterapie, construită cu
+            accent pe confidențialitate și fluxuri dedicate de conformitate.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">

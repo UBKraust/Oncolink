@@ -231,7 +231,7 @@ export function ClientOnboardingWizard({ clientId, clientName }: ClientOnboardin
                     Acord prelucrare date (GDPR)
                   </label>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    Sunt de acord cu colectarea și păstrarea datelor mele personale (CNP, istoric clinic) în sistemul securizat Ce`ai Pățit?.
+                    Sunt de acord cu prelucrarea datelor mele personale și a informațiilor necesare pentru înrolare și desfășurarea serviciilor terapeutice în platforma Ce`ai Pățit?.
                   </p>
                   {errors.gdpr_consent && <p className="text-xs text-rose-500 font-medium mt-1">{errors.gdpr_consent.message}</p>}
                 </div>
@@ -291,7 +291,7 @@ export function ClientOnboardingWizard({ clientId, clientName }: ClientOnboardin
       <div className="flex flex-col items-center gap-1.5 pt-10 text-[10px] text-muted-foreground lowercase opacity-60">
         <div className="flex items-center gap-1 font-bold">
           <ShieldCheck className="h-3 w-3" />
-          Powered by Ce`ai Pățit? encrypted systems
+          gestionat prin platforma Ce`ai Pățit?
         </div>
         <div>Standarde Colegiul Psihologilor din România</div>
       </div>

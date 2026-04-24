@@ -55,7 +55,7 @@ export default async function OnboardingPage({ params }: { params: Promise<{ id:
 
         {/* Privacy Note */}
         <p className="mt-12 text-center text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
-          Sistemul nostru folosește criptare SSL de 256 de biți pentru a proteja datele tale medicale. Informațiile sunt stocate conform normelor GDPR ale Uniunii Europene.
+          Datele transmise prin acest formular sunt procesate prin fluxurile de securitate ale platformei Ce`ai Pățit?. Configurarea finală și utilizarea clinică trebuie validate de cabinetul operator.
         </p>
       </div>
     </main>

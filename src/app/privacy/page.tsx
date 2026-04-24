@@ -41,7 +41,7 @@ export default function PrivacyPage() {
                 Colectăm date strict necesare pentru desfășurarea actului terapeutic și obligațiile legale (facturare):
               </p>
               <ul className="list-disc pl-5 mt-2 space-y-2 text-slate-600">
-                <li>Nume și prenume, CNP (pentru facturare și dosar clinic).</li>
+                <li>Nume și prenume, iar CNP doar atunci când este necesar pentru identificare legală, decontare sau facturare.</li>
                 <li>Informații de contact (telefon, email).</li>
                 <li>Date medicale și clinice (note de ședință, istoricul terapeutic).</li>
                 <li>Informații despre reprezentanții legali (în cazul minorilor).</li>
@@ -53,14 +53,14 @@ export default function PrivacyPage() {
                 <Shield className="h-5 w-5 text-primary" /> 3. Securitatea Datelor
               </h2>
               <p className="text-slate-600 leading-relaxed">
-                Siguranța datelor tale este prioritatea noastră absolută. Ce`ai Pățit? utilizează:
+                Ce`ai Pățit? este construit cu accent pe protecția datelor sensibile și pe minimizarea expunerii informațiilor personale. Platforma include:
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 italic text-sm text-slate-600">
-                  "Criptare end-to-end pentru notele clinice."
+                  "Mecanisme de criptare pentru zonele sensibile ale produsului."
                 </div>
                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 italic text-sm text-slate-600">
-                  "Stocare securizată pe servere certificate UE."
+                  "Fluxuri și controale care trebuie configurate și validate de operator înainte de utilizarea clinică."
                 </div>
               </div>
             </section>

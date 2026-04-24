@@ -4,7 +4,7 @@ import { ShieldCheck, Baby } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Onboarding Minor | Securitate Juridică | Ce`ai Pățit?",
-  description: "Formular de înrolare pentru pacienți minori. Obligatoriu conform legii CPR.",
+  description: "Formular de înrolare pentru pacienți minori, cu pași dedicați pentru consimțământ și reprezentare legală.",
 };
 
 export default function MinorOnboardingPage() {
@@ -44,11 +44,11 @@ export default function MinorOnboardingPage() {
         {/* Legal Disclaimer Footer */}
         <div className="mt-12 max-w-md mx-auto text-center space-y-4">
            <p className="text-[10px] text-slate-400 leading-relaxed uppercase tracking-widest font-bold">
-             Criptare End-to-End • Server Securizat • Conformitate GDPR & CPR
+             Fluxuri pentru consimțământ • Date sensibile protejate • Verificare juridică necesară înainte de utilizare clinică
            </p>
            <div className="h-px w-12 bg-slate-200 mx-auto" />
            <p className="text-[9px] text-slate-400 italic">
-             Ce`ai Pățit? este marcă înregistrată. Toate datele medicale sunt procesate conform Legii 190/2018 privind prelucrarea datelor cu caracter personal.
+             Ce`ai Pățit? include instrumente pentru gestionarea documentelor și consimțământului. Configurarea finală trebuie adaptată cadrului juridic aplicabil cabinetului.
            </p>
         </div>
       </div>

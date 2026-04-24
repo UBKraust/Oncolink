@@ -74,7 +74,7 @@ export default function DeclarationPage() {
 
             <div className="mt-12 text-center">
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-                Generat automat de platforma Oncolink · © 2026
+                Generat automat de platforma Ce`ai Pățit? · © 2026
               </p>
             </div>
           </div>

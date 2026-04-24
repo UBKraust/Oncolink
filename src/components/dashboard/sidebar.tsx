@@ -128,7 +128,7 @@ export function DashboardSidebar() {
           </Link>
         </div>
         <div className="mt-2 px-2 text-[9px] text-slate-400 font-bold uppercase tracking-tighter">
-          Ce`ai Pățit? v1.2 · CPR Certified
+          Ce`ai Pățit? v1.2 · GDPR-first workflows
         </div>
       </div>
     </aside>

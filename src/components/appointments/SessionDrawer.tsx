@@ -287,7 +287,7 @@ export function SessionDrawer({
                   </span>
                 </div>
                 <p className="mt-2 text-xs text-muted-foreground">
-                  Notele sunt criptate end-to-end (AES-256) și necesită PIN
+                  Notele sunt protejate prin criptare locală și necesită PIN
                   pentru acces.
                 </p>
               </div>

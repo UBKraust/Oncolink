@@ -326,7 +326,7 @@ export async function sendOnboardingNotification(clientId: string, clientName: s
       }
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://oncolink.cepaipatit.ro";
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const onboardingLink = `${baseUrl}/onboarding/${clientId}`;
     
     const message = onboardingLinkMsg(clientName, onboardingLink);
@@ -348,14 +348,14 @@ export async function sendOnboardingEmail(clientId: string, clientName: string, 
   if (!email) return { error: "Clientul nu are o adresă de email setată." };
 
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://oncolink.cepaipatit.ro";
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const onboardingLink = `${baseUrl}/onboarding/${clientId}`;
     
     const html = onboardingEmailTemplate(clientName, onboardingLink);
     
     const res = await sendEmail({
       to: email,
-      subject: "Formular Înrolare Pacient — Oncolink",
+      subject: "Formular Înrolare Pacient — Ce`ai Pățit?",
       html,
     });
 

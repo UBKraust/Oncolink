@@ -50,7 +50,7 @@ export default async function DocumentsPage() {
             </div>
             <CardTitle className="text-base">Acord GDPR</CardTitle>
             <CardDescription>
-              Consimțământ prelucrare date · ANSPDCP compliant
+              Consimțământ pentru prelucrarea datelor, pregătit pentru configurarea cabinetului
             </CardDescription>
           </CardHeader>
         </Card>

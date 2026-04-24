@@ -208,7 +208,7 @@ export default async function AppointmentDetailPage({
                   </Link>
                 </Button>
                 <p className="mt-2 text-xs text-muted-foreground">
-                  Nota este criptată end-to-end și necesită PIN pentru acces.
+                  Nota este protejată prin criptare locală și necesită PIN pentru acces.
                 </p>
               </CardContent>
             </Card>

@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Declarație pe proprie răspundere · Oncolink",
+  title: "Declarație pe proprie răspundere · Ce`ai Pățit?",
   description: "Declarație privind conformitatea datelor furnizate pentru pacienții minori.",
 };
 

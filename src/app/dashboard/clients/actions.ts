@@ -14,6 +14,7 @@ import {
 } from "@/lib/clients/validation";
 import { shareFile } from "@/lib/google/drive";
 import { sendMessage, onboardingLinkMsg } from "@/lib/twilio/client";
+import { sendEmail, onboardingEmailTemplate } from "@/lib/mail/client";
 import type { ClientFormState } from "@/lib/clients/form-state";
 
 function parseForm(formData: FormData) {
@@ -340,6 +341,32 @@ export async function sendOnboardingNotification(clientId: string, clientName: s
   } catch (err) {
     console.error("[Onboarding Notification Error]", err);
     return { error: err instanceof Error ? err.message : "Eroare la trimiterea notificării." };
+  }
+}
+
+export async function sendOnboardingEmail(clientId: string, clientName: string, email: string) {
+  if (!email) return { error: "Clientul nu are o adresă de email setată." };
+
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://oncolink.cepaipatit.ro";
+    const onboardingLink = `${baseUrl}/onboarding/${clientId}`;
+    
+    const html = onboardingEmailTemplate(clientName, onboardingLink);
+    
+    const res = await sendEmail({
+      to: email,
+      subject: "Formular Înrolare Pacient — Oncolink",
+      html,
+    });
+
+    if ("error" in res) {
+      return { error: res.error };
+    }
+
+    return { success: true };
+  } catch (err) {
+    console.error("[Onboarding Email Error]", err);
+    return { error: err instanceof Error ? err.message : "Eroare la trimiterea email-ului." };
   }
 }
 

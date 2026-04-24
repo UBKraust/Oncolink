@@ -67,6 +67,7 @@ export async function submitMinorOnboarding(data: OnboardingData, files?: { cust
 
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
+  const admin = createSupabaseServiceClient();
   let therapistId: string | null = user?.id || null;
 
   if (!therapistId) {
@@ -77,8 +78,11 @@ export async function submitMinorOnboarding(data: OnboardingData, files?: { cust
     return { success: false, error: "Nu am găsit niciun terapeut configurat." };
   }
 
+  const db = user ? supabase : admin;
+  const storageClient = user ? supabase : admin;
+
   // 1. Create the client record
-  const { data: newClient, error: clientError } = await (supabase as any)
+  const { data: newClient, error: clientError } = await db
     .from("clients")
     .insert({
       therapist_id: therapistId,
@@ -118,17 +122,17 @@ export async function submitMinorOnboarding(data: OnboardingData, files?: { cust
     const ext = file.name.split(".").pop();
     const filePath = `${clientId}/legal_${Date.now()}.${ext}`;
 
-    const { error: uploadError } = await supabase.storage
+    const { error: uploadError } = await storageClient.storage
       .from("patient-documents")
       .upload(filePath, file);
 
     if (!uploadError) {
-      const { data: urlData } = supabase.storage
+      const { data: urlData } = storageClient.storage
         .from("patient-documents")
         .getPublicUrl(filePath);
 
       // Create doc record
-      await (supabase as any).from("patient_documents").insert({
+      await db.from("patient_documents").insert({
         therapist_id: therapistId,
         client_id: clientId,
         file_name: file.name,

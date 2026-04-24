@@ -82,6 +82,38 @@ const MOCK_SETTINGS: TherapistSettings = {
   has_pin: true,
 };
 
+function mergeWithDefaultSettings(
+  partial?: Partial<TherapistSettings> | null,
+): TherapistSettings {
+  return {
+    ...MOCK_SETTINGS,
+    ...partial,
+    full_name: partial?.full_name ?? MOCK_SETTINGS.full_name,
+    cif: partial?.cif ?? MOCK_SETTINGS.cif,
+    cpr_code: partial?.cpr_code ?? MOCK_SETTINGS.cpr_code,
+    iban: partial?.iban ?? MOCK_SETTINGS.iban,
+    practice_name: partial?.practice_name ?? MOCK_SETTINGS.practice_name,
+    practice_address: partial?.practice_address ?? MOCK_SETTINGS.practice_address,
+    practice_phone: partial?.practice_phone ?? MOCK_SETTINGS.practice_phone,
+    practice_email: partial?.practice_email ?? MOCK_SETTINGS.practice_email,
+    practice_caen: partial?.practice_caen ?? MOCK_SETTINGS.practice_caen,
+    default_session_price: partial?.default_session_price ?? MOCK_SETTINGS.default_session_price,
+    default_session_duration_minutes:
+      partial?.default_session_duration_minutes ?? MOCK_SETTINGS.default_session_duration_minutes,
+    session_types_pricing: partial?.session_types_pricing ?? MOCK_SETTINGS.session_types_pricing,
+    currency: partial?.currency ?? MOCK_SETTINGS.currency,
+    work_schedule: partial?.work_schedule ?? MOCK_SETTINGS.work_schedule,
+    smartbill_username: partial?.smartbill_username ?? MOCK_SETTINGS.smartbill_username,
+    smartbill_cif: partial?.smartbill_cif ?? MOCK_SETTINGS.smartbill_cif,
+    twilio_account_sid: partial?.twilio_account_sid ?? MOCK_SETTINGS.twilio_account_sid,
+    twilio_phone_number: partial?.twilio_phone_number ?? MOCK_SETTINGS.twilio_phone_number,
+    cas_active: partial?.cas_active ?? MOCK_SETTINGS.cas_active,
+    cas_contract_number: partial?.cas_contract_number ?? MOCK_SETTINGS.cas_contract_number,
+    cas_county: partial?.cas_county ?? MOCK_SETTINGS.cas_county,
+    has_pin: partial?.has_pin ?? MOCK_SETTINGS.has_pin,
+  };
+}
+
 function isLegacyTherapistSettingsSchemaError(message: string): boolean {
   return message.includes("therapist_settings.therapist_id");
 }
@@ -152,7 +184,7 @@ export async function getTherapistSettings(): Promise<TherapistSettings> {
 
   if (!data) return MOCK_SETTINGS;
 
-  return {
+  return mergeWithDefaultSettings({
     full_name: data.full_name ?? null,
     cif: data.cif ?? null,
     cpr_code: data.cpr_code ?? null,
@@ -175,7 +207,7 @@ export async function getTherapistSettings(): Promise<TherapistSettings> {
     cas_contract_number: data.cas_contract_number ?? null,
     cas_county: data.cas_county ?? null,
     has_pin: Boolean(data.clinical_notes_pin_hash),
-  };
+  });
 }
 
 export async function updateProfileSettings(data: {

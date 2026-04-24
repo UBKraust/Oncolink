@@ -35,10 +35,21 @@ interface DocumentListProps {
 export function DocumentList({ clients }: DocumentListProps) {
   const [loading, setLoading] = useState<string | null>(null);
 
+  const downloadBlob = (blob: Blob, fileName: string) => {
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = fileName;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
   const handleContract = async (c: DocumentClient) => {
     setLoading(`contract-${c.id}`);
     try {
-      await generateContract({
+      const result = await generateContract({
         contractNumber: `CTR-${new Date().getFullYear()}-${c.id.slice(0, 8)}`,
         clientName: c.full_name ?? "Client",
         clientCNP: c.cnp_cif ?? "—",
@@ -48,6 +59,7 @@ export function DocumentList({ clients }: DocumentListProps) {
         sessionPrice: 250,
         startDate: new Date().toLocaleDateString("ro-RO"),
       });
+      downloadBlob(result.blob, result.fileName);
     } finally {
       setLoading(null);
     }
@@ -56,12 +68,13 @@ export function DocumentList({ clients }: DocumentListProps) {
   const handleGdpr = async (c: DocumentClient) => {
     setLoading(`gdpr-${c.id}`);
     try {
-      await generateGdprConsent({
+      const result = await generateGdprConsent({
         clientName: c.full_name ?? "Client",
         clientCNP: c.cnp_cif ?? "—",
         therapistName: "Dr. Psiholog",
         date: new Date().toLocaleDateString("ro-RO"),
       });
+      downloadBlob(result.blob, result.fileName);
     } finally {
       setLoading(null);
     }

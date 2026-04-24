@@ -161,6 +161,7 @@ export function ContractGenerator({ client, onSuccess }: ContractGeneratorProps)
       clientAddress: client.address || "—",
       therapistName: settings.full_name || "—",
       therapistCIF: settings.cif || "—",
+      therapistCPRCode: settings.cpr_code || undefined,
       therapistIBAN: settings.iban || undefined,
       therapistPracticeName: settings.practice_name || undefined,
       therapistPracticeAddress: settings.practice_address || undefined,

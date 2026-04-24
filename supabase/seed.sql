@@ -1,0 +1,2 @@
+-- Placeholder seed file for local Supabase development.
+-- Add idempotent seed data here when the project needs local fixtures.

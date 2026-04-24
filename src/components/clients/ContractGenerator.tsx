@@ -11,7 +11,8 @@ import {
   Loader2,
   AlertCircle,
   Hash,
-  Info
+  Info,
+  Eye
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -66,6 +67,7 @@ function buildSuggestedContractNumber() {
 
 export function ContractGenerator({ client, onSuccess }: ContractGeneratorProps) {
   const [loading, setLoading] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
   const [settings, setSettings] = useState<TherapistSettings | null>(null);
   const [latestReferral, setLatestReferral] = useState<Pick<
     ReferralDocumentRow,
@@ -137,9 +139,63 @@ export function ContractGenerator({ client, onSuccess }: ContractGeneratorProps)
     if (!referralDate) missingData.push("Lipsește data biletului de trimitere.");
   }
 
-  const handleGenerate = async () => {
+  const buildContractPayload = () => {
+    if (!settings) return null;
+
+    return {
+      startDate: new Date().toLocaleDateString("ro-RO"),
+      clientName: client.full_name,
+      clientCNP: client.cnp_cif || "—",
+      clientAddress: client.address || "—",
+      therapistName: settings.full_name || "—",
+      therapistCIF: settings.cif || "—",
+      therapistIBAN: settings.iban || undefined,
+      therapistPracticeName: settings.practice_name || undefined,
+      therapistPracticeAddress: settings.practice_address || undefined,
+      therapistPracticePhone: settings.practice_phone || undefined,
+      therapistPracticeEmail: settings.practice_email || undefined,
+      therapistPracticeCaen: settings.practice_caen || undefined,
+      sessionPrice: Number(client.session_price) || settings.default_session_price,
+      isMinor: template === "MINOR",
+      parent1Name: client.parent_1_name || client.parent_name,
+      parent2Name: client.parent_2_name,
+      parentsMaritalStatus: client.parents_marital_status,
+      isB2B: template === "B2B",
+      companyName: client.company_name,
+      companyCIF: client.cnp_cif,
+      companyRegCom: regCom,
+      representativeName: repName,
+      representativeRole: repRole,
+      isCas: template === "CAS",
+      referralNumber,
+      referralDate: formatDateForDisplay(referralDate),
+      referringDoctor,
+      casContractNumber: settings.cas_contract_number || undefined,
+      casCounty: settings.cas_county || undefined,
+    };
+  };
+
+  const downloadBlob = (blob: Blob, fileName: string) => {
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = fileName;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  const previewBlob = (blob: Blob) => {
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank", "noopener,noreferrer");
+    window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  };
+
+  const handleGenerate = async (mode: "download" | "preview") => {
     if (!settings || missingData.length > 0) return;
-    setLoading(true);
+    if (mode === "download") setLoading(true);
+    else setPreviewLoading(true);
 
     try {
       const issuedContract = await issueGeneratedContractNumber(client.id, template);
@@ -150,49 +206,32 @@ export function ContractGenerator({ client, onSuccess }: ContractGeneratorProps)
 
       setContractNumber(issuedContract.contract_number);
 
-      await generateContract({
-        contractNumber: issuedContract.contract_number,
-        startDate: new Date().toLocaleDateString("ro-RO"),
-        clientName: client.full_name,
-        clientCNP: client.cnp_cif || "—",
-        clientAddress: client.address || "—",
-        therapistName: settings.full_name || "—",
-        therapistCIF: settings.cif || "—",
-        therapistIBAN: settings.iban || undefined,
-        therapistPracticeName: settings.practice_name || undefined,
-        therapistPracticeAddress: settings.practice_address || undefined,
-        therapistPracticePhone: settings.practice_phone || undefined,
-        therapistPracticeEmail: settings.practice_email || undefined,
-        therapistPracticeCaen: settings.practice_caen || undefined,
-        sessionPrice: Number(client.session_price) || settings.default_session_price,
-        
-        isMinor: template === "MINOR",
-        parent1Name: client.parent_1_name || client.parent_name,
-        parent2Name: client.parent_2_name,
-        parentsMaritalStatus: client.parents_marital_status,
-        
-        isB2B: template === "B2B",
-        companyName: client.company_name,
-        companyCIF: client.cnp_cif,
-        companyRegCom: regCom,
-        representativeName: repName,
-        representativeRole: repRole,
+      const payload = buildContractPayload();
+      if (!payload) {
+        toast.error("Nu am putut pregăti contractul.");
+        return;
+      }
 
-        isCas: template === "CAS",
-        referralNumber,
-        referralDate: formatDateForDisplay(referralDate),
-        referringDoctor,
-        casContractNumber: settings.cas_contract_number || undefined,
-        casCounty: settings.cas_county || undefined,
+      const result = await generateContract({
+        contractNumber: issuedContract.contract_number,
+        ...payload,
       });
 
-      toast.success(`Contractul ${issuedContract.contract_number} a fost generat.`);
+      if (mode === "download") {
+        downloadBlob(result.blob, result.fileName);
+        toast.success(`Contractul ${issuedContract.contract_number} a fost descărcat local.`);
+      } else {
+        previewBlob(result.blob);
+        toast.success(`Previzualizarea pentru ${issuedContract.contract_number} a fost deschisă.`);
+      }
+
       onSuccess?.();
     } catch (error) {
       console.error("PDF Generation error:", error);
       toast.error("Nu am putut genera contractul.");
     } finally {
-      setLoading(false);
+      if (mode === "download") setLoading(false);
+      else setPreviewLoading(false);
     }
   };
 
@@ -361,16 +400,28 @@ export function ContractGenerator({ client, onSuccess }: ContractGeneratorProps)
             {getTemplateIcon(template)}
             {template === "B2B" ? "Model Business" : template === "MINOR" ? "Model Protecție Minor" : template === "CAS" ? "Model Asigurări Sănătate" : "Model Standard Client"}
          </div>
-         <Button 
-           onClick={handleGenerate} 
-           disabled={loading || !settings || missingData.length > 0}
-           className="w-full rounded-xl font-black shadow-lg shadow-primary/20 gap-2 h-11"
-         >
-            {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Download className="h-5 w-5" />}
-            GENEREAZĂ PDF CONTRACT
-         </Button>
+         <div className="grid w-full gap-2 sm:grid-cols-2">
+           <Button
+             type="button"
+             variant="outline"
+             onClick={() => handleGenerate("preview")}
+             disabled={previewLoading || loading || !settings || missingData.length > 0}
+             className="w-full rounded-xl font-black gap-2 h-11 border-slate-200"
+           >
+              {previewLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Eye className="h-5 w-5" />}
+              PREVIZUALIZEAZĂ PDF
+           </Button>
+           <Button 
+             onClick={() => handleGenerate("download")} 
+             disabled={loading || previewLoading || !settings || missingData.length > 0}
+             className="w-full rounded-xl font-black shadow-lg shadow-primary/20 gap-2 h-11"
+           >
+              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Download className="h-5 w-5" />}
+              DESCARCĂ PDF
+           </Button>
+         </div>
          <p className="text-[9px] text-center text-slate-400 font-medium">
-           Documentul va fi descărcat local și poate fi semnat digital pe tabletă.
+           Pentru test poți deschide previzualizarea în browser sau descărca local fișierul PDF.
          </p>
       </CardFooter>
     </Card>

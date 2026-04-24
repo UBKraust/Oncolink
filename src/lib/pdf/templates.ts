@@ -124,6 +124,11 @@ export interface ContractData {
   casCounty?: string;
 }
 
+export interface GeneratedPdfResult {
+  blob: Blob;
+  fileName: string;
+}
+
 /**
  * Common Signature Block with large whitespace for digital signing (reMarkable/Tablet)
  */
@@ -152,7 +157,7 @@ function signatureBlock(doc: jsPDF, y: number, labelLeft: string, labelRight: st
   return y;
 }
 
-export async function generateContract(data: ContractData): Promise<void> {
+export async function generateContract(data: ContractData): Promise<GeneratedPdfResult> {
   const JsPDF = await loadJsPDF();
   const doc = new JsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
@@ -275,7 +280,13 @@ export async function generateContract(data: ContractData): Promise<void> {
 
   footer(doc);
   const fileName = data.isB2B ? `contract-b2b-${data.companyName}` : `contract-${data.clientName}`;
-  doc.save(`${fileName.replace(/\s+/g, "-").toLowerCase()}.pdf`);
+  const normalizedFileName = `${fileName.replace(/\s+/g, "-").toLowerCase()}.pdf`;
+  const blob = doc.output("blob");
+
+  return {
+    blob,
+    fileName: normalizedFileName,
+  };
 }
 
 /**

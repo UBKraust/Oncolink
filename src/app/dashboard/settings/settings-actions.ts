@@ -82,6 +82,55 @@ const MOCK_SETTINGS: TherapistSettings = {
   has_pin: true,
 };
 
+function isLegacyTherapistSettingsSchemaError(message: string): boolean {
+  return message.includes("therapist_settings.therapist_id");
+}
+
+function mapTherapistSettingsSchemaError(message: string): string {
+  if (message.includes("schema cache") && message.includes("practice_")) {
+    return "Baza de date nu are inca noile campuri pentru contracte. Aplica migrarea 0034_therapist_profile_contract_fields.sql, apoi reincarca pagina.";
+  }
+
+  return message;
+}
+
+async function selectTherapistSettingsRow(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
+  const primary = await supabase
+    .from("therapist_settings")
+    .select("*")
+    .eq("therapist_id", userId)
+    .maybeSingle();
+
+  if (!primary.error || !isLegacyTherapistSettingsSchemaError(primary.error.message)) {
+    return primary;
+  }
+
+  return supabase
+    .from("therapist_settings")
+    .select("*")
+    .eq("id", 1)
+    .maybeSingle();
+}
+
+async function upsertTherapistSettingsRow(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  payload: Record<string, unknown>,
+) {
+  const primary = await supabase
+    .from("therapist_settings")
+    .upsert({ therapist_id: userId, ...payload, updated_at: new Date().toISOString() });
+
+  if (!primary.error || !isLegacyTherapistSettingsSchemaError(primary.error.message)) {
+    return primary;
+  }
+
+  const legacyPayload = { ...payload, id: 1, updated_at: new Date().toISOString() };
+  return supabase
+    .from("therapist_settings")
+    .upsert(legacyPayload);
+}
+
 export async function getTherapistSettings(): Promise<TherapistSettings> {
   if (!isSupabaseConfigured()) return MOCK_SETTINGS;
 
@@ -89,11 +138,17 @@ export async function getTherapistSettings(): Promise<TherapistSettings> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthorized");
 
-  const { data } = await supabase
-    .from("therapist_settings")
-    .select("*")
-    .eq("therapist_id", user.id)
-    .maybeSingle();
+  const { data, error } = await selectTherapistSettingsRow(supabase, user.id);
+
+  if (error) {
+    const normalizedMessage = mapTherapistSettingsSchemaError(error.message);
+    if (normalizedMessage !== error.message) {
+      console.warn("[Settings] Falling back to mock practice fields:", normalizedMessage);
+      return MOCK_SETTINGS;
+    }
+
+    throw new Error(normalizedMessage);
+  }
 
   if (!data) return MOCK_SETTINGS;
 
@@ -140,11 +195,9 @@ export async function updateProfileSettings(data: {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Unauthorized" };
 
-  const { error } = await supabase
-    .from("therapist_settings")
-    .upsert({ therapist_id: user.id, ...data, updated_at: new Date().toISOString() });
+  const { error } = await upsertTherapistSettingsRow(supabase, user.id, data);
 
-  if (error) return { success: false, error: error.message };
+  if (error) return { success: false, error: mapTherapistSettingsSchemaError(error.message) };
   return { success: true };
 }
 
@@ -159,11 +212,9 @@ export async function updatePricingSettings(data: {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Unauthorized" };
 
-  const { error } = await supabase
-    .from("therapist_settings")
-    .upsert({ therapist_id: user.id, ...data, updated_at: new Date().toISOString() });
+  const { error } = await upsertTherapistSettingsRow(supabase, user.id, data);
 
-  if (error) return { success: false, error: error.message };
+  if (error) return { success: false, error: mapTherapistSettingsSchemaError(error.message) };
   return { success: true };
 }
 
@@ -176,11 +227,9 @@ export async function updateScheduleSettings(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Unauthorized" };
 
-  const { error } = await supabase
-    .from("therapist_settings")
-    .upsert({ therapist_id: user.id, work_schedule, updated_at: new Date().toISOString() });
+  const { error } = await upsertTherapistSettingsRow(supabase, user.id, { work_schedule });
 
-  if (error) return { success: false, error: error.message };
+  if (error) return { success: false, error: mapTherapistSettingsSchemaError(error.message) };
   return { success: true };
 }
 
@@ -206,11 +255,9 @@ export async function updateIntegrationsSettings(data: {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Unauthorized" };
 
-  const { error } = await supabase
-    .from("therapist_settings")
-    .upsert({ therapist_id: user.id, ...patch });
+  const { error } = await upsertTherapistSettingsRow(supabase, user.id, patch);
 
-  if (error) return { success: false, error: error.message };
+  if (error) return { success: false, error: mapTherapistSettingsSchemaError(error.message) };
   return { success: true };
 }
 
@@ -225,11 +272,9 @@ export async function updateCasSettings(data: {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Unauthorized" };
 
-  const { error } = await supabase
-    .from("therapist_settings")
-    .upsert({ therapist_id: user.id, ...data, updated_at: new Date().toISOString() });
+  const { error } = await upsertTherapistSettingsRow(supabase, user.id, data);
 
-  if (error) return { success: false, error: error.message };
+  if (error) return { success: false, error: mapTherapistSettingsSchemaError(error.message) };
   return { success: true };
 }
 
@@ -243,11 +288,27 @@ export async function updatePinSettings(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Unauthorized" };
 
-  const { data: row } = await supabase
-    .from("therapist_settings")
-    .select("clinical_notes_pin_hash")
-    .eq("therapist_id", user.id)
-    .maybeSingle();
+  const { data: row, error: rowError } = await (async () => {
+    const primary = await supabase
+      .from("therapist_settings")
+      .select("clinical_notes_pin_hash")
+      .eq("therapist_id", user.id)
+      .maybeSingle();
+
+    if (!primary.error || !isLegacyTherapistSettingsSchemaError(primary.error.message)) {
+      return primary;
+    }
+
+    return supabase
+      .from("therapist_settings")
+      .select("clinical_notes_pin_hash")
+      .eq("id", 1)
+      .maybeSingle();
+  })();
+
+  if (rowError) {
+    return { success: false, error: mapTherapistSettingsSchemaError(rowError.message) };
+  }
 
   const currentHash = createHash("sha256").update(currentPin).digest("hex");
   if (row?.clinical_notes_pin_hash && row.clinical_notes_pin_hash !== currentHash) {
@@ -255,10 +316,10 @@ export async function updatePinSettings(
   }
 
   const newHash = createHash("sha256").update(newPin).digest("hex");
-  const { error } = await supabase
-    .from("therapist_settings")
-    .upsert({ therapist_id: user.id, clinical_notes_pin_hash: newHash, updated_at: new Date().toISOString() });
+  const { error } = await upsertTherapistSettingsRow(supabase, user.id, {
+    clinical_notes_pin_hash: newHash,
+  });
 
-  if (error) return { success: false, error: error.message };
+  if (error) return { success: false, error: mapTherapistSettingsSchemaError(error.message) };
   return { success: true };
 }

@@ -524,6 +524,48 @@ export type Database = {
         };
         Relationships: [];
       };
+      generated_contracts: {
+        Row: {
+          client_id: string;
+          contract_number: string;
+          contract_year: number;
+          document_url: string | null;
+          drive_file_id: string | null;
+          generated_at: string;
+          id: string;
+          patient_document_id: string | null;
+          sequence_number: number;
+          template_type: string;
+          therapist_id: string;
+        };
+        Insert: {
+          client_id: string;
+          contract_number: string;
+          contract_year: number;
+          document_url?: string | null;
+          drive_file_id?: string | null;
+          generated_at?: string;
+          id?: string;
+          patient_document_id?: string | null;
+          sequence_number: number;
+          template_type: string;
+          therapist_id: string;
+        };
+        Update: {
+          client_id?: string;
+          contract_number?: string;
+          contract_year?: number;
+          document_url?: string | null;
+          drive_file_id?: string | null;
+          generated_at?: string;
+          id?: string;
+          patient_document_id?: string | null;
+          sequence_number?: number;
+          template_type?: string;
+          therapist_id?: string;
+        };
+        Relationships: [];
+      };
       patient_documents: {
         Row: {
           client_id: string | null;
@@ -768,6 +810,11 @@ export type Database = {
           google_refresh_token: string | null;
           google_token_expires_at: string | null;
           iban: string | null;
+          practice_address: string | null;
+          practice_caen: string | null;
+          practice_email: string | null;
+          practice_name: string | null;
+          practice_phone: string | null;
           public_booking_enabled: boolean | null;
           public_booking_slug: string | null;
           session_types_pricing: Json | null;
@@ -798,6 +845,11 @@ export type Database = {
           google_refresh_token?: string | null;
           google_token_expires_at?: string | null;
           iban?: string | null;
+          practice_address?: string | null;
+          practice_caen?: string | null;
+          practice_email?: string | null;
+          practice_name?: string | null;
+          practice_phone?: string | null;
           public_booking_enabled?: boolean | null;
           public_booking_slug?: string | null;
           session_types_pricing?: Json | null;
@@ -828,6 +880,11 @@ export type Database = {
           google_refresh_token?: string | null;
           google_token_expires_at?: string | null;
           iban?: string | null;
+          practice_address?: string | null;
+          practice_caen?: string | null;
+          practice_email?: string | null;
+          practice_name?: string | null;
+          practice_phone?: string | null;
           public_booking_enabled?: boolean | null;
           public_booking_slug?: string | null;
           session_types_pricing?: Json | null;
@@ -845,7 +902,15 @@ export type Database = {
       };
     };
     Views: { [key: string]: never };
-    Functions: { [key: string]: never };
+    Functions: {
+      issue_generated_contract_number: {
+        Args: {
+          p_client_id: string;
+          p_template_type: string;
+        };
+        Returns: Database["public"]["Tables"]["generated_contracts"]["Row"];
+      };
+    };
     Enums: { [key: string]: never };
     CompositeTypes: { [key: string]: never };
   };

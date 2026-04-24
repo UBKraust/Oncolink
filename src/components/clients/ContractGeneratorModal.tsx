@@ -55,6 +55,7 @@ export function ContractGeneratorModal({ isOpen, onClose, client }: ContractGene
         <div className="max-h-[90vh] overflow-auto custom-scrollbar">
           {client && (
             <ContractGenerator 
+              key={client.id}
               client={client} 
               onSuccess={() => {
                 // We keep it open so they see the download happened, 

@@ -60,6 +60,11 @@ function ProfileTab({ s }: { s: TherapistSettings }) {
     cif: s.cif ?? "",
     cpr_code: s.cpr_code ?? "",
     iban: s.iban ?? "",
+    practice_name: s.practice_name ?? "",
+    practice_address: s.practice_address ?? "",
+    practice_phone: s.practice_phone ?? "",
+    practice_email: s.practice_email ?? "",
+    practice_caen: s.practice_caen ?? "",
   });
 
   function handleSubmit(e: React.FormEvent) {
@@ -88,6 +93,10 @@ function ProfileTab({ s }: { s: TherapistSettings }) {
               <Label htmlFor="full_name">Nume Complet Titular</Label>
               <Input id="full_name" value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} placeholder="ex: Dr. Ioana Popescu" />
             </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="practice_name">Denumire Cabinet / PFA</Label>
+              <Input id="practice_name" value={form.practice_name} onChange={e => setForm(f => ({ ...f, practice_name: e.target.value }))} placeholder="ex: POPESCU IOANA CABINET INDIVIDUAL DE PSIHOLOGIE" />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="cpr_code">Cod Parafă (CPR)</Label>
               <Input id="cpr_code" value={form.cpr_code} onChange={e => setForm(f => ({ ...f, cpr_code: e.target.value }))} placeholder="ex: 123456" className="font-mono" />
@@ -95,6 +104,22 @@ function ProfileTab({ s }: { s: TherapistSettings }) {
             <div className="space-y-2">
               <Label htmlFor="cif">CIF / CUI Cabinet</Label>
               <Input id="cif" value={form.cif} onChange={e => setForm(f => ({ ...f, cif: e.target.value }))} placeholder="ex: 42880000" className="font-mono" />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="practice_address">Adresă Profesională</Label>
+              <Input id="practice_address" value={form.practice_address} onChange={e => setForm(f => ({ ...f, practice_address: e.target.value }))} placeholder="Str., nr., bloc, sc., et., ap., sector/județ" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="practice_phone">Telefon Cabinet</Label>
+              <Input id="practice_phone" value={form.practice_phone} onChange={e => setForm(f => ({ ...f, practice_phone: e.target.value }))} placeholder="07xxxxxxxx" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="practice_email">E-mail Cabinet</Label>
+              <Input id="practice_email" type="email" value={form.practice_email} onChange={e => setForm(f => ({ ...f, practice_email: e.target.value }))} placeholder="email@cabinet.ro" />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="practice_caen">Cod CAEN</Label>
+              <Input id="practice_caen" value={form.practice_caen} onChange={e => setForm(f => ({ ...f, practice_caen: e.target.value }))} placeholder="ex: 8690 - Alte activități de asistență medicală" />
             </div>
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="iban">Cont IBAN</Label>

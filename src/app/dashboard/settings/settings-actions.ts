@@ -27,6 +27,11 @@ export interface TherapistSettings {
   cif: string | null;
   cpr_code: string | null;
   iban: string | null;
+  practice_name: string | null;
+  practice_address: string | null;
+  practice_phone: string | null;
+  practice_email: string | null;
+  practice_caen: string | null;
   default_session_price: number;
   default_session_duration_minutes: number;
   session_types_pricing: Record<string, number>;
@@ -54,9 +59,14 @@ const DEFAULT_SCHEDULE: WorkSchedule = {
 
 const MOCK_SETTINGS: TherapistSettings = {
   full_name: "Ioana Cosmina Terente",
-  cif: "42880000",
+  cif: "41185364",
   cpr_code: "123456",
   iban: "RO89INGB0000000000000000",
+  practice_name: "TERENTE IOANA-COSMINA CABINET INDIVIDUAL DE PSIHOLOGIE",
+  practice_address: "Str. Mihail Sebastian 23, Bloc S13, Sc. 1, Et. 6, Ap. 22, Sector 5, Bucuresti",
+  practice_phone: "0760 27 95 31",
+  practice_email: "ioana.terente@gmail.com",
+  practice_caen: "8690 - Alte activitati de asistenta medicala",
   default_session_price: 250,
   default_session_duration_minutes: 50,
   session_types_pricing: { "Ședință Individuală": 250, "Consiliere Cuplu": 350 },
@@ -79,7 +89,7 @@ export async function getTherapistSettings(): Promise<TherapistSettings> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthorized");
 
-  const { data } = await (supabase as any)
+  const { data } = await supabase
     .from("therapist_settings")
     .select("*")
     .eq("therapist_id", user.id)
@@ -92,6 +102,11 @@ export async function getTherapistSettings(): Promise<TherapistSettings> {
     cif: data.cif ?? null,
     cpr_code: data.cpr_code ?? null,
     iban: data.iban ?? null,
+    practice_name: data.practice_name ?? null,
+    practice_address: data.practice_address ?? null,
+    practice_phone: data.practice_phone ?? null,
+    practice_email: data.practice_email ?? null,
+    practice_caen: data.practice_caen ?? null,
     default_session_price: data.default_session_price ?? 250,
     default_session_duration_minutes: data.default_session_duration_minutes ?? 50,
     session_types_pricing: data.session_types_pricing ?? { "Ședință Individuală": 250 },
@@ -113,6 +128,11 @@ export async function updateProfileSettings(data: {
   cif: string;
   cpr_code: string;
   iban: string;
+  practice_name: string;
+  practice_address: string;
+  practice_phone: string;
+  practice_email: string;
+  practice_caen: string;
 }): Promise<{ success: boolean; error?: string }> {
   if (!isSupabaseConfigured()) return { success: true };
 
@@ -120,7 +140,7 @@ export async function updateProfileSettings(data: {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Unauthorized" };
 
-  const { error } = await (supabase as any)
+  const { error } = await supabase
     .from("therapist_settings")
     .upsert({ therapist_id: user.id, ...data, updated_at: new Date().toISOString() });
 
@@ -139,7 +159,7 @@ export async function updatePricingSettings(data: {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Unauthorized" };
 
-  const { error } = await (supabase as any)
+  const { error } = await supabase
     .from("therapist_settings")
     .upsert({ therapist_id: user.id, ...data, updated_at: new Date().toISOString() });
 
@@ -156,7 +176,7 @@ export async function updateScheduleSettings(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Unauthorized" };
 
-  const { error } = await (supabase as any)
+  const { error } = await supabase
     .from("therapist_settings")
     .upsert({ therapist_id: user.id, work_schedule, updated_at: new Date().toISOString() });
 
@@ -186,7 +206,7 @@ export async function updateIntegrationsSettings(data: {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Unauthorized" };
 
-  const { error } = await (supabase as any)
+  const { error } = await supabase
     .from("therapist_settings")
     .upsert({ therapist_id: user.id, ...patch });
 
@@ -205,7 +225,7 @@ export async function updateCasSettings(data: {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Unauthorized" };
 
-  const { error } = await (supabase as any)
+  const { error } = await supabase
     .from("therapist_settings")
     .upsert({ therapist_id: user.id, ...data, updated_at: new Date().toISOString() });
 
@@ -223,7 +243,7 @@ export async function updatePinSettings(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Unauthorized" };
 
-  const { data: row } = await (supabase as any)
+  const { data: row } = await supabase
     .from("therapist_settings")
     .select("clinical_notes_pin_hash")
     .eq("therapist_id", user.id)
@@ -235,7 +255,7 @@ export async function updatePinSettings(
   }
 
   const newHash = createHash("sha256").update(newPin).digest("hex");
-  const { error } = await (supabase as any)
+  const { error } = await supabase
     .from("therapist_settings")
     .upsert({ therapist_id: user.id, clinical_notes_pin_hash: newHash, updated_at: new Date().toISOString() });
 

@@ -446,3 +446,68 @@ export async function getClientOverview(clientId: string) {
     }))
   };
 }
+
+export async function getLatestReferralDocument(clientId: string) {
+  if (!isSupabaseConfigured()) {
+    return null;
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("referral_documents")
+    .select("id, referral_number, referral_date, referring_doctor_code, uploaded_at")
+    .eq("client_id", clientId)
+    .order("referral_date", { ascending: false, nullsFirst: false })
+    .order("uploaded_at", { ascending: false, nullsFirst: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[Referral] Could not load latest referral document:", error);
+    return null;
+  }
+
+  return data;
+}
+
+export async function issueGeneratedContractNumber(
+  clientId: string,
+  templateType: "STANDARD" | "MINOR" | "B2B" | "CAS",
+) {
+  if (!isSupabaseConfigured()) {
+    const year = new Date().getFullYear();
+    return {
+      id: `demo-contract-${Date.now()}`,
+      contract_number: `CTR-${year}-DEMO`,
+      contract_year: year,
+      sequence_number: 0,
+      template_type: templateType,
+    };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data: authData } = await supabase.auth.getUser();
+  if (!authData.user) {
+    return { error: "Sesiune neautorizată. Te rugăm să te autentifici din nou." };
+  }
+
+  const { data, error } = await supabase.rpc("issue_generated_contract_number", {
+    p_client_id: clientId,
+    p_template_type: templateType,
+  });
+
+  if (error || !data) {
+    return { error: error?.message || "Nu am putut emite numărul contractului." };
+  }
+
+  revalidatePath("/dashboard/clients");
+  revalidatePath(`/dashboard/clients/${clientId}`);
+
+  return {
+    id: data.id,
+    contract_number: data.contract_number,
+    contract_year: data.contract_year,
+    sequence_number: data.sequence_number,
+    template_type: data.template_type,
+  };
+}

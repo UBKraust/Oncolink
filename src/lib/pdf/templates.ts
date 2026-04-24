@@ -80,6 +80,10 @@ function para(doc: jsPDF, y: number, text: string): number {
   return y + lines.length * 5.5 + 4;
 }
 
+function safeValue(value?: string | null): string {
+  return value?.trim() || "________________";
+}
+
 export interface ContractData {
   contractNumber: string;
   startDate: string;
@@ -89,6 +93,11 @@ export interface ContractData {
   therapistName: string;
   therapistCIF: string;
   therapistIBAN?: string;
+  therapistPracticeName?: string;
+  therapistPracticeAddress?: string;
+  therapistPracticePhone?: string;
+  therapistPracticeEmail?: string;
+  therapistPracticeCaen?: string;
   sessionPrice: number;
 
   // Minor specific
@@ -111,6 +120,8 @@ export interface ContractData {
   referralNumber?: string;
   referralDate?: string;
   referringDoctor?: string;
+  casContractNumber?: string;
+  casCounty?: string;
 }
 
 /**
@@ -154,63 +165,111 @@ export async function generateContract(data: ContractData): Promise<void> {
   doc.text(`Nr. ${data.contractNumber} / Data: ${data.startDate}`, PAGE_W - MARGIN - 50, 25);
 
   let y = 44;
+  const sessionPriceLabel = `${data.sessionPrice.toFixed(2)} RON / sedinta`;
+  const therapistPracticeName = safeValue(data.therapistPracticeName);
+  const therapistPracticeAddress = safeValue(data.therapistPracticeAddress);
+  const therapistPracticePhone = safeValue(data.therapistPracticePhone);
+  const therapistPracticeEmail = safeValue(data.therapistPracticeEmail);
+  const therapistPracticeCaen = safeValue(data.therapistPracticeCaen);
+  const beneficiaryIdentity = data.isB2B
+    ? safeValue(data.companyName)
+    : safeValue(data.clientName);
+  const beneficiaryAddress = safeValue(data.clientAddress);
+  const beneficiaryIdentifier = safeValue(data.isB2B ? data.companyCIF : data.clientCNP);
+  const beneficiaryRepresentative = data.isB2B
+    ? `${safeValue(data.representativeName)}${data.representativeRole ? `, ${data.representativeRole}` : ""}`
+    : data.isMinor
+      ? [data.parent1Name, data.parent2Name].filter(Boolean).join(" / ") || "________________"
+      : "Nu este cazul";
 
   // 1. Părți Contractante
   y = section(doc, y, "Părțile contractante");
-  y = kv(doc, y, "Prestator", data.therapistName);
-  y = kv(doc, y, "CIF", data.therapistCIF);
-  if (data.therapistIBAN) y = kv(doc, y, "IBAN", data.therapistIBAN);
-  
-  y += 4;
-  
-  if (data.isB2B) {
-    y = kv(doc, y, "Beneficiar (Firmă)", data.companyName || "—");
-    y = kv(doc, y, "CUI/CIF", data.companyCIF || "—");
-    y = kv(doc, y, "Reg. Com.", data.companyRegCom || "—");
-    y = kv(doc, y, "Reprezentat prin", `${data.representativeName} (${data.representativeRole})`);
-  } else {
-    y = kv(doc, y, "Beneficiar (Pacient)", data.clientName);
-    y = kv(doc, y, "CNP", data.clientCNP);
-    y = kv(doc, y, "Adresă", data.clientAddress);
-    if (data.isMinor) {
-      y = kv(doc, y, "Reprezentant legal 1", data.parent1Name || "—");
-      if (data.parent2Name) y = kv(doc, y, "Reprezentant legal 2", data.parent2Name);
-    }
-  }
+  y = para(
+    doc,
+    y,
+    `Prestator - ${data.therapistName || "________________"}, psiholog clinician si psihoterapeut, PFA cu denumirea "${therapistPracticeName}", avand CUI ${data.therapistCIF || "________________"}, cu sediul profesional in ${therapistPracticeAddress}, telefon ${therapistPracticePhone}, e-mail ${therapistPracticeEmail}${data.therapistIBAN ? `, cont bancar ${data.therapistIBAN}` : ""}, cod CAEN ${therapistPracticeCaen}.`
+  );
+  y = para(
+    doc,
+    y,
+    data.isB2B
+      ? `Beneficiar - ${beneficiaryIdentity}, cu sediul social in ${beneficiaryAddress}, CUI/CIF ${beneficiaryIdentifier}, Reg. Com. ${safeValue(data.companyRegCom)}, reprezentat legal de ${beneficiaryRepresentative}, denumit in continuare "Beneficiarul".`
+      : `Beneficiar - ${beneficiaryIdentity}, cu domiciliul in ${beneficiaryAddress}, CNP ${beneficiaryIdentifier}${data.isMinor ? `, reprezentat legal de ${beneficiaryRepresentative}` : ""}, denumit in continuare "Beneficiarul".`
+  );
 
   // 2. Obiectul Contractului
   y += 4;
   y = section(doc, y, "Obiectul contractului");
   if (data.isCas) {
     y = para(doc, y, `Prezentul acord reglementează prestarea serviciilor psihologice decontate prin Casa de Asigurări de Sănătate în baza biletului de trimitere nr. ${data.referralNumber || "—"} din data de ${data.referralDate || "—"} emis de Dr. ${data.referringDoctor || "—"}.`);
+    if (data.casContractNumber || data.casCounty) {
+      y = para(doc, y, `Serviciile sunt furnizate în baza contractului CAS ${data.casContractNumber || "—"}${data.casCounty ? `, județ ${data.casCounty}` : ""}.`);
+    }
     y = para(doc, y, "Beneficiarul declară că a fost informat cu privire la drepturile și obligațiile ce decurg din calitatea de asigurat.");
   } else {
-    y = para(doc, y, `Prestatorul se angajează să furnizeze servicii de ${data.isB2B ? "consultanță psihologică" : "psihoterapie individuală"} Beneficiarului, conform Legii nr. 213/2004 și Codului Deontologic al profesiei de psiholog cu drept de liberă practică.`);
+    y = para(doc, y, "2.1. Obiectul prezentului contract il constituie furnizarea de servicii psihologice si/sau psihoterapeutice de catre Prestator in beneficiul Beneficiarului sau al persoanelor nominalizate de acesta, dupa caz.");
+    y = para(doc, y, "Serviciile pot include: sesiuni de consiliere psihologica individuala sau de grup cu adolescenti/adulti; evaluari psihologice si elaborarea unor planuri de interventie; workshopuri privind autoreglarea emotionala, comunicarea in familie si tehnici cognitiv-comportamentale; alte servicii conexe agreate de parti, in limitele specializarii Prestatorului.");
+    y = para(doc, y, "2.2. Prestatorul va oferi serviciile conform competentelor sale profesionale, legilor aplicabile si normelor etice ale Colegiului Psihologilor din Romania.");
   }
 
-  // 3. Clauze Speciale (Minor / B2B)
+  if (!data.isCas) {
+    y = section(doc, y, "Durata contractului");
+    y = para(doc, y, "3.1. Contractul se incheie pe durata determinata, incepand cu data semnarii, pana la incetarea colaborarii prin acordul partilor sau conform clauzelor de mai jos. Partile pot conveni prelungirea sau detalierea relatiei contractuale prin act aditional.");
+    y = para(doc, y, "3.2. Daca Beneficiarul solicita suspendarea temporara a serviciilor, Prestatorul va fi notificat cu cel putin 5 zile lucratoare inainte.");
+
+    y = section(doc, y, "Programarea sedintelor");
+    y = para(doc, y, "4.1. Sedintele de terapie se vor desfasura in spatiul profesional din Bucuresti sau online, dupa caz. Beneficiarul si Prestatorul stabilesc de comun acord frecventa sedintelor.");
+    y = para(doc, y, "4.2. Programarile se fac prin telefon sau e-mail, cu cel putin 48 de ore inainte. Anularile sau reprogramarile se notifica cu minimum 24 de ore inainte; in caz contrar, sedinta se considera rezervata si poate fi facturata integral.");
+
+    y = section(doc, y, "Pretul si modalitatea de plata");
+    y = para(doc, y, `5.1. Tariful pentru o sedinta de consiliere/psihoterapie de aproximativ 50 de minute este de ${sessionPriceLabel}. Pentru workshopuri, evaluari sau servicii complexe se poate stabili un tarif separat.`);
+    y = para(doc, y, `5.2. Beneficiarul va achita contravaloarea serviciilor la fiecare sedinta, prin numerar sau transfer bancar${data.therapistIBAN ? ` in contul ${data.therapistIBAN}` : ""}.`);
+    if (data.isB2B) {
+      y = para(doc, y, "5.3. Pentru persoane juridice, Prestatorul va emite factura fiscala conform legislatiei; plata se face in termen de 15 zile calendaristice de la data facturii.");
+    } else {
+      y = para(doc, y, "5.3. Prestatorul poate emite factura sau chitanta, conform legislatiei aplicabile. Cabinetul nu este inregistrat in scopuri de TVA.");
+    }
+
+    y = section(doc, y, "Drepturile si obligatiile partilor");
+    y = para(doc, y, "6.1. Obligatiile Prestatorului: sa respecte confidentialitatea datelor personale si sa le prelucreze exclusiv in scopul prestarii serviciilor psihologice; sa ofere servicii de calitate, in concordanta cu pregatirea sa si standardele profesionale; sa informeze Beneficiarul despre obiectivele, metodele si durata programului terapeutic si sa obtina consimtamantul informat; sa mentina un climat sigur si respectuos in timpul sedintelor.");
+    y = para(doc, y, "6.2. Drepturile Prestatorului: sa primeasca remuneratia convenita la termenele stabilite; sa refuze prestarea serviciilor daca Beneficiarul nu respecta obligatiile contractuale sau daca apar situatii care ar compromite etica profesionala; sa solicite reprogramarea sedintelor atunci cand apar situatii de forta majora.");
+    y = para(doc, y, "6.3. Obligatiile Beneficiarului: sa furnizeze informatii corecte privind starea psihologica si sa respecte recomandarile Prestatorului; sa respecte programarile si conditiile de anulare; sa achite contravaloarea serviciilor la termenele stabilite; sa nu divulge informatii confidentiale despre alte persoane care participa la sedinte de grup.");
+    y = para(doc, y, "6.4. Drepturile Beneficiarului: sa primeasca servicii psihologice de calitate si sa fie informat despre metodele utilizate; sa intrerupa colaborarea in orice moment, cu notificare scrisa transmisa cu 5 zile inainte; sa primeasca factura fiscala si documente justificative la plata serviciilor.");
+  }
+
   if (data.isMinor) {
-    y = section(doc, y, "Consimțământ pentru minori (Legea 272/2004)");
-    y = para(doc, y, "Părinții / Reprezentanții legali declară că dețin autoritatea părintească și își exprimă acordul pentru prestarea serviciilor psihologice minorului conform Legii 272/2004.");
+    y = section(doc, y, "Clauze speciale pentru minor");
+    y = para(doc, y, "Pentru beneficiarii minori, reprezentantii legali declara ca detin autoritatea parinteasca si isi exprima acordul pentru prestarea serviciilor psihologice, conform Legii 272/2004.");
+    if (data.parent1Name) y = para(doc, y, `Reprezentant legal principal: ${data.parent1Name}.`);
+    if (data.parent2Name) y = para(doc, y, `Al doilea reprezentant legal declarat: ${data.parent2Name}.`);
+    if (data.parentsMaritalStatus) y = para(doc, y, `Situatia juridica declarata a parintilor: ${data.parentsMaritalStatus}.`);
     if (data.parentsMaritalStatus !== "CASATORITI" && data.courtSentenceNumber) {
-      y = para(doc, y, `Conform sentinței judecătorești nr. ${data.courtSentenceNumber}, custodia este exercitată conform dispozițiilor legale aferente.`);
+      y = para(doc, y, `Conform sentintei judecatoresti nr. ${data.courtSentenceNumber}, custodia este exercitata potrivit dispozitiilor legale aplicabile.`);
     }
   }
 
-  // 4. Onorariu și Plată
+  y = section(doc, y, "Confidentialitate si protectia datelor");
+  y = para(doc, y, "7.1. Partile se obliga sa respecte prevederile GDPR si ale Legii nr. 213/2004 privind exercitarea profesiei de psiholog cu drept de libera practica. Informatiile si datele personale dezvaluite pe durata contractului sunt strict confidentiale.");
+  y = para(doc, y, "7.2. Prestatorul poate utiliza date anonimizate in scopuri de cercetare sau formare profesionala numai cu consimtamantul scris al Beneficiarului.");
+
   if (!data.isCas) {
-    y = section(doc, y, "Tarif și modalitate de plată");
-    y = kv(doc, y, "Tarif", `${data.sessionPrice.toFixed(2)} RON / ședință (scutit TVA)`);
-    y = para(doc, y, "Plata se efectuează la data emiterii facturii prin metodele agreate (Transfer, Card, Numerar).");
+    y = section(doc, y, "Raspunderea contractuala");
+    y = para(doc, y, "8.1. In cazul neexecutarii sau executarii necorespunzatoare a obligatiilor contractuale, partea in culpa raspunde pentru prejudiciile cauzate celeilalte parti, in conditiile legii.");
+    y = para(doc, y, "8.2. Forta majora exonereaza partile de raspundere. Partea care invoca forta majora va notifica cealalta parte in termen de 5 zile de la aparitia evenimentului.");
+
+    y = section(doc, y, "Incetarea contractului");
+    y = para(doc, y, "9.1. Contractul inceteaza prin expirarea termenului convenit, prin acordul partilor sau prin denuntare unilaterala, cu notificarea prealabila de 5 zile.");
+    y = para(doc, y, "9.2. Prestatorul poate rezilia contractul imediat in cazul in care Beneficiarul incalca grav obligatiile contractuale, inclusiv prin neplata repetata sau comportament agresiv.");
+
+    y = section(doc, y, "Dispozitii finale");
+    y = para(doc, y, "10.1. Orice modificare a prezentului contract se face prin act aditional semnat de ambele parti.");
+    y = para(doc, y, "10.2. Litigiile nascute din interpretarea sau executarea contractului vor fi solutionate pe cale amiabila; in caz contrar, competenta revine instantelor judecatoresti din Bucuresti.");
+    y = para(doc, y, `10.3. Contractul se semneaza astazi, ${data.startDate}, in doua exemplare originale, cate unul pentru fiecare parte.`);
   }
 
-  // 5. Confidențialitate
-  y = section(doc, y, "Confidențialitate și GDPR");
-  y = para(doc, y, "Datele sunt prelucrate conform Regulamentului UE 2016/679. Notele clinice sunt protejate prin criptare end-to-end. Secretul profesional poate fi ridicat doar cu acordul pacientului sau în condițiile prevăzute de lege (pericol iminent).");
-
   // Signatures
-  let leftLabel = "Prestator (Terapeut)";
-  let rightLabel = data.isB2B ? "Beneficiar (Firmă)" : (data.isMinor ? "Reprezentanți Legali" : "Beneficiar (Pacient)");
+  const leftLabel = "Prestator (Terapeut)";
+  const rightLabel = data.isB2B ? "Beneficiar (Firmă)" : (data.isMinor ? "Reprezentanți Legali" : "Beneficiar (Pacient)");
   
   signatureBlock(doc, y, leftLabel, rightLabel);
 

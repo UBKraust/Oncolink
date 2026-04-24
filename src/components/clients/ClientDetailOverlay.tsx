@@ -418,7 +418,7 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
 
                  {/* NEW: Contract Generator Component */}
                  <div className="pt-2">
-                    <ContractGenerator client={client} />
+                    <ContractGenerator key={client.id} client={client} />
                  </div>
               </div>
            </div>

@@ -69,7 +69,6 @@ export function MinorOnboardingWizard() {
   } = useForm<MinorOnboardingValues>({
     resolver: zodResolver(minorOnboardingSchema),
     defaultValues: {
-      is_minor: true,
       legal_liability_consent: false,
       gdpr_consent: false,
     },

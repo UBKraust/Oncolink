@@ -30,6 +30,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Fișierul depășește 10MB." }, { status: 400 });
     }
 
+    const supabase = await createSupabaseServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     let driveFileId: string | null = null;
     let documentUrl: string | null = null;
 
@@ -37,12 +43,16 @@ export async function POST(req: NextRequest) {
     let parentFolderId: string | null = null;
 
     if (isSupabaseConfigured()) {
-      const supabase = await createSupabaseServerClient();
       const { data: clientRow } = await supabase
         .from("clients")
         .select("contract_url")
         .eq("id", clientId)
+        .eq("therapist_id", user.id)
         .single();
+
+      if (!clientRow) {
+        return NextResponse.json({ error: "Client inexistent sau inaccesibil." }, { status: 404 });
+      }
 
       // contract_url holds the Drive FOLDER url — extract folder id
       if (clientRow?.contract_url) {
@@ -67,10 +77,10 @@ export async function POST(req: NextRequest) {
 
     // ── Save to Supabase ───────────────────────────────────────────────────────
     if (isSupabaseConfigured()) {
-      const supabase = await createSupabaseServerClient();
       const { data, error } = await supabase
         .from("patient_documents")
         .insert({
+          therapist_id: user.id,
           client_id: clientId,
           file_name: file.name,
           file_size_kb: Math.round(file.size / 1024),

@@ -54,7 +54,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
     for (const a of data ?? []) {
-      const client = a.client as { full_name: string | null } | null;
+      const client = Array.isArray(a.client) ? a.client[0] : a.client;
       rows.push({
         date: new Date(a.appointment_date).toLocaleDateString("ro-RO"),
         initials: client?.full_name ? initialsFromName(client.full_name) : "—",

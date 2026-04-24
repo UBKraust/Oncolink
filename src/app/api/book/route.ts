@@ -21,17 +21,17 @@ export async function GET(): Promise<NextResponse> {
 
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
+  const admin = createSupabaseServiceClient();
   
   let therapistId: string | null = user?.id || null;
 
   // Fallback for public: find the first therapist (single-tenant MVP mode)
   if (!therapistId) {
-    const admin = createSupabaseServiceClient();
     const { data: first } = await admin
-      .from("therapist_settings")
+      .from("therapist_settings" as never)
       .select("therapist_id")
       .limit(1)
-      .maybeSingle();
+      .maybeSingle() as { data: { therapist_id: string | null } | null };
     therapistId = first?.therapist_id || null;
   }
 
@@ -39,7 +39,8 @@ export async function GET(): Promise<NextResponse> {
     return NextResponse.json({ slots: [] });
   }
 
-  const { data } = await supabase
+  const db = user ? supabase : admin;
+  const { data } = await db
     .from("appointments")
     .select("*")
     .eq("therapist_id", therapistId)
@@ -91,15 +92,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
+  const admin = createSupabaseServiceClient();
   let therapistId: string | null = user?.id || null;
 
   if (!therapistId) {
-    const admin = createSupabaseServiceClient();
     const { data: first } = await admin
-      .from("therapist_settings")
+      .from("therapist_settings" as never)
       .select("therapist_id")
       .limit(1)
-      .maybeSingle();
+      .maybeSingle() as { data: { therapist_id: string | null } | null };
     therapistId = first?.therapist_id || null;
   }
 
@@ -107,8 +108,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Nu am găsit niciun terapeut configurat." }, { status: 500 });
   }
 
+  const db = user ? supabase : admin;
+
   // Check slot is still free
-  const { data: conflicts } = await supabase
+  const { data: conflicts } = await db
     .from("appointments")
     .select("id")
     .eq("therapist_id", therapistId)
@@ -125,7 +128,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   // Upsert client
   let clientId: string;
-  const { data: existing } = await supabase
+  const { data: existing } = await db
     .from("clients")
     .select("id")
     .eq("therapist_id", therapistId)
@@ -134,12 +137,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   if (existing) {
     clientId = existing.id;
-    await supabase
+    await db
       .from("clients")
       .update({ full_name, phone: phone ?? null, cnp_cif: cnp_cif ?? null, address: address ?? null })
       .eq("id", clientId);
   } else {
-    const { data: created, error } = await supabase
+    const { data: created, error } = await db
       .from("clients")
       .insert({ 
         therapist_id: therapistId, 
@@ -155,7 +158,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     clientId = created.id;
   }
 
-  const { data: appt, error: apptError } = await supabase
+  const { data: appt, error: apptError } = await db
     .from("appointments")
     .insert({
       therapist_id: therapistId,

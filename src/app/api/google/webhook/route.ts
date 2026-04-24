@@ -24,7 +24,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const updatedMin = new Date(Date.now() - 5 * 60_000).toISOString();
   try {
-    await reconcileFromGoogle(updatedMin);
+    await reconcileFromGoogle(updatedMin, { service: true });
   } catch (e) {
     console.error("[google-webhook] reconcile error:", (e as Error).message);
     return NextResponse.json({ error: "reconcile failed" }, { status: 500 });

@@ -8,7 +8,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { mockClients } from "@/lib/mock/clients";
 
 export interface OnboardingData {
-  id: string;
+  id?: string;
   cnp_cif?: string;
   address?: string;
   emergency_contact_name?: string;
@@ -118,6 +118,9 @@ export async function submitMinorOnboarding(data: OnboardingData, files?: { cust
 }
 
 export async function submitClientOnboarding(data: OnboardingData) {
+  if (!data.id) {
+    return { success: false, error: "Client lipsă pentru onboarding." };
+  }
 
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase

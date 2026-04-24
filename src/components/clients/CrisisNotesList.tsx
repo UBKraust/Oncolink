@@ -11,6 +11,8 @@ import { deleteCrisisNote, type CrisisNote } from "@/app/dashboard/clients/crisi
 import { useNotesVault } from "@/components/notes/notes-context";
 import { decryptNote } from "@/lib/crypto/notes";
 import { cn } from "@/lib/utils";
+
+interface Props {
   clientId: string;
   clientName: string;
   initialNotes: CrisisNote[];

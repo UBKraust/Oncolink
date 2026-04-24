@@ -2,9 +2,8 @@
 
 import React, { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ListCharacters, Calendar as CalendarIcon, LayoutList } from "lucide-react";
+import { Calendar as CalendarIcon, LayoutList } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { WeeklyCalendar } from "./WeeklyCalendar";
 import type { AppointmentWithClient } from "@/lib/appointments/queries";
 

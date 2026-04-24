@@ -19,7 +19,8 @@ const schema = z.object({
   duration_minutes: z.coerce.number().int().min(25).max(240).default(50),
 });
 
-type FormValues = z.infer<typeof schema>;
+type FormInput = z.input<typeof schema>;
+type FormValues = z.output<typeof schema>;
 
 interface BookingFormProps {
   onSuccess?: (appointmentId: string) => void;
@@ -41,7 +42,7 @@ export function BookingForm({ onSuccess }: BookingFormProps) {
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
-  } = useForm<FormValues>({
+  } = useForm<FormInput, undefined, FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { duration_minutes: 50 },
   });

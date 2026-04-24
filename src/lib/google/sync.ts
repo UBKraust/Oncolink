@@ -11,6 +11,7 @@
  */
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import {
   createCalendarEvent,
   deleteCalendarEvent,
@@ -27,12 +28,19 @@ const CALENDAR_ID = "primary";
  * Retrieve stored tokens from DB and auto-refresh if expired.
  * Returns null if Google OAuth is not yet connected.
  */
-export async function getValidAccessToken(): Promise<string | null> {
-  const supabase = await createSupabaseServerClient();
+export async function getValidAccessToken(options?: {
+  therapistId?: string;
+  service?: boolean;
+}): Promise<string | null> {
+  const supabase = options?.service
+    ? createSupabaseServiceClient()
+    : await createSupabaseServerClient();
   const { data } = await supabase
     .from("therapist_settings" as never)
-    .select("google_access_token, google_refresh_token, google_token_expires_at")
+    .select("therapist_id, google_access_token, google_refresh_token, google_token_expires_at")
+    .match(options?.therapistId ? { therapist_id: options.therapistId } : {})
     .maybeSingle() as { data: {
+      therapist_id: string;
       google_access_token: string | null;
       google_refresh_token: string | null;
       google_token_expires_at: string | null;
@@ -51,8 +59,13 @@ export async function getValidAccessToken(): Promise<string | null> {
   const refreshed = await refreshAccessToken(data.google_refresh_token);
   const newExpiry = new Date(Date.now() + refreshed.expires_in * 1000);
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
+  let therapistId = options?.therapistId ?? data.therapist_id;
+
+  if (!options?.service) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+    therapistId = user.id;
+  }
 
   await supabase
     .from("therapist_settings" as never)
@@ -60,7 +73,7 @@ export async function getValidAccessToken(): Promise<string | null> {
       google_access_token: refreshed.access_token,
       google_token_expires_at: newExpiry.toISOString(),
     } as never)
-    .eq("therapist_id" as never, user.id as never);
+    .eq("therapist_id" as never, therapistId as never);
 
   return refreshed.access_token;
 }
@@ -68,10 +81,7 @@ export async function getValidAccessToken(): Promise<string | null> {
 export async function pushAppointmentToGoogle(
   appointmentId: string,
 ): Promise<void> {
-  const accessToken = await getValidAccessToken();
-  if (!accessToken) return;
-
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseServiceClient();
   const { data: a } = await supabase
     .from("appointments")
     .select("*, client:clients(full_name, email)")
@@ -80,9 +90,22 @@ export async function pushAppointmentToGoogle(
 
   if (!a) return;
 
+  const appointmentTherapistId = (a as unknown as { therapist_id?: string | null }).therapist_id;
+  if (!appointmentTherapistId) return;
+
+  const accessToken = await getValidAccessToken({
+    therapistId: appointmentTherapistId,
+    service: true,
+  });
+  if (!accessToken) return;
+
   const start = new Date(a.appointment_date);
   const end = new Date(start.getTime() + a.duration_minutes * 60_000);
   const client = a.client as { full_name: string | null; email: string | null } | null;
+  const reminderSettings = a as unknown as {
+    reminders_enabled?: boolean | null;
+    reminder_minutes?: number | null;
+  };
 
   const event: GCalEvent = {
     summary: a.is_external_duty
@@ -94,9 +117,9 @@ export async function pushAppointmentToGoogle(
     start: { dateTime: start.toISOString(), timeZone: TZ },
     end: { dateTime: end.toISOString(), timeZone: TZ },
     reminders: {
-      useDefault: !a.reminders_enabled,
-      overrides: a.reminders_enabled
-        ? [{ method: "popup", minutes: a.reminder_minutes ?? 60 }]
+      useDefault: !reminderSettings.reminders_enabled,
+      overrides: reminderSettings.reminders_enabled
+        ? [{ method: "popup", minutes: reminderSettings.reminder_minutes ?? 60 }]
         : [],
     },
   };
@@ -129,14 +152,19 @@ export async function deleteAppointmentFromGoogle(
  * - Updates meet_link when a conference link is present.
  * - Sets status = 'ANULAT' when the therapist deletes the event in Google Calendar.
  */
-export async function reconcileFromGoogle(updatedMin: string): Promise<void> {
-  const accessToken = await getValidAccessToken();
+export async function reconcileFromGoogle(
+  updatedMin: string,
+  options?: { service?: boolean },
+): Promise<void> {
+  const accessToken = await getValidAccessToken(options);
   if (!accessToken) return;
 
   const events = await listRecentEvents(accessToken, CALENDAR_ID, updatedMin);
   if (!events.length) return;
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = options?.service
+    ? createSupabaseServiceClient()
+    : await createSupabaseServerClient();
 
   for (const ev of events) {
     if (!ev.id) continue;

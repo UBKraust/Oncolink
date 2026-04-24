@@ -26,6 +26,7 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   deriveLocation,
   locationLabel,
@@ -376,7 +377,9 @@ export function SessionDrawer({
                     {[null, "#cabinet", "#Clinica"].map((tag) => (
                       <button
                         key={String(tag)}
-                        onClick={() => startTransition(() => updateAppointmentFields(appointment.id, { location_tag: tag }))}
+                        onClick={() => startTransition(() => {
+                          void updateAppointmentFields(appointment.id, { location_tag: tag });
+                        })}
                         className={cn(
                           "flex-1 py-2 rounded-xl text-[10px] font-black uppercase transition-all border",
                           appointment.location_tag === tag 
@@ -396,7 +399,9 @@ export function SessionDrawer({
                     defaultValue={appointment.personal_notes || ""}
                     onBlur={(e) => {
                       if (e.target.value !== (appointment.personal_notes || "")) {
-                         startTransition(() => updateAppointmentFields(appointment.id, { personal_notes: e.target.value }));
+                         startTransition(() => {
+                           void updateAppointmentFields(appointment.id, { personal_notes: e.target.value });
+                         });
                       }
                     }}
                     placeholder="Note doar pentru tine..."
@@ -411,7 +416,9 @@ export function SessionDrawer({
                       <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Notificări App</p>
                     </div>
                     <button
-                      onClick={() => startTransition(() => updateAppointmentFields(appointment.id, { reminders_enabled: !appointment.reminders_enabled }))}
+                      onClick={() => startTransition(() => {
+                        void updateAppointmentFields(appointment.id, { reminders_enabled: !appointment.reminders_enabled });
+                      })}
                       className={cn(
                         "h-5 w-10 rounded-full transition-all relative",
                         appointment.reminders_enabled ? "bg-emerald-500" : "bg-slate-300"
@@ -431,7 +438,9 @@ export function SessionDrawer({
                         <input 
                           type="number"
                           defaultValue={appointment.reminder_minutes || 60}
-                          onBlur={(e) => startTransition(() => updateAppointmentFields(appointment.id, { reminder_minutes: parseInt(e.target.value) }))}
+                          onBlur={(e) => startTransition(() => {
+                            void updateAppointmentFields(appointment.id, { reminder_minutes: parseInt(e.target.value) });
+                          })}
                           className="w-12 h-8 rounded-lg bg-white border border-slate-200 text-center text-xs font-bold font-mono outline-none"
                         />
                         <span className="text-[10px] font-bold text-slate-400 uppercase">min înainte</span>

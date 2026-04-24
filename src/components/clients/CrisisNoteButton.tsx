@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useNotesVault } from "@/components/notes/notes-context";
+import { addCrisisNote } from "@/app/dashboard/clients/crisis-notes-actions";
 import { encryptNote } from "@/lib/crypto/notes";
 
 interface Props {

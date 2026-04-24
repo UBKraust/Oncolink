@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { mockAssessments } from "@/lib/mock/assessments";
+import { mockClients } from "@/lib/mock/clients";
 import { seededTests } from "@/lib/assessments/seededTests";
 
 export default async function AssessmentsRegistryPage() {
@@ -37,10 +38,12 @@ export default async function AssessmentsRegistryPage() {
   } else {
     // Enrich mock assessments with seeded test names for display
     assessments = mockAssessments.map(a => {
-      const test = seededTests.find(t => t.id === a.test_id);
+      const testType = String(a.scoring_data.test_type ?? "").toLowerCase();
+      const test = seededTests.find((t) => t.name.toLowerCase().includes(testType));
+      const client = mockClients.find((c) => c.id === a.client_id);
       return {
         ...a,
-        client: { full_name: a.client_name },
+        client: { full_name: client?.full_name ?? "Client demo" },
         test: { name: test?.name ?? "Test Standard" }
       };
     });

@@ -10,6 +10,9 @@ import type { AppointmentStatus } from "@/lib/appointments/helpers";
 import { pushAppointmentToGoogle } from "@/lib/google/sync";
 
 function parseForm(formData: FormData) {
+  const location = String(formData.get("location") ?? "PRIVAT").trim();
+  const meetLink = String(formData.get("meet_link") ?? "").trim();
+
   return {
     client_id: String(formData.get("client_id") ?? "").trim(),
     appointment_date: String(formData.get("appointment_date") ?? "").trim(),

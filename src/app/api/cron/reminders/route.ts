@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { format, addHours } from "date-fns";
 import { ro } from "date-fns/locale";
 
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import {
   isTwilioConfigured,
@@ -13,7 +13,6 @@ import {
   unpaidInvoiceMsg,
   travelReminderMsg,
 } from "@/lib/twilio/client";
-import { deriveLocation } from "@/lib/appointments/helpers";
 
 /**
  * Cron endpoint — invoke every hour via Cloudflare Cron Triggers.
@@ -38,7 +37,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   }
 
   const results = { reminders: 0, unpaid: 0, travel: 0, errors: [] as string[] };
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseServiceClient();
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://cepaipatit.app";
 
   // ─── Job 1: 24h appointment reminders ──────────────────────────────────────
@@ -144,8 +143,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         .lte("appointment_date", travelEnd.toISOString());
 
       for (const a of policlinic ?? []) {
-        const loc = deriveLocation(a);
-        if (loc !== "POLICLINIC") continue;
+        if (!a.is_external_duty || a.meet_link) continue;
         try {
           await sendMessage({
             to: therapistPhone,
@@ -185,7 +183,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
             parent_phone: null,
             notes_anonymized_at: new Date().toISOString(),
             scheduled_anonymization_at: null,
-          })
+          } as never)
           .eq("id", c.id);
 
         if (error) throw error;

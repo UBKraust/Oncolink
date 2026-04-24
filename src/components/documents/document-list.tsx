@@ -19,19 +19,27 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { generateContract, generateGdprConsent } from "@/lib/pdf/templates";
-import type { MockClient } from "@/lib/mock/clients";
+
+type DocumentClient = {
+  id: string;
+  full_name: string | null;
+  cnp_cif: string | null;
+  address: string | null;
+  gdpr_consent_signed: boolean;
+};
 
 interface DocumentListProps {
-  clients: MockClient[];
+  clients: DocumentClient[];
 }
 
 export function DocumentList({ clients }: DocumentListProps) {
   const [loading, setLoading] = useState<string | null>(null);
 
-  const handleContract = async (c: MockClient) => {
+  const handleContract = async (c: DocumentClient) => {
     setLoading(`contract-${c.id}`);
     try {
       await generateContract({
+        contractNumber: `CTR-${new Date().getFullYear()}-${c.id.slice(0, 8)}`,
         clientName: c.full_name ?? "Client",
         clientCNP: c.cnp_cif ?? "—",
         clientAddress: c.address ?? "—",
@@ -45,7 +53,7 @@ export function DocumentList({ clients }: DocumentListProps) {
     }
   };
 
-  const handleGdpr = async (c: MockClient) => {
+  const handleGdpr = async (c: DocumentClient) => {
     setLoading(`gdpr-${c.id}`);
     try {
       await generateGdprConsent({

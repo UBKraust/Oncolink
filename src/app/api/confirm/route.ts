@@ -2,7 +2,7 @@ export const runtime = "edge";
 
 import { NextRequest, NextResponse } from "next/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
 /**
  * GET /api/confirm?id=<appointmentId>&action=confirm|cancel
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseServiceClient();
   const newStatus = action === "confirm" ? "CONFIRMAT" : "ANULAT";
 
   await supabase

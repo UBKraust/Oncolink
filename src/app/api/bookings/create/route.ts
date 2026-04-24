@@ -49,9 +49,29 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const payload: BookingPayload = parsed.data;
   const startISO = payload.slot_start;
 
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const admin = createSupabaseServiceClient();
+  let therapistId: string | null = user?.id || null;
+
+  if (!therapistId) {
+    const { data: first } = await admin
+      .from("therapist_settings" as never)
+      .select("therapist_id")
+      .limit(1)
+      .maybeSingle() as { data: { therapist_id: string | null } | null };
+    therapistId = first?.therapist_id || null;
+  }
+
+  if (!therapistId) {
+    return NextResponse.json({ error: "Nu am găsit niciun terapeut configurat." }, { status: 500 });
+  }
+
+  const db = user ? supabase : admin;
+
   // --- Step 1 + 2: Dual overlap check (Supabase + Google FreeBusy) ---
   try {
-    await checkOverlap(startISO, payload.duration_minutes);
+    await checkOverlap(startISO, payload.duration_minutes, therapistId);
   } catch (err) {
     if (err instanceof OverlapError) {
       return NextResponse.json(
@@ -66,29 +86,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     throw err;
   }
 
-  const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  let therapistId: string | null = user?.id || null;
-
-  if (!therapistId) {
-    const admin = createSupabaseServiceClient();
-    const { data: first } = await admin
-      .from("therapist_settings")
-      .select("therapist_id")
-      .limit(1)
-      .maybeSingle();
-    therapistId = first?.therapist_id || null;
-  }
-
-  if (!therapistId) {
-    return NextResponse.json({ error: "Nu am găsit niciun terapeut configurat." }, { status: 500 });
-  }
-
   // --- Step 3: Atomic client upsert + appointment insert ---
   // Upsert client (match by email or phone)
   let clientId: string;
 
-  const { data: byEmail } = await supabase
+  const { data: byEmail } = await db
     .from("clients")
     .select("id")
     .eq("therapist_id", therapistId)
@@ -96,7 +98,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     .maybeSingle();
 
   const { data: byPhone } = !byEmail
-    ? await supabase
+    ? await db
         .from("clients")
         .select("id")
         .eq("therapist_id", therapistId)
@@ -108,7 +110,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   if (existingClient) {
     clientId = existingClient.id;
-    await supabase
+    await db
       .from("clients")
       .update({
         full_name: payload.full_name,
@@ -118,7 +120,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       })
       .eq("id", clientId);
   } else {
-    const { data: created, error: clientError } = await supabase
+    const { data: created, error: clientError } = await db
       .from("clients")
       .insert({
         therapist_id: therapistId,
@@ -138,7 +140,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   // Insert appointment
-  const { data: appt, error: apptError } = await supabase
+  const { data: appt, error: apptError } = await db
     .from("appointments")
     .insert({
       therapist_id: therapistId,

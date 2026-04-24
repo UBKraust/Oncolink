@@ -12,6 +12,7 @@
  */
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { getFreeBusy } from "@/lib/google/client";
 import { getValidAccessToken } from "@/lib/google/sync";
 
@@ -32,6 +33,7 @@ export class OverlapError extends Error {
 export async function checkOverlap(
   startISO: string,
   durationMinutes: number,
+  therapistId?: string,
 ): Promise<void> {
   const startMs = new Date(startISO).getTime();
   const endMs = startMs + durationMinutes * 60_000;
@@ -43,8 +45,10 @@ export async function checkOverlap(
   //   A_start < end  AND  A_start + duration > start
   // We approximate by checking: A_start < end AND A_start >= start - maxDuration
   // Then filter precisely in JS to handle variable durations.
-  const supabase = await createSupabaseServerClient();
-  const { data: candidates, error } = await supabase
+  const supabase = therapistId
+    ? createSupabaseServiceClient()
+    : await createSupabaseServerClient();
+  let query = supabase
     .from("appointments")
     .select("appointment_date, duration_minutes")
     .lt("appointment_date", endUTC)
@@ -53,6 +57,12 @@ export async function checkOverlap(
       new Date(startMs - 4 * 60 * 60_000).toISOString(), // look back up to 4 h
     )
     .in("status", ["PROGRAMAT", "CONFIRMAT"]);
+
+  if (therapistId) {
+    query = query.eq("therapist_id", therapistId);
+  }
+
+  const { data: candidates, error } = await query;
 
   if (error) throw new Error(`Supabase check failed: ${error.message}`);
 
@@ -69,7 +79,10 @@ export async function checkOverlap(
   }
 
   // --- 2. Google Calendar FreeBusy check ---
-  const accessToken = await getValidAccessToken().catch(() => null);
+  const accessToken = await getValidAccessToken({
+    therapistId,
+    service: Boolean(therapistId),
+  }).catch(() => null);
   if (accessToken) {
     const busy = await getFreeBusy(
       accessToken,

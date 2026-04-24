@@ -60,7 +60,9 @@ export const locationLabel: Record<LocationKind, string> = {
  * otherwise fallback to PRIVAT.
  */
 export function deriveLocation(
-  a: Pick<AppointmentRow, "meet_link" | "is_external_duty" | "location_tag">,
+  a: Pick<AppointmentRow, "meet_link" | "is_external_duty"> & {
+    location_tag?: string | null;
+  },
 ): LocationKind {
   if (a.location_tag === "#cabinet") return "CABINET";
   if (a.location_tag === "#Clinica") return "CLINICA";

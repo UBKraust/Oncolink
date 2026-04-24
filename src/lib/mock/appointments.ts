@@ -19,7 +19,7 @@ const generateDay = (
   dayIndex: number,
   start: number,
   end: number,
-  options: { tag?: string; is_external?: boolean; online?: boolean } = {}
+  options: { tag?: string | null; is_external?: boolean; online?: boolean } = {}
 ): MockAppointment[] => {
   const result: MockAppointment[] = [];
   for (let h = start; h < end; h++) {

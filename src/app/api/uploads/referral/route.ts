@@ -46,6 +46,37 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const supabase = await createSupabaseServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { data: clientRow } = await supabase
+      .from("clients")
+      .select("id")
+      .eq("id", clientId)
+      .eq("therapist_id", user.id)
+      .single();
+
+    if (!clientRow) {
+      return NextResponse.json({ error: "Client inexistent sau inaccesibil." }, { status: 404 });
+    }
+
+    if (appointmentId) {
+      const { data: appointmentRow } = await supabase
+        .from("appointments")
+        .select("id")
+        .eq("id", appointmentId)
+        .eq("client_id", clientId)
+        .eq("therapist_id", user.id)
+        .single();
+
+      if (!appointmentRow) {
+        return NextResponse.json({ error: "Programare inexistentă sau inaccesibilă." }, { status: 404 });
+      }
+    }
+
     let driveFileId: string | null = null;
     let documentUrl: string | null = null;
 
@@ -66,11 +97,10 @@ export async function POST(req: NextRequest) {
 
     // ── Save metadata to Supabase ────────────────────────────────────────────
     if (isSupabaseConfigured()) {
-      const supabase = await createSupabaseServerClient();
-
       const { data, error } = await supabase
         .from("referral_documents")
         .insert({
+          therapist_id: user.id,
           client_id: clientId,
           appointment_id: appointmentId ?? null,
           file_name: file.name,

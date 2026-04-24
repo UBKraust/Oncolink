@@ -6,6 +6,10 @@ export type { AppointmentRow };
 
 export interface AppointmentWithClient extends AppointmentRow {
   client: Pick<ClientRow, "id" | "full_name" | "email"> | null;
+  location_tag?: string | null;
+  personal_notes?: string | null;
+  reminders_enabled?: boolean | null;
+  reminder_minutes?: number | null;
 }
 
 export interface ListAppointmentsFilters {

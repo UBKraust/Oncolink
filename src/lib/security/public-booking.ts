@@ -22,7 +22,7 @@ export async function resolvePublicBookingTherapistId(
   }
 
   const admin = createSupabaseServiceClient();
-  const { data } = await (admin as any)
+  const { data } = await admin
     .from("therapist_settings")
     .select("therapist_id")
     .eq("public_booking_slug", resolvedSlug)

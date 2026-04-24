@@ -40,6 +40,23 @@ function isActiveToken(row: {
   );
 }
 
+type PublicOnboardingClient = {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+  phone: string | null;
+};
+
+type OnboardingTokenPayload = {
+  id: string;
+  therapist_id: string;
+  client_id: string;
+  expires_at: string;
+  used_at: string | null;
+  revoked_at: string | null;
+  client: PublicOnboardingClient | null;
+};
+
 export async function createOnboardingAccessToken(params: {
   clientId: string;
   therapistId: string;
@@ -58,14 +75,14 @@ export async function createOnboardingAccessToken(params: {
     Date.now() + (params.expiresInHours ?? 72) * 60 * 60 * 1000,
   ).toISOString();
 
-  await (admin as any)
+  await admin
     .from("onboarding_tokens")
     .update({ revoked_at: now })
     .eq("client_id", params.clientId)
     .is("used_at", null)
     .is("revoked_at", null);
 
-  const { error } = await (admin as any).from("onboarding_tokens").insert({
+  const { error } = await admin.from("onboarding_tokens").insert({
     therapist_id: params.therapistId,
     client_id: params.clientId,
     token_hash: tokenHash,
@@ -90,17 +107,19 @@ export async function getOnboardingTokenPayload(rawToken: string) {
 
   const admin = createSupabaseServiceClient();
   const tokenHash = await sha256Hex(rawToken);
-  const { data } = await (admin as any)
+  const { data } = await admin
     .from("onboarding_tokens")
     .select("id, therapist_id, client_id, expires_at, used_at, revoked_at, client:clients(id, full_name, email, phone)")
     .eq("token_hash", tokenHash)
     .maybeSingle();
 
-  if (!data || !isActiveToken(data)) {
+  const typedData = data as unknown as OnboardingTokenPayload | null;
+
+  if (!typedData || !isActiveToken(typedData)) {
     return null;
   }
 
-  return data;
+  return typedData;
 }
 
 export async function consumeOnboardingAccessToken(
@@ -113,7 +132,7 @@ export async function consumeOnboardingAccessToken(
   }
 
   const admin = createSupabaseServiceClient();
-  const { error } = await (admin as any)
+  const { error } = await admin
     .from("clients")
     .update({
       ...patch,
@@ -126,7 +145,7 @@ export async function consumeOnboardingAccessToken(
     return { success: false, error: error.message };
   }
 
-  await (admin as any)
+  await admin
     .from("onboarding_tokens")
     .update({ used_at: new Date().toISOString() })
     .eq("id", tokenData.id)
@@ -155,7 +174,7 @@ export async function createAppointmentActionAccessToken(params: {
     Date.now() + (params.expiresInHours ?? 48) * 60 * 60 * 1000,
   ).toISOString();
 
-  await (admin as any)
+  await admin
     .from("appointment_action_tokens")
     .update({ revoked_at: now })
     .eq("appointment_id", params.appointmentId)
@@ -163,7 +182,7 @@ export async function createAppointmentActionAccessToken(params: {
     .is("used_at", null)
     .is("revoked_at", null);
 
-  const { error } = await (admin as any).from("appointment_action_tokens").insert({
+  const { error } = await admin.from("appointment_action_tokens").insert({
     therapist_id: params.therapistId,
     appointment_id: params.appointmentId,
     action: params.action,
@@ -189,7 +208,7 @@ export async function consumeAppointmentActionAccessToken(rawToken: string) {
 
   const admin = createSupabaseServiceClient();
   const tokenHash = await sha256Hex(rawToken);
-  const { data } = await (admin as any)
+  const { data } = await admin
     .from("appointment_action_tokens")
     .select("id, appointment_id, therapist_id, action, expires_at, used_at, revoked_at")
     .eq("token_hash", tokenHash)
@@ -200,7 +219,7 @@ export async function consumeAppointmentActionAccessToken(rawToken: string) {
   }
 
   const newStatus = data.action === "confirm" ? "CONFIRMAT" : "ANULAT";
-  const { error } = await (admin as any)
+  const { error } = await admin
     .from("appointments")
     .update({ status: newStatus })
     .eq("id", data.appointment_id)
@@ -211,7 +230,7 @@ export async function consumeAppointmentActionAccessToken(rawToken: string) {
     return { success: false, error: error.message };
   }
 
-  await (admin as any)
+  await admin
     .from("appointment_action_tokens")
     .update({ used_at: new Date().toISOString() })
     .eq("id", data.id)

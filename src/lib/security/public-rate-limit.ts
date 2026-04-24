@@ -47,7 +47,7 @@ export async function enforceRateLimit({
   const admin = createSupabaseServiceClient();
   const now = new Date();
   const bucketKey = await sha256Hex(`${action}:${identifier}`);
-  const { data: existing } = await (admin as any)
+  const { data: existing } = await admin
     .from("public_request_rate_limits")
     .select("bucket_key, hits, window_expires_at")
     .eq("bucket_key", bucketKey)
@@ -67,7 +67,7 @@ export async function enforceRateLimit({
       };
     }
 
-    await (admin as any)
+    await admin
       .from("public_request_rate_limits")
       .update({
         hits: nextHits,
@@ -78,7 +78,7 @@ export async function enforceRateLimit({
     return { ok: true };
   }
 
-  await (admin as any).from("public_request_rate_limits").upsert({
+  await admin.from("public_request_rate_limits").upsert({
     bucket_key: bucketKey,
     action,
     hits: 1,

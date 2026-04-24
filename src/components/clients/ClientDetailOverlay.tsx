@@ -28,7 +28,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { initialsFromName } from "@/lib/clients/validation";
 import { cn } from "@/lib/utils";
-import { scheduleAnonymization, cancelAnonymization, sendOnboardingNotification } from "@/app/dashboard/clients/actions";
+import { scheduleAnonymization, cancelAnonymization, sendOnboardingNotification, getClientOverview } from "@/app/dashboard/clients/actions";
 import { toast } from "@/components/ui/toast";
 import { 
   AlertDialog,
@@ -52,15 +52,23 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
   const [isPending, setIsPending] = useState(false);
   const [isNotifying, setIsNotifying] = useState(false);
   const [overrideScheduledAt, setOverrideScheduledAt] = useState<Date | null>(null);
+  const [overview, setOverview] = useState<any>(null);
+  const [loadingOverview, setLoadingOverview] = useState(false);
+
 
   useEffect(() => {
     setOverrideScheduledAt(null);
     if (client) {
       setIsVisible(true);
       document.body.style.overflow = "hidden";
+      
+      // Fetch overview data
+      setLoadingOverview(true);
+      getClientOverview(client.id).then(setOverview).finally(() => setLoadingOverview(false));
     } else {
       setIsVisible(false);
       document.body.style.overflow = "auto";
+      setOverview(null);
     }
     return () => { document.body.style.overflow = "auto"; };
   }, [client]);
@@ -191,19 +199,35 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
         </div>
 
         {/* Action Bar */}
-        <div className="flex items-center gap-2 p-4 border-b bg-slate-50/50 shrink-0">
-           <Button variant="outline" size="sm" className="gap-2 rounded-xl flex-1 border-slate-200" disabled={anonymized}>
-              <Phone className="h-4 w-4" /> Telefon
-           </Button>
-           <Button variant="outline" size="sm" className="gap-2 rounded-xl flex-1 border-slate-200" disabled={anonymized}>
-              <Mail className="h-4 w-4" /> Email
-           </Button>
-           <Button className="gap-2 rounded-xl flex-1 shadow-md" asChild>
-              <a href={`/dashboard/clients/${client.id}`}>
-                 <ExternalLink className="h-4 w-4" /> Detalii Fișă
-              </a>
-           </Button>
-        </div>
+         <div className="flex items-center gap-2 p-4 border-b bg-slate-50/50 shrink-0">
+            <Button variant="outline" size="sm" className="gap-2 rounded-xl flex-1 border-slate-200" disabled={anonymized || !client.phone} asChild={!anonymized && !!client.phone}>
+               {anonymized || !client.phone ? (
+                 <>
+                   <Phone className="h-4 w-4" /> Telefon
+                 </>
+               ) : (
+                 <a href={`tel:${client.phone}`}>
+                   <Phone className="h-4 w-4" /> Telefon
+                 </a>
+               )}
+            </Button>
+            <Button variant="outline" size="sm" className="gap-2 rounded-xl flex-1 border-slate-200" disabled={anonymized || !client.email} asChild={!anonymized && !!client.email}>
+               {anonymized || !client.email ? (
+                 <>
+                   <Mail className="h-4 w-4" /> Email
+                 </>
+               ) : (
+                 <a href={`mailto:${client.email}`}>
+                   <Mail className="h-4 w-4" /> Email
+                 </a>
+               )}
+            </Button>
+            <Button className="gap-2 rounded-xl flex-1 shadow-md" asChild>
+               <a href={`/dashboard/clients/${client.id}`}>
+                  <ExternalLink className="h-4 w-4" /> Detalii Fișă
+               </a>
+            </Button>
+         </div>
 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-auto p-8 space-y-8 custom-scrollbar">
@@ -232,24 +256,26 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
            )}
 
            {/* Section: Stats Grid */}
-           <div className="grid grid-cols-2 gap-4">
-              <Card className="rounded-2xl border-none bg-slate-100/50 shadow-none">
-                 <CardContent className="p-4 flex flex-col gap-1">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Sesiuni</span>
-                    <span className="text-xl font-black text-slate-800">12</span>
-                    <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-600">
-                       <TrendingUp className="h-3 w-3" /> +2 luna asta
-                    </div>
-                 </CardContent>
-              </Card>
-              <Card className="rounded-2xl border-none bg-slate-100/50 shadow-none">
-                 <CardContent className="p-4 flex flex-col gap-1">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Ultima Ședință</span>
-                    <span className="text-sm font-black text-slate-800">14 Apr 2026</span>
-                    <span className="text-[10px] text-slate-500 font-medium">Acum 7 zile</span>
-                 </CardContent>
-              </Card>
-           </div>
+            <div className="grid grid-cols-2 gap-4">
+               <Card className="rounded-2xl border-none bg-slate-100/50 shadow-none">
+                  <CardContent className="p-4 flex flex-col gap-1">
+                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Sesiuni</span>
+                     <span className="text-xl font-black text-slate-800">{loadingOverview ? "..." : overview?.totalSessions ?? 0}</span>
+                     <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-600">
+                        <TrendingUp className="h-3 w-3" /> activitate curentă
+                     </div>
+                  </CardContent>
+               </Card>
+               <Card className="rounded-2xl border-none bg-slate-100/50 shadow-none">
+                  <CardContent className="p-4 flex flex-col gap-1">
+                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Ultima Ședință</span>
+                     <span className="text-sm font-black text-slate-800">
+                       {loadingOverview ? "..." : overview?.lastAppointmentDate ? format(new Date(overview.lastAppointmentDate), "dd MMM yyyy", { locale: ro }) : "—"}
+                     </span>
+                     <span className="text-[10px] text-slate-500 font-medium">istoric clinic</span>
+                  </CardContent>
+               </Card>
+            </div>
 
            {/* Section: Contact & Info */}
            <div className="space-y-4">
@@ -340,11 +366,12 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
                              <p className="text-sm font-black text-blue-900">Documente Custodie</p>
                              <p className="text-[10px] text-blue-700 font-medium">Situație: {client.parents_marital_status || "Nesalvat"}</p>
                           </div>
-                       </div>
-                       <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 hover:bg-blue-100/50">
-                          Vezi Doc
-                       </Button>
-                    </div>
+                        <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 hover:bg-blue-100/50" asChild>
+                           <a href={`/dashboard/clients/${client.id}?section=documents`}>
+                              Vezi Doc
+                           </a>
+                        </Button>
+                     </div>
                  )}
 
                  {/* NEW: Contract Generator Component */}
@@ -355,30 +382,41 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
            </div>
 
            {/* Quick History Log */}
-           <div className="space-y-4 pt-2 pb-10">
-              <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2">
-                 <History className="h-3 w-3" /> Ultimele Interacțiuni
-              </h3>
-              <div className="relative space-y-6 before:absolute before:left-3 before:top-2 before:bottom-2 before:w-px before:bg-slate-100">
-                 <div className="relative pl-8">
-                    <div className="absolute left-1.5 top-1.5 h-3 w-3 rounded-full bg-emerald-500 ring-4 ring-emerald-50 pointer-events-none" />
-                    <div className="space-y-1">
-                       <p className="text-xs font-black text-slate-700">Ședință Individuală</p>
-                       <p className="text-[11px] text-slate-500">14 Apr 2026 • 10:30</p>
-                       <div className="mt-2 p-2 rounded-lg bg-slate-50 border border-slate-100 text-[10px] text-slate-600 italic">
-                          "Progrese vizibile în gestionarea anxietății sociale..."
+            <div className="space-y-4 pt-2 pb-10">
+               <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2">
+                  <History className="h-3 w-3" /> Ultimele Interacțiuni
+               </h3>
+               <div className="relative space-y-6 before:absolute before:left-3 before:top-2 before:bottom-2 before:w-px before:bg-slate-100">
+                  {loadingOverview ? (
+                    <div className="pl-8 text-xs text-slate-400 animate-pulse">Se încarcă istoricul...</div>
+                  ) : overview?.recentInteractions && overview.recentInteractions.length > 0 ? (
+                    overview.recentInteractions.map((interaction: any) => (
+                      <div key={interaction.id} className="relative pl-8">
+                        <div className="absolute left-1.5 top-1.5 h-3 w-3 rounded-full bg-emerald-500 ring-4 ring-emerald-50 pointer-events-none" />
+                        <div className="space-y-1">
+                           <p className="text-xs font-black text-slate-700">{interaction.status === 'COMPLETED' ? 'Ședință Încheiată' : 'Programare Istorică'}</p>
+                           <p className="text-[11px] text-slate-500">{format(new Date(interaction.date), "dd MMM yyyy • HH:mm", { locale: ro })}</p>
+                           <div className="mt-2 p-2 rounded-lg bg-slate-50 border border-slate-100 text-[10px] text-slate-600 italic">
+                              "{interaction.summary}"
+                           </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="pl-8 text-xs text-slate-400 italic">Nicio interacțiune înregistrată încă.</div>
+                  )}
+
+                  {overview?.nextAppointment && (
+                    <div className="relative pl-8">
+                       <div className="absolute left-1.5 top-1.5 h-3 w-3 rounded-full bg-blue-400 ring-4 ring-blue-50 pointer-events-none" />
+                       <div className="space-y-1">
+                          <p className="text-xs font-black text-blue-600">Următoarea Programare</p>
+                          <p className="text-[11px] text-slate-500">{format(new Date(overview.nextAppointment.date), "dd MMM yyyy • HH:mm", { locale: ro })}</p>
                        </div>
                     </div>
-                 </div>
-                 <div className="relative pl-8">
-                    <div className="absolute left-1.5 top-1.5 h-3 w-3 rounded-full bg-slate-300 ring-4 ring-slate-50 pointer-events-none" />
-                    <div className="space-y-1">
-                       <p className="text-xs font-black text-slate-500 italic">Programare Viitoare</p>
-                       <p className="text-[11px] text-slate-400">22 Apr 2026 • 11:00</p>
-                    </div>
-                 </div>
-              </div>
-           </div>
+                  )}
+               </div>
+            </div>
         </div>
 
         {/* Sticky Footer Actions */}
@@ -422,8 +460,10 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
                 {anonymized ? "Pacient Anonimizat" : "Anonimizare în curs..."}
              </Button>
            )}
-           <Button className="flex-1 rounded-2xl font-black shadow-xl shadow-primary/20" disabled={showScheduledAlert || anonymized}>
-              <Calendar className="h-4 w-4 mr-2" /> Programare
+           <Button className="flex-1 rounded-2xl font-black shadow-xl shadow-primary/20" disabled={showScheduledAlert || anonymized} asChild>
+              <a href={`/dashboard/appointments/new?clientId=${client.id}`}>
+                 <Calendar className="h-4 w-4 mr-2" /> Programare
+              </a>
            </Button>
         </div>
       </div>

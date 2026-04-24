@@ -1,6 +1,8 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { startOfMonth, endOfMonth, startOfDay, endOfDay, format } from "date-fns";
+import { startOfMonth, endOfMonth, startOfDay, endOfDay, format, differenceInDays } from "date-fns";
 import { ro } from "date-fns/locale";
+import { initialsFromName } from "@/lib/clients/validation";
+import { LocationKind } from "@/lib/mock/dashboard";
 
 export interface DashboardStats {
   totalRevenue: number;
@@ -110,11 +112,16 @@ export async function getUnpaidInvoices() {
     .order("issued_at", { ascending: false })
     .limit(5);
   
+  const now = new Date();
+  
   return data?.map(inv => ({
     id: inv.id,
     clientName: (inv.appointments as any)?.clients?.full_name || "Client Necunoscut",
-    amount: inv.amount,
-    date: inv.issued_at,
+    series: inv.smartbill_series || "FĂRĂ",
+    number: inv.smartbill_number || "0000",
+    amount: Number(inv.amount),
+    issuedAt: new Date(inv.issued_at),
+    daysOverdue: differenceInDays(now, new Date(inv.issued_at)),
     status: inv.status
   })) || [];
 }
@@ -129,13 +136,20 @@ export async function getAppointmentsToday() {
     .lte("appointment_date", endOfDay(now).toISOString())
     .order("appointment_date", { ascending: true });
 
-  return data?.map(app => ({
-    id: app.id,
-    time: format(new Date(app.appointment_date), "HH:mm"),
-    clientName: (app.clients as any)?.full_name || "Client",
-    type: app.is_external_duty ? "Clinic" : "Cabinet",
-    status: app.status
-  })) || [];
+  return data?.map(app => {
+    const clientName = (app.clients as any)?.full_name || "Client";
+    return {
+      id: app.id,
+      clientName,
+      clientInitials: initialsFromName(clientName),
+      startsAt: new Date(app.appointment_date),
+      durationMinutes: app.duration_minutes || 50,
+      status: app.status as any,
+      location: (app.is_external_duty ? "POLICLINIC" : (app.location_tag === "#Clinica" ? "CLINICA" : "CABINET")) as LocationKind,
+      isExternalDuty: app.is_external_duty,
+      meetLink: app.meet_link
+    };
+  }) || [];
 }
 
 export async function getUpcomingAppointments() {
@@ -151,11 +165,18 @@ export async function getUpcomingAppointments() {
     .order("appointment_date", { ascending: true })
     .limit(10);
 
-  return data?.map(app => ({
-    id: app.id,
-    date: format(new Date(app.appointment_date), "d MMM", { locale: ro }),
-    time: format(new Date(app.appointment_date), "HH:mm"),
-    clientName: (app.clients as any)?.full_name || "Client",
-    type: app.is_external_duty ? "Clinic" : "Cabinet"
-  })) || [];
+  return data?.map(app => {
+    const clientName = (app.clients as any)?.full_name || "Client";
+    return {
+      id: app.id,
+      clientName,
+      clientInitials: initialsFromName(clientName),
+      startsAt: new Date(app.appointment_date),
+      durationMinutes: app.duration_minutes || 50,
+      status: app.status as any,
+      location: (app.is_external_duty ? "POLICLINIC" : (app.location_tag === "#Clinica" ? "CLINICA" : "CABINET")) as LocationKind,
+      isExternalDuty: app.is_external_duty,
+      meetLink: app.meet_link
+    };
+  }) || [];
 }

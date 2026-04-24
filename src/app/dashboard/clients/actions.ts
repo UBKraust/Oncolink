@@ -342,3 +342,58 @@ export async function sendOnboardingNotification(clientId: string, clientName: s
     return { error: err instanceof Error ? err.message : "Eroare la trimiterea notificării." };
   }
 }
+
+export async function getClientOverview(clientId: string) {
+  const supabase = await createSupabaseServerClient();
+  
+  // 1. Fetch total COMPLETED sessions
+  const { count: totalSessions } = await supabase
+    .from("appointments")
+    .select("*", { count: "exact", head: true })
+    .eq("client_id", clientId)
+    .eq("status", "COMPLETED");
+
+  // 2. Fetch last appointment (past)
+  const { data: lastAppointment } = await supabase
+    .from("appointments")
+    .select("appointment_date")
+    .eq("client_id", clientId)
+    .lt("appointment_date", new Date().toISOString())
+    .order("appointment_date", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  // 3. Fetch next appointment (future)
+  const { data: nextAppointment } = await supabase
+    .from("appointments")
+    .select("appointment_date, status")
+    .eq("client_id", clientId)
+    .gte("appointment_date", new Date().toISOString())
+    .order("appointment_date", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  // 4. Fetch recent 3 past appointments for the log
+  const { data: recentInteractions } = await supabase
+    .from("appointments")
+    .select("id, appointment_date, status, personal_notes")
+    .eq("client_id", clientId)
+    .lt("appointment_date", new Date().toISOString())
+    .order("appointment_date", { ascending: false })
+    .limit(3);
+
+  return {
+    totalSessions: totalSessions || 0,
+    lastAppointmentDate: lastAppointment?.appointment_date || null,
+    nextAppointment: nextAppointment ? {
+      date: nextAppointment.appointment_date,
+      status: nextAppointment.status
+    } : null,
+    recentInteractions: (recentInteractions || []).map(a => ({
+      id: a.id,
+      date: a.appointment_date,
+      status: a.status,
+      summary: a.personal_notes || "Niciun rezumat disponibil."
+    }))
+  };
+}

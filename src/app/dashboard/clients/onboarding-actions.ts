@@ -12,6 +12,7 @@ import {
   createOnboardingAccessToken,
   getOnboardingTokenPayload,
 } from "@/lib/security/public-links";
+import { resolvePublicBookingTherapistId } from "@/lib/security/public-booking";
 import {
   enforceRateLimit,
   getClientIp,
@@ -22,6 +23,7 @@ export interface OnboardingData {
   id?: string;
   token?: string;
   website?: string;
+  therapist_slug?: string;
   cnp_cif?: string;
   address?: string;
   emergency_contact_name?: string;
@@ -44,19 +46,31 @@ export interface OnboardingData {
 }
 
 export async function submitMinorOnboarding(data: OnboardingData, files?: { custody?: File }) {
+  if (isHoneypotTriggered(data.website)) {
+    return { success: true };
+  }
+
+  const headerStore = await headers();
+  const ip = getClientIp(headerStore);
+  const rateLimit = await enforceRateLimit({
+    action: "public_minor_onboarding_submit",
+    identifier: `${ip}:${data.parent_1_email ?? "unknown"}`,
+    limit: 4,
+    windowMs: 60 * 60 * 1000,
+  });
+  if (!rateLimit.ok) {
+    return {
+      success: false,
+      error: `Prea multe încercări. Reîncearcă peste ${rateLimit.retryAfterSec} secunde.`,
+    };
+  }
 
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   let therapistId: string | null = user?.id || null;
 
   if (!therapistId) {
-    const admin = createSupabaseServiceClient();
-    const { data: first } = await (admin as any)
-      .from("therapist_settings")
-      .select("therapist_id")
-      .limit(1)
-      .maybeSingle();
-    therapistId = first?.therapist_id || null;
+    therapistId = await resolvePublicBookingTherapistId(data.therapist_slug);
   }
 
   if (!therapistId) {

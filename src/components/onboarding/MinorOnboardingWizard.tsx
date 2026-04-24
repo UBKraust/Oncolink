@@ -46,6 +46,7 @@ const minorOnboardingSchema = z.object({
   // Referral
   referral_source: z.string().min(1, "Vă rugăm selectați sursa"),
   referred_by_name: z.string().optional(),
+  website: z.string().optional(),
   
   // Consents
   legal_liability_consent: z.boolean().refine(val => val === true, "Asumarea realității datelor este obligatorie"),
@@ -54,7 +55,7 @@ const minorOnboardingSchema = z.object({
 
 type MinorOnboardingValues = z.infer<typeof minorOnboardingSchema>;
 
-export function MinorOnboardingWizard() {
+export function MinorOnboardingWizard({ therapistSlug }: { therapistSlug?: string | null }) {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -91,12 +92,18 @@ export function MinorOnboardingWizard() {
 
     setIsSubmitting(true);
     try {
-      const result = await submitMinorOnboarding(values, file ? { custody: file } : undefined);
-      if (result.success) {
-        setIsSuccess(true);
-      } else {
+      const result = await submitMinorOnboarding(
+        {
+          ...values,
+          therapist_slug: therapistSlug ?? undefined,
+        },
+        file ? { custody: file } : undefined,
+      );
+      if (!result.success) {
         alert("Eroare: " + result.error);
+        return;
       }
+      setIsSuccess(true);
     } finally {
       setIsSubmitting(false);
     }
@@ -148,6 +155,7 @@ export function MinorOnboardingWizard() {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+        <input type="text" tabIndex={-1} autoComplete="off" className="hidden" {...register("website")} />
         {/* Step 1: Parent Info */}
         {step === 1 && (
           <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">

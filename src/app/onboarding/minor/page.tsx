@@ -7,7 +7,13 @@ export const metadata: Metadata = {
   description: "Formular de înrolare pentru pacienți minori, cu pași dedicați pentru consimțământ și reprezentare legală.",
 };
 
-export default function MinorOnboardingPage() {
+export default async function MinorOnboardingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ therapist?: string }>;
+}) {
+  const { therapist } = await searchParams;
+
   return (
     <main className="min-h-screen bg-[#F8FAFC] selection:bg-rose-100">
       {/* Visual Background Pattern */}
@@ -38,7 +44,7 @@ export default function MinorOnboardingPage() {
               </div>
            </div>
            
-           <MinorOnboardingWizard />
+           <MinorOnboardingWizard therapistSlug={therapist ?? process.env.NEXT_PUBLIC_PUBLIC_BOOKING_SLUG ?? null} />
         </div>
 
         {/* Legal Disclaimer Footer */}

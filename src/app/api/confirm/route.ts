@@ -2,39 +2,36 @@ export const runtime = "edge";
 
 import { NextRequest, NextResponse } from "next/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { createSupabaseServiceClient } from "@/lib/supabase/service";
+import { consumeAppointmentActionAccessToken } from "@/lib/security/public-links";
 
 /**
- * GET /api/confirm?id=<appointmentId>&action=confirm|cancel
+ * GET /api/confirm?t=<token>
  *
  * Used in WhatsApp reminder links. Updates status and redirects to a
  * simple confirmation page.
  */
 export async function GET(req: NextRequest): Promise<NextResponse> {
   const { searchParams } = new URL(req.url);
-  const id = searchParams.get("id");
-  const action = searchParams.get("action");
+  const token = searchParams.get("t");
 
-  if (!id || (action !== "confirm" && action !== "cancel")) {
+  if (!token) {
     return NextResponse.json({ error: "Parametri invalizi." }, { status: 400 });
   }
 
   if (!isSupabaseConfigured()) {
     return NextResponse.redirect(
-      new URL(`/confirm-result?action=${action}&demo=1`, req.url),
+      new URL("/confirm-result?action=confirm&demo=1", req.url),
     );
   }
 
-  const supabase = createSupabaseServiceClient();
-  const newStatus = action === "confirm" ? "CONFIRMAT" : "ANULAT";
-
-  await supabase
-    .from("appointments")
-    .update({ status: newStatus })
-    .eq("id", id)
-    .in("status", ["PROGRAMAT", "CONFIRMAT"]);
+  const result = await consumeAppointmentActionAccessToken(token);
+  if (!result.success) {
+    return NextResponse.redirect(
+      new URL("/confirm-result?action=cancel&error=expired", req.url),
+    );
+  }
 
   return NextResponse.redirect(
-    new URL(`/confirm-result?action=${action}`, req.url),
+    new URL(`/confirm-result?action=${result.action}`, req.url),
   );
 }

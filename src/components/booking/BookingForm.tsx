@@ -24,6 +24,7 @@ type FormValues = z.output<typeof schema>;
 
 interface BookingFormProps {
   onSuccess?: (appointmentId: string) => void;
+  therapistSlug?: string | null;
 }
 
 const DURATIONS = [
@@ -33,7 +34,7 @@ const DURATIONS = [
   { value: 90, label: "90 min" },
 ];
 
-export function BookingForm({ onSuccess }: BookingFormProps) {
+export function BookingForm({ onSuccess, therapistSlug }: BookingFormProps) {
   const [serverError, setServerError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
@@ -54,6 +55,8 @@ export function BookingForm({ onSuccess }: BookingFormProps) {
     const slotDate = new Date(values.slot_start);
     const payload = {
       ...values,
+      therapist_slug: therapistSlug,
+      website: "",
       slot_start: slotDate.toISOString(),
     };
 

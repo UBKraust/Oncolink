@@ -13,17 +13,22 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createSupabaseServerClient();
-  const { data } = await supabase.auth.getUser();
-  if (!data.user) redirect("/login");
-  const userEmail = data.user.email ?? null;
+  const configured = isSupabaseConfigured();
+  let userEmail: string | null = null;
+
+  if (configured) {
+    const supabase = await createSupabaseServerClient();
+    const { data } = await supabase.auth.getUser();
+    if (!data.user) redirect("/login");
+    userEmail = data.user.email ?? null;
+  }
 
   return (
     <NotesVaultProvider>
       <div className="flex min-h-svh bg-muted/30">
         <DashboardSidebar />
         <div className="flex min-w-0 flex-1 flex-col">
-          <DashboardTopbar userEmail={userEmail} demoMode={false} />
+          <DashboardTopbar userEmail={userEmail} demoMode={!configured} />
           <div className="flex-1 overflow-auto p-4 md:p-6">{children}</div>
         </div>
       </div>

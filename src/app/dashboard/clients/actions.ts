@@ -16,6 +16,7 @@ import { shareFile } from "@/lib/google/drive";
 import { sendMessage, onboardingLinkMsg } from "@/lib/twilio/client";
 import { sendEmail, onboardingEmailTemplate } from "@/lib/mail/client";
 import type { ClientFormState } from "@/lib/clients/form-state";
+import { createOnboardingAccessToken } from "@/lib/security/public-links";
 
 function parseForm(formData: FormData) {
   const is_minor = formData.get("is_minor") === "on";
@@ -326,8 +327,18 @@ export async function sendOnboardingNotification(clientId: string, clientName: s
       }
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    const onboardingLink = `${baseUrl}/onboarding/${clientId}`;
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return { error: "Terapeut neautentificat." };
+    }
+
+    const { url: onboardingLink } = await createOnboardingAccessToken({
+      clientId,
+      therapistId: user.id,
+      createdBy: user.id,
+    });
     
     const message = onboardingLinkMsg(clientName, onboardingLink);
     
@@ -348,8 +359,19 @@ export async function sendOnboardingEmail(clientId: string, clientName: string, 
   if (!email) return { error: "Clientul nu are o adresă de email setată." };
 
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    const onboardingLink = `${baseUrl}/onboarding/${clientId}`;
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return { error: "Terapeut neautentificat." };
+    }
+
+    const { url: onboardingLink } = await createOnboardingAccessToken({
+      clientId,
+      therapistId: user.id,
+      createdBy: user.id,
+    });
     
     const html = onboardingEmailTemplate(clientName, onboardingLink);
     

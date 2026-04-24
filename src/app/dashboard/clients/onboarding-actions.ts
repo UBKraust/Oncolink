@@ -3,12 +3,25 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { mockClients } from "@/lib/mock/clients";
+import {
+  consumeOnboardingAccessToken,
+  createOnboardingAccessToken,
+  getOnboardingTokenPayload,
+} from "@/lib/security/public-links";
+import {
+  enforceRateLimit,
+  getClientIp,
+  isHoneypotTriggered,
+} from "@/lib/security/public-rate-limit";
 
 export interface OnboardingData {
   id?: string;
+  token?: string;
+  website?: string;
   cnp_cif?: string;
   address?: string;
   emergency_contact_name?: string;
@@ -118,8 +131,49 @@ export async function submitMinorOnboarding(data: OnboardingData, files?: { cust
 }
 
 export async function submitClientOnboarding(data: OnboardingData) {
-  if (!data.id) {
+  if (!data.id && !data.token) {
     return { success: false, error: "Client lipsă pentru onboarding." };
+  }
+
+  if (isHoneypotTriggered(data.website)) {
+    return { success: true };
+  }
+
+  const headerStore = await headers();
+  const ip = getClientIp(headerStore);
+  const rateLimit = await enforceRateLimit({
+    action: "public_onboarding_submit",
+    identifier: data.token ? `${ip}:${data.token}` : ip,
+    limit: 8,
+    windowMs: 60 * 60 * 1000,
+  });
+  if (!rateLimit.ok) {
+    return {
+      success: false,
+      error: `Prea multe încercări. Reîncearcă peste ${rateLimit.retryAfterSec} secunde.`,
+    };
+  }
+
+  if (data.token) {
+    const result = await consumeOnboardingAccessToken(data.token, {
+      cnp_cif: data.cnp_cif || null,
+      address: data.address,
+      emergency_contact_name: data.emergency_contact_name,
+      emergency_contact_phone: data.emergency_contact_phone,
+      emergency_contact_relation: data.emergency_contact_relation,
+      referral_source: data.referral_source,
+      referred_by_name: data.referred_by_name || null,
+      gdpr_consent_signed: data.gdpr_consent_signed,
+    });
+
+    if (!result.success) {
+      return { success: false, error: result.error };
+    }
+
+    if ((result as { client?: { id?: string } }).client?.id) {
+      revalidatePath(`/dashboard/clients/${(result as { client: { id: string } }).client.id}`);
+    }
+    return { success: true };
   }
 
   const supabase = await createSupabaseServerClient();
@@ -157,4 +211,42 @@ export async function getClientForOnboarding(id: string) {
 
   if (error) return { error: error.message };
   return { data };
+}
+
+export async function getClientForOnboardingToken(token: string) {
+  const payload = await getOnboardingTokenPayload(token);
+  if (!payload?.client) {
+    return { error: "Link invalid sau expirat." };
+  }
+
+  return { data: payload.client };
+}
+
+export async function createClientOnboardingLink(clientId: string) {
+  if (!isSupabaseConfigured()) {
+    return { error: "Supabase nu este configurat." };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Unauthorized" };
+  }
+
+  try {
+    const { url } = await createOnboardingAccessToken({
+      clientId,
+      therapistId: user.id,
+      createdBy: user.id,
+    });
+    return { data: { url } };
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error ? error.message : "Nu am putut genera linkul de onboarding.",
+    };
+  }
 }

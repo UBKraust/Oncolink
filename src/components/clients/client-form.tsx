@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useState, useEffect } from "react";
+import { createClientOnboardingLink } from "@/app/dashboard/clients/onboarding-actions";
 import { CheckCircle2, Copy, ExternalLink, UserPlus, FileCheck, ShieldAlert, ArrowRight } from "lucide-react";
 import { toast } from "@/components/ui/toast";
 
@@ -60,9 +61,15 @@ export function ClientForm({ action, defaults = {}, submitLabel, cancelHref }: C
     }
   }, [state.success, state.clientId]);
 
-  const copyOnboardingLink = () => {
+  const copyOnboardingLink = async () => {
     if (typeof window === "undefined" || !state.clientId) return;
-    const url = `${window.location.origin}/onboarding/${state.clientId}`;
+    const result = await createClientOnboardingLink(state.clientId);
+    if (result.error || !result.data?.url) {
+      toast.error(result.error ?? "Nu am putut genera linkul de onboarding.");
+      return;
+    }
+
+    const url = result.data.url;
     navigator.clipboard.writeText(url);
     toast.success("Link copiat în clipboard!");
   };

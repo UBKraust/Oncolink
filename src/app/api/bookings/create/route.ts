@@ -7,6 +7,12 @@ import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { checkOverlap, OverlapError } from "@/lib/availability/overlapCheck";
 import { pushAppointmentToGoogle } from "@/lib/google/sync";
+import { resolvePublicBookingTherapistId } from "@/lib/security/public-booking";
+import {
+  enforceRateLimit,
+  getClientIp,
+  isHoneypotTriggered,
+} from "@/lib/security/public-rate-limit";
 
 const BookingSchema = z.object({
   // Client details
@@ -15,6 +21,8 @@ const BookingSchema = z.object({
   phone: z.string().min(7, "Telefon invalid"),
   cnp_cif: z.string().optional(),
   address: z.string().optional(),
+  therapist_slug: z.string().optional(),
+  website: z.string().optional(),
   // Booking details
   slot_start: z.string().datetime({ message: "Data/ora invalidă (format ISO 8601)" }),
   duration_minutes: z.number().int().min(25).max(240).default(50),
@@ -47,6 +55,23 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   const payload: BookingPayload = parsed.data;
+  if (isHoneypotTriggered(payload.website)) {
+    return NextResponse.json({ ok: true }, { status: 202 });
+  }
+
+  const rateLimit = await enforceRateLimit({
+    action: "public_booking_submit_v2",
+    identifier: `${getClientIp(req.headers)}:${payload.email.toLowerCase()}`,
+    limit: 6,
+    windowMs: 60 * 60 * 1000,
+  });
+  if (!rateLimit.ok) {
+    return NextResponse.json(
+      { error: "Prea multe încercări. Reîncearcă mai târziu." },
+      { status: 429 },
+    );
+  }
+
   const startISO = payload.slot_start;
 
   const supabase = await createSupabaseServerClient();
@@ -55,12 +80,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   let therapistId: string | null = user?.id || null;
 
   if (!therapistId) {
-    const { data: first } = await admin
-      .from("therapist_settings" as never)
-      .select("therapist_id")
-      .limit(1)
-      .maybeSingle() as { data: { therapist_id: string | null } | null };
-    therapistId = first?.therapist_id || null;
+    therapistId = await resolvePublicBookingTherapistId(payload.therapist_slug);
   }
 
   if (!therapistId) {
@@ -90,7 +110,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   // Upsert client (match by email or phone)
   let clientId: string;
 
-  const { data: byEmail } = await db
+  const { data: byEmail } = await (db as any)
     .from("clients")
     .select("id")
     .eq("therapist_id", therapistId)
@@ -98,7 +118,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     .maybeSingle();
 
   const { data: byPhone } = !byEmail
-    ? await db
+    ? await (db as any)
         .from("clients")
         .select("id")
         .eq("therapist_id", therapistId)
@@ -110,7 +130,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   if (existingClient) {
     clientId = existingClient.id;
-    await db
+    await (db as any)
       .from("clients")
       .update({
         full_name: payload.full_name,
@@ -120,7 +140,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       })
       .eq("id", clientId);
   } else {
-    const { data: created, error: clientError } = await db
+    const { data: created, error: clientError } = await (db as any)
       .from("clients")
       .insert({
         therapist_id: therapistId,
@@ -140,7 +160,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   // Insert appointment
-  const { data: appt, error: apptError } = await db
+  const { data: appt, error: apptError } = await (db as any)
     .from("appointments")
     .insert({
       therapist_id: therapistId,

@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 
+import { getSupabaseEnv, isSupabaseServiceConfigured } from "@/lib/supabase/config";
 import type { Database } from "@/lib/supabase/types";
 
 /**
@@ -7,9 +8,15 @@ import type { Database } from "@/lib/supabase/types";
  * (webhooks, cron jobs). Never import from a client component.
  */
 export function createSupabaseServiceClient() {
+  if (!isSupabaseServiceConfigured()) {
+    throw new Error("Supabase service role is not configured.");
+  }
+
+  const { url, serviceRoleKey } = getSupabaseEnv();
+
   return createClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    url,
+    serviceRoleKey,
     {
       auth: { persistSession: false, autoRefreshToken: false },
     },

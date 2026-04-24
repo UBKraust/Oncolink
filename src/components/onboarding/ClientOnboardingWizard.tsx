@@ -16,13 +16,14 @@ import { cn } from "@/lib/utils";
 import { submitClientOnboarding } from "@/app/dashboard/clients/onboarding-actions";
 
 const onboardingSchema = z.object({
-  cnp_cif: z.string().min(1, "CNP/CIF este obligatoriu pentru facturare"),
+  cnp_cif: z.string().optional(),
   address: z.string().min(5, "Adresa completă este necesară"),
   emergency_contact_name: z.string().min(2, "Numele contactului este obligatoriu"),
   emergency_contact_phone: z.string().min(10, "Numărul de telefon este invalid"),
   emergency_contact_relation: z.string().min(2, "Vă rugăm specificați relația"),
   referral_source: z.string().min(1, "Vă rugăm selectați sursa"),
   referred_by_name: z.string().optional(),
+  website: z.string().optional(),
   gdpr_consent: z.boolean().refine(val => val === true, "Acordul GDPR este obligatoriu"),
   terms_consent: z.boolean().refine(val => val === true, "Acceptarea termenilor este obligatorie"),
 });
@@ -30,11 +31,11 @@ const onboardingSchema = z.object({
 type OnboardingFormValues = z.infer<typeof onboardingSchema>;
 
 interface ClientOnboardingWizardProps {
-  clientId: string;
+  token: string;
   clientName: string;
 }
 
-export function ClientOnboardingWizard({ clientId, clientName }: ClientOnboardingWizardProps) {
+export function ClientOnboardingWizard({ token, clientName }: ClientOnboardingWizardProps) {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -60,7 +61,7 @@ export function ClientOnboardingWizard({ clientId, clientName }: ClientOnboardin
     setIsSubmitting(true);
     try {
       const result = await submitClientOnboarding({
-        id: clientId,
+        token,
         cnp_cif: values.cnp_cif,
         address: values.address,
         emergency_contact_name: values.emergency_contact_name,
@@ -69,6 +70,7 @@ export function ClientOnboardingWizard({ clientId, clientName }: ClientOnboardin
         referral_source: values.referral_source,
         referred_by_name: values.referred_by_name,
         gdpr_consent_signed: values.gdpr_consent,
+        website: values.website,
       });
 
       if (result.success) {
@@ -128,6 +130,7 @@ export function ClientOnboardingWizard({ clientId, clientName }: ClientOnboardin
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+        <input type="text" tabIndex={-1} autoComplete="off" className="hidden" {...register("website")} />
         {/* Step 1: Billing */}
         {step === 1 && (
           <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">

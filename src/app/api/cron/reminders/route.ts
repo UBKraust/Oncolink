@@ -13,6 +13,7 @@ import {
   unpaidInvoiceMsg,
   travelReminderMsg,
 } from "@/lib/twilio/client";
+import { createAppointmentActionAccessToken } from "@/lib/security/public-links";
 
 /**
  * Cron endpoint — invoke every hour via Cloudflare Cron Triggers.
@@ -38,17 +39,15 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
   const results = { reminders: 0, unpaid: 0, travel: 0, errors: [] as string[] };
   const supabase = createSupabaseServiceClient();
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://cepaipatit.app";
-
   // ─── Job 1: 24h appointment reminders ──────────────────────────────────────
   try {
     const now = new Date();
     const windowStart = new Date(now.getTime() + 23 * 3_600_000);
     const windowEnd = new Date(now.getTime() + 25 * 3_600_000);
 
-    const { data: upcoming } = await supabase
+    const { data: upcoming } = await (supabase as any)
       .from("appointments")
-      .select("id, appointment_date, client:clients(full_name, phone)")
+      .select("id, therapist_id, appointment_date, client:clients(full_name, phone)")
       .in("status", ["PROGRAMAT", "CONFIRMAT"])
       .gte("appointment_date", windowStart.toISOString())
       .lte("appointment_date", windowEnd.toISOString())
@@ -57,12 +56,21 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     for (const a of upcoming ?? []) {
       const client = a.client as { full_name: string | null; phone: string | null } | null;
       if (!client?.phone) continue;
+      if (!a.therapist_id) continue;
 
       const dt = new Date(a.appointment_date);
       const dateRo = format(dt, "EEEE, d MMMM", { locale: ro });
       const timeRo = format(dt, "HH:mm");
-      const confirmLink = `${appUrl}/api/confirm?id=${a.id}&action=confirm`;
-      const cancelLink = `${appUrl}/api/confirm?id=${a.id}&action=cancel`;
+      const { url: confirmLink } = await createAppointmentActionAccessToken({
+        appointmentId: a.id,
+        therapistId: a.therapist_id,
+        action: "confirm",
+      });
+      const { url: cancelLink } = await createAppointmentActionAccessToken({
+        appointmentId: a.id,
+        therapistId: a.therapist_id,
+        action: "cancel",
+      });
 
       try {
         await sendMessage({

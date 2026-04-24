@@ -4,7 +4,13 @@ export const metadata = {
   title: "Programare online · Cabinet psihoterapie",
 };
 
-export default function BookPage() {
+export default async function BookPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ therapist?: string }>;
+}) {
+  const { therapist } = await searchParams;
+
   return (
     <div className="min-h-screen bg-muted/30 py-10">
       <div className="mx-auto w-full max-w-lg px-4">
@@ -19,7 +25,7 @@ export default function BookPage() {
             Completează formularul pentru a rezerva o ședință de psihoterapie.
           </p>
         </div>
-        <BookingWidget />
+        <BookingWidget therapistSlug={therapist ?? process.env.NEXT_PUBLIC_PUBLIC_BOOKING_SLUG ?? null} />
       </div>
     </div>
   );

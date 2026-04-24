@@ -23,7 +23,7 @@ interface Slot {
 
 type Step = "slot" | "details" | "done";
 
-export function BookingWidget() {
+export function BookingWidget({ therapistSlug }: { therapistSlug?: string | null }) {
   const [step, setStep] = useState<Step>("slot");
   const [slots, setSlots] = useState<Slot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(true);
@@ -32,12 +32,13 @@ export function BookingWidget() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/book")
+    const qs = therapistSlug ? `?therapist=${encodeURIComponent(therapistSlug)}` : "";
+    fetch(`/api/book${qs}`)
       .then((r) => r.json())
       .then((d: { slots?: Slot[] }) => setSlots(d.slots ?? []))
       .catch(() => setError("Nu am putut încărca orarul disponibil."))
       .finally(() => setLoadingSlots(false));
-  }, []);
+  }, [therapistSlug]);
 
   const handleBookingSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -48,11 +49,13 @@ export function BookingWidget() {
     const fd = new FormData(e.currentTarget);
     const body = {
       slotStart: selectedSlot.start,
+      therapist_slug: therapistSlug,
       full_name: fd.get("full_name"),
       email: fd.get("email"),
       phone: fd.get("phone"),
       cnp_cif: fd.get("cnp_cif"),
       address: fd.get("address"),
+      website: fd.get("website"),
     };
 
     try {
@@ -132,6 +135,7 @@ export function BookingWidget() {
               <Label htmlFor="address">Adresă</Label>
               <Input id="address" name="address" placeholder="Str. Exemplu 1, Cluj-Napoca" />
             </div>
+            <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" />
 
             {error && (
               <p className="rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">

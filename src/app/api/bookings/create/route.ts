@@ -7,6 +7,7 @@ import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { checkOverlap, OverlapError } from "@/lib/availability/overlapCheck";
 import { pushAppointmentToGoogle } from "@/lib/google/sync";
+import { upsertClientByIdentifiers } from "@/lib/clients/upsert";
 import { resolvePublicBookingTherapistId } from "@/lib/security/public-booking";
 import {
   enforceRateLimit,
@@ -107,56 +108,27 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   // --- Step 3: Atomic client upsert + appointment insert ---
-  // Upsert client (match by email or phone)
   let clientId: string;
-
-  const { data: byEmail } = await (db as any)
-    .from("clients")
-    .select("id")
-    .eq("therapist_id", therapistId)
-    .eq("email", payload.email)
-    .maybeSingle();
-
-  const { data: byPhone } = !byEmail
-    ? await (db as any)
-        .from("clients")
-        .select("id")
-        .eq("therapist_id", therapistId)
-        .eq("phone", payload.phone)
-        .maybeSingle()
-    : { data: null };
-
-  const existingClient = byEmail ?? byPhone;
-
-  if (existingClient) {
-    clientId = existingClient.id;
-    await (db as any)
-      .from("clients")
-      .update({
-        full_name: payload.full_name,
-        phone: payload.phone,
-        cnp_cif: payload.cnp_cif ?? null,
-        address: payload.address ?? null,
-      })
-      .eq("id", clientId);
-  } else {
-    const { data: created, error: clientError } = await (db as any)
-      .from("clients")
-      .insert({
-        therapist_id: therapistId,
-        full_name: payload.full_name,
-        email: payload.email,
-        phone: payload.phone,
-        cnp_cif: payload.cnp_cif ?? null,
-        address: payload.address ?? null,
-      })
-      .select("id")
-      .single();
-
-    if (clientError) {
-      return NextResponse.json({ error: clientError.message }, { status: 500 });
-    }
-    clientId = created.id;
+  try {
+    const clientResult = await upsertClientByIdentifiers(db as any, therapistId, {
+      email: payload.email,
+      phone: payload.phone,
+      cnp_cif: payload.cnp_cif ?? null,
+      full_name: payload.full_name,
+    }, {
+      therapist_id: therapistId,
+      full_name: payload.full_name,
+      email: payload.email.toLowerCase(),
+      phone: payload.phone,
+      cnp_cif: payload.cnp_cif ?? null,
+      address: payload.address ?? null,
+    });
+    clientId = clientResult.id;
+  } catch (clientError) {
+    return NextResponse.json(
+      { error: clientError instanceof Error ? clientError.message : "Nu am putut salva clientul." },
+      { status: 500 },
+    );
   }
 
   // Insert appointment

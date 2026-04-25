@@ -7,6 +7,7 @@ import { getAvailableSlots } from "@/lib/availability/engine";
 import type { AppointmentRow } from "@/lib/appointments/helpers";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { checkOverlap, OverlapError } from "@/lib/availability/overlapCheck";
+import { upsertClientByIdentifiers } from "@/lib/clients/upsert";
 import { resolvePublicBookingTherapistId } from "@/lib/security/public-booking";
 import {
   enforceRateLimit,
@@ -147,45 +148,26 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   // Upsert client
   let clientId: string;
-  const { data: byEmail } = await (db as any)
-    .from("clients")
-    .select("id")
-    .eq("therapist_id", therapistId)
-    .eq("email", email)
-    .maybeSingle();
-
-  const { data: byPhone } = !byEmail && phone
-    ? await (db as any)
-        .from("clients")
-        .select("id")
-        .eq("therapist_id", therapistId)
-        .eq("phone", phone)
-        .maybeSingle()
-    : { data: null };
-
-  const existing = byEmail ?? byPhone;
-
-  if (existing) {
-    clientId = existing.id;
-    await (db as any)
-      .from("clients")
-      .update({ full_name, phone: phone ?? null, cnp_cif: cnp_cif ?? null, address: address ?? null })
-      .eq("id", clientId);
-  } else {
-    const { data: created, error } = await (db as any)
-      .from("clients")
-      .insert({ 
-        therapist_id: therapistId, 
-        full_name, 
-        email, 
-        phone: phone ?? null, 
-        cnp_cif: cnp_cif ?? null, 
-        address: address ?? null 
-      })
-      .select("id")
-      .single();
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    clientId = created.id;
+  try {
+    const clientResult = await upsertClientByIdentifiers(db as any, therapistId, {
+      email,
+      phone: phone ?? null,
+      cnp_cif: cnp_cif ?? null,
+      full_name,
+    }, {
+      therapist_id: therapistId,
+      full_name,
+      email: email.toLowerCase(),
+      phone: phone ?? null,
+      cnp_cif: cnp_cif ?? null,
+      address: address ?? null,
+    });
+    clientId = clientResult.id;
+  } catch (clientError) {
+    return NextResponse.json(
+      { error: clientError instanceof Error ? clientError.message : "Nu am putut salva clientul." },
+      { status: 500 },
+    );
   }
 
   const { data: appt, error: apptError } = await (db as any)

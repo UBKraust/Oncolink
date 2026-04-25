@@ -17,6 +17,8 @@ import { sendMessage, onboardingLinkMsg } from "@/lib/twilio/client";
 import { sendEmail, onboardingEmailTemplate } from "@/lib/mail/client";
 import type { ClientFormState } from "@/lib/clients/form-state";
 import { createOnboardingAccessToken } from "@/lib/security/public-links";
+import { upsertClientByIdentifiers } from "@/lib/clients/upsert";
+import { createSignedObjectUrl } from "@/lib/storage/private-urls";
 
 function parseForm(formData: FormData) {
   const is_minor = formData.get("is_minor") === "on";
@@ -117,11 +119,20 @@ export async function createClient(
     return { error: "Sesiune neautorizată. Te rugăm să te autentifici din nou.", fieldErrors: {} };
   }
 
-  const { data, error } = await supabase
-    .from("clients")
-    .insert({
-      full_name: payload.full_name,
+  let clientResult: { id: string; created: boolean };
+  try {
+    clientResult = await upsertClientByIdentifiers(supabase as any, user.id, {
       email: payload.email,
+      phone: payload.phone || null,
+      cnp_cif: payload.cnp_cif || null,
+      minor_cnp: payload.minor_cnp,
+      full_name: payload.full_name,
+      parent_1_email: payload.parent_1_email,
+      parent_1_phone: payload.parent_phone,
+    }, {
+      therapist_id: user.id,
+      full_name: payload.full_name,
+      email: payload.email.toLowerCase(),
       phone: payload.phone || null,
       cnp_cif: payload.cnp_cif || null,
       address: payload.address || null,
@@ -154,12 +165,13 @@ export async function createClient(
       company_representative_email: payload.company_representative_email,
       company_representative_role: payload.company_representative_role,
       company_reg_com: payload.company_reg_com,
-      therapist_id: user.id, // Explicitly set to pass RLS
-    })
-    .select("id")
-    .single();
-
-  if (error) return { error: error.message, fieldErrors: {} };
+    });
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Nu am putut salva clientul.",
+      fieldErrors: {},
+    };
+  }
 
   // ── Provision Google Drive folder (fire-and-forget) ──────────────────────
   // Runs async — client creation never blocks on Drive availability.
@@ -170,13 +182,13 @@ export async function createClient(
         const { folderUrl } = await provisionClientDriveFolder(
           accessToken,
           payload.full_name,
-          data.id
+          clientResult.id
         );
         // Save folder URL as contract_url for easy reference
         await supabase
           .from("clients")
           .update({ contract_url: folderUrl })
-          .eq("id", data.id);
+          .eq("id", clientResult.id);
       }
     } catch (driveErr) {
       console.warn("[Drive] Could not provision client folder:", driveErr);
@@ -184,7 +196,7 @@ export async function createClient(
   })();
 
   revalidatePath("/dashboard/clients");
-  return { success: true, clientId: data.id, error: null, fieldErrors: {} };
+  return { success: true, clientId: clientResult.id, error: null, fieldErrors: {} };
 }
 
 export async function updateClient(
@@ -206,7 +218,7 @@ export async function updateClient(
     .from("clients")
     .update({
       full_name: payload.full_name,
-      email: payload.email,
+      email: payload.email.toLowerCase(),
       phone: payload.phone || null,
       cnp_cif: payload.cnp_cif || null,
       address: payload.address || null,
@@ -327,21 +339,62 @@ export async function uploadClientDocument(clientId: string, folderId: string, f
   if (!file) return { error: "Niciun fișier selectat." };
 
   try {
-    const accessToken = await getValidAccessToken();
-    if (!accessToken) throw new Error("Nu s-a putut obține token-ul Google.");
-
-    const res = await uploadFileToDriveFolder(
-      accessToken,
-      file,
-      file.name,
-      folderId
-    );
-
     const supabase = await createSupabaseServerClient();
-    // Logic to log this upload if needed or update client metadata
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData.user) {
+      return { error: "Sesiune neautorizată." };
+    }
+
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const storagePath = `${clientId}/${Date.now()}_${safeName}`;
+
+    const { error: storageError } = await supabase.storage
+      .from("patient-documents")
+      .upload(storagePath, file, {
+        contentType: file.type || "application/octet-stream",
+        upsert: false,
+      });
+
+    if (storageError) {
+      return { error: storageError.message };
+    }
+
+    const signedStorageUrl = await createSignedObjectUrl(supabase, "patient-documents", storagePath);
+
+    let driveFileId: string | null = null;
+    let webViewLink: string | null = null;
+    const accessToken = await getValidAccessToken();
+    if (accessToken && folderId) {
+      const res = await uploadFileToDriveFolder(
+        accessToken,
+        file,
+        file.name,
+        folderId
+      );
+      driveFileId = res.id;
+      webViewLink = res.webViewLink;
+    }
+
+    const { error: docError } = await supabase
+      .from("patient_documents")
+      .insert({
+        therapist_id: authData.user.id,
+        client_id: clientId,
+        file_name: file.name,
+        file_size_kb: Math.round(file.size / 1024),
+        mime_type: file.type || "application/octet-stream",
+        storage_path: storagePath,
+        drive_file_id: driveFileId,
+        document_url: webViewLink ?? signedStorageUrl,
+        document_type: "ALTELE",
+      });
+
+    if (docError) {
+      return { error: docError.message };
+    }
     
     revalidatePath(`/dashboard/clients/${clientId}`);
-    return { success: true, webViewLink: res.webViewLink };
+    return { success: true, webViewLink: webViewLink ?? signedStorageUrl };
   } catch (err) {
     console.error("[Drive Upload Error]", err);
     return { error: err instanceof Error ? err.message : "Eroare la încărcare." };

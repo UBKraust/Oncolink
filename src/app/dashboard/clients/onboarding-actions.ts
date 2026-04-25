@@ -19,6 +19,7 @@ import {
   isHoneypotTriggered,
 } from "@/lib/security/public-rate-limit";
 import { createSignedObjectUrl } from "@/lib/storage/private-urls";
+import { upsertClientByIdentifiers } from "@/lib/clients/upsert";
 
 export interface OnboardingData {
   id?: string;
@@ -87,10 +88,16 @@ export async function submitMinorOnboarding(data: OnboardingData, files?: { cust
   const db = user ? supabase : admin;
   const storageClient = user ? supabase : admin;
 
-  // 1. Create the client record
-  const { data: newClient, error: clientError } = await db
-    .from("clients")
-    .insert({
+  let clientId: string;
+  try {
+    const result = await upsertClientByIdentifiers(db as any, therapistId, {
+      id: data.id,
+      minor_cnp: data.minor_cnp,
+      cnp_cif: data.cnp_cif,
+      full_name: data.full_name,
+      parent_1_email: data.parent_1_email,
+      parent_1_phone: data.parent_1_phone,
+    }, {
       therapist_id: therapistId,
       is_minor: true,
       full_name: data.full_name,
@@ -102,7 +109,7 @@ export async function submitMinorOnboarding(data: OnboardingData, files?: { cust
       parent_2_phone: data.parent_2_phone,
       parent_2_email: data.parent_2_email,
       parents_marital_status: data.parents_marital_status,
-      cnp_cif: data.cnp_cif, // parent's CNP usually for invoicing
+      cnp_cif: data.cnp_cif,
       address: data.address,
       referral_source: data.referral_source,
       referred_by_name: data.referred_by_name,
@@ -113,16 +120,15 @@ export async function submitMinorOnboarding(data: OnboardingData, files?: { cust
       legal_liability_consent_signed_at: data.legal_liability_consent_signed ? now : null,
       needs_legal_review: data.parents_marital_status !== "CASATORITI",
       onboarding_completed_at: now,
-    })
-    .select("id")
-    .single();
-
-  if (clientError) {
-    console.error("Error creating minor client:", clientError);
-    return { success: false, error: clientError.message };
+    });
+    clientId = result.id;
+  } catch (clientError) {
+    console.error("Error upserting minor client:", clientError);
+    return {
+      success: false,
+      error: clientError instanceof Error ? clientError.message : "Nu am putut salva clientul minor.",
+    };
   }
-
-  const clientId = newClient.id;
 
   // 2. Handle file upload if present
   if (files?.custody) {

@@ -189,6 +189,11 @@ export function ContractGenerator({ client, onSuccess }: ContractGeneratorProps)
       clientName: client.full_name || "—",
       clientCNP: template === "MINOR" ? client.minor_cnp || "—" : client.cnp_cif || "—",
       clientAddress: client.address || "—",
+      clientBirthDate: client.date_of_birth ? formatDateForDisplay(client.date_of_birth) : undefined,
+      clientPhone: client.phone || undefined,
+      clientEmail: client.email || undefined,
+      clientIdSeries: client.client_id_series || undefined,
+      clientIdNumber: client.client_id_number || undefined,
       therapistName: settings.full_name || "—",
       therapistCIF: settings.cif || "—",
       therapistCPRCode: settings.cpr_code || undefined,
@@ -201,14 +206,24 @@ export function ContractGenerator({ client, onSuccess }: ContractGeneratorProps)
       sessionPrice: Number(client.session_price) || settings.default_session_price,
       isMinor: template === "MINOR",
       parent1Name: client.parent_1_name || client.parent_name || undefined,
+      parentCNP: template === "MINOR" ? client.parent_cnp || client.cnp_cif || undefined : undefined,
+      parentAddress: template === "MINOR" ? client.parent_address || client.address || undefined : undefined,
+      parentPhone: client.parent_1_phone || client.parent_phone || undefined,
+      parentEmail: client.parent_1_email || undefined,
+      parentIdSeries: client.parent_id_series || undefined,
+      parentIdNumber: client.parent_id_number || undefined,
       parent2Name: client.parent_2_name || undefined,
       parentsMaritalStatus: client.parents_marital_status || undefined,
       isB2B: template === "B2B",
       companyName: client.company_name || undefined,
       companyCIF: client.cnp_cif || undefined,
+      companyAddress: client.company_address || client.address || undefined,
+      companyIBAN: client.company_iban || undefined,
+      companyBank: client.company_bank || undefined,
       companyRegCom: regCom || undefined,
       representativeName: repName || undefined,
       representativeRole: repRole || undefined,
+      representativeEmail: client.company_representative_email || client.email || undefined,
       isCas: template === "CAS",
       referralNumber,
       referralDate: formatDateForDisplay(referralDate),
@@ -260,21 +275,38 @@ export function ContractGenerator({ client, onSuccess }: ContractGeneratorProps)
         ...payload,
       });
 
-      await persistGeneratedContract({
-        blob: result.blob,
-        fileName: result.fileName,
-        clientId: client.id,
-        generatedContractId: issuedContract.id,
-        contractNumber: issuedContract.contract_number,
-        templateType: template,
-      });
+      let persistenceWarning: string | null = null;
+      try {
+        await persistGeneratedContract({
+          blob: result.blob,
+          fileName: result.fileName,
+          clientId: client.id,
+          generatedContractId: issuedContract.id,
+          contractNumber: issuedContract.contract_number,
+          templateType: template,
+        });
+      } catch (persistError) {
+        const message = persistError instanceof Error
+          ? persistError.message
+          : "Nu am putut salva contractul în baza de date.";
+        persistenceWarning = message;
+        console.warn("Contract persistence skipped:", persistError);
+      }
 
       if (mode === "download") {
         downloadBlob(result.blob, result.fileName);
-        toast.success(`Contractul ${issuedContract.contract_number} a fost descărcat local.`);
+        if (persistenceWarning) {
+          toast.success(`Contractul ${issuedContract.contract_number} a fost descărcat local. Salvarea remote este dezactivată momentan.`);
+        } else {
+          toast.success(`Contractul ${issuedContract.contract_number} a fost descărcat local.`);
+        }
       } else {
         previewBlob(result.blob);
-        toast.success(`Previzualizarea pentru ${issuedContract.contract_number} a fost deschisă.`);
+        if (persistenceWarning) {
+          toast.success(`Previzualizarea pentru ${issuedContract.contract_number} a fost deschisă. PDF-ul rămâne disponibil local momentan.`);
+        } else {
+          toast.success(`Previzualizarea pentru ${issuedContract.contract_number} a fost deschisă.`);
+        }
       }
 
       onSuccess?.();

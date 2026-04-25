@@ -13,29 +13,45 @@ const MARGIN = 20;
 const PAGE_W = 210; // A4 mm
 const CONTENT_W = PAGE_W - MARGIN * 2;
 const PRIMARY = "#1a3c5e";
+const SECONDARY = "#6b7c93";
+const BORDER = "#d9e2ec";
+const SOFT_BG = "#f6f8fb";
+let pageHeaderRenderer: ((doc: jsPDF) => void) | null = null;
 
 function ensurePage(doc: jsPDF, y: number, threshold = 260) {
   if (y > threshold) {
     doc.addPage();
-    return 25;
+    pageHeaderRenderer?.(doc);
+    return 58;
   }
   return y;
 }
 
-function header(doc: jsPDF, title: string) {
+function drawPageHeader(doc: jsPDF, title: string, subtitle?: string) {
   doc.setFillColor(PRIMARY);
-  doc.rect(0, 0, PAGE_W, 18, "F");
+  doc.rect(0, 0, PAGE_W, 24, "F");
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.text("Ce`ai Pățit? · Cabinet psihoterapie", MARGIN, 12);
+  doc.text("Ce-ai Pățit? · Cabinet psihoterapie", MARGIN, 12);
 
-  doc.setTextColor(40, 40, 40);
-  doc.setFontSize(14);
+  doc.setTextColor(36, 45, 56);
+  doc.setFontSize(17);
   doc.setFont("helvetica", "bold");
-  doc.text(title, MARGIN, 32);
+  doc.text(title, MARGIN, 37);
+  if (subtitle) {
+    doc.setFontSize(9.5);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(107, 124, 147);
+    doc.text(subtitle, MARGIN, 43);
+  }
   doc.setDrawColor(220, 220, 220);
-  doc.line(MARGIN, 35, PAGE_W - MARGIN, 35);
+  doc.line(MARGIN, 48, PAGE_W - MARGIN, 48);
+}
+
+function header(doc: jsPDF, title: string, subtitle?: string) {
+  pageHeaderRenderer = (activeDoc: jsPDF) => drawPageHeader(activeDoc, title, subtitle);
+  drawPageHeader(doc, title, subtitle);
 }
 
 function footer(doc: jsPDF) {
@@ -64,6 +80,40 @@ function section(doc: jsPDF, y: number, title: string): number {
   doc.setTextColor(30, 30, 30);
   doc.setFont("helvetica", "normal");
   return y + 14;
+}
+
+function labelValue(doc: jsPDF, x: number, y: number, label: string, value: string) {
+  doc.setFontSize(8);
+  doc.setTextColor(107, 124, 147);
+  doc.setFont("helvetica", "bold");
+  doc.text(label.toUpperCase(), x, y);
+  doc.setFontSize(10);
+  doc.setTextColor(36, 45, 56);
+  doc.setFont("helvetica", "normal");
+  doc.text(value, x, y + 5);
+}
+
+function metaCard(doc: jsPDF, numberLabel: string, docNumber: string, dateLabel: string, dateValue: string) {
+  doc.setFillColor(SOFT_BG);
+  doc.setDrawColor(BORDER);
+  doc.roundedRect(MARGIN, 54, CONTENT_W, 19, 3, 3, "FD");
+  labelValue(doc, MARGIN + 4, 60, numberLabel, docNumber);
+  labelValue(doc, MARGIN + 68, 60, dateLabel, dateValue);
+  labelValue(doc, MARGIN + 112, 60, "Locul încheierii", "București");
+}
+
+function infoBox(doc: jsPDF, y: number, text: string): number {
+  y = ensurePage(doc, y, 245);
+  doc.setFillColor(246, 248, 251);
+  doc.setDrawColor(BORDER);
+  const lines = doc.splitTextToSize(text, CONTENT_W - 10);
+  const height = 8 + lines.length * 5;
+  doc.roundedRect(MARGIN, y, CONTENT_W, height, 3, 3, "FD");
+  doc.setFontSize(8.5);
+  doc.setTextColor(107, 124, 147);
+  doc.setFont("helvetica", "italic");
+  doc.text(lines, MARGIN + 5, y + 6);
+  return y + height + 5;
 }
 
 function para(doc: jsPDF, y: number, text: string): number {
@@ -103,6 +153,11 @@ export interface ContractData {
   clientName: string;
   clientCNP: string;
   clientAddress: string;
+  clientBirthDate?: string;
+  clientPhone?: string;
+  clientEmail?: string;
+  clientIdSeries?: string;
+  clientIdNumber?: string;
   therapistName: string;
   therapistCIF: string;
   therapistIBAN?: string;
@@ -116,6 +171,12 @@ export interface ContractData {
 
   isMinor?: boolean;
   parent1Name?: string;
+  parentCNP?: string;
+  parentAddress?: string;
+  parentPhone?: string;
+  parentEmail?: string;
+  parentIdSeries?: string;
+  parentIdNumber?: string;
   parent2Name?: string;
   parentsMaritalStatus?: string;
   courtSentenceNumber?: string;
@@ -124,8 +185,12 @@ export interface ContractData {
   companyName?: string;
   companyCIF?: string;
   companyRegCom?: string;
+  companyAddress?: string;
+  companyIBAN?: string;
+  companyBank?: string;
   representativeName?: string;
   representativeRole?: string;
+  representativeEmail?: string;
 
   isCas?: boolean;
   referralNumber?: string;
@@ -163,12 +228,50 @@ function signatureBlock(doc: jsPDF, y: number, labelLeft: string, labelRight: st
   return y;
 }
 
-function writeDocumentMeta(doc: jsPDF, numberLabel: string, docNumber: string, dateLabel: string, dateValue: string) {
+function signatureBlockTriple(
+  doc: jsPDF,
+  y: number,
+  leftLabel: string,
+  centerLabel: string,
+  rightLabel: string,
+  centerNote = "(semnătură)",
+  rightNote = "(semnătură / acord, dacă este cazul)",
+) {
+  y = ensurePage(doc, y, 220);
+  y += 10;
+
+  const columnWidth = 48;
+  const gap = 8;
+  const startX = MARGIN;
+  const centerX = startX + columnWidth + gap;
+  const rightX = centerX + columnWidth + gap;
+
   doc.setFontSize(9);
-  doc.setTextColor(60, 60, 60);
-  doc.text(`${numberLabel} ${docNumber}`, MARGIN, 42);
-  doc.text(`${dateLabel} ${dateValue}`, MARGIN, 48);
-  doc.text("Locul: București", MARGIN, 54);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(30, 30, 30);
+  doc.text(leftLabel, startX, y);
+  doc.text(centerLabel, centerX, y);
+  doc.text(rightLabel, rightX, y);
+
+  y += 25;
+  doc.setDrawColor(200, 200, 200);
+  doc.line(startX, y, startX + columnWidth, y);
+  doc.line(centerX, y, centerX + columnWidth, y);
+  doc.line(rightX, y, rightX + columnWidth, y);
+
+  y += 5;
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(150, 150, 150);
+  doc.text("(semnătură și parafă)", startX, y);
+  doc.text(centerNote, centerX, y);
+  doc.text(rightNote, rightX, y);
+
+  return y;
+}
+
+function writeDocumentMeta(doc: jsPDF, numberLabel: string, docNumber: string, dateLabel: string, dateValue: string) {
+  metaCard(doc, numberLabel, docNumber, dateLabel, dateValue);
 }
 
 export async function generateContract(data: ContractData): Promise<GeneratedPdfResult> {
@@ -191,7 +294,15 @@ export async function generateContract(data: ContractData): Promise<GeneratedPdf
         ? "Contract de Prestări Servicii Psihologice pentru Minor"
         : "Contract de Prestări Servicii Psihologice";
 
-  header(doc, title);
+  const subtitle = templateType === "CAS"
+    ? "Model CAS · Consimțământ informat"
+    : templateType === "B2B"
+      ? "Model Business · B2B / Firmă"
+      : templateType === "MINOR"
+        ? "Model Minor · Legea 272/2004"
+        : "Model Standard · Client individual adult";
+
+  header(doc, title, subtitle);
   writeDocumentMeta(
     doc,
     templateType === "CAS" ? "Document nr." : "Contract nr.",
@@ -200,7 +311,7 @@ export async function generateContract(data: ContractData): Promise<GeneratedPdf
     data.startDate,
   );
 
-  let y = 66;
+  let y = 79;
 
   const therapistEntity = safeValue(data.therapistPracticeName);
   const therapistRole = therapistRoleLabel(data.therapistCPRCode);
@@ -210,25 +321,35 @@ export async function generateContract(data: ContractData): Promise<GeneratedPdf
   const therapistName = safeValue(data.therapistName);
   const therapistCif = safeValue(data.therapistCIF);
   const sessionPrice = formatMoney(data.sessionPrice);
+  const paymentMethod = data.therapistIBAN
+    ? `transfer bancar în contul ${data.therapistIBAN}`
+    : "transfer bancar sau altă metodă convenită de Părți";
+
+  y = infoBox(
+    doc,
+    y,
+    "Document generat din șablonul contractual intern al cabinetului și formatat automat pentru semnare.",
+  );
 
   if (templateType === "STANDARD") {
     y = section(doc, y, "1. Părțile contractante");
     y = para(doc, y, `1.1. Prestatorul: ${therapistEntity}, cu CUI ${therapistCif}, având sediul profesional în ${therapistAddress}, reprezentat prin ${therapistName}, în calitate de ${therapistRole}, telefon ${therapistPhone}, e-mail ${therapistEmail}, denumit în continuare Prestatorul.`);
-    y = para(doc, y, `1.2. Beneficiarul: ${safeValue(data.clientName)}, CNP ${safeValue(data.clientCNP)}, domiciliat/ă în ${safeValue(data.clientAddress)}, denumit/ă în continuare Beneficiarul.`);
+    y = para(doc, y, `1.2. Beneficiarul: ${safeValue(data.clientName)}, CNP ${safeValue(data.clientCNP)}, domiciliat/ă în ${safeValue(data.clientAddress)}, identificat/ă cu CI seria ${safeValue(data.clientIdSeries, "____")} nr. ${safeValue(data.clientIdNumber, "______")}, telefon ${safeValue(data.clientPhone, "—")}, e-mail ${safeValue(data.clientEmail, "—")}, denumit/ă în continuare Beneficiarul.`);
+    y = para(doc, y, "Prestatorul și Beneficiarul vor fi denumiți împreună Părțile.");
 
     y = section(doc, y, "2. Obiectul contractului");
-    y = para(doc, y, "2.1. Obiectul prezentului contract îl reprezintă prestarea de către Prestator a serviciilor psihologice în beneficiul Beneficiarului.");
+    y = para(doc, y, "2.1. Obiectul prezentului contract îl reprezintă prestarea de către Prestator a serviciilor de psihoterapie / consiliere psihologică, în beneficiul Beneficiarului.");
     y = para(doc, y, "2.2. Serviciile pot include, după caz: evaluare psihologică, consiliere psihologică, psihoterapie, intervenții de autoreglare emoțională, orientare psihologică și alte activități specifice competențelor profesionale ale Prestatorului.");
-    y = para(doc, y, "2.3. Prezentul contract nu garantează un rezultat terapeutic prestabilit. Procesul psihologic depinde de participarea activă a Beneficiarului, de frecvența ședințelor și de particularitățile individuale.");
+    y = para(doc, y, "2.3. Prezentul contract nu garantează un rezultat terapeutic prestabilit. Procesul psihologic/psihoterapeutic depinde de participarea activă a Beneficiarului, de frecvența ședințelor și de particularitățile individuale ale acestuia.");
 
     y = section(doc, y, "3. Durata contractului");
-    y = para(doc, y, `3.1. Prezentul contract se încheie începând cu data de ${data.startDate}, pe durata colaborării dintre Părți.`);
+    y = para(doc, y, `3.1. Prezentul contract se încheie pe perioada colaborării dintre Părți, începând cu data de ${data.startDate}.`);
     y = para(doc, y, "3.2. O ședință are durata standard de 50 de minute, cu excepția cazului în care Părțile convin altfel.");
     y = para(doc, y, "3.3. Frecvența ședințelor se stabilește de comun acord între Prestator și Beneficiar.");
 
     y = section(doc, y, "4. Prețul serviciilor și modalitatea de plată");
     y = para(doc, y, `4.1. Tariful unei ședințe este de ${sessionPrice}.`);
-    y = para(doc, y, `4.2. Plata se efectuează prin transfer bancar${data.therapistIBAN ? ` în contul ${data.therapistIBAN}` : ""} sau prin altă metodă convenită de Părți.`);
+    y = para(doc, y, `4.2. Plata se efectuează prin ${paymentMethod}.`);
     y = para(doc, y, "4.3. Plata se face la finalul ședinței sau conform acordului stabilit între Părți.");
     y = para(doc, y, "4.4. În cazul în care Beneficiarul nu anulează sau nu reprogramează ședința cu minimum 24 de ore înainte, Prestatorul poate considera ședința datorată integral.");
 
@@ -281,8 +402,8 @@ export async function generateContract(data: ContractData): Promise<GeneratedPdf
   if (templateType === "MINOR") {
     y = section(doc, y, "1. Părțile contractante");
     y = para(doc, y, `1.1. Prestatorul: ${therapistEntity}, cu CUI ${therapistCif}, având sediul profesional în ${therapistAddress}, reprezentat prin ${therapistName}, în calitate de ${therapistRole}, telefon ${therapistPhone}, e-mail ${therapistEmail}, denumit în continuare Prestatorul.`);
-    y = para(doc, y, `1.2. Reprezentantul legal al minorului: ${safeValue(data.parent1Name)}, denumit în continuare Reprezentantul legal.`);
-    y = para(doc, y, `1.3. Beneficiarul minor: ${safeValue(data.clientName)}, CNP ${safeValue(data.clientCNP)}, domiciliat/ă în ${safeValue(data.clientAddress)}, denumit/ă în continuare Beneficiarul minor.`);
+    y = para(doc, y, `1.2. Reprezentantul legal al minorului: ${safeValue(data.parent1Name)}, CNP ${safeValue(data.parentCNP, "—")}, domiciliat/ă în ${safeValue(data.parentAddress, data.clientAddress)}, identificat/ă cu CI seria ${safeValue(data.parentIdSeries, "____")} nr. ${safeValue(data.parentIdNumber, "______")}, telefon ${safeValue(data.parentPhone, "—")}, e-mail ${safeValue(data.parentEmail, "—")}, în calitate de părinte / reprezentant legal, denumit/ă în continuare Reprezentantul legal.`);
+    y = para(doc, y, `1.3. Beneficiarul minor: ${safeValue(data.clientName)}, CNP ${safeValue(data.clientCNP)}, născut/ă la data de ${safeValue(data.clientBirthDate, "____________")}, domiciliat/ă în ${safeValue(data.clientAddress)}, denumit/ă în continuare Beneficiarul minor.`);
 
     y = section(doc, y, "2. Temeiul și principiile contractului");
     y = para(doc, y, "2.1. Prezentul contract se încheie cu respectarea legislației aplicabile privind protecția și promovarea drepturilor copilului, inclusiv principiul interesului superior al copilului.");
@@ -305,13 +426,13 @@ export async function generateContract(data: ContractData): Promise<GeneratedPdf
     y = para(doc, y, "5.3. Minorul nu va fi forțat să comunice informații pentru care nu este pregătit, cu excepția situațiilor în care siguranța lui sau a altor persoane este în pericol.");
 
     y = section(doc, y, "6. Durata contractului");
-    y = para(doc, y, `6.1. Contractul se încheie începând cu data de ${data.startDate}, pe durata colaborării dintre Părți.`);
+    y = para(doc, y, `6.1. Contractul se încheie pe perioada colaborării dintre Părți, începând cu data de ${data.startDate}.`);
     y = para(doc, y, "6.2. O ședință are durata de 50 de minute.");
     y = para(doc, y, "6.3. Numărul, frecvența și durata ședințelor pot fi ajustate în funcție de nevoile minorului și de acordul Părților.");
 
     y = section(doc, y, "7. Prețul și modalitatea de plată");
     y = para(doc, y, `7.1. Tariful unei ședințe este de ${sessionPrice}.`);
-    y = para(doc, y, `7.2. Plata se efectuează prin transfer bancar${data.therapistIBAN ? ` în contul ${data.therapistIBAN}` : ""} sau prin altă metodă convenită.`);
+    y = para(doc, y, `7.2. Plata se efectuează prin ${paymentMethod}.`);
     y = para(doc, y, "7.3. Ședințele anulate cu mai puțin de 24 de ore înainte pot fi facturate integral, cu excepția unor situații justificate.");
 
     y = section(doc, y, "8. Confidențialitate");
@@ -352,12 +473,13 @@ export async function generateContract(data: ContractData): Promise<GeneratedPdf
   if (templateType === "B2B") {
     y = section(doc, y, "1. Părțile contractante");
     y = para(doc, y, `1.1. Prestatorul: ${therapistEntity}, cu CUI ${therapistCif}, având sediul profesional în ${therapistAddress}, reprezentat prin ${therapistName}, în calitate de ${therapistRole}, telefon ${therapistPhone}, e-mail ${therapistEmail}, denumit în continuare Prestatorul.`);
-    y = para(doc, y, `1.2. Beneficiarul: ${safeValue(data.companyName)}, cu CUI ${safeValue(data.companyCIF)}, nr. Reg. Comerțului ${safeValue(data.companyRegCom)}, reprezentată legal prin ${safeValue(data.representativeName)}, având funcția de ${safeValue(data.representativeRole)}, denumită în continuare Beneficiarul.`);
+    y = para(doc, y, `1.2. Beneficiarul: ${safeValue(data.companyName)}, cu CUI ${safeValue(data.companyCIF)}, nr. Reg. Comerțului ${safeValue(data.companyRegCom)}, cu sediul social în ${safeValue(data.companyAddress, data.clientAddress)}, cont IBAN ${safeValue(data.companyIBAN, "—")}, deschis la ${safeValue(data.companyBank, "—")}, reprezentată legal prin ${safeValue(data.representativeName)}, având funcția de ${safeValue(data.representativeRole)}, e-mail ${safeValue(data.representativeEmail, data.clientEmail)}, denumită în continuare Beneficiarul.`);
 
     y = section(doc, y, "2. Obiectul contractului");
-    y = para(doc, y, "2.1. Obiectul prezentului contract îl reprezintă prestarea de către Prestator a serviciilor de consiliere psihologică, workshopuri, traininguri, intervenții de wellbeing organizațional sau alte servicii profesionale similare pentru Beneficiar.");
+    y = para(doc, y, "2.1. Obiectul prezentului contract îl reprezintă prestarea de către Prestator a serviciilor de consiliere psihologică, workshopuri, traininguri, intervenții de wellbeing organizațional sau alte servicii profesionale similare pentru angajații / colaboratorii Beneficiarului.");
     y = para(doc, y, "2.2. Serviciile pot include sesiuni individuale de consiliere psihologică, workshopuri, traininguri de autoreglare emoțională, evaluări non-diagnostice și consultanță privind sănătatea emoțională în organizație.");
-    y = para(doc, y, "2.3. Prezentul contract nu are ca obiect servicii medicale de urgență, expertiză psihologică judiciară sau evaluări obligatorii, cu excepția cazului în care Părțile stabilesc expres altfel și Prestatorul are competența necesară.");
+    y = para(doc, y, "2.3. Serviciile vor fi prestate la sediul Beneficiarului, online sau în alt spațiu agreat de Părți.");
+    y = para(doc, y, "2.4. Prezentul contract nu are ca obiect servicii medicale de urgență, expertiză psihologică judiciară sau evaluări psihologice obligatorii pentru angajare, cu excepția cazului în care Părțile stabilesc expres altfel și Prestatorul are competența necesară.");
 
     y = section(doc, y, "3. Beneficiarii finali ai serviciilor");
     y = para(doc, y, "3.1. Beneficiarii finali pot fi angajații, colaboratorii sau membrii echipei Beneficiarului.");
@@ -370,7 +492,7 @@ export async function generateContract(data: ContractData): Promise<GeneratedPdf
     y = para(doc, y, "4.3. Beneficiarul înțelege că relația psihologică dintre Prestator și participant se bazează pe confidențialitate, autonomie și consimțământ informat.");
 
     y = section(doc, y, "5. Durata contractului");
-    y = para(doc, y, `5.1. Contractul se încheie începând cu data de ${data.startDate}, pe perioada colaborării dintre Părți.`);
+    y = para(doc, y, `5.1. Contractul se încheie pe perioada colaborării dintre Părți, începând cu data de ${data.startDate}.`);
     y = para(doc, y, "5.2. Calendarul serviciilor se stabilește prin anexă, comandă, e-mail sau alt document agreat de Părți.");
 
     y = section(doc, y, "6. Prețul și modalitatea de plată");
@@ -470,28 +592,36 @@ export async function generateContract(data: ContractData): Promise<GeneratedPdf
     y = para(doc, y, "Declar că informațiile furnizate sunt reale și complete, iar acordul meu este exprimat liber și informat.");
   }
 
-  const leftLabel = templateType === "CAS" ? "Prestator" : "Prestator";
-  const rightLabel = templateType === "MINOR"
-    ? "Reprezentant legal"
-    : templateType === "B2B"
+  if (templateType === "MINOR") {
+    signatureBlockTriple(
+      doc,
+      y,
+      "Prestator",
+      "Reprezentant legal",
+      "Beneficiar minor",
+      "(semnătură)",
+      "(semnătură / acord, dacă este cazul)",
+    );
+  } else {
+    const rightLabel = templateType === "B2B"
       ? "Beneficiar"
       : templateType === "CAS"
         ? "Beneficiar / Pacient"
         : "Beneficiar";
 
-  signatureBlock(
-    doc,
-    y,
-    leftLabel,
-    rightLabel,
-    templateType === "B2B"
-      ? "(semnătură și ștampilă, dacă este cazul)"
-      : templateType === "MINOR"
-        ? "(semnătură)"
+    signatureBlock(
+      doc,
+      y,
+      "Prestator",
+      rightLabel,
+      templateType === "B2B"
+        ? "(semnătură și ștampilă, dacă este cazul)"
         : "(semnătură olografă digitală)",
-  );
+    );
+  }
 
   footer(doc);
+  pageHeaderRenderer = null;
 
   const fileNameBase = templateType === "B2B"
     ? `contract-b2b-${safeValue(data.companyName, "beneficiar")}`
@@ -597,6 +727,7 @@ export async function generateGdprConsent(data: {
 
   signatureBlock(doc, y, "Prestator", "Persoana vizată", "(semnătură)");
   footer(doc);
+  pageHeaderRenderer = null;
 
   return {
     blob: doc.output("blob"),

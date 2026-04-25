@@ -6,6 +6,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getAvailableSlots } from "@/lib/availability/engine";
 import type { AppointmentRow } from "@/lib/appointments/helpers";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
+import { checkOverlap, OverlapError } from "@/lib/availability/overlapCheck";
 import { resolvePublicBookingTherapistId } from "@/lib/security/public-booking";
 import {
   enforceRateLimit,
@@ -132,30 +133,37 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const db = user ? supabase : admin;
 
-  // Check slot is still free
-  const { data: conflicts } = await (db as any)
-    .from("appointments")
-    .select("id")
-    .eq("therapist_id", therapistId)
-    .gte("appointment_date", new Date(start.getTime() - 60 * 60_000).toISOString())
-    .lte("appointment_date", new Date(start.getTime() + 60 * 60_000).toISOString())
-    .in("status", ["PROGRAMAT", "CONFIRMAT"]);
-
-  if (conflicts && conflicts.length > 0) {
-    return NextResponse.json(
-      { error: "Slot indisponibil. Alege un alt interval." },
-      { status: 409 },
-    );
+  try {
+    await checkOverlap(start.toISOString(), 50, therapistId);
+  } catch (err) {
+    if (err instanceof OverlapError) {
+      return NextResponse.json(
+        { error: "Slot indisponibil. Alege un alt interval.", source: err.source },
+        { status: 409 },
+      );
+    }
+    throw err;
   }
 
   // Upsert client
   let clientId: string;
-  const { data: existing } = await (db as any)
+  const { data: byEmail } = await (db as any)
     .from("clients")
     .select("id")
     .eq("therapist_id", therapistId)
     .eq("email", email)
     .maybeSingle();
+
+  const { data: byPhone } = !byEmail && phone
+    ? await (db as any)
+        .from("clients")
+        .select("id")
+        .eq("therapist_id", therapistId)
+        .eq("phone", phone)
+        .maybeSingle()
+    : { data: null };
+
+  const existing = byEmail ?? byPhone;
 
   if (existing) {
     clientId = existing.id;

@@ -81,10 +81,16 @@ export function PersonalInfoOverlay({ isOpen, onClose, client, anonymized }: Per
             {isMinor ? (
               <>
                 <Row label="CNP minor" value={client.minor_cnp} mono />
-                <Row label="CNP / CIF reprezentant legal" value={client.cnp_cif} mono />
+                <Row label="CNP reprezentant legal" value={client.parent_cnp ?? client.cnp_cif} mono />
               </>
             ) : (
               <Row label="CNP / CIF" value={client.cnp_cif} mono />
+            )}
+            {client.date_of_birth && (
+              <Row label="Data nașterii" value={new Date(client.date_of_birth).toLocaleDateString("ro-RO")} />
+            )}
+            {!isMinor && (client.client_id_series || client.client_id_number) && (
+              <Row label="Act identitate" value={`${client.client_id_series ?? "—"} ${client.client_id_number ?? ""}`.trim()} mono />
             )}
             <Row
               label="Status GDPR"
@@ -176,6 +182,24 @@ export function PersonalInfoOverlay({ isOpen, onClose, client, anonymized }: Per
             {isB2B && client.company_name && (
               <Row label="Companie" value={client.company_name} icon={Briefcase} />
             )}
+            {isB2B && client.company_address && (
+              <Row label="Sediu social" value={client.company_address} />
+            )}
+            {isB2B && client.company_reg_com && (
+              <Row label="Reg. Comerțului" value={client.company_reg_com} mono />
+            )}
+            {isB2B && client.company_iban && (
+              <Row label="IBAN companie" value={client.company_iban} mono />
+            )}
+            {isB2B && client.company_bank && (
+              <Row label="Bancă" value={client.company_bank} />
+            )}
+            {isB2B && client.company_representative_name && (
+              <Row label="Reprezentant legal" value={client.company_representative_name} />
+            )}
+            {isB2B && client.company_representative_email && (
+              <Row label="Email reprezentant" value={client.company_representative_email} href={anonymized ? undefined : `mailto:${client.company_representative_email}`} />
+            )}
           </div>
         </section>
 
@@ -219,13 +243,29 @@ export function PersonalInfoOverlay({ isOpen, onClose, client, anonymized }: Per
           <section className="space-y-3">
             <SectionTitle>Tutore Legal</SectionTitle>
             <div className="rounded-2xl bg-indigo-50/50 border border-indigo-100 p-4 space-y-3">
-              <Row label="Părinte / Tutore" value={client.parent_name} icon={Baby} />
-              {client.parent_phone && (
+              <Row label="Părinte / Tutore" value={client.parent_1_name ?? client.parent_name} icon={Baby} />
+              {(client.parent_1_phone ?? client.parent_phone) && (
                 <Row
                   label="Telefon Tutore"
-                  value={anonymized ? "REDACTED" : client.parent_phone}
-                  href={anonymized || !client.parent_phone ? undefined : `tel:${client.parent_phone}`}
+                  value={anonymized ? "REDACTED" : client.parent_1_phone ?? client.parent_phone}
+                  href={anonymized || !(client.parent_1_phone ?? client.parent_phone) ? undefined : `tel:${client.parent_1_phone ?? client.parent_phone}`}
                 />
+              )}
+              {client.parent_1_email && (
+                <Row
+                  label="Email Tutore"
+                  value={anonymized ? "REDACTED" : client.parent_1_email}
+                  href={anonymized ? undefined : `mailto:${client.parent_1_email}`}
+                />
+              )}
+              {client.parent_address && (
+                <Row label="Adresă Tutore" value={client.parent_address} />
+              )}
+              {client.parent_cnp && (
+                <Row label="CNP Tutore" value={client.parent_cnp} mono />
+              )}
+              {(client.parent_id_series || client.parent_id_number) && (
+                <Row label="CI Tutore" value={`${client.parent_id_series ?? "—"} ${client.parent_id_number ?? ""}`.trim()} mono />
               )}
               {client.parent_2_name && (
                 <Row label="Tutore 2" value={client.parent_2_name} />

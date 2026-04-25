@@ -28,18 +28,31 @@ function parseForm(formData: FormData) {
     phone: String(formData.get("phone") ?? "").trim(),
     cnp_cif: String(formData.get("cnp_cif") ?? "").trim(),
     address: String(formData.get("address") ?? "").trim(),
+    date_of_birth: String(formData.get("date_of_birth") ?? "").trim() || null,
+    client_id_series: String(formData.get("client_id_series") ?? "").trim() || null,
+    client_id_number: String(formData.get("client_id_number") ?? "").trim() || null,
     gdpr_consent_signed: formData.get("gdpr_consent_signed") === "on",
     location: formData.get("location") as "CABINET_PARTICULAR" | "CLINICA" | null,
     is_minor,
+    minor_cnp: is_minor ? String(formData.get("minor_cnp") ?? "").trim() || null : null,
     parent_name: is_minor ? String(formData.get("parent_name") ?? "").trim() : null,
     parent_phone: is_minor ? String(formData.get("parent_phone") ?? "").trim() : null,
+    parent_1_email: is_minor ? String(formData.get("parent_1_email") ?? "").trim() || null : null,
+    parent_cnp: is_minor ? String(formData.get("parent_cnp") ?? "").trim() || null : null,
+    parent_address: is_minor ? String(formData.get("parent_address") ?? "").trim() || null : null,
+    parent_id_series: is_minor ? String(formData.get("parent_id_series") ?? "").trim() || null : null,
+    parent_id_number: is_minor ? String(formData.get("parent_id_number") ?? "").trim() || null : null,
     billing_type: billing_type || "INDIVIDUAL",
     company_name: billing_type === "B2B_COMPANY" ? String(formData.get("company_name") ?? "").trim() : null,
+    company_address: billing_type === "B2B_COMPANY" ? String(formData.get("company_address") ?? "").trim() || null : null,
+    company_iban: billing_type === "B2B_COMPANY" ? String(formData.get("company_iban") ?? "").trim() || null : null,
+    company_bank: billing_type === "B2B_COMPANY" ? String(formData.get("company_bank") ?? "").trim() || null : null,
     session_price: String(formData.get("session_price") ?? "").trim() || null,
     session_frequency: String(formData.get("session_frequency") ?? "SAPTAMANAL"),
     report_frequency: String(formData.get("report_frequency") ?? "NICIODATA"),
     send_report_to_parent: formData.get("send_report_to_parent") === "on",
     company_representative_name: billing_type === "B2B_COMPANY" ? String(formData.get("company_representative_name") ?? "").trim() : null,
+    company_representative_email: billing_type === "B2B_COMPANY" ? String(formData.get("company_representative_email") ?? "").trim() || null : null,
     company_representative_role: billing_type === "B2B_COMPANY" ? String(formData.get("company_representative_role") ?? "").trim() : null,
     company_reg_com: billing_type === "B2B_COMPANY" ? String(formData.get("company_reg_com") ?? "").trim() : null,
   };
@@ -57,11 +70,18 @@ function validate(payload: ReturnType<typeof parseForm>): ClientFormState {
     const v = validateCnpCif(payload.cnp_cif);
     if (!v.ok) fieldErrors.cnp_cif = v.reason;
   }
+  if (payload.parent_1_email && !isValidEmail(payload.parent_1_email)) {
+    fieldErrors.parent_1_email = "Email invalid.";
+  }
+  if (payload.company_representative_email && !isValidEmail(payload.company_representative_email)) {
+    fieldErrors.company_representative_email = "Email invalid.";
+  }
   
   if (payload.is_minor) {
     if (!payload.parent_name) fieldErrors.parent_name = "Numele părintelui/tutorelui este obligatoriu pentru minori.";
     if (!payload.parent_phone) fieldErrors.parent_phone = "Telefonul părintelui este obligatoriu.";
     else if (!isValidRomanianPhone(payload.parent_phone)) fieldErrors.parent_phone = "Telefon RO invalid.";
+    if (!payload.minor_cnp) fieldErrors.minor_cnp = "CNP-ul minorului este obligatoriu pentru contract.";
   }
 
   if (payload.billing_type === "B2B_COMPANY") {
@@ -105,18 +125,33 @@ export async function createClient(
       phone: payload.phone || null,
       cnp_cif: payload.cnp_cif || null,
       address: payload.address || null,
+      date_of_birth: payload.date_of_birth,
+      client_id_series: payload.client_id_series,
+      client_id_number: payload.client_id_number,
       gdpr_consent_signed: payload.gdpr_consent_signed,
       location: payload.location,
       is_minor: payload.is_minor,
+      minor_cnp: payload.minor_cnp,
       parent_name: payload.parent_name,
       parent_phone: payload.parent_phone,
+      parent_1_name: payload.parent_name,
+      parent_1_phone: payload.parent_phone,
+      parent_1_email: payload.parent_1_email,
+      parent_cnp: payload.parent_cnp,
+      parent_address: payload.parent_address,
+      parent_id_series: payload.parent_id_series,
+      parent_id_number: payload.parent_id_number,
       billing_type: payload.billing_type,
       company_name: payload.company_name,
+      company_address: payload.company_address,
+      company_iban: payload.company_iban,
+      company_bank: payload.company_bank,
       session_price: payload.session_price ? Number(payload.session_price) : null,
       session_frequency: payload.session_frequency,
       report_frequency: payload.report_frequency,
       send_report_to_parent: payload.send_report_to_parent,
       company_representative_name: payload.company_representative_name,
+      company_representative_email: payload.company_representative_email,
       company_representative_role: payload.company_representative_role,
       company_reg_com: payload.company_reg_com,
       therapist_id: user.id, // Explicitly set to pass RLS
@@ -175,18 +210,33 @@ export async function updateClient(
       phone: payload.phone || null,
       cnp_cif: payload.cnp_cif || null,
       address: payload.address || null,
+      date_of_birth: payload.date_of_birth,
+      client_id_series: payload.client_id_series,
+      client_id_number: payload.client_id_number,
       gdpr_consent_signed: payload.gdpr_consent_signed,
       location: payload.location,
       is_minor: payload.is_minor,
+      minor_cnp: payload.minor_cnp,
       parent_name: payload.parent_name,
       parent_phone: payload.parent_phone,
+      parent_1_name: payload.parent_name,
+      parent_1_phone: payload.parent_phone,
+      parent_1_email: payload.parent_1_email,
+      parent_cnp: payload.parent_cnp,
+      parent_address: payload.parent_address,
+      parent_id_series: payload.parent_id_series,
+      parent_id_number: payload.parent_id_number,
       billing_type: payload.billing_type,
       company_name: payload.company_name,
+      company_address: payload.company_address,
+      company_iban: payload.company_iban,
+      company_bank: payload.company_bank,
       session_price: payload.session_price ? Number(payload.session_price) : null,
       session_frequency: payload.session_frequency,
       report_frequency: payload.report_frequency,
       send_report_to_parent: payload.send_report_to_parent,
       company_representative_name: payload.company_representative_name,
+      company_representative_email: payload.company_representative_email,
       company_representative_role: payload.company_representative_role,
       company_reg_com: payload.company_reg_com,
     })

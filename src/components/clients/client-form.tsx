@@ -27,13 +27,29 @@ type Defaults = Partial<{
   phone: string;
   cnp_cif: string;
   address: string;
+  date_of_birth: string;
+  client_id_series: string;
+  client_id_number: string;
   gdpr_consent_signed: boolean;
   location: string;
   is_minor: boolean;
+  minor_cnp: string;
   parent_name: string;
   parent_phone: string;
+  parent_1_email: string;
+  parent_cnp: string;
+  parent_address: string;
+  parent_id_series: string;
+  parent_id_number: string;
   billing_type: string;
   company_name: string;
+  company_address: string;
+  company_iban: string;
+  company_bank: string;
+  company_representative_name: string;
+  company_representative_email: string;
+  company_representative_role: string;
+  company_reg_com: string;
   session_price: string;
   session_frequency: string;
   report_frequency: string;
@@ -109,9 +125,33 @@ export function ClientForm({ action, defaults = {}, submitLabel, cancelHref }: C
           <Field
             label="CNP / CIF"
             name="cnp_cif"
-            hint="Necesar pentru e-Factura SmartBill."
+            hint={isMinor ? "Pentru minor, aici se poate păstra CNP-ul reprezentantului legal / plătitorului." : "Necesar pentru e-Factura SmartBill."}
             defaultValue={defaults.cnp_cif}
             error={state.fieldErrors.cnp_cif}
+          />
+        </div>
+
+        <div className="grid gap-5 md:grid-cols-3">
+          <Field
+            label="Data nașterii"
+            name="date_of_birth"
+            type="date"
+            defaultValue={defaults.date_of_birth}
+            error={state.fieldErrors.date_of_birth}
+          />
+          <Field
+            label="Serie CI"
+            name="client_id_series"
+            placeholder="RX"
+            defaultValue={defaults.client_id_series}
+            error={state.fieldErrors.client_id_series}
+          />
+          <Field
+            label="Număr CI"
+            name="client_id_number"
+            placeholder="123456"
+            defaultValue={defaults.client_id_number}
+            error={state.fieldErrors.client_id_number}
           />
         </div>
 
@@ -185,6 +225,54 @@ export function ClientForm({ action, defaults = {}, submitLabel, cancelHref }: C
                     defaultValue={defaults.parent_phone}
                     error={state.fieldErrors.parent_phone}
                   />
+                  <Field
+                    label="Email Părinte"
+                    name="parent_1_email"
+                    type="email"
+                    defaultValue={defaults.parent_1_email}
+                    error={state.fieldErrors.parent_1_email}
+                  />
+                  <Field
+                    label="CNP Minor"
+                    name="minor_cnp"
+                    required
+                    defaultValue={defaults.minor_cnp}
+                    error={state.fieldErrors.minor_cnp}
+                  />
+                  <Field
+                    label="CNP Reprezentant Legal"
+                    name="parent_cnp"
+                    defaultValue={defaults.parent_cnp}
+                    error={state.fieldErrors.parent_cnp}
+                  />
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <Field
+                      label="Serie CI Reprezentant"
+                      name="parent_id_series"
+                      placeholder="RX"
+                      defaultValue={defaults.parent_id_series}
+                      error={state.fieldErrors.parent_id_series}
+                    />
+                    <Field
+                      label="Număr CI Reprezentant"
+                      name="parent_id_number"
+                      placeholder="123456"
+                      defaultValue={defaults.parent_id_number}
+                      error={state.fieldErrors.parent_id_number}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="parent_address">Adresă Reprezentant Legal</Label>
+                    <Textarea
+                      id="parent_address"
+                      name="parent_address"
+                      rows={2}
+                      defaultValue={defaults.parent_address ?? ""}
+                    />
+                    {state.fieldErrors.parent_address ? (
+                      <p className="text-xs text-rose-600">{state.fieldErrors.parent_address}</p>
+                    ) : null}
+                  </div>
                 </div>
               )}
             </div>
@@ -213,6 +301,64 @@ export function ClientForm({ action, defaults = {}, submitLabel, cancelHref }: C
                     error={state.fieldErrors.company_name}
                     hint="Firma va achita direct ședințele sau va oferi un buget."
                   />
+                  <div className="space-y-1.5">
+                    <Label htmlFor="company_address">Sediu Social Companie</Label>
+                    <Textarea
+                      id="company_address"
+                      name="company_address"
+                      rows={2}
+                      defaultValue={defaults.company_address ?? ""}
+                    />
+                    {state.fieldErrors.company_address ? (
+                      <p className="text-xs text-rose-600">{state.fieldErrors.company_address}</p>
+                    ) : null}
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <Field
+                      label="Nr. Reg. Comerțului"
+                      name="company_reg_com"
+                      placeholder="J40/1234/2024"
+                      defaultValue={defaults.company_reg_com}
+                      error={state.fieldErrors.company_reg_com}
+                    />
+                    <Field
+                      label="Email Reprezentant"
+                      name="company_representative_email"
+                      type="email"
+                      defaultValue={defaults.company_representative_email}
+                      error={state.fieldErrors.company_representative_email}
+                    />
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <Field
+                      label="Nume Reprezentant"
+                      name="company_representative_name"
+                      required
+                      defaultValue={defaults.company_representative_name}
+                      error={state.fieldErrors.company_representative_name}
+                    />
+                    <Field
+                      label="Calitate Reprezentant"
+                      name="company_representative_role"
+                      required
+                      defaultValue={defaults.company_representative_role}
+                      error={state.fieldErrors.company_representative_role}
+                    />
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <Field
+                      label="IBAN Companie"
+                      name="company_iban"
+                      defaultValue={defaults.company_iban}
+                      error={state.fieldErrors.company_iban}
+                    />
+                    <Field
+                      label="Banca Companie"
+                      name="company_bank"
+                      defaultValue={defaults.company_bank}
+                      error={state.fieldErrors.company_bank}
+                    />
+                  </div>
                 </div>
               )}
             </div>

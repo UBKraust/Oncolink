@@ -65,6 +65,33 @@ function buildSuggestedContractNumber() {
   return `CTR-${year}-....`;
 }
 
+async function persistGeneratedContract(params: {
+  blob: Blob;
+  fileName: string;
+  clientId: string;
+  generatedContractId: string;
+  contractNumber: string;
+  templateType: TemplateType;
+}) {
+  const file = new File([params.blob], params.fileName, { type: "application/pdf" });
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("clientId", params.clientId);
+  formData.append("generatedContractId", params.generatedContractId);
+  formData.append("contractNumber", params.contractNumber);
+  formData.append("templateType", params.templateType);
+
+  const response = await fetch("/api/contracts/generated", {
+    method: "POST",
+    body: formData,
+  });
+
+  const payload = await response.json() as { error?: string };
+  if (!response.ok) {
+    throw new Error(payload.error || "Nu am putut salva contractul în baza de date.");
+  }
+}
+
 export function ContractGenerator({ client, onSuccess }: ContractGeneratorProps) {
   const [loading, setLoading] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -231,6 +258,15 @@ export function ContractGenerator({ client, onSuccess }: ContractGeneratorProps)
       const result = await generateContract({
         contractNumber: issuedContract.contract_number,
         ...payload,
+      });
+
+      await persistGeneratedContract({
+        blob: result.blob,
+        fileName: result.fileName,
+        clientId: client.id,
+        generatedContractId: issuedContract.id,
+        contractNumber: issuedContract.contract_number,
+        templateType: template,
       });
 
       if (mode === "download") {

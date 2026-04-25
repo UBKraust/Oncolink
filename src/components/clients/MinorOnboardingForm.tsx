@@ -39,6 +39,7 @@ export function MinorOnboardingForm() {
   const [form, setForm] = useState({
     full_name: "",
     cnp_cif: "",
+    minor_cnp: "",
     address: "",
     // Parent 1
     parent_1_name: "",
@@ -62,7 +63,7 @@ export function MinorOnboardingForm() {
   }
 
   const needsCustody =
-    form.parents_marital_status === "DIVORTATI_CUSTODIE_COMUNI" ||
+    form.parents_marital_status === "DIVORTATI_CUSTODIE_COMUNA" ||
     form.parents_marital_status === "DIVORTATI_CUSTODIE_EXCLUSIVA";
 
   function handleSubmit(e: React.FormEvent) {
@@ -88,6 +89,7 @@ export function MinorOnboardingForm() {
           id: "",
           full_name: form.full_name,
           cnp_cif: form.cnp_cif || undefined,
+          minor_cnp: form.minor_cnp || undefined,
           address: form.address || undefined,
           parent_1_name: form.parent_1_name,
           parent_1_phone: form.parent_1_phone || undefined,
@@ -154,12 +156,22 @@ export function MinorOnboardingForm() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="cnp_cif">CNP minor</Label>
+            <Label htmlFor="minor_cnp">CNP minor</Label>
+            <Input
+              id="minor_cnp"
+              value={form.minor_cnp}
+              onChange={(e) => set("minor_cnp", e.target.value)}
+              placeholder="ex: 5120301123456"
+              className="font-mono"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="cnp_cif">CNP părinte / tutore (facturare)</Label>
             <Input
               id="cnp_cif"
               value={form.cnp_cif}
               onChange={(e) => set("cnp_cif", e.target.value)}
-              placeholder="ex: 5120301123456"
+              placeholder="ex: 2880101123456"
               className="font-mono"
             />
           </div>

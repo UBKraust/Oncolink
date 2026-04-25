@@ -78,7 +78,14 @@ export function PersonalInfoOverlay({ isOpen, onClose, client, anonymized }: Per
         <section className="space-y-3">
           <SectionTitle>Identificare</SectionTitle>
           <div className="rounded-2xl bg-slate-50 border border-slate-100 p-4 space-y-3">
-            <Row label="CNP / CIF" value={client.cnp_cif} mono />
+            {isMinor ? (
+              <>
+                <Row label="CNP minor" value={client.minor_cnp} mono />
+                <Row label="CNP / CIF reprezentant legal" value={client.cnp_cif} mono />
+              </>
+            ) : (
+              <Row label="CNP / CIF" value={client.cnp_cif} mono />
+            )}
             <Row
               label="Status GDPR"
               value={
@@ -89,6 +96,18 @@ export function PersonalInfoOverlay({ isOpen, onClose, client, anonymized }: Per
                 )
               }
             />
+            {client.terms_consent_signed_at && (
+              <Row
+                label="Termeni acceptați"
+                value={new Date(client.terms_consent_signed_at).toLocaleString("ro-RO")}
+              />
+            )}
+            {client.legal_liability_consent_signed_at && (
+              <Row
+                label="Asumare legală"
+                value={new Date(client.legal_liability_consent_signed_at).toLocaleString("ro-RO")}
+              />
+            )}
             {client.contract_url && (
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-tight">Contract</span>

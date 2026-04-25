@@ -96,6 +96,8 @@ export function MinorOnboardingWizard({ therapistSlug }: { therapistSlug?: strin
         {
           ...values,
           therapist_slug: therapistSlug ?? undefined,
+          legal_liability_consent_signed: values.legal_liability_consent,
+          gdpr_consent_signed: values.gdpr_consent,
         },
         file ? { custody: file } : undefined,
       );

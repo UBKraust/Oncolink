@@ -26,6 +26,7 @@ export interface OnboardingData {
   website?: string;
   therapist_slug?: string;
   cnp_cif?: string;
+  minor_cnp?: string;
   address?: string;
   emergency_contact_name?: string;
   emergency_contact_phone?: string;
@@ -33,6 +34,7 @@ export interface OnboardingData {
   referral_source?: string;
   referred_by_name?: string;
   gdpr_consent_signed?: boolean;
+  terms_consent_signed?: boolean;
   // Minor specific
   is_minor?: boolean;
   full_name?: string;
@@ -44,6 +46,7 @@ export interface OnboardingData {
   parent_2_email?: string;
   parents_marital_status?: string;
   needs_legal_review?: boolean;
+  legal_liability_consent_signed?: boolean;
 }
 
 export async function submitMinorOnboarding(data: OnboardingData, files?: { custody?: File }) {
@@ -65,6 +68,8 @@ export async function submitMinorOnboarding(data: OnboardingData, files?: { cust
       error: `Prea multe încercări. Reîncearcă peste ${rateLimit.retryAfterSec} secunde.`,
     };
   }
+
+  const now = new Date().toISOString();
 
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -89,6 +94,7 @@ export async function submitMinorOnboarding(data: OnboardingData, files?: { cust
       therapist_id: therapistId,
       is_minor: true,
       full_name: data.full_name,
+      minor_cnp: data.minor_cnp,
       parent_1_name: data.parent_1_name,
       parent_1_phone: data.parent_1_phone,
       parent_1_email: data.parent_1_email,
@@ -104,8 +110,9 @@ export async function submitMinorOnboarding(data: OnboardingData, files?: { cust
       emergency_contact_phone: data.parent_1_phone,
       emergency_contact_relation: "Părinte",
       gdpr_consent_signed: data.gdpr_consent_signed,
+      legal_liability_consent_signed_at: data.legal_liability_consent_signed ? now : null,
       needs_legal_review: data.parents_marital_status !== "CASATORITI",
-      onboarding_completed_at: new Date().toISOString(),
+      onboarding_completed_at: now,
     })
     .select("id")
     .single();
@@ -176,6 +183,8 @@ export async function submitClientOnboarding(data: OnboardingData) {
     };
   }
 
+  const now = new Date().toISOString();
+
   if (data.token) {
     const result = await consumeOnboardingAccessToken(data.token, {
       cnp_cif: data.cnp_cif || null,
@@ -186,6 +195,7 @@ export async function submitClientOnboarding(data: OnboardingData) {
       referral_source: data.referral_source,
       referred_by_name: data.referred_by_name || null,
       gdpr_consent_signed: data.gdpr_consent_signed,
+      terms_consent_signed_at: data.terms_consent_signed ? now : null,
     });
 
     if (!result.success) {
@@ -210,6 +220,8 @@ export async function submitClientOnboarding(data: OnboardingData) {
       referral_source: data.referral_source,
       referred_by_name: data.referred_by_name || null,
       gdpr_consent_signed: data.gdpr_consent_signed,
+      terms_consent_signed_at: data.terms_consent_signed ? now : null,
+      onboarding_completed_at: now,
     })
     .eq("id", data.id);
 

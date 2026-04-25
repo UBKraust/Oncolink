@@ -70,6 +70,7 @@ export function ClientOnboardingWizard({ token, clientName }: ClientOnboardingWi
         referral_source: values.referral_source,
         referred_by_name: values.referred_by_name,
         gdpr_consent_signed: values.gdpr_consent,
+        terms_consent_signed: values.terms_consent,
         website: values.website,
       });
 

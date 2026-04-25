@@ -143,6 +143,9 @@ export function ContractGenerator({ client, onSuccess }: ContractGeneratorProps)
   if (template === "MINOR" && !client.parent_1_name && !client.parent_name) {
     missingData.push("Lipsesc datele reprezentantului legal pentru minor.");
   }
+  if (template === "MINOR" && !client.minor_cnp) {
+    missingData.push("Lipsește CNP-ul minorului.");
+  }
 
   if (template === "CAS") {
     if (!settings?.cas_active) missingData.push("CAS nu este activ în setările cabinetului.");
@@ -157,7 +160,7 @@ export function ContractGenerator({ client, onSuccess }: ContractGeneratorProps)
     return {
       startDate: new Date().toLocaleDateString("ro-RO"),
       clientName: client.full_name,
-      clientCNP: client.cnp_cif || "—",
+      clientCNP: template === "MINOR" ? client.minor_cnp || "—" : client.cnp_cif || "—",
       clientAddress: client.address || "—",
       therapistName: settings.full_name || "—",
       therapistCIF: settings.cif || "—",

@@ -269,7 +269,9 @@ export type Database = {
           gdpr_consent_signed: boolean;
           id: string;
           is_minor: boolean | null;
+          legal_liability_consent_signed_at: string | null;
           location: string | null;
+          minor_cnp: string | null;
           needs_legal_review: boolean | null;
           notes_anonymized_at: string | null;
           onboarding_completed_at: string | null;
@@ -291,6 +293,7 @@ export type Database = {
           session_frequency: string | null;
           session_price: number | null;
           therapist_id: string | null;
+          terms_consent_signed_at: string | null;
         };
         Insert: {
           address?: string | null;
@@ -310,7 +313,9 @@ export type Database = {
           gdpr_consent_signed?: boolean;
           id?: string;
           is_minor?: boolean | null;
+          legal_liability_consent_signed_at?: string | null;
           location?: string | null;
+          minor_cnp?: string | null;
           needs_legal_review?: boolean | null;
           notes_anonymized_at?: string | null;
           onboarding_completed_at?: string | null;
@@ -332,6 +337,7 @@ export type Database = {
           session_frequency?: string | null;
           session_price?: number | null;
           therapist_id?: string | null;
+          terms_consent_signed_at?: string | null;
         };
         Update: {
           address?: string | null;
@@ -351,7 +357,9 @@ export type Database = {
           gdpr_consent_signed?: boolean;
           id?: string;
           is_minor?: boolean | null;
+          legal_liability_consent_signed_at?: string | null;
           location?: string | null;
+          minor_cnp?: string | null;
           needs_legal_review?: boolean | null;
           notes_anonymized_at?: string | null;
           onboarding_completed_at?: string | null;
@@ -373,6 +381,7 @@ export type Database = {
           session_frequency?: string | null;
           session_price?: number | null;
           therapist_id?: string | null;
+          terms_consent_signed_at?: string | null;
         };
         Relationships: [];
       };

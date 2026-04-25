@@ -159,7 +159,7 @@ export function ContractGenerator({ client, onSuccess }: ContractGeneratorProps)
 
     return {
       startDate: new Date().toLocaleDateString("ro-RO"),
-      clientName: client.full_name,
+      clientName: client.full_name || "—",
       clientCNP: template === "MINOR" ? client.minor_cnp || "—" : client.cnp_cif || "—",
       clientAddress: client.address || "—",
       therapistName: settings.full_name || "—",
@@ -173,19 +173,19 @@ export function ContractGenerator({ client, onSuccess }: ContractGeneratorProps)
       therapistPracticeCaen: settings.practice_caen || undefined,
       sessionPrice: Number(client.session_price) || settings.default_session_price,
       isMinor: template === "MINOR",
-      parent1Name: client.parent_1_name || client.parent_name,
-      parent2Name: client.parent_2_name,
-      parentsMaritalStatus: client.parents_marital_status,
+      parent1Name: client.parent_1_name || client.parent_name || undefined,
+      parent2Name: client.parent_2_name || undefined,
+      parentsMaritalStatus: client.parents_marital_status || undefined,
       isB2B: template === "B2B",
-      companyName: client.company_name,
-      companyCIF: client.cnp_cif,
-      companyRegCom: regCom,
-      representativeName: repName,
-      representativeRole: repRole,
+      companyName: client.company_name || undefined,
+      companyCIF: client.cnp_cif || undefined,
+      companyRegCom: regCom || undefined,
+      representativeName: repName || undefined,
+      representativeRole: repRole || undefined,
       isCas: template === "CAS",
       referralNumber,
       referralDate: formatDateForDisplay(referralDate),
-      referringDoctor,
+      referringDoctor: referringDoctor || undefined,
       casContractNumber: settings.cas_contract_number || undefined,
       casCounty: settings.cas_county || undefined,
     };
@@ -216,7 +216,7 @@ export function ContractGenerator({ client, onSuccess }: ContractGeneratorProps)
     try {
       const issuedContract = await issueGeneratedContractNumber(client.id, template);
       if ("error" in issuedContract) {
-        toast.error(issuedContract.error);
+        toast.error(issuedContract.error || "Nu am putut emite numărul contractului.");
         return;
       }
 

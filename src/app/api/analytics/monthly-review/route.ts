@@ -168,8 +168,8 @@ function buildReview(
   appts: any[], invoices: any[], newClients: any[], expenses: any[],
   year: number, month: number
 ): MonthlyReview {
-  const done     = appts.filter(a => a.status === "FINALIZATĂ");
-  const canceled = appts.filter(a => a.status === "ANULAT" || a.status === "NEPREZENT");
+  const done     = appts.filter(a => a.status === "FINALIZAT");
+  const canceled = appts.filter(a => a.status === "ANULAT" || a.status === "LIPSA");
   const uniqueCl  = [...new Set(done.map((a:any) => a.client_id))];
   const totalMin  = done.reduce((s:number,a:any) => s + (a.duration_minutes||50), 0);
   const collected = invoices.filter((i:any) => i.status==="ACHITATĂ").reduce((s:number,i:any)=>s+i.amount,0);

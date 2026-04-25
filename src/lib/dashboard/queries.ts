@@ -57,7 +57,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     .select("duration_minutes")
     .gte("appointment_date", startMonth)
     .lte("appointment_date", endMonth)
-    .eq("status", "FINALIZATĂ");
+    .eq("status", "FINALIZAT");
   const totalMinutes = monthlyApps?.reduce((sum, app) => sum + (app.duration_minutes || 50), 0) || 0;
   const totalHours = Math.round(totalMinutes / 60);
 

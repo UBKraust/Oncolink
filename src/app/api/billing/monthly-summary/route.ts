@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
         .select("id, client_id, appointment_date, duration_minutes, status")
         .gte("appointment_date", startDate)
         .lt("appointment_date",  endDate)
-        .eq("status", "FINALIZATĂ");
+        .eq("status", "FINALIZAT");
 
       if (apptErr) return NextResponse.json({ error: apptErr.message }, { status: 500 });
 

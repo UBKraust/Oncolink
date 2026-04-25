@@ -503,7 +503,7 @@ export async function getClientOverview(clientId: string) {
     .from("appointments")
     .select("*", { count: "exact", head: true })
     .eq("client_id", clientId)
-    .eq("status", "COMPLETED");
+    .eq("status", "FINALIZAT");
 
   // 2. Fetch last appointment (past)
   const { data: lastAppointment } = await supabase

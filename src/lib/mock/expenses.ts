@@ -12,8 +12,6 @@ function splitmix32(a: number) {
   };
 }
 
-const rand = splitmix32(987654);
-
 interface ExpenseDef {
   category: ExpenseCategory;
   description: string;
@@ -71,16 +69,25 @@ function generateExpensesForMonth(year: number, month: number): Expense[] {
 }
 
 // In-memory store for optimistic demo creates/deletes
-let _mockOverrides: Expense[] | null = null;
+type MockExpenseOverride =
+  | Expense
+  | {
+      id: string;
+      _deleted: true;
+    };
+
+let _mockOverrides: MockExpenseOverride[] | null = null;
 
 export function getMockExpenses(year: number, month: number): Expense[] {
   const base = generateExpensesForMonth(year, month);
   if (!_mockOverrides) return base;
   const added = _mockOverrides.filter(
-    (e) => e.expense_date.startsWith(`${year}-${String(month).padStart(2, "0")}`)
+    (e): e is Expense =>
+      "expense_date" in e &&
+      e.expense_date.startsWith(`${year}-${String(month).padStart(2, "0")}`),
   );
   const deletedIds = new Set(
-    (_mockOverrides as any[]).filter((e) => e._deleted).map((e) => e.id)
+    _mockOverrides.filter((e): e is Extract<MockExpenseOverride, { _deleted: true }> => "_deleted" in e).map((e) => e.id)
   );
   return [...base.filter((e) => !deletedIds.has(e.id)), ...added].sort(
     (a, b) => b.expense_date.localeCompare(a.expense_date)
@@ -94,7 +101,7 @@ export function addMockExpense(expense: Expense) {
 
 export function removeMockExpense(id: string) {
   if (!_mockOverrides) _mockOverrides = [];
-  _mockOverrides.push({ id, _deleted: true } as any);
+  _mockOverrides.push({ id, _deleted: true });
 }
 
 // Export a static snapshot for the current month (used by dashboard stats)

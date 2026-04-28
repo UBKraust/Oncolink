@@ -1,6 +1,7 @@
 import type { Database } from "@/lib/supabase/types";
 
 export type MockAppointment = Database["public"]["Tables"]["appointments"]["Row"];
+type MockAppointmentInsert = Database["public"]["Tables"]["appointments"]["Insert"];
 
 /**
  * Utility to generate a specific date for the week of April 20, 2026.
@@ -40,7 +41,7 @@ const generateDay = (
       reminders_enabled: true,
       reminder_minutes: 60,
       created_at: new Date().toISOString(),
-    } as any);
+    } as MockAppointmentInsert as MockAppointment);
   }
   return result;
 };

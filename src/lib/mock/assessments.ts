@@ -2,7 +2,7 @@ export interface MockAssessment {
   id: string;
   client_id: string;
   assessment_type: "EVALUARE_INITIALA" | "SCORING_ANXIETATE" | "RAPORT_LUNAR";
-  scoring_data: Record<string, any>;
+  scoring_data: Record<string, unknown>;
   content_summary: string | null;
   sent_to_parent_at: string | null;
   created_at: string;

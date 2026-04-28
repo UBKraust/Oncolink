@@ -1,9 +1,10 @@
 export const runtime = "edge";
 
 import { NextRequest, NextResponse } from "next/server";
-import { format, addHours } from "date-fns";
+import { format } from "date-fns";
 import { ro } from "date-fns/locale";
 
+import type { Database } from "@/lib/supabase/types";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import {
@@ -39,13 +40,35 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
   const results = { reminders: 0, unpaid: 0, travel: 0, errors: [] as string[] };
   const supabase = createSupabaseServiceClient();
+  type AppointmentReminderRow = Pick<
+    Database["public"]["Tables"]["appointments"]["Row"],
+    "id" | "therapist_id" | "appointment_date"
+  > & {
+    client:
+      | { full_name: string | null; phone: string | null }
+      | { full_name: string | null; phone: string | null }[]
+      | null;
+  };
+
+  type InvoiceReminderRow = Pick<
+    Database["public"]["Tables"]["invoices"]["Row"],
+    "id" | "smartbill_series" | "smartbill_number" | "amount" | "payment_link" | "appointment_id"
+  >;
+
+  type AppointmentClientLookupRow = {
+    client:
+      | { full_name: string | null; phone: string | null }
+      | { full_name: string | null; phone: string | null }[]
+      | null;
+  };
+
   // ─── Job 1: 24h appointment reminders ──────────────────────────────────────
   try {
     const now = new Date();
     const windowStart = new Date(now.getTime() + 23 * 3_600_000);
     const windowEnd = new Date(now.getTime() + 25 * 3_600_000);
 
-    const { data: upcoming } = await (supabase as any)
+    const { data: upcoming } = await supabase
       .from("appointments")
       .select("id, therapist_id, appointment_date, client:clients(full_name, phone)")
       .in("status", ["PROGRAMAT", "CONFIRMAT"])
@@ -53,8 +76,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       .lte("appointment_date", windowEnd.toISOString())
       .eq("is_external_duty", false);
 
-    for (const a of upcoming ?? []) {
-      const client = a.client as { full_name: string | null; phone: string | null } | null;
+    for (const a of (upcoming ?? []) as AppointmentReminderRow[]) {
+      const clientRelation = Array.isArray(a.client) ? a.client[0] : a.client;
+      const client = clientRelation ?? null;
       if (!client?.phone) continue;
       if (!a.therapist_id) continue;
 
@@ -101,7 +125,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       .eq("status", "EMISĂ")
       .lte("issued_at", overdueCutoff);
 
-    for (const inv of unpaid ?? []) {
+    for (const inv of (unpaid ?? []) as InvoiceReminderRow[]) {
       // Fetch client separately to avoid complex join typing
       let client: { full_name: string | null; phone: string | null } | null = null;
       if (inv.appointment_id) {
@@ -110,7 +134,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
           .select("client:clients(full_name, phone)")
           .eq("id", inv.appointment_id)
           .maybeSingle();
-        client = (apptData?.client as { full_name: string | null; phone: string | null } | null) ?? null;
+        const clientRelation = (apptData as AppointmentClientLookupRow | null)?.client;
+        client = (Array.isArray(clientRelation) ? clientRelation[0] : clientRelation) ?? null;
       }
       if (!client?.phone || !inv.payment_link) continue;
 

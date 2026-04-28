@@ -8,6 +8,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
 } from "react";
 
 import {
@@ -38,16 +39,21 @@ interface NotesVaultValue {
 const NotesVaultContext = createContext<NotesVaultValue | null>(null);
 
 const AUTO_LOCK_MS = 15 * 60 * 1000;
+const subscribeToPinState = () => () => {};
 
 export function NotesVaultProvider({ children }: { children: React.ReactNode }) {
-  const [status, setStatus] = useState<VaultStatus>(() => {
-    if (typeof window === "undefined") {
-      return "loading";
-    }
-    return readPinState() ? "locked" : "needs-setup";
-  });
   const [key, setKey] = useState<CryptoKey | null>(null);
   const autoLockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pinState = useSyncExternalStore(
+    subscribeToPinState,
+    readPinState,
+    () => null,
+  );
+  const status: VaultStatus = key
+    ? "unlocked"
+    : pinState
+      ? "locked"
+      : "needs-setup";
 
   const clearTimer = () => {
     if (autoLockTimer.current) {
@@ -59,7 +65,6 @@ export function NotesVaultProvider({ children }: { children: React.ReactNode }) 
   const lock = useCallback(() => {
     clearTimer();
     setKey(null);
-    setStatus((prev) => (prev === "needs-setup" ? prev : "locked"));
   }, []);
 
   useEffect(() => {
@@ -85,7 +90,6 @@ export function NotesVaultProvider({ children }: { children: React.ReactNode }) 
       const canary = await makeCanary(derived);
       writePinState({ saltB64: saltToBase64(salt), canary });
       setKey(derived);
-      setStatus("unlocked");
       return { ok: true };
     } catch (e) {
       return { ok: false, error: (e as Error).message };
@@ -101,7 +105,6 @@ export function NotesVaultProvider({ children }: { children: React.ReactNode }) 
       const ok = await verifyCanary(state.canary, derived);
       if (!ok) return { ok: false, error: "PIN incorect." };
       setKey(derived);
-      setStatus("unlocked");
       return { ok: true };
     } catch (e) {
       return { ok: false, error: (e as Error).message };
@@ -112,7 +115,6 @@ export function NotesVaultProvider({ children }: { children: React.ReactNode }) 
     clearTimer();
     clearPinState();
     setKey(null);
-    setStatus("needs-setup");
   }, []);
 
   const value = useMemo<NotesVaultValue>(

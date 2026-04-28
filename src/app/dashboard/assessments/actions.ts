@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import type { Json } from "@/lib/supabase/types";
 
 export interface SaveAssessmentResult {
   ok: boolean;
@@ -19,7 +20,7 @@ export async function saveAssessmentAction({
 }: {
   clientId: string;
   assessmentType: string;
-  scoringData: any;
+  scoringData: unknown;
   contentSummary: string;
   encryptedContent?: string;
 }): Promise<SaveAssessmentResult> {
@@ -31,7 +32,7 @@ export async function saveAssessmentAction({
   const { data, error } = await supabase.from("assessments").insert({
     client_id: clientId,
     assessment_type: assessmentType,
-    scoring_data: scoringData,
+    scoring_data: scoringData as Json,
     content_summary: encryptedContent ? "[CONȚINUT CRIPTAT]" : contentSummary,
     encrypted_content: encryptedContent ?? null,
   }).select("id").single();

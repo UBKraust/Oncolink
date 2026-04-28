@@ -19,10 +19,24 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { mockAssessments } from "@/lib/mock/assessments";
 import { mockClients } from "@/lib/mock/clients";
 import { seededTests } from "@/lib/assessments/seededTests";
+type AssessmentRegistryRow = {
+  id: string;
+  client_id: string | null;
+  created_at: string;
+  calculated_score: unknown;
+  client:
+    | { full_name: string | null }
+    | { full_name: string | null }[]
+    | null;
+  test:
+    | { name: string | null }
+    | { name: string | null }[]
+    | null;
+};
 
 export default async function AssessmentsRegistryPage() {
   const configured = isSupabaseConfigured();
-  let assessments: any[] = [];
+  let assessments: AssessmentRegistryRow[] = [];
 
   if (configured) {
     const supabase = await createSupabaseServerClient();
@@ -34,17 +48,18 @@ export default async function AssessmentsRegistryPage() {
         test:psychological_tests(name)
       `)
       .order("created_at", { ascending: false });
-    assessments = data ?? [];
+    assessments = (data ?? []) as AssessmentRegistryRow[];
   } else {
     // Enrich mock assessments with seeded test names for display
-    assessments = mockAssessments.map(a => {
+    assessments = mockAssessments.map((a) => {
       const testType = String(a.scoring_data.test_type ?? "").toLowerCase();
       const test = seededTests.find((t) => t.name.toLowerCase().includes(testType));
       const client = mockClients.find((c) => c.id === a.client_id);
       return {
         ...a,
         client: { full_name: client?.full_name ?? "Client demo" },
-        test: { name: test?.name ?? "Test Standard" }
+        test: { name: test?.name ?? "Test Standard" },
+        calculated_score: null,
       };
     });
   }
@@ -107,27 +122,35 @@ export default async function AssessmentsRegistryPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {assessments.map((a) => (
-                  <TableRow key={a.id}>
+                {assessments.map((assessment) => {
+                  const clientRelation = Array.isArray(assessment.client)
+                    ? assessment.client[0]
+                    : assessment.client;
+                  const testRelation = Array.isArray(assessment.test)
+                    ? assessment.test[0]
+                    : assessment.test;
+
+                  return (
+                  <TableRow key={assessment.id}>
                     <TableCell className="text-sm tabular-nums">
-                      {format(new Date(a.created_at), "d MMM yyyy", { locale: ro })}
+                      {format(new Date(assessment.created_at), "d MMM yyyy", { locale: ro })}
                     </TableCell>
                     <TableCell className="font-medium text-sm">
-                      {a.client?.full_name ?? "—"}
+                      {clientRelation?.full_name ?? "—"}
                     </TableCell>
                     <TableCell className="text-sm">
                       <div className="flex items-center gap-2">
                         <Badge variant="outline" className="text-[10px] uppercase font-bold text-slate-500">
-                          {a.test?.name ?? "Evaluare"}
+                          {testRelation?.name ?? "Evaluare"}
                         </Badge>
                       </div>
                     </TableCell>
                     <TableCell>
-                      {a.calculated_score ? (
+                      {assessment.calculated_score ? (
                         <div className="flex items-center gap-2">
                           <ClipboardCheck className="h-4 w-4 text-emerald-500" />
                           <span className="text-xs font-semibold text-slate-700">
-                            {JSON.stringify(a.calculated_score).slice(0, 30)}...
+                            {JSON.stringify(assessment.calculated_score).slice(0, 30)}...
                           </span>
                         </div>
                       ) : (
@@ -138,13 +161,13 @@ export default async function AssessmentsRegistryPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="sm" asChild>
-                        <Link href={`/dashboard/clients/${a.client_id}`}>
+                        <Link href={`/dashboard/clients/${assessment.client_id}`}>
                           Vezi Fișă
                         </Link>
                       </Button>
                     </TableCell>
                   </TableRow>
-                ))}
+                )})}
               </TableBody>
             </Table>
           )}

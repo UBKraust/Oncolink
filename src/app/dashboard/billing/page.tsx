@@ -49,6 +49,59 @@ const STATUS_CONFIG = {
   NEEMIS:  { label: "De facturat", cls: "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-400" },
 };
 
+const EMPTY_SUMMARY: MonthlySummary = {
+  year: new Date().getFullYear(),
+  month: new Date().getMonth() + 1,
+  totalSessions: 0,
+  totalHours: 0,
+  totalAmount: 0,
+  collectedAmount: 0,
+  uncollectedAmount: 0,
+  clients: [],
+};
+
+function asNumber(value: unknown): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function isInvoiceStatus(value: unknown): value is ClientRow["invoiceStatus"] {
+  return value === "ACHITAT" || value === "PARTIAL" || value === "NEEMIS";
+}
+
+function normalizeMonthlySummary(payload: unknown, fallbackYear: number, fallbackMonth: number): MonthlySummary {
+  if (!payload || typeof payload !== "object") {
+    return { ...EMPTY_SUMMARY, year: fallbackYear, month: fallbackMonth };
+  }
+
+  const source = payload as Partial<MonthlySummary>;
+  const clients = Array.isArray(source.clients)
+    ? source.clients.map((client, index) => {
+        const row = client as Partial<ClientRow>;
+        return {
+          clientId: typeof row.clientId === "string" ? row.clientId : `client-${index}`,
+          clientName: typeof row.clientName === "string" ? row.clientName : "Client",
+          sessions: asNumber(row.sessions),
+          totalMinutes: asNumber(row.totalMinutes),
+          totalAmount: asNumber(row.totalAmount),
+          collectedAmount: asNumber(row.collectedAmount),
+          invoiceStatus: isInvoiceStatus(row.invoiceStatus) ? row.invoiceStatus : "NEEMIS",
+        };
+      })
+    : [];
+
+  return {
+    year: asNumber(source.year) || fallbackYear,
+    month: asNumber(source.month) || fallbackMonth,
+    totalSessions: asNumber(source.totalSessions),
+    totalHours: asNumber(source.totalHours),
+    totalAmount: asNumber(source.totalAmount),
+    collectedAmount: asNumber(source.collectedAmount),
+    uncollectedAmount: asNumber(source.uncollectedAmount),
+    clients,
+    isDemo: source.isDemo,
+  };
+}
+
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 
 export default function BillingPage() {
@@ -65,7 +118,8 @@ export default function BillingPage() {
     setSelected(new Set());
     try {
       const res = await fetch(`/api/billing/monthly-summary?year=${year}&month=${month}`);
-      setData(await res.json());
+      const payload = await res.json();
+      setData(normalizeMonthlySummary(payload, year, month));
     } finally {
       setLoading(false);
     }
@@ -112,7 +166,7 @@ export default function BillingPage() {
   function exportCsv() {
     if (!data) return;
     const header = ["Client","Ședinte","Ore","De încasat (RON)","Încasat (RON)","Status"];
-    const rows = data.clients.map(c => [
+    const rows = (data.clients ?? []).map(c => [
       c.clientName, c.sessions,
       (c.totalMinutes / 60).toFixed(1),
       c.totalAmount, c.collectedAmount,
@@ -125,7 +179,8 @@ export default function BillingPage() {
     a.click();
   }
 
-  const unpaidClients = (data?.clients ?? []).filter(c => c.invoiceStatus !== "ACHITAT");
+  const clients = data?.clients ?? [];
+  const unpaidClients = clients.filter(c => c.invoiceStatus !== "ACHITAT");
   const collectionRate = data ? Math.round((data.collectedAmount / (data.totalAmount || 1)) * 100) : 0;
 
   return (
@@ -240,7 +295,7 @@ export default function BillingPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {data.clients.map(c => {
+                  {clients.map(c => {
                     const cfg = STATUS_CONFIG[c.invoiceStatus];
                     const isChecked = selected.has(c.clientId);
                     return (
@@ -385,6 +440,7 @@ function ForecastBar({ label, amount, sessions, maxAmount, type }: {
   );
 }
 
-function fmt(n: number): string {
-  return n.toLocaleString("ro-RO", { maximumFractionDigits: 0 });
+function fmt(n?: number | null): string {
+  const value = typeof n === "number" && Number.isFinite(n) ? n : 0;
+  return value.toLocaleString("ro-RO", { maximumFractionDigits: 0 });
 }

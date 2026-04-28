@@ -3,7 +3,6 @@ import {
   ClientComplianceResult, 
   ComplianceSummary, 
   ComplianceIssue,
-  ComplianceSeverity
 } from "./engine";
 
 export async function runServerComplianceCheck(): Promise<ComplianceSummary> {
@@ -12,7 +11,6 @@ export async function runServerComplianceCheck(): Promise<ComplianceSummary> {
   // Fetch everything needed for compliance
   const { data: clients } = await supabase.from("clients").select("*");
   const { data: docs } = await supabase.from("patient_documents").select("*");
-  const { data: invoices } = await supabase.from("invoices").select("*");
 
   if (!clients) return {
     totalClients: 0, compliantCount: 0, warningCount: 0, criticalCount: 0,
@@ -21,7 +19,7 @@ export async function runServerComplianceCheck(): Promise<ComplianceSummary> {
 
   const results: ClientComplianceResult[] = clients.map(client => {
     const issues: ComplianceIssue[] = [];
-    const isMinor = (client as any).is_minor;
+    const isMinor = client.is_minor;
     const isAnon = Boolean(client.notes_anonymized_at);
     
     // R1 - GDPR

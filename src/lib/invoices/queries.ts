@@ -36,11 +36,27 @@ export async function listInvoices(filters: {
 
   const { data, error } = await query;
   if (error) throw new Error(error.message);
-  
-  return (data ?? []).map(inv => ({
-    ...inv,
-    client_name: (inv.appointments as any)?.clients?.full_name || "Client Necunoscut"
-  }));
+
+  type InvoiceWithAppointmentClient = InvoiceRow & {
+    appointments:
+      | { clients: { full_name: string | null } | { full_name: string | null }[] | null }
+      | { clients: { full_name: string | null } | { full_name: string | null }[] | null }[]
+      | null;
+  };
+
+  return ((data ?? []) as InvoiceWithAppointmentClient[]).map((invoice) => {
+    const appointmentRelation = Array.isArray(invoice.appointments)
+      ? invoice.appointments[0]
+      : invoice.appointments;
+    const clientRelation = Array.isArray(appointmentRelation?.clients)
+      ? appointmentRelation.clients[0]
+      : appointmentRelation?.clients;
+
+    return {
+      ...invoice,
+      client_name: clientRelation?.full_name || "Client Necunoscut",
+    };
+  });
 }
 
 export async function getInvoice(id: string): Promise<InvoiceRow | null> {

@@ -6,11 +6,12 @@ import { SectionDetailOverlay } from "./SectionDetailOverlay";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
+import type { CrisisNoteItem } from "./types";
 
 interface CrisisNotesDetailOverlayProps {
   isOpen: boolean;
   onClose: () => void;
-  notes: any[];
+  notes: CrisisNoteItem[];
   clientName: string;
 }
 
@@ -55,8 +56,8 @@ export function CrisisNotesDetailOverlay({ isOpen, onClose, notes, clientName }:
                 <p className="text-sm font-bold text-slate-400 italic">Nicio notă de criză înregistrată.</p>
               </div>
             ) : (
-              notes.map((note, idx) => (
-                <div key={idx} className="relative pl-6 space-y-2 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-rose-200 before:rounded-full">
+              notes.map((note) => (
+                <div key={note.id} className="relative pl-6 space-y-2 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-rose-200 before:rounded-full">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Clock className="h-3.5 w-3.5 text-slate-400" />
@@ -69,7 +70,7 @@ export function CrisisNotesDetailOverlay({ isOpen, onClose, notes, clientName }:
                     </button>
                   </div>
                   <div className="p-5 p-5 rounded-3xl bg-white border border-slate-100 shadow-sm leading-relaxed text-sm font-medium text-slate-700">
-                    {note.content}
+                    {note.content ?? note.summary ?? "Fără conținut disponibil."}
                   </div>
                   {note.severity && (
                     <div className="flex gap-2">

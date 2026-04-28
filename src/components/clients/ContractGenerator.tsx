@@ -23,10 +23,11 @@ import { generateContract } from "@/lib/pdf/templates";
 import { getTherapistSettings, TherapistSettings } from "@/app/dashboard/settings/settings-actions";
 import { getLatestReferralDocument, issueGeneratedContractNumber } from "@/app/dashboard/clients/actions";
 import type { Database } from "@/lib/supabase/types";
+import type { ClientProfile } from "./types";
 import { toast } from "@/components/ui/toast";
 
 interface ContractGeneratorProps {
-  client: Database["public"]["Tables"]["clients"]["Row"];
+  client: ClientProfile;
   onSuccess?: () => void;
 }
 

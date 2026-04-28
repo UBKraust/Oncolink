@@ -11,6 +11,7 @@ export interface ClientProfile {
   created_at: string;
   gdpr_consent_signed: boolean | null;
   notes_anonymized_at: string | null;
+  scheduled_anonymization_at: string | null;
   is_minor: boolean | null;
   cnp_cif: string | null;
   minor_cnp: string | null;
@@ -44,6 +45,7 @@ export interface ClientProfile {
   company_bank: string | null;
   company_representative_name: string | null;
   company_representative_email: string | null;
+  company_representative_role: string | null;
   session_price: number | null;
   session_frequency: string | null;
   report_frequency: string | null;
@@ -94,8 +96,10 @@ export interface ClientMedication {
 
 export interface CrisisNoteItem {
   id: string;
-  created_at?: string | null;
+  created_at: string;
+  content?: string | null;
   summary?: string | null;
+  severity?: string | null;
 }
 
 export interface ClientAppointment {
@@ -122,6 +126,21 @@ export interface ClientAiContext {
     type: string;
     date: string;
     scores: Record<string, unknown>;
+  }>;
+}
+
+export interface ClientOverview {
+  totalSessions: number;
+  lastAppointmentDate: string | null;
+  nextAppointment: {
+    date: string;
+    status: string | null;
+  } | null;
+  recentInteractions: Array<{
+    id: string;
+    date: string;
+    status: string | null;
+    summary: string;
   }>;
 }
 

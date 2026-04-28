@@ -12,7 +12,6 @@ import {
   ChevronRight,
   Filter,
   Users,
-  AlertCircle,
   FileCheck
 } from "lucide-react";
 import { format } from "date-fns";
@@ -29,13 +28,13 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { initialsFromName } from "@/lib/clients/validation";
-import { cn } from "@/lib/utils";
 import { ClientDetailOverlay } from "./ClientDetailOverlay";
 import { ContractGeneratorModal } from "./ContractGeneratorModal";
+import type { ClientProfile } from "./types";
 import Link from "next/link";
 
 interface ClientsClientProps {
-  initialClients: any[];
+  initialClients: ClientProfile[];
 }
 
 export function ClientsClient({ initialClients }: ClientsClientProps) {

@@ -6,7 +6,6 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { mockClients } from "@/lib/mock/clients";
 import {
   consumeOnboardingAccessToken,
   createOnboardingAccessToken,
@@ -20,6 +19,8 @@ import {
 } from "@/lib/security/public-rate-limit";
 import { createSignedObjectUrl } from "@/lib/storage/private-urls";
 import { upsertClientByIdentifiers } from "@/lib/clients/upsert";
+
+type ClientUpsertDb = Parameters<typeof upsertClientByIdentifiers>[0];
 
 export interface OnboardingData {
   id?: string;
@@ -90,7 +91,7 @@ export async function submitMinorOnboarding(data: OnboardingData, files?: { cust
 
   let clientId: string;
   try {
-    const result = await upsertClientByIdentifiers(db as any, therapistId, {
+    const result = await upsertClientByIdentifiers(db as unknown as ClientUpsertDb, therapistId, {
       id: data.id,
       minor_cnp: data.minor_cnp,
       cnp_cif: data.cnp_cif,

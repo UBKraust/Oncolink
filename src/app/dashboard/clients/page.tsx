@@ -1,13 +1,11 @@
-import { Users, UserCheck, UserX, UserPlus, TrendingUp } from "lucide-react";
+import { Users, UserCheck, UserX, TrendingUp } from "lucide-react";
 import { listClients } from "@/lib/clients/queries";
-import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { ClientsClient } from "@/components/clients/ClientsClient";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 export default async function ClientsPage() {
   const clients = await listClients();
-  const configured = isSupabaseConfigured();
 
   const activeCount = clients.filter((c) => !c.notes_anonymized_at).length;
   const anonCount = clients.length - activeCount;
@@ -86,7 +84,7 @@ export default async function ClientsPage() {
   );
 }
 
-function AlertCircle(props: any) {
+function AlertCircle(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
       {...props}
@@ -106,3 +104,4 @@ function AlertCircle(props: any) {
     </svg>
   );
 }
+import type { SVGProps } from "react";

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { 
   X, 
   Phone, 
@@ -14,7 +14,6 @@ import {
   ExternalLink,
   MessageCircle,
   Clock,
-  Activity,
   History,
   TrendingUp,
   Baby,
@@ -26,6 +25,7 @@ import { ro } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import type { ClientOverview, ClientProfile } from "./types";
 import { initialsFromName } from "@/lib/clients/validation";
 import { cn } from "@/lib/utils";
 import { 
@@ -49,40 +49,65 @@ import {
 } from "@/components/ui/alert-dialog";
 
 interface ClientDetailOverlayProps {
-  client: any | null;
+  client: ClientProfile | null;
   onClose: () => void;
 }
 
 export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProps) {
-  const [isVisible, setIsVisible] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [isNotifying, setIsNotifying] = useState(false);
-  const [overrideScheduledAt, setOverrideScheduledAt] = useState<Date | null>(null);
-  const [overview, setOverview] = useState<any>(null);
-  const [loadingOverview, setLoadingOverview] = useState(false);
-
+  const [overrideScheduledState, setOverrideScheduledState] = useState<{
+    clientId: string | null;
+    value: Date | null;
+  }>({
+    clientId: null,
+    value: null,
+  });
+  const [overviewState, setOverviewState] = useState<{
+    clientId: string | null;
+    data: ClientOverview | null;
+  }>({
+    clientId: null,
+    data: null,
+  });
 
   useEffect(() => {
-    setOverrideScheduledAt(null);
-    if (client) {
-      setIsVisible(true);
-      document.body.style.overflow = "hidden";
-      
-      // Fetch overview data
-      setLoadingOverview(true);
-      getClientOverview(client.id).then(setOverview).finally(() => setLoadingOverview(false));
-    } else {
-      setIsVisible(false);
+    if (!client) return;
+
+    let active = true;
+    getClientOverview(client.id).then((data) => {
+      if (!active) return;
+      setOverviewState({
+        clientId: client.id,
+        data,
+      });
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [client]);
+
+  useEffect(() => {
+    if (!client) return;
+
+    document.body.style.overflow = "hidden";
+    return () => {
       document.body.style.overflow = "auto";
-      setOverview(null);
-    }
-    return () => { document.body.style.overflow = "auto"; };
+    };
   }, [client]);
 
   if (!client) return null;
+  const currentClient = client;
+  const overview = overviewState.clientId === currentClient.id ? overviewState.data : null;
+  const loadingOverview = overviewState.clientId !== currentClient.id;
 
-  const anonymized = Boolean(client.notes_anonymized_at);
-  const actualScheduledAt = client.scheduled_anonymization_at ? new Date(client.scheduled_anonymization_at) : null;
+  const anonymized = Boolean(currentClient.notes_anonymized_at);
+  const actualScheduledAt = currentClient.scheduled_anonymization_at
+    ? new Date(currentClient.scheduled_anonymization_at)
+    : null;
+  const overrideScheduledAt =
+    overrideScheduledState.clientId === currentClient.id ? overrideScheduledState.value : null;
   const scheduledAt = overrideScheduledAt !== null ? overrideScheduledAt : actualScheduledAt;
   const isScheduled = !!scheduledAt;
   
@@ -94,14 +119,17 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
 
   async function handleSchedule() {
     setIsPending(true);
-    const res = await scheduleAnonymization(client.id);
+    const res = await scheduleAnonymization(currentClient.id);
     setIsPending(false);
     if (res?.success) {
       toast.success("Anonimizare programată în 15 zile.");
     } else if (res?.error?.includes("Mod demo")) {
       const mockDate = new Date();
       mockDate.setDate(mockDate.getDate() + 15);
-      setOverrideScheduledAt(mockDate);
+      setOverrideScheduledState({
+        clientId: currentClient.id,
+        value: mockDate,
+      });
       toast.success("Mod Demo: Anonimizare simulată.");
     } else {
       toast.error("Eroare: " + res?.error);
@@ -110,13 +138,16 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
 
   async function handleCancel() {
     setIsPending(true);
-    const res = await cancelAnonymization(client.id);
+    const res = await cancelAnonymization(currentClient.id);
     setIsPending(false);
     if (res?.success) {
       toast.success("Anonimizare anulată. Datele au fost recuperate.");
     } else if (res?.error?.includes("Mod demo")) {
       // Simulate un-scheduling
-      setOverrideScheduledAt(new Date(0)); // Use epoch to explicitly say "cleared" without matching null
+      setOverrideScheduledState({
+        clientId: currentClient.id,
+        value: new Date(0),
+      }); // Use epoch to explicitly say "cleared" without matching null
       toast.success("Mod Demo: Datele au fost recuperate.");
     } else {
       toast.error("Eroare: " + res?.error);
@@ -124,20 +155,24 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
   }
 
   async function handleSendOnboarding() {
-    if (!client.phone) {
+    if (!currentClient.phone) {
       toast.error("Clientul nu are un număr de telefon valid.");
       return;
     }
     
     setIsNotifying(true);
     try {
-      const res = await sendOnboardingNotification(client.id, client.full_name, client.phone);
+      const res = await sendOnboardingNotification(
+        currentClient.id,
+        currentClient.full_name ?? "Client",
+        currentClient.phone,
+      );
       if (res.success) {
         toast.success("Link-ul de onboarding a fost trimis pe WhatsApp.");
       } else {
         toast.error("Eroare la trimitere: " + res.error);
       }
-    } catch (err) {
+    } catch {
       toast.error("Eroare neașteptată la trimitere.");
     } finally {
       setIsNotifying(false);
@@ -145,20 +180,24 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
   }
 
   async function handleSendEmailOnboarding() {
-    if (!client.email) {
+    if (!currentClient.email) {
       toast.error("Clientul nu are o adresă de email validă.");
       return;
     }
     
     setIsNotifying(true);
     try {
-      const res = await sendOnboardingEmail(client.id, client.full_name, client.email);
+      const res = await sendOnboardingEmail(
+        currentClient.id,
+        currentClient.full_name ?? "Client",
+        currentClient.email,
+      );
       if (res.success) {
         toast.success("Link-ul de onboarding a fost trimis prin Email.");
       } else {
         toast.error("Eroare la trimitere: " + res.error);
       }
-    } catch (err) {
+    } catch {
       toast.error("Eroare neașteptată la trimitere.");
     } finally {
       setIsNotifying(false);
@@ -168,7 +207,7 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
   return (
     <div className={cn(
       "fixed inset-0 z-[110] flex justify-end transition-opacity duration-300",
-      isVisible ? "opacity-100" : "opacity-0 pointer-events-none"
+      "opacity-100"
     )}>
       {/* Backdrop */}
       <div 
@@ -179,7 +218,7 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
       {/* Pane */}
       <div className={cn(
         "relative h-full w-full max-w-xl bg-white shadow-2xl transition-transform duration-500 ease-out flex flex-col",
-        isVisible ? "translate-x-0" : "translate-x-full"
+        "translate-x-0"
       )}>
         {/* Header */}
         <div className="relative h-48 shrink-0 overflow-hidden bg-slate-900">
@@ -202,7 +241,7 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
                  </div>
                  <div className="space-y-1">
                     <h2 className="text-2xl font-black text-white tracking-tight leading-none">
-                      {client.full_name}
+                      {client.full_name ?? "Client"}
                     </h2>
                     <div className="flex items-center gap-2">
                        {client.is_minor ? (
@@ -432,14 +471,14 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
                   {loadingOverview ? (
                     <div className="pl-8 text-xs text-slate-400 animate-pulse">Se încarcă istoricul...</div>
                   ) : overview?.recentInteractions && overview.recentInteractions.length > 0 ? (
-                    overview.recentInteractions.map((interaction: any) => (
+                    overview.recentInteractions.map((interaction) => (
                       <div key={interaction.id} className="relative pl-8">
                         <div className="absolute left-1.5 top-1.5 h-3 w-3 rounded-full bg-emerald-500 ring-4 ring-emerald-50 pointer-events-none" />
                         <div className="space-y-1">
-                           <p className="text-xs font-black text-slate-700">{interaction.status === 'COMPLETED' ? 'Ședință Încheiată' : 'Programare Istorică'}</p>
+                           <p className="text-xs font-black text-slate-700">{interaction.status === "COMPLETED" ? "Ședință Încheiată" : "Programare Istorică"}</p>
                            <p className="text-[11px] text-slate-500">{format(new Date(interaction.date), "dd MMM yyyy • HH:mm", { locale: ro })}</p>
                            <div className="mt-2 p-2 rounded-lg bg-slate-50 border border-slate-100 text-[10px] text-slate-600 italic">
-                              "{interaction.summary}"
+                              &quot;{interaction.summary}&quot;
                            </div>
                         </div>
                       </div>

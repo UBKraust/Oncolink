@@ -62,16 +62,33 @@ export async function listCasAppointments() {
     .order("appointment_date", { ascending: false });
 
   if (error) throw new Error(error.message);
-  return (data || []).map(a => ({
-    id: a.id,
-    client_id: a.client_id,
-    client_name: (a.clients as any)?.full_name || "Necunoscut",
-    cnp: (a.clients as any)?.cnp_cif || "---",
-    appointment_date: a.appointment_date,
-    diagnosis_code_cim10: a.diagnosis_code_cim10,
-    diagnosis_label: "Diagnostic CAS",
-    referral_number: a.referral_number,
-    referral_date: a.referral_date,
-    referring_doctor_code: a.referring_doctor_code,
-  }));
+  type CasAppointmentRow = AppointmentRow & {
+    diagnosis_code_cim10?: string | null;
+    referral_number?: string | null;
+    referral_date?: string | null;
+    referring_doctor_code?: string | null;
+    clients:
+      | { full_name: string | null; cnp_cif: string | null }
+      | { full_name: string | null; cnp_cif: string | null }[]
+      | null;
+  };
+
+  return ((data ?? []) as CasAppointmentRow[]).map((appointment) => {
+    const clientRelation = Array.isArray(appointment.clients)
+      ? appointment.clients[0]
+      : appointment.clients;
+
+    return {
+      id: appointment.id,
+      client_id: appointment.client_id,
+      client_name: clientRelation?.full_name || "Necunoscut",
+      cnp: clientRelation?.cnp_cif || "---",
+      appointment_date: appointment.appointment_date,
+      diagnosis_code_cim10: appointment.diagnosis_code_cim10 ?? null,
+      diagnosis_label: "Diagnostic CAS",
+      referral_number: appointment.referral_number ?? null,
+      referral_date: appointment.referral_date ?? null,
+      referring_doctor_code: appointment.referring_doctor_code ?? null,
+    };
+  });
 }

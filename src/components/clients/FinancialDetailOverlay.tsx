@@ -1,23 +1,29 @@
 "use client";
 
 import React from "react";
-import { CreditCard, Wallet, TrendingUp, Receipt, CalendarClock, ExternalLink } from "lucide-react";
+import { Wallet, TrendingUp, Receipt, CalendarClock } from "lucide-react";
 import { SectionDetailOverlay } from "./SectionDetailOverlay";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import type { ClientPayment } from "./types";
+import { isPaidInvoiceStatus } from "@/lib/invoices/status";
 
 interface FinancialDetailOverlayProps {
   isOpen: boolean;
   onClose: () => void;
-  payments: any[];
+  payments: ClientPayment[];
   clientName: string;
 }
 
 export function FinancialDetailOverlay({ isOpen, onClose, payments, clientName }: FinancialDetailOverlayProps) {
-  const totalPaid = payments.filter(p => p.invoice_status === "ACHITATĂ").reduce((sum, p) => sum + p.amount, 0);
-  const totalPending = payments.filter(p => p.invoice_status === "EMISĂ").reduce((sum, p) => sum + p.amount, 0);
+  const totalPaid = payments
+    .filter((payment) => isPaidInvoiceStatus(payment.status))
+    .reduce((sum, payment) => sum + payment.amount, 0);
+  const totalPending = payments
+    .filter((payment) => payment.status === "EMISĂ")
+    .reduce((sum, payment) => sum + payment.amount, 0);
 
   return (
     <SectionDetailOverlay
@@ -59,29 +65,36 @@ export function FinancialDetailOverlay({ isOpen, onClose, payments, clientName }
                 Nicio tranzacție înregistrată încă.
               </div>
             ) : (
-              payments.map((p, idx) => (
-                <div key={idx} className="group flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-primary/20 transition-all">
+              payments.map((payment) => (
+                <div key={payment.id} className="group flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-primary/20 transition-all">
                   <div className="flex items-center gap-4">
                     <div className={cn(
                       "h-10 w-10 flex items-center justify-center rounded-xl font-black text-xs shadow-sm ring-1 ring-inset",
-                      p.invoice_status === "ACHITATĂ" 
+                      isPaidInvoiceStatus(payment.status)
                         ? "bg-emerald-50 text-emerald-600 ring-emerald-200" 
                         : "bg-amber-50 text-amber-600 ring-amber-200"
                     )}>
-                      {p.amount}
+                      {payment.amount}
                     </div>
                     <div>
                       <p className="text-sm font-black text-slate-800 leading-tight">
-                        {p.session_type || "Ședință Terapie"}
+                        {payment.smartbill_series && payment.smartbill_number
+                          ? `Factura ${payment.smartbill_series}-${payment.smartbill_number}`
+                          : "Ședință Terapie"}
                       </p>
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                        {format(new Date(p.appointment_date), "d MMM yyyy", { locale: ro })}
+                        {payment.issued_at
+                          ? format(new Date(payment.issued_at), "d MMM yyyy", { locale: ro })
+                          : "Dată indisponibilă"}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Badge variant={p.invoice_status === "ACHITATĂ" ? "success" : "warning"} className="text-[9px] uppercase font-black tracking-widest px-2 h-5">
-                      {p.invoice_status}
+                    <Badge
+                      variant={isPaidInvoiceStatus(payment.status) ? "success" : "warning"}
+                      className="text-[9px] uppercase font-black tracking-widest px-2 h-5"
+                    >
+                      {payment.status ?? "NECUNOSCUT"}
                     </Badge>
                     <button className="p-2 rounded-xl bg-white border border-slate-100 text-slate-400 hover:text-primary transition-all opacity-0 group-hover:opacity-100 shadow-sm shadow-slate-200/50">
                       <Receipt className="h-4 w-4" />

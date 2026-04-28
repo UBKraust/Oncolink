@@ -19,7 +19,7 @@ import { TrendingDown, Activity } from "lucide-react";
 interface AssessmentData {
   id: string;
   created_at: string;
-  scoring_data: Record<string, any>;
+  scoring_data: Record<string, unknown>;
   assessment_type: string;
 }
 
@@ -34,9 +34,13 @@ export function ClientEvolutionChart({ assessments }: { assessments: AssessmentD
         const numericKey = Object.keys(a.scoring_data).find(
           (k) => typeof a.scoring_data[k] === "number"
         );
+        const scoreValue =
+          numericKey && typeof a.scoring_data[numericKey] === "number"
+            ? a.scoring_data[numericKey]
+            : 0;
         return {
           date: format(new Date(a.created_at), "MMM yyyy", { locale: ro }),
-          score: numericKey ? a.scoring_data[numericKey] : 0,
+          score: scoreValue,
           label: numericKey ? numericKey.replace("_", " ") : "Scor",
           type: a.assessment_type,
         };

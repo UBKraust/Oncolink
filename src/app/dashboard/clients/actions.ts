@@ -20,6 +20,8 @@ import { createOnboardingAccessToken } from "@/lib/security/public-links";
 import { upsertClientByIdentifiers } from "@/lib/clients/upsert";
 import { createSignedObjectUrl } from "@/lib/storage/private-urls";
 
+type ClientUpsertDb = Parameters<typeof upsertClientByIdentifiers>[0];
+
 function parseForm(formData: FormData) {
   const is_minor = formData.get("is_minor") === "on";
   const billing_type = formData.get("billing_type") as "INDIVIDUAL" | "B2B_COMPANY" | null;
@@ -121,7 +123,7 @@ export async function createClient(
 
   let clientResult: { id: string; created: boolean };
   try {
-    clientResult = await upsertClientByIdentifiers(supabase as any, user.id, {
+    clientResult = await upsertClientByIdentifiers(supabase as unknown as ClientUpsertDb, user.id, {
       email: payload.email,
       phone: payload.phone || null,
       cnp_cif: payload.cnp_cif || null,

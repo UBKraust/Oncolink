@@ -31,21 +31,17 @@ const CONTACT_LABEL: Record<string, string> = {
 };
 
 export function CrisisNotesList({ clientId, clientName, initialNotes }: Props) {
-  const [notes, setNotes] = useState<CrisisNote[]>(initialNotes);
+  const [deletedNoteIds, setDeletedNoteIds] = useState<string[]>([]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
-
-  // Sync state with props if they change
-  useEffect(() => {
-    setNotes(initialNotes);
-  }, [initialNotes]);
+  const notes = initialNotes.filter((note) => !deletedNoteIds.includes(note.id));
 
   function handleDelete(noteId: string) {
     setDeletingId(noteId);
     startTransition(async () => {
       const result = await deleteCrisisNote(noteId, clientId);
       if (result.ok) {
-        setNotes((prev) => prev.filter((n) => n.id !== noteId));
+        setDeletedNoteIds((prev) => [...prev, noteId]);
       }
       setDeletingId(null);
     });
@@ -96,18 +92,54 @@ function CrisisNoteItem({
   isDeleting: boolean;
 }) {
   const { key, status } = useNotesVault();
-  const [decrypted, setDecrypted] = useState<string | null>(null);
-  const [error, setError] = useState(false);
+  const [decryptState, setDecryptState] = useState<{
+    source: string | null;
+    content: string | null;
+    error: boolean;
+  }>({
+    source: null,
+    content: null,
+    error: false,
+  });
+  const canDecrypt = Boolean(note.encrypted_content && key && status === "unlocked");
 
   useEffect(() => {
-    if (note.encrypted_content && key && status === "unlocked") {
-      decryptNote(note.encrypted_content, key)
-        .then(setDecrypted)
-        .catch(() => setError(true));
-    } else {
-      setDecrypted(null);
+    if (!canDecrypt || !note.encrypted_content || !key) {
+      return;
     }
-  }, [note.encrypted_content, key, status]);
+
+    let active = true;
+    decryptNote(note.encrypted_content, key)
+      .then((content) => {
+        if (!active) return;
+        setDecryptState({
+          source: note.encrypted_content,
+          content,
+          error: false,
+        });
+      })
+      .catch(() => {
+        if (!active) return;
+        setDecryptState({
+          source: note.encrypted_content,
+          content: null,
+          error: true,
+        });
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [canDecrypt, note.encrypted_content, key]);
+
+  const decrypted =
+    canDecrypt && decryptState.source === note.encrypted_content
+      ? decryptState.content
+      : null;
+  const error =
+    canDecrypt && decryptState.source === note.encrypted_content
+      ? decryptState.error
+      : false;
 
   const ContactIcon = note.contact_method ? CONTACT_ICON[note.contact_method] : null;
   const content = note.encrypted_content

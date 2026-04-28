@@ -4,6 +4,7 @@ import { ChevronLeft, ClipboardList } from "lucide-react";
 
 import { getClient } from "@/lib/clients/queries";
 import { OnboardingForm } from "@/components/clients/OnboardingForm";
+import type { ClientProfile } from "@/components/clients/types";
 import {
   Card,
   CardContent,
@@ -20,6 +21,7 @@ export default async function ClientOnboardingPage({
   const { id } = await params;
   const client = await getClient(id);
   if (!client) notFound();
+  const profile = client as ClientProfile;
 
   if (client.notes_anonymized_at) {
     return (
@@ -55,16 +57,16 @@ export default async function ClientOnboardingPage({
         <CardContent>
           <OnboardingForm
             clientId={id}
-            clientName={client.full_name ?? "Client"}
+            clientName={profile.full_name ?? "Client"}
             defaults={{
-              cnp_cif: client.cnp_cif,
-              address: client.address,
-              emergency_contact_name: (client as any).emergency_contact_name ?? null,
-              emergency_contact_phone: (client as any).emergency_contact_phone ?? null,
-              emergency_contact_relation: (client as any).emergency_contact_relation ?? null,
-              referral_source: (client as any).referral_source ?? null,
-              referred_by_name: (client as any).referred_by_name ?? null,
-              gdpr_consent_signed: client.gdpr_consent_signed ?? false,
+              cnp_cif: profile.cnp_cif,
+              address: profile.address,
+              emergency_contact_name: profile.emergency_contact_name ?? null,
+              emergency_contact_phone: profile.emergency_contact_phone ?? null,
+              emergency_contact_relation: profile.emergency_contact_relation ?? null,
+              referral_source: profile.referral_source ?? null,
+              referred_by_name: profile.referred_by_name ?? null,
+              gdpr_consent_signed: profile.gdpr_consent_signed ?? false,
             }}
           />
         </CardContent>

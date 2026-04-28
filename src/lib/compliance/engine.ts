@@ -55,7 +55,7 @@ function hasDocument(clientId: string, type: DocumentType): boolean {
 
 function checkClient(client: MockClient): ComplianceIssue[] {
   const issues: ComplianceIssue[] = [];
-  const isMinor = (client as any).is_minor as boolean;
+  const isMinor = client.is_minor;
   const isAnon  = Boolean(client.notes_anonymized_at);
   const cnp     = client.cnp_cif;
 
@@ -92,7 +92,7 @@ function checkClient(client: MockClient): ComplianceIssue[] {
         action: "Încarcă acordul semnat de ambii părinți în secțiunea Documente.",
       });
     }
-    if (!hasDocument(client.id, "SENTINTA_CUSTODIE") && !(client as any).parent_name) {
+    if (!hasDocument(client.id, "SENTINTA_CUSTODIE") && !client.parent_name) {
       issues.push({
         ruleId: "R4",
         severity: "WARNING",
@@ -125,7 +125,7 @@ function checkClient(client: MockClient): ComplianceIssue[] {
   }
 
   // R6 — CNP pentru facturare B2B/Individual
-  if (!isAnon && !cnp && (client as any).billing_type === "INDIVIDUAL") {
+  if (!isAnon && !cnp && client.billing_type === "INDIVIDUAL") {
     issues.push({
       ruleId: "R6",
       severity: "WARNING",
@@ -165,7 +165,7 @@ export function runComplianceCheck(): ComplianceSummary {
     return {
       clientId:    client.id,
       clientName:  client.full_name ?? "Client anonimizat",
-      isMinor:     (client as any).is_minor ?? false,
+      isMinor:     client.is_minor ?? false,
       isAnonymized: Boolean(client.notes_anonymized_at),
       issues,
       score,

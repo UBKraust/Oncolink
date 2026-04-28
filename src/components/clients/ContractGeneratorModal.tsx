@@ -1,30 +1,19 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { X } from "lucide-react";
 import { ContractGenerator } from "./ContractGenerator";
+import type { ClientProfile } from "./types";
 import { cn } from "@/lib/utils";
 
 interface ContractGeneratorModalProps {
   isOpen: boolean;
   onClose: () => void;
-  client: any | null;
+  client: ClientProfile | null;
 }
 
 export function ContractGeneratorModal({ isOpen, onClose, client }: ContractGeneratorModalProps) {
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    if (isOpen) {
-      setIsVisible(true);
-      document.body.style.overflow = "hidden";
-    } else {
-      setTimeout(() => setIsVisible(false), 300);
-      document.body.style.overflow = "auto";
-    }
-  }, [isOpen]);
-
-  if (!isOpen && !isVisible) return null;
+  if (!isOpen) return null;
 
   return (
     <div className={cn(
@@ -56,7 +45,7 @@ export function ContractGeneratorModal({ isOpen, onClose, client }: ContractGene
           {client && (
             <ContractGenerator 
               key={client.id}
-              client={client} 
+              client={client}
               onSuccess={() => {
                 // We keep it open so they see the download happened, 
                 // but we could also auto-close if preferred.

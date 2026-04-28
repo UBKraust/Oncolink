@@ -6,6 +6,7 @@ import { mockClients } from "@/lib/mock/clients";
 import { mockPayments } from "@/lib/mock/payments";
 import { mockPatientDocuments } from "@/lib/mock/patientFiles";
 import { getMockExpenses } from "@/lib/mock/expenses";
+import { isPaidInvoiceStatus } from "@/lib/invoices/status";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -49,6 +50,29 @@ export interface MonthlyReview {
   isDemo: boolean;
 }
 
+type ReviewAppointmentRow = {
+  client_id: string;
+  appointment_date: string;
+  duration_minutes: number | null;
+  status: string | null;
+};
+
+type ReviewInvoiceRow = {
+  amount: number | null;
+  issued_at: string;
+  status: string | null;
+};
+
+type ReviewClientRow = {
+  id: string;
+  is_minor: boolean | null;
+  gdpr_consent_signed: boolean | null;
+};
+
+type ReviewExpenseRow = {
+  amount: number | null;
+};
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const year  = parseInt(searchParams.get("year")  ?? String(new Date().getFullYear()));
@@ -60,32 +84,72 @@ export async function GET(req: NextRequest) {
 
   // ── Supabase path ─────────────────────────────────────────────────────────
   if (isSupabaseConfigured()) {
-    try {
-      const supabase = await createSupabaseServerClient();
-      const startDate = `${year}-${String(month).padStart(2,"0")}-01`;
-      const endDate   = new Date(year, month, 1).toISOString().slice(0,10);
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-      const [{ data: appts }, { data: invoices }, { data: newClients }, { data: expenseData }] = await Promise.all([
-        supabase.from("appointments")
-          .select("id,client_id,appointment_date,duration_minutes,status")
-          .gte("appointment_date", startDate)
-          .lt("appointment_date", endDate),
-        supabase.from("invoices")
-          .select("appointment_id,amount,status")
-          .gte("created_at", startDate)
-          .lt("created_at", endDate),
-        supabase.from("clients")
-          .select("id,is_minor,gdpr_consent_signed")
-          .gte("created_at", startDate)
-          .lt("created_at", endDate),
-        supabase.from("cabinet_expenses")
-          .select("amount")
-          .gte("expense_date", startDate)
-          .lt("expense_date", endDate),
-      ]);
+    if (userError) {
+      return NextResponse.json({ error: userError.message }, { status: 500 });
+    }
 
-      return NextResponse.json(buildReview(appts ?? [], invoices ?? [], newClients ?? [], expenseData ?? [], year, month));
-    } catch { /* fall to mock */ }
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+    const endDate = new Date(year, month, 1).toISOString().slice(0, 10);
+
+    const [
+      { data: appts, error: apptsError },
+      { data: invoices, error: invoicesError },
+      { data: newClients, error: newClientsError },
+      { data: expenseData, error: expenseError },
+    ] = await Promise.all([
+      supabase
+        .from("appointments")
+        .select("client_id,appointment_date,duration_minutes,status")
+        .gte("appointment_date", startDate)
+        .lt("appointment_date", endDate)
+        .eq("therapist_id", user.id),
+      supabase
+        .from("invoices")
+        .select("amount,issued_at,status")
+        .gte("issued_at", startDate)
+        .lt("issued_at", endDate)
+        .eq("therapist_id", user.id),
+      supabase
+        .from("clients")
+        .select("id,is_minor,gdpr_consent_signed")
+        .gte("created_at", startDate)
+        .lt("created_at", endDate)
+        .eq("therapist_id", user.id),
+      supabase
+        .from("cabinet_expenses")
+        .select("amount")
+        .gte("expense_date", startDate)
+        .lt("expense_date", endDate)
+        .eq("therapist_id", user.id),
+    ]);
+
+    const firstError =
+      apptsError || invoicesError || newClientsError || expenseError;
+
+    if (firstError) {
+      return NextResponse.json({ error: firstError.message }, { status: 500 });
+    }
+
+    return NextResponse.json(
+      buildReview(
+        appts ?? [],
+        invoices ?? [],
+        newClients ?? [],
+        expenseData ?? [],
+        year,
+        month,
+      ),
+    );
   }
 
   // ── Demo/mock path ────────────────────────────────────────────────────────
@@ -102,22 +166,30 @@ export async function GET(req: NextRequest) {
 
   const uniqueClientIds = [...new Set(monthPayments.map(p => p.client_id))];
   const totalMin = monthPayments.reduce((s,p) => s + p.duration_minutes, 0);
-  const collected = monthPayments.filter(p => p.invoice_status === "ACHITATĂ").reduce((s,p) => s + p.amount, 0);
-  const outstanding = monthPayments.filter(p => p.invoice_status !== "ACHITATĂ").reduce((s,p) => s + p.amount, 0);
+  const collected = monthPayments
+    .filter((payment) => isPaidInvoiceStatus(payment.invoice_status))
+    .reduce((sum, payment) => sum + payment.amount, 0);
+  const outstanding = monthPayments
+    .filter((payment) => !isPaidInvoiceStatus(payment.invoice_status))
+    .reduce((sum, payment) => sum + payment.amount, 0);
   const total = monthPayments.reduce((s,p) => s + p.amount, 0);
 
   // Compliance alerts
-  const newClientsThisMonth = mockClients.filter(c => {
-    const d = new Date((c as any).created_at ?? Date.now() - 999999999);
+  const newClientsThisMonth = mockClients.filter((client) => {
+    const d = new Date(client.created_at);
     return d >= startDate && d < endDate;
   });
-  const missingGdpr = mockClients.filter(c => !c.gdpr_consent_signed);
-  const minorsMissingConsent = mockClients.filter(c =>
-    (c as any).is_minor &&
-    !mockPatientDocuments.some(d => d.client_id === c.id && d.document_type === "ACORD_PARINTI")
+  const missingGdpr = newClientsThisMonth.filter(
+    (client) => !client.gdpr_consent_signed,
+  );
+  const minorsMissingConsent = newClientsThisMonth.filter((client) =>
+    client.is_minor &&
+    !mockPatientDocuments.some(d => d.client_id === client.id && d.document_type === "ACORD_PARINTI")
   );
   const unpaidClients = [...new Set(
-    monthPayments.filter(p => p.invoice_status !== "ACHITATĂ").map(p => p.client_id)
+    monthPayments
+      .filter((payment) => !isPaidInvoiceStatus(payment.invoice_status))
+      .map((payment) => payment.client_id)
   )];
 
   const alerts = [];
@@ -165,30 +237,57 @@ export async function GET(req: NextRequest) {
 }
 
 function buildReview(
-  appts: any[], invoices: any[], newClients: any[], expenses: any[],
+  appts: ReviewAppointmentRow[],
+  invoices: ReviewInvoiceRow[],
+  newClients: ReviewClientRow[],
+  expenses: ReviewExpenseRow[],
   year: number, month: number
 ): MonthlyReview {
-  const done     = appts.filter(a => a.status === "FINALIZAT");
-  const canceled = appts.filter(a => a.status === "ANULAT" || a.status === "LIPSA");
-  const uniqueCl  = [...new Set(done.map((a:any) => a.client_id))];
-  const totalMin  = done.reduce((s:number,a:any) => s + (a.duration_minutes||50), 0);
-  const collected = invoices.filter((i:any) => i.status==="ACHITATĂ").reduce((s:number,i:any)=>s+i.amount,0);
-  const outstanding = invoices.filter((i:any) => i.status!=="ACHITATĂ").reduce((s:number,i:any)=>s+i.amount,0);
-  const total     = invoices.reduce((s:number,i:any)=>s+i.amount,0);
-  const totalExp  = expenses.reduce((s:number, e:any) => s + Number(e.amount), 0);
+  const done = appts.filter((appointment) => appointment.status === "FINALIZAT");
+  const canceled = appts.filter(
+    (appointment) =>
+      appointment.status === "ANULAT" || appointment.status === "LIPSA",
+  );
+  const uniqueCl = [...new Set(done.map((appointment) => appointment.client_id))];
+  const totalMin = done.reduce(
+    (sum, appointment) => sum + (appointment.duration_minutes || 50),
+    0,
+  );
+  const collected = invoices
+    .filter((invoice) => isPaidInvoiceStatus(invoice.status))
+    .reduce((sum, invoice) => sum + Number(invoice.amount ?? 0), 0);
+  const outstanding = invoices
+    .filter((invoice) => !isPaidInvoiceStatus(invoice.status))
+    .reduce((sum, invoice) => sum + Number(invoice.amount ?? 0), 0);
+  const total = invoices.reduce(
+    (sum, invoice) => sum + Number(invoice.amount ?? 0),
+    0,
+  );
+  const totalExp = expenses.reduce(
+    (sum, expense) => sum + Number(expense.amount ?? 0),
+    0,
+  );
 
-  const missingGdpr = newClients.filter((c:any)=>!c.gdpr_consent_signed);
-  const minorsNoConsent = newClients.filter((c:any)=>c.is_minor);
+  const missingGdpr = newClients.filter((client) => !client.gdpr_consent_signed);
+  const minorsNoConsent = newClients.filter((client) => client.is_minor);
 
   const alerts = [];
-  if (missingGdpr.length) alerts.push({ id:"A1", severity:"CRITICAL" as const, message:"Pacienți noi fără acord GDPR", count:missingGdpr.length, clientIds:missingGdpr.map((c:any)=>c.id) });
-  if (minorsNoConsent.length) alerts.push({ id:"A2", severity:"CRITICAL" as const, message:"Minori noi — verificați acorduri părinți", count:minorsNoConsent.length, clientIds:minorsNoConsent.map((c:any)=>c.id) });
+  if (missingGdpr.length) alerts.push({ id:"A1", severity:"CRITICAL" as const, message:"Pacienți noi fără acord GDPR", count:missingGdpr.length, clientIds:missingGdpr.map((client)=>client.id) });
+  if (minorsNoConsent.length) alerts.push({ id:"A2", severity:"CRITICAL" as const, message:"Minori noi — verificați acorduri părinți", count:minorsNoConsent.length, clientIds:minorsNoConsent.map((client)=>client.id) });
 
   const weeks = [1,2,3,4,5];
   const weeklyBreakdown = weeks.map(w => ({
     week: `S${w}`,
-    sessions: done.filter((a:any) => { const d = new Date(a.appointment_date).getDate(); return d >= w*7-6 && d <= w*7; }).length,
-    revenue: invoices.filter((_:any,i:number) => i % 5 === w-1).reduce((s:number,x:any)=>s+x.amount,0),
+    sessions: done.filter((appointment) => {
+      const day = new Date(appointment.appointment_date).getDate();
+      return day >= w * 7 - 6 && day <= w * 7;
+    }).length,
+    revenue: invoices
+      .filter((invoice) => {
+        const day = new Date(invoice.issued_at).getDate();
+        return day >= w * 7 - 6 && day <= w * 7;
+      })
+      .reduce((sum, invoice) => sum + Number(invoice.amount ?? 0), 0),
   }));
 
   return { year, month, totalSessions:done.length, cancelledSessions:canceled.length,

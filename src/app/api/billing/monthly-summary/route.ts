@@ -4,10 +4,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { mockPayments } from "@/lib/mock/payments";
 import { mockClients } from "@/lib/mock/clients";
+import { isPaidInvoiceStatus } from "@/lib/invoices/status";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const runtime = "edge";
+
+type SummaryAppointmentRow = {
+  id: string;
+  client_id: string;
+  duration_minutes: number;
+  clients: { full_name: string | null }[] | { full_name: string | null } | null;
+};
+
+type SummaryInvoiceRow = {
+  appointment_id: string | null;
+  amount: number | null;
+  status: string | null;
+};
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -20,41 +34,47 @@ export async function GET(req: NextRequest) {
 
   // ── Supabase path ─────────────────────────────────────────────────────────
   if (isSupabaseConfigured()) {
-    try {
-      const supabase = await createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-      const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
-      const endDate   = new Date(year, month, 1).toISOString().slice(0, 10); // first day next month
-
-      // Appointments for the month
-      const { data: appts, error: apptErr } = await supabase
-        .from("appointments")
-        .select("id, client_id, appointment_date, duration_minutes, status")
-        .gte("appointment_date", startDate)
-        .lt("appointment_date",  endDate)
-        .eq("status", "FINALIZAT");
-
-      if (apptErr) return NextResponse.json({ error: apptErr.message }, { status: 500 });
-
-      // Invoices for same period (paid)
-      const apptIds = (appts ?? []).map(a => a.id);
-      const { data: invoices } = await supabase
-        .from("invoices")
-        .select("appointment_id, amount, status")
-        .in("appointment_id", apptIds.length ? apptIds : ["__none__"]);
-
-      const paidInvoices = (invoices ?? []).filter(i => i.status === "ACHITATĂ");
-
-      // Client lookup
-      const { data: clients } = await supabase
-        .from("clients")
-        .select("id, full_name, session_price");
-
-      return NextResponse.json(buildSummary(appts ?? [], paidInvoices, clients ?? [], year, month));
-    } catch (err) {
-      console.error("[billing/monthly-summary] Supabase error:", err);
-      // fall through to mock
+    if (userError) {
+      return NextResponse.json({ error: userError.message }, { status: 500 });
     }
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+    const endDate = new Date(year, month, 1).toISOString().slice(0, 10);
+
+    const { data: appts, error: apptErr } = await supabase
+      .from("appointments")
+      .select("id, client_id, duration_minutes, clients(full_name)")
+      .gte("appointment_date", startDate)
+      .lt("appointment_date", endDate)
+      .eq("status", "FINALIZAT")
+      .eq("therapist_id", user.id);
+
+    if (apptErr) {
+      return NextResponse.json({ error: apptErr.message }, { status: 500 });
+    }
+
+    const apptIds = (appts ?? []).map((appointment) => appointment.id);
+    const { data: invoices, error: invoiceErr } = await supabase
+      .from("invoices")
+      .select("appointment_id, amount, status")
+      .in("appointment_id", apptIds.length ? apptIds : ["__none__"])
+      .eq("therapist_id", user.id);
+
+    if (invoiceErr) {
+      return NextResponse.json({ error: invoiceErr.message }, { status: 500 });
+    }
+
+    return NextResponse.json(buildSummary(appts ?? [], invoices ?? [], year, month));
   }
 
   // ── Demo / mock path ──────────────────────────────────────────────────────
@@ -115,13 +135,17 @@ export async function GET(req: NextRequest) {
 }
 
 function buildSummary(
-  appts: { id: string; client_id: string; duration_minutes: number }[],
-  paidInvoices: { appointment_id: string; amount: number }[],
-  clients: { id: string; full_name: string | null; session_price: number | null }[],
+  appts: SummaryAppointmentRow[],
+  invoices: SummaryInvoiceRow[],
   year: number, month: number
 ) {
-  const clientMap = Object.fromEntries(clients.map(c => [c.id, c]));
-  const paidMap   = Object.fromEntries(paidInvoices.map(i => [i.appointment_id, i.amount]));
+  const invoiceMap = new Map<string, SummaryInvoiceRow[]>();
+  for (const invoice of invoices) {
+    if (!invoice.appointment_id) continue;
+    const existing = invoiceMap.get(invoice.appointment_id) ?? [];
+    existing.push(invoice);
+    invoiceMap.set(invoice.appointment_id, existing);
+  }
 
   const perClient: Record<string, {
     clientId: string; clientName: string;
@@ -131,22 +155,32 @@ function buildSummary(
   }> = {};
 
   for (const a of appts) {
-    const cl = clientMap[a.client_id];
+    const clientRelation = Array.isArray(a.clients) ? a.clients[0] : a.clients;
     if (!perClient[a.client_id]) {
       perClient[a.client_id] = {
         clientId: a.client_id,
-        clientName: cl?.full_name ?? "Client necunoscut",
+        clientName: clientRelation?.full_name ?? "Client necunoscut",
         sessions: 0, totalMinutes: 0,
         totalAmount: 0, collectedAmount: 0,
         invoiceStatus: "NEEMIS",
       };
     }
     const row = perClient[a.client_id];
+    const appointmentInvoices = invoiceMap.get(a.id) ?? [];
+    const appointmentTotal = appointmentInvoices.reduce(
+      (sum, invoice) => sum + Number(invoice.amount ?? 0),
+      0,
+    );
+    const appointmentCollected = appointmentInvoices.reduce(
+      (sum, invoice) =>
+        sum + (isPaidInvoiceStatus(invoice.status) ? Number(invoice.amount ?? 0) : 0),
+      0,
+    );
+
     row.sessions++;
     row.totalMinutes += a.duration_minutes;
-    const price = cl?.session_price ?? 0;
-    row.totalAmount  += price;
-    row.collectedAmount += paidMap[a.id] ?? 0;
+    row.totalAmount += appointmentTotal;
+    row.collectedAmount += appointmentCollected;
   }
 
   for (const row of Object.values(perClient)) {

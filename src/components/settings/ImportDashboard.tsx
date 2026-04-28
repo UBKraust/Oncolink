@@ -4,11 +4,9 @@ import React, { useRef, useState } from "react";
 import Papa from "papaparse";
 import { 
   Upload, 
-  FileText, 
   CheckCircle2, 
   AlertCircle, 
   Loader2, 
-  ArrowRight,
   History,
   Info
 } from "lucide-react";
@@ -16,8 +14,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import type { ImportedExpense, ImportedInvoice } from "@/lib/imports/smartbill";
 
 type ImportType = "invoices" | "expenses";
+type CsvRow = Record<string, string | undefined>;
 
 interface ImportStats {
   total: number;
@@ -30,6 +30,11 @@ export function ImportDashboard() {
   const [invoiceStats, setInvoiceStats] = useState<ImportStats>({ total: 0, processed: 0, status: "idle" });
   const [expenseStats, setExpenseStats] = useState<ImportStats>({ total: 0, processed: 0, status: "idle" });
 
+  const resetStats = (type: ImportType) => {
+    const setStats = type === "invoices" ? setInvoiceStats : setExpenseStats;
+    setStats({ total: 0, processed: 0, status: "idle" });
+  };
+
   const processCSV = async (file: File, type: ImportType) => {
     const setStats = type === "invoices" ? setInvoiceStats : setExpenseStats;
     setStats({ total: 0, processed: 0, status: "parsing" });
@@ -38,10 +43,10 @@ export function ImportDashboard() {
       header: true,
       skipEmptyLines: true,
       complete: async (results) => {
-        const rawData = results.data as any[];
+        const rawData = results.data as CsvRow[];
         
         // Filter out summary rows (SmartBill often has "Total general" at the bottom)
-        const filteredData = rawData.filter(row => {
+        const filteredData = rawData.filter((row) => {
           if (type === "invoices") {
             return row.Serie || row.Numar || row.Client;
           }
@@ -57,8 +62,8 @@ export function ImportDashboard() {
 
         try {
           // Normalize data structure for our API
-          const payload = type === "invoices" 
-            ? filteredData.map(row => ({
+          const payload: ImportedInvoice[] | ImportedExpense[] = type === "invoices" 
+            ? filteredData.map((row) => ({
                 series: row.Serie || "",
                 number: row.Numar || "",
                 date: row.Data || "",
@@ -66,7 +71,7 @@ export function ImportDashboard() {
                 total: row.Total || row["Valoare cu TVA"] || row["Suma Totala"] || "0",
                 status: row.Status || "EMISĂ"
               }))
-            : filteredData.map(row => ({
+            : filteredData.map((row) => ({
                 number: row.Numar || row["Numar Document"] || "",
                 date: row.Data || "",
                 supplier: row.Furnizor || "",
@@ -87,8 +92,12 @@ export function ImportDashboard() {
           }
 
           setStats(prev => ({ ...prev, status: "success", processed: prev.total }));
-        } catch (err: any) {
-          setStats(prev => ({ ...prev, status: "error", errorMsg: err.message }));
+        } catch (err) {
+          setStats(prev => ({
+            ...prev,
+            status: "error",
+            errorMsg: err instanceof Error ? err.message : "Eroare necunoscută.",
+          }));
         }
       },
       error: (err) => {
@@ -105,6 +114,7 @@ export function ImportDashboard() {
         description="Încarcă exportul SmartBill 'Vânzări' pentru a popula istoricul de încasări."
         stats={invoiceStats}
         onFileSelect={(file) => processCSV(file, "invoices")}
+        onReset={() => resetStats("invoices")}
         columns={["Serie", "Număr", "Client", "Total", "Data"]}
       />
 
@@ -114,6 +124,7 @@ export function ImportDashboard() {
         description="Încarcă exportul SmartBill 'Achiziții' pentru a vedea profitul net."
         stats={expenseStats}
         onFileSelect={(file) => processCSV(file, "expenses")}
+        onReset={() => resetStats("expenses")}
         columns={["Serie", "Număr", "Furnizor", "Total", "Data"]}
       />
       
@@ -139,12 +150,14 @@ function ImportCard({
   description, 
   stats, 
   onFileSelect, 
+  onReset,
   columns 
 }: { 
   title: string; 
   description: string; 
   stats: ImportStats;
   onFileSelect: (file: File) => void;
+  onReset: () => void;
   columns: string[];
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -230,7 +243,7 @@ function ImportCard({
                 <p className="text-sm font-bold text-slate-900 italic">Import reușit!</p>
                 <p className="text-xs text-slate-500 mt-1">Au fost procesate cu succes {stats.total} înregistrări.</p>
              </div>
-             <Button variant="outline" size="sm" onClick={() => onFileSelect(null as any)}> {/* Cheat to reset */}
+             <Button variant="outline" size="sm" onClick={onReset}>
                 Încarcă alt fișier
              </Button>
           </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState, useEffect } from "react";
+import { useActionState, useState } from "react";
 import { createClientOnboardingLink } from "@/app/dashboard/clients/onboarding-actions";
 import { CheckCircle2, Copy, ExternalLink, UserPlus, FileCheck, ShieldAlert, ArrowRight } from "lucide-react";
 import { toast } from "@/components/ui/toast";
@@ -16,8 +16,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 import type { ClientFormState } from "@/lib/clients/form-state";
 
@@ -69,13 +67,8 @@ export function ClientForm({ action, defaults = {}, submitLabel, cancelHref }: C
   const [state, formAction, pending] = useActionState(action, initialState);
   const [isMinor, setIsMinor] = useState(defaults.is_minor ?? false);
   const [billingType, setBillingType] = useState(defaults.billing_type ?? "INDIVIDUAL");
-  const [showSuccess, setShowSuccess] = useState(false);
-
-  useEffect(() => {
-    if (state.success && state.clientId) {
-      setShowSuccess(true);
-    }
-  }, [state.success, state.clientId]);
+  const [dismissedSuccess, setDismissedSuccess] = useState(false);
+  const showSuccess = Boolean(state.success && state.clientId) && !dismissedSuccess;
 
   const copyOnboardingLink = async () => {
     if (typeof window === "undefined" || !state.clientId) return;
@@ -441,7 +434,7 @@ export function ClientForm({ action, defaults = {}, submitLabel, cancelHref }: C
       </form>
 
       {/* Success Modal */}
-      <AlertDialog open={showSuccess} onOpenChange={setShowSuccess}>
+      <AlertDialog open={showSuccess} onOpenChange={setDismissedSuccess}>
         <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
             <div className="mx-auto w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-500 mb-4 animate-in zoom-in-50 duration-500">
@@ -505,7 +498,7 @@ export function ClientForm({ action, defaults = {}, submitLabel, cancelHref }: C
                 variant="ghost" 
                 className="w-full justify-center h-10 text-xs font-bold gap-2"
                 onClick={() => {
-                  setShowSuccess(false);
+                  setDismissedSuccess(true);
                   window.location.href = "/dashboard/clients/new";
                 }}
               >

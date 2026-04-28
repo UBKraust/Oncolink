@@ -46,7 +46,7 @@ export function NoteEditor({
 }: NoteEditorProps) {
   const { status, key } = useNotesVault();
   const [plaintext, setPlaintext] = useState<string>("");
-  const [loaded, setLoaded] = useState(false);
+  const [loaded, setLoaded] = useState(() => !initialCiphertext);
   const [decryptError, setDecryptError] = useState<string | null>(null);
 
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
@@ -60,11 +60,7 @@ export function NoteEditor({
 
   useEffect(() => {
     if (!key) return;
-    if (!initialCiphertext) {
-      setPlaintext("");
-      setLoaded(true);
-      return;
-    }
+    if (!initialCiphertext) return;
     let cancelled = false;
     (async () => {
       try {

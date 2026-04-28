@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -25,25 +25,19 @@ export function SectionDetailOverlay({
   footer,
   maxWidth = "max-w-xl",
 }: SectionDetailOverlayProps) {
-  const [isVisible, setIsVisible] = useState(false);
-
   useEffect(() => {
-    if (isOpen) {
-      setIsVisible(true);
-      document.body.style.overflow = "hidden";
-    } else {
-      setIsVisible(false);
+    document.body.style.overflow = isOpen ? "hidden" : "auto";
+    return () => {
       document.body.style.overflow = "auto";
-    }
-    return () => { document.body.style.overflow = "auto"; };
+    };
   }, [isOpen]);
 
-  if (!isOpen && !isVisible) return null;
+  if (!isOpen) return null;
 
   return (
     <div className={cn(
       "fixed inset-0 z-[110] flex justify-end transition-opacity duration-300",
-      isVisible ? "opacity-100" : "opacity-0 pointer-events-none"
+      "opacity-100"
     )}>
       {/* Backdrop */}
       <div 
@@ -55,7 +49,7 @@ export function SectionDetailOverlay({
       <div className={cn(
         "relative h-full w-full bg-white shadow-2xl transition-transform duration-500 ease-out flex flex-col",
         maxWidth,
-        isVisible ? "translate-x-0" : "translate-x-full"
+        "translate-x-0"
       )}>
         {/* Header */}
         <div className="flex items-center justify-between border-b px-6 py-5 bg-slate-50/50">

@@ -23,20 +23,31 @@ import { MedicalDetailOverlay } from "@/components/clients/MedicalDetailOverlay"
 import { CrisisNotesDetailOverlay } from "@/components/clients/CrisisNotesDetailOverlay";
 import { AssessmentDetailOverlay } from "@/components/clients/AssessmentDetailOverlay";
 import { ContractGeneratorModal } from "@/components/clients/ContractGeneratorModal";
+import type {
+  ClientAiContext,
+  ClientAppointment,
+  ClientAssessment,
+  ClientDocument,
+  ClientMedication,
+  ClientPayment,
+  ClientProfile,
+  CrisisNoteItem,
+  WidgetCardProps,
+} from "@/components/clients/types";
 
 interface ClientDashboardUIProps {
-  client: any;
-  assessments: any[];
-  payments: any[];
-  clientDocs: any[];
-  clientMeds: any[];
-  crisisNotes: any[];
-  appointments: any[];
+  client: ClientProfile;
+  assessments: ClientAssessment[];
+  payments: ClientPayment[];
+  clientDocs: ClientDocument[];
+  clientMeds: ClientMedication[];
+  crisisNotes: CrisisNoteItem[];
+  appointments: ClientAppointment[];
   anonymized: boolean;
   justAnonymized: boolean;
   sectionParam: string | undefined;
   assessmentParam: string | undefined;
-  aiClientContext: any;
+  aiClientContext: ClientAiContext;
 }
 
 const SESSION_FREQ_LABELS: Record<string, string> = {
@@ -78,8 +89,8 @@ export function ClientDashboardUI({
     .sort((a, b) => new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime())
     .slice(0, 4);
 
-  const sessionFreqLabel = SESSION_FREQ_LABELS[(client as any).session_frequency ?? ""] ?? null;
-  const isB2B = (client as any).billing_type === "B2B_COMPANY";
+  const sessionFreqLabel = SESSION_FREQ_LABELS[client.session_frequency ?? ""] ?? null;
+  const isB2B = client.billing_type === "B2B_COMPANY";
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-8 pb-20">
@@ -139,9 +150,9 @@ export function ClientDashboardUI({
                     <RefreshCw className="h-3 w-3" /> {sessionFreqLabel}
                   </span>
                 )}
-                {(client as any).session_price && (
+                {client.session_price && (
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">
-                    <TrendingUp className="h-3 w-3" /> {(client as any).session_price} RON/ședință
+                    <TrendingUp className="h-3 w-3" /> {client.session_price} RON/ședință
                   </span>
                 )}
               </div>
@@ -371,7 +382,7 @@ export function ClientDashboardUI({
           assessment={selectedAssessment}
           clientName={client.full_name ?? "Client"}
           isMinor={isMinor}
-          sendReportToParent={(client as any).send_report_to_parent ?? false}
+          sendReportToParent={client.send_report_to_parent ?? false}
           closeUrl={baseUrl}
         />
       )}
@@ -388,7 +399,7 @@ export function ClientDashboardUI({
 
 // ── AppointmentRow ────────────────────────────────────────────────────────────
 
-function AppointmentRow({ appt, upcoming }: { appt: any; upcoming: boolean }) {
+function AppointmentRow({ appt, upcoming }: { appt: ClientAppointment; upcoming: boolean }) {
   const date = new Date(appt.appointment_date);
   const statusColors: Record<string, string> = {
     PROGRAMAT: "bg-blue-100 text-blue-700",
@@ -436,7 +447,15 @@ function AppointmentRow({ appt, upcoming }: { appt: any; upcoming: boolean }) {
 
 // ── WidgetCard ────────────────────────────────────────────────────────────────
 
-function WidgetCard({ icon: Icon, title, value, link, subtitle, badge, badgeVariant = "default" }: any) {
+function WidgetCard({
+  icon: Icon,
+  title,
+  value,
+  link,
+  subtitle,
+  badge,
+  badgeVariant = "default",
+}: WidgetCardProps) {
   return (
     <Link
       href={link}
@@ -446,7 +465,7 @@ function WidgetCard({ icon: Icon, title, value, link, subtitle, badge, badgeVari
         <div className="h-10 w-10 flex items-center justify-center rounded-2xl bg-slate-100 text-slate-500 group-hover:bg-primary/10 group-hover:text-primary transition-all">
           <Icon className="h-5 w-5" />
         </div>
-        {badge && <Badge variant={badgeVariant as any} className="text-[9px] font-black tracking-widest">{badge}</Badge>}
+        {badge && <Badge variant={badgeVariant} className="text-[9px] font-black tracking-widest">{badge}</Badge>}
       </div>
       <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{title}</h3>
       <p className="text-lg font-black text-slate-800 leading-tight truncate">{value}</p>
@@ -460,7 +479,20 @@ function WidgetCard({ icon: Icon, title, value, link, subtitle, badge, badgeVari
 
 // ── AssessmentCard ────────────────────────────────────────────────────────────
 
-function AssessmentCard({ acc, clientId, isActive }: any) {
+function AssessmentCard({
+  acc,
+  clientId,
+  isActive,
+}: {
+  acc: ClientAssessment;
+  clientId: string;
+  isActive: boolean;
+}) {
+  const scoringTestType =
+    typeof acc.scoring_data.test_type === "string"
+      ? acc.scoring_data.test_type
+      : "Rezultat Test";
+
   return (
     <Link
       href={`/dashboard/clients/${clientId}?assessment=${acc.id}`}
@@ -482,7 +514,7 @@ function AssessmentCard({ acc, clientId, isActive }: any) {
           <div className="flex items-center gap-2 mb-3">
             <Brain className="h-4 w-4 text-primary" />
             <span className="text-xs font-black text-slate-800 uppercase tracking-tighter">
-              {acc.scoring_data.test_type || "Rezultat Test"}
+              {scoringTestType}
             </span>
           </div>
           <div className="grid grid-cols-2 gap-x-4 gap-y-2">
@@ -495,7 +527,9 @@ function AssessmentCard({ acc, clientId, isActive }: any) {
           </div>
         </div>
         {acc.content_summary && (
-          <p className="text-xs font-medium text-slate-500 line-clamp-2 italic leading-relaxed">"{acc.content_summary}"</p>
+          <p className="text-xs font-medium text-slate-500 line-clamp-2 italic leading-relaxed">
+            &quot;{acc.content_summary}&quot;
+          </p>
         )}
       </div>
       <div className="mt-6 pt-4 border-t border-slate-50 flex items-center justify-between">

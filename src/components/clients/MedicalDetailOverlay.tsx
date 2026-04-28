@@ -1,18 +1,19 @@
 "use client";
 
 import React from "react";
-import { FileText, Pill, ShieldCheck, Download, Plus, AlertCircle, History } from "lucide-react";
+import { FileText, Pill, ShieldCheck, Download, Plus } from "lucide-react";
 import { SectionDetailOverlay } from "./SectionDetailOverlay";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
+import type { ClientDocument, ClientMedication } from "./types";
 
 interface MedicalDetailOverlayProps {
   isOpen: boolean;
   onClose: () => void;
-  documents: any[];
-  medications: any[];
+  documents: ClientDocument[];
+  medications: ClientMedication[];
   clientName: string;
 }
 

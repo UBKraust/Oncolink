@@ -26,17 +26,20 @@ export function PinDialog({ open, onClose }: PinDialogProps) {
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
-    if (!open) {
-      setPin("");
-      setConfirm("");
-      setError(null);
-      setPending(false);
-    }
-  }, [open]);
-
-  useEffect(() => {
     if (status === "unlocked" && open) onClose();
   }, [status, open, onClose]);
+
+  const resetForm = () => {
+    setPin("");
+    setConfirm("");
+    setError(null);
+    setPending(false);
+  };
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
 
   if (!open) return null;
 
@@ -53,10 +56,18 @@ export function PinDialog({ open, onClose }: PinDialogProps) {
           return;
         }
         const res = await setup(pin);
-        if (!res.ok) setError(res.error ?? "Eroare la setare PIN.");
+        if (!res.ok) {
+          setError(res.error ?? "Eroare la setare PIN.");
+          return;
+        }
+        handleClose();
       } else {
         const res = await unlock(pin);
-        if (!res.ok) setError(res.error ?? "Eroare la deblocare.");
+        if (!res.ok) {
+          setError(res.error ?? "Eroare la deblocare.");
+          return;
+        }
+        handleClose();
       }
     } finally {
       setPending(false);
@@ -92,7 +103,7 @@ export function PinDialog({ open, onClose }: PinDialogProps) {
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             className="rounded-md p-1 text-muted-foreground hover:bg-accent"
             aria-label="Închide"
           >
@@ -149,7 +160,7 @@ export function PinDialog({ open, onClose }: PinDialogProps) {
             <Button
               type="button"
               variant="ghost"
-              onClick={onClose}
+              onClick={handleClose}
               disabled={pending}
             >
               Anulează

@@ -1,19 +1,12 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { UploadCloud, File, FileText, Download, ExternalLink, ImageIcon, Loader2, CheckCircle2 } from "lucide-react";
+import { UploadCloud, File, FileText, ExternalLink, Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { uploadClientDocument } from "@/app/dashboard/clients/actions";
 import { toast } from "@/components/ui/toast";
-
-interface DriveDocument {
-  id: string;
-  file_name: string;
-  document_type: string;
-  drive_link: string;
-  created_at: string;
-}
+import type { ClientDocument } from "./types";
 
 export function ClientDriveDocuments({ 
   clientId, 
@@ -22,7 +15,7 @@ export function ClientDriveDocuments({
 }: { 
   clientId: string;
   folderId?: string;
-  documents?: DriveDocument[] 
+  documents?: ClientDocument[] 
 }) {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -42,7 +35,7 @@ export function ClientDriveDocuments({
       } else {
         toast.error(res.error || "Eroare la încărcare.");
       }
-    } catch (err) {
+    } catch {
       toast.error("Eroare neprevăzută la încărcare.");
     } finally {
       setIsUploading(false);
@@ -119,12 +112,12 @@ export function ClientDriveDocuments({
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium leading-none">{doc.file_name}</p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Adăugat la {new Date(doc.created_at).toLocaleDateString("ro-RO")} • {doc.document_type.replace('_', ' ')}
+                      Adăugat la {new Date(doc.created_at ?? new Date().toISOString()).toLocaleDateString("ro-RO")} • {(doc.document_type ?? "Fișier").replace('_', ' ')}
                     </p>
                   </div>
                 </div>
                 <Button variant="ghost" size="icon" asChild className="shrink-0 h-8 w-8">
-                  <a href={doc.drive_link} target="_blank" rel="noopener noreferrer">
+                  <a href={doc.drive_link ?? doc.document_url ?? "#"} target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="h-4 w-4 text-muted-foreground" />
                   </a>
                 </Button>

@@ -9,11 +9,12 @@ import {
 import { SectionDetailOverlay } from "./SectionDetailOverlay";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import type { ClientProfile, IconComponent } from "./types";
 
 interface PersonalInfoOverlayProps {
   isOpen: boolean;
   onClose: () => void;
-  client: any;
+  client: ClientProfile;
   anonymized: boolean;
 }
 
@@ -318,7 +319,7 @@ function Row({
 }: {
   label: string;
   value: React.ReactNode;
-  icon?: any;
+  icon?: IconComponent;
   href?: string;
   mono?: boolean;
 }) {
@@ -345,7 +346,7 @@ function Row({
 }
 
 function InfoBox({ icon: Icon, label, value, href }: {
-  icon: any;
+  icon: IconComponent;
   label: string;
   value: string | null | undefined;
   href?: string;
@@ -366,7 +367,7 @@ function InfoBox({ icon: Icon, label, value, href }: {
   return inner;
 }
 
-function StatCard({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
+function StatCard({ icon: Icon, label, value }: { icon: IconComponent; label: string; value: string }) {
   return (
     <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-2">{label}</p>

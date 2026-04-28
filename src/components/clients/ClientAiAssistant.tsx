@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Bot, Send, Loader2, Sparkles, Trash2, ChevronDown, ChevronUp, User, AlertCircle, X } from "lucide-react";
+import { Bot, Send, Loader2, Sparkles, Trash2, User, AlertCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { MockSessionPayment } from "@/lib/mock/payments";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

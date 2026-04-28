@@ -1,18 +1,19 @@
 export const runtime = "edge";
 
 import { NextRequest, NextResponse } from "next/server";
+import {
+  createPublicBooking,
+  PublicBookingSchema,
+} from "@/lib/booking/public";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getAvailableSlots } from "@/lib/availability/engine";
 import type { AppointmentRow } from "@/lib/appointments/helpers";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
-import { checkOverlap, OverlapError } from "@/lib/availability/overlapCheck";
-import { upsertClientByIdentifiers } from "@/lib/clients/upsert";
 import { resolvePublicBookingTherapistId } from "@/lib/security/public-booking";
 import {
   enforceRateLimit,
   getClientIp,
-  isHoneypotTriggered,
 } from "@/lib/security/public-rate-limit";
 
 /**
@@ -49,8 +50,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Booking public indisponibil." }, { status: 404 });
   }
 
-  const db = user ? supabase : admin;
-  const { data } = await (db as any)
+  const appointmentsQuery = user ? supabase : admin;
+  const { data } = await appointmentsQuery
     .from("appointments")
     .select("*")
     .eq("therapist_id", therapistId)
@@ -71,16 +72,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Booking offline în mod demo." }, { status: 503 });
   }
 
-  let body: {
-    slotStart?: string;
-    therapist_slug?: string;
-    full_name?: string;
-    email?: string;
-    phone?: string;
-    cnp_cif?: string;
-    address?: string;
-    website?: string;
-  };
+  let body: unknown;
 
   try {
     body = await req.json();
@@ -88,101 +80,35 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Invalid JSON." }, { status: 400 });
   }
 
-  const { slotStart, therapist_slug, full_name, email, phone, cnp_cif, address, website } = body;
+  const legacyBody =
+    typeof body === "object" && body !== null ? (body as Record<string, unknown>) : {};
+  const asOptionalString = (value: unknown) =>
+    typeof value === "string" ? value : undefined;
+  const asDuration = (value: unknown) =>
+    typeof value === "number" ? value : 50;
+  const parsed = PublicBookingSchema.safeParse({
+    full_name: asOptionalString(legacyBody.full_name),
+    email: asOptionalString(legacyBody.email),
+    phone: asOptionalString(legacyBody.phone),
+    cnp_cif: asOptionalString(legacyBody.cnp_cif),
+    address: asOptionalString(legacyBody.address),
+    therapist_slug: asOptionalString(legacyBody.therapist_slug),
+    website: asOptionalString(legacyBody.website),
+    slot_start:
+      asOptionalString(legacyBody.slot_start) ??
+      asOptionalString(legacyBody.slotStart),
+    duration_minutes: asDuration(legacyBody.duration_minutes),
+  });
 
-  if (!slotStart || !full_name || !email) {
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: "slotStart, full_name, email sunt obligatorii." },
+      { error: "Date invalide.", details: parsed.error.flatten().fieldErrors },
       { status: 400 },
     );
   }
 
-  const start = new Date(slotStart);
-  if (isNaN(start.getTime())) {
-    return NextResponse.json({ error: "slotStart invalid." }, { status: 400 });
-  }
-
-  if (isHoneypotTriggered(website)) {
-    return NextResponse.json({ ok: true }, { status: 202 });
-  }
-
-  const rateLimit = await enforceRateLimit({
-    action: "public_booking_submit",
-    identifier: `${getClientIp(req.headers)}:${email.toLowerCase()}`,
-    limit: 6,
-    windowMs: 60 * 60 * 1000,
+  const result = await createPublicBooking(parsed.data, req.headers, {
+    rateLimitAction: "public_booking_submit",
   });
-  if (!rateLimit.ok) {
-    return NextResponse.json(
-      { error: "Prea multe încercări. Reîncearcă mai târziu." },
-      { status: 429 },
-    );
-  }
-
-  const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const admin = createSupabaseServiceClient();
-  let therapistId: string | null = user?.id || null;
-
-  if (!therapistId) {
-    therapistId = await resolvePublicBookingTherapistId(therapist_slug);
-  }
-
-  if (!therapistId) {
-    return NextResponse.json({ error: "Nu am găsit niciun terapeut configurat." }, { status: 500 });
-  }
-
-  const db = user ? supabase : admin;
-
-  try {
-    await checkOverlap(start.toISOString(), 50, therapistId);
-  } catch (err) {
-    if (err instanceof OverlapError) {
-      return NextResponse.json(
-        { error: "Slot indisponibil. Alege un alt interval.", source: err.source },
-        { status: 409 },
-      );
-    }
-    throw err;
-  }
-
-  // Upsert client
-  let clientId: string;
-  try {
-    const clientResult = await upsertClientByIdentifiers(db as any, therapistId, {
-      email,
-      phone: phone ?? null,
-      cnp_cif: cnp_cif ?? null,
-      full_name,
-    }, {
-      therapist_id: therapistId,
-      full_name,
-      email: email.toLowerCase(),
-      phone: phone ?? null,
-      cnp_cif: cnp_cif ?? null,
-      address: address ?? null,
-    });
-    clientId = clientResult.id;
-  } catch (clientError) {
-    return NextResponse.json(
-      { error: clientError instanceof Error ? clientError.message : "Nu am putut salva clientul." },
-      { status: 500 },
-    );
-  }
-
-  const { data: appt, error: apptError } = await (db as any)
-    .from("appointments")
-    .insert({
-      therapist_id: therapistId,
-      client_id: clientId,
-      appointment_date: start.toISOString(),
-      duration_minutes: 50,
-      status: "PROGRAMAT",
-    })
-    .select("id")
-    .single();
-
-  if (apptError) return NextResponse.json({ error: apptError.message }, { status: 500 });
-
-  return NextResponse.json({ ok: true, appointmentId: appt.id }, { status: 201 });
+  return NextResponse.json(result.body, { status: result.status });
 }

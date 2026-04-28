@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   TrendingUp, Clock, Users, Wallet, AlertCircle,
   CheckCircle2, FileCheck2, RotateCcw, Loader2,
-  ChevronRight, Download, BrainCircuit, BarChart3
+  Download, BrainCircuit, BarChart3
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -76,13 +76,22 @@ export default function BillingPage() {
     setForecast(await res.json());
   }, []);
 
-  // Load on mount and whenever month/year changes
-  useEffect(() => { loadSummary(); loadForecast(); }, [loadSummary, loadForecast]);
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void loadSummary();
+      void loadForecast();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [loadSummary, loadForecast]);
 
   function toggleSelect(id: string) {
-    setSelected(prev => {
+    setSelected((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
   }

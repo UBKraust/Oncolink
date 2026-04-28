@@ -34,9 +34,19 @@ const DURATIONS = [
   { value: 90, label: "90 min" },
 ];
 
+function toDatetimeLocalValue(date: Date) {
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function getMinimumBookingDateTime() {
+  return toDatetimeLocalValue(new Date(Date.now() + 60 * 60_000));
+}
+
 export function BookingForm({ onSuccess, therapistSlug }: BookingFormProps) {
   const [serverError, setServerError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [minDateTime] = useState(getMinimumBookingDateTime);
 
   const {
     register,
@@ -145,7 +155,7 @@ export function BookingForm({ onSuccess, therapistSlug }: BookingFormProps) {
           <Input
             {...register("slot_start")}
             type="datetime-local"
-            min={new Date(Date.now() + 60 * 60_000).toISOString().slice(0, 16)}
+            min={minDateTime}
           />
         </Field>
 

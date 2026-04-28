@@ -40,14 +40,14 @@ const NotesVaultContext = createContext<NotesVaultValue | null>(null);
 const AUTO_LOCK_MS = 15 * 60 * 1000;
 
 export function NotesVaultProvider({ children }: { children: React.ReactNode }) {
-  const [status, setStatus] = useState<VaultStatus>("loading");
+  const [status, setStatus] = useState<VaultStatus>(() => {
+    if (typeof window === "undefined") {
+      return "loading";
+    }
+    return readPinState() ? "locked" : "needs-setup";
+  });
   const [key, setKey] = useState<CryptoKey | null>(null);
   const autoLockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    const pin = readPinState();
-    setStatus(pin ? "locked" : "needs-setup");
-  }, []);
 
   const clearTimer = () => {
     if (autoLockTimer.current) {

@@ -48,7 +48,8 @@ export function BookingWidget({ therapistSlug }: { therapistSlug?: string | null
 
     const fd = new FormData(e.currentTarget);
     const body = {
-      slotStart: selectedSlot.start,
+      slot_start: selectedSlot.start,
+      duration_minutes: 50,
       therapist_slug: therapistSlug,
       full_name: fd.get("full_name"),
       email: fd.get("email"),
@@ -59,7 +60,7 @@ export function BookingWidget({ therapistSlug }: { therapistSlug?: string | null
     };
 
     try {
-      const res = await fetch("/api/book", {
+      const res = await fetch("/api/bookings/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),

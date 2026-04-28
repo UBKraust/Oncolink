@@ -1,8 +1,35 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { startOfMonth, endOfMonth, startOfDay, endOfDay, format, differenceInDays } from "date-fns";
-import { ro } from "date-fns/locale";
+import { startOfMonth, endOfMonth, startOfDay, endOfDay, differenceInDays } from "date-fns";
 import { initialsFromName } from "@/lib/clients/validation";
-import { LocationKind } from "@/lib/mock/dashboard";
+import { deriveLocation, type AppointmentStatus, type LocationKind } from "@/lib/appointments/helpers";
+import { isPaidInvoiceStatus, normalizeInvoiceStatus } from "@/lib/invoices/status";
+
+type InvoiceWithAppointmentClient = {
+  id: string;
+  smartbill_series: string | null;
+  smartbill_number: string | null;
+  amount: number | null;
+  issued_at: string;
+  status: string;
+  appointments:
+    | { clients: { full_name: string | null } | { full_name: string | null }[] | null }
+    | { clients: { full_name: string | null } | { full_name: string | null }[] | null }[]
+    | null;
+};
+
+type AppointmentWithClient = {
+  id: string;
+  appointment_date: string;
+  duration_minutes: number | null;
+  status: string | null;
+  is_external_duty: boolean | null;
+  location_tag: string | null;
+  meet_link: string | null;
+  clients:
+    | { full_name: string | null }
+    | { full_name: string | null }[]
+    | null;
+};
 
 export interface DashboardStats {
   totalRevenue: number;
@@ -40,8 +67,8 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   const { data: expenses } = await supabase
     .from("cabinet_expenses")
     .select("amount")
-    .gte("date", startMonth)
-    .lte("date", endMonth);
+    .gte("expense_date", startMonth)
+    .lte("expense_date", endMonth);
   const expensesMonth = expenses?.reduce((sum, exp) => sum + Number(exp.amount), 0) || 0;
 
   // 3. Appointments Today
@@ -73,13 +100,15 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   // 6. Demographics
   const { data: clients, error: demographicsError } = await supabase
     .from("clients")
-    .select("is_minor, billing_type, company_name");
+    .select("is_minor, billing_type, company_name, location");
   
   if (demographicsError) console.error("Error fetching demographics:", demographicsError);
   
   const minorPatients = clients?.filter(c => c.is_minor).length || 0;
   const adultPatients = (clients?.length || 0) - minorPatients;
-  const b2bPatients = clients?.filter(c => c.billing_type === "COMPANY" || c.company_name).length || 0;
+  const b2bPatients = clients?.filter(c => c.billing_type === "B2B_COMPANY" || c.company_name).length || 0;
+  const privatePatients = clients?.filter(c => c.location === "CABINET_PARTICULAR").length || 0;
+  const clinicPatients = clients?.filter(c => c.location === "CLINICA").length || 0;
 
   // 7. Vault Stats
   const { count: vaultTotalDocs } = await supabase
@@ -93,8 +122,8 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     appointmentsToday: appointmentsToday || 0,
     totalHours,
     pendingMinorReviews: pendingMinorReviews || 0,
-    privatePatients: clients?.filter(c => c.billing_type !== "COMPANY").length || 0,
-    clinicPatients: 0, // We don't have cabinet_id column yet
+    privatePatients,
+    clinicPatients,
     minorPatients,
     adultPatients,
     b2bPatients,
@@ -108,22 +137,38 @@ export async function getUnpaidInvoices() {
   const { data } = await supabase
     .from("invoices")
     .select("*, appointments(clients(full_name))")
-    .neq("status", "PLĂTITĂ")
     .order("issued_at", { ascending: false })
-    .limit(5);
+    .limit(20);
   
   const now = new Date();
   
-  return data?.map(inv => ({
-    id: inv.id,
-    clientName: (inv.appointments as any)?.clients?.full_name || "Client Necunoscut",
-    series: inv.smartbill_series || "FĂRĂ",
-    number: inv.smartbill_number || "0000",
-    amount: Number(inv.amount),
-    issuedAt: new Date(inv.issued_at),
-    daysOverdue: differenceInDays(now, new Date(inv.issued_at)),
-    status: inv.status
-  })) || [];
+  return (
+    (data as InvoiceWithAppointmentClient[] | null)
+      ?.filter((invoice) => {
+        const normalizedStatus = normalizeInvoiceStatus(invoice.status);
+        return normalizedStatus !== "ANULATĂ" && !isPaidInvoiceStatus(normalizedStatus);
+      })
+      .slice(0, 5)
+      .map((invoice) => {
+        const appointmentRelation = Array.isArray(invoice.appointments)
+          ? invoice.appointments[0]
+          : invoice.appointments;
+        const clientRelation = Array.isArray(appointmentRelation?.clients)
+          ? appointmentRelation.clients[0]
+          : appointmentRelation?.clients;
+
+        return {
+          id: invoice.id,
+          clientName: clientRelation?.full_name || "Client Necunoscut",
+          series: invoice.smartbill_series || "FĂRĂ",
+          number: invoice.smartbill_number || "0000",
+          amount: Number(invoice.amount ?? 0),
+          issuedAt: new Date(invoice.issued_at),
+          daysOverdue: differenceInDays(now, new Date(invoice.issued_at)),
+          status: invoice.status,
+        };
+      }) || []
+  );
 }
 
 export async function getAppointmentsToday() {
@@ -136,20 +181,30 @@ export async function getAppointmentsToday() {
     .lte("appointment_date", endOfDay(now).toISOString())
     .order("appointment_date", { ascending: true });
 
-  return data?.map(app => {
-    const clientName = (app.clients as any)?.full_name || "Client";
-    return {
-      id: app.id,
-      clientName,
-      clientInitials: initialsFromName(clientName),
-      startsAt: new Date(app.appointment_date),
-      durationMinutes: app.duration_minutes || 50,
-      status: app.status as any,
-      location: (app.is_external_duty ? "POLICLINIC" : (app.location_tag === "#Clinica" ? "CLINICA" : "CABINET")) as LocationKind,
-      isExternalDuty: app.is_external_duty,
-      meetLink: app.meet_link
-    };
-  }) || [];
+  return (
+    (data as AppointmentWithClient[] | null)?.map((appointment) => {
+      const clientRelation = Array.isArray(appointment.clients)
+        ? appointment.clients[0]
+        : appointment.clients;
+      const clientName = clientRelation?.full_name || "Client";
+
+      return {
+        id: appointment.id,
+        clientName,
+        clientInitials: initialsFromName(clientName),
+        startsAt: new Date(appointment.appointment_date),
+        durationMinutes: appointment.duration_minutes || 50,
+        status: (appointment.status || "PROGRAMAT") as AppointmentStatus,
+        location: deriveLocation({
+          meet_link: appointment.meet_link,
+          is_external_duty: appointment.is_external_duty || false,
+          location_tag: appointment.location_tag,
+        }) as LocationKind,
+        isExternalDuty: appointment.is_external_duty || false,
+        meetLink: appointment.meet_link || undefined,
+      };
+    }) || []
+  );
 }
 
 export async function getUpcomingAppointments() {
@@ -165,18 +220,28 @@ export async function getUpcomingAppointments() {
     .order("appointment_date", { ascending: true })
     .limit(10);
 
-  return data?.map(app => {
-    const clientName = (app.clients as any)?.full_name || "Client";
-    return {
-      id: app.id,
-      clientName,
-      clientInitials: initialsFromName(clientName),
-      startsAt: new Date(app.appointment_date),
-      durationMinutes: app.duration_minutes || 50,
-      status: app.status as any,
-      location: (app.is_external_duty ? "POLICLINIC" : (app.location_tag === "#Clinica" ? "CLINICA" : "CABINET")) as LocationKind,
-      isExternalDuty: app.is_external_duty,
-      meetLink: app.meet_link
-    };
-  }) || [];
+  return (
+    (data as AppointmentWithClient[] | null)?.map((appointment) => {
+      const clientRelation = Array.isArray(appointment.clients)
+        ? appointment.clients[0]
+        : appointment.clients;
+      const clientName = clientRelation?.full_name || "Client";
+
+      return {
+        id: appointment.id,
+        clientName,
+        clientInitials: initialsFromName(clientName),
+        startsAt: new Date(appointment.appointment_date),
+        durationMinutes: appointment.duration_minutes || 50,
+        status: (appointment.status || "PROGRAMAT") as AppointmentStatus,
+        location: deriveLocation({
+          meet_link: appointment.meet_link,
+          is_external_duty: appointment.is_external_duty || false,
+          location_tag: appointment.location_tag,
+        }) as LocationKind,
+        isExternalDuty: appointment.is_external_duty || false,
+        meetLink: appointment.meet_link || undefined,
+      };
+    }) || []
+  );
 }

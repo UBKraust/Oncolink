@@ -4,8 +4,6 @@ import { AppointmentRow } from "@/components/dashboard/appointment-row";
 import type { DashboardAppointment } from "@/lib/mock/dashboard";
 
 export function AppointmentsToday({ appointments }: { appointments: DashboardAppointment[] }) {
-  const nonDuty = appointments.filter(a => !a.isExternalDuty).length;
-
   return (
     <div className="rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
       <div className="flex items-center justify-between px-6 py-4 border-b border-slate-50">

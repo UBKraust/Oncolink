@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { MonthlyReview } from "@/app/api/analytics/monthly-review/route";
 
@@ -45,7 +44,12 @@ export default function MonthlyReviewPage() {
     } finally { setLoading(false); }
   }, [year, month]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void load();
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [load]);
 
   // ── AI Narrative ────────────────────────────────────────────────────────────
   async function generateAiInsight() {

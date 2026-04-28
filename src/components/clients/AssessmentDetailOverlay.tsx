@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import type { MockAssessment } from "@/lib/mock/assessments";
+import type { ClientAssessment } from "./types";
 
 const SEVERITY_CONFIG = {
   minimal: { label: "Minimal", bar: "bg-emerald-500", text: "text-emerald-700", bg: "bg-emerald-50 dark:bg-emerald-950/30", border: "border-emerald-200 dark:border-emerald-800" },
@@ -29,7 +29,7 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 interface Props {
-  assessment: MockAssessment;
+  assessment: ClientAssessment;
   clientName: string;
   isMinor: boolean;
   sendReportToParent: boolean;
@@ -44,13 +44,20 @@ export function AssessmentDetailOverlay({
   closeUrl,
 }: Props) {
   const scoring = assessment.scoring_data;
-  const severity = scoring.severity?.toLowerCase() as keyof typeof SEVERITY_CONFIG | undefined;
+  const severityRaw =
+    typeof scoring.severity === "string" ? scoring.severity.toLowerCase() : undefined;
+  const severity = severityRaw as keyof typeof SEVERITY_CONFIG | undefined;
   const severityCfg = severity ? SEVERITY_CONFIG[severity] : null;
+  const scoreValue = typeof scoring.score === "number" ? scoring.score : null;
+  const stateAnxiety =
+    typeof scoring.state_anxiety === "number" ? scoring.state_anxiety : null;
+  const traitAnxiety =
+    typeof scoring.trait_anxiety === "number" ? scoring.trait_anxiety : null;
+  const testType =
+    typeof scoring.test_type === "string" ? scoring.test_type : null;
 
   const hasNumericScore =
-    typeof scoring.score === "number" ||
-    typeof scoring.state_anxiety === "number" ||
-    typeof scoring.trait_anxiety === "number";
+    scoreValue !== null || stateAnxiety !== null || traitAnxiety !== null;
 
   const scoreEntries = Object.entries(scoring).filter(
     ([k]) => k !== "test_type" && k !== "severity"
@@ -89,10 +96,10 @@ export function AssessmentDetailOverlay({
         {/* Body */}
         <div className="flex-1 space-y-5 overflow-y-auto px-5 py-5">
           {/* Test type badge */}
-          {scoring.test_type && (
+          {testType && (
             <div className="flex items-center gap-2 text-sm">
               <Brain className="h-4 w-4 text-primary" />
-              <span className="font-medium">{scoring.test_type}</span>
+              <span className="font-medium">{testType}</span>
             </div>
           )}
 
@@ -103,17 +110,17 @@ export function AssessmentDetailOverlay({
                 <span className={`text-sm font-semibold ${severityCfg.text}`}>
                   {severityCfg.label}
                 </span>
-                {typeof scoring.score === "number" && (
+                {scoreValue !== null && (
                   <span className={`text-2xl font-bold ${severityCfg.text}`}>
-                    {scoring.score}
+                    {scoreValue}
                   </span>
                 )}
               </div>
-              {typeof scoring.score === "number" && (
+              {scoreValue !== null && (
                 <div className="h-2 w-full rounded-full bg-black/10">
                   <div
                     className={`h-2 rounded-full transition-all ${severityCfg.bar}`}
-                    style={{ width: `${Math.min((scoring.score / 27) * 100, 100)}%` }}
+                    style={{ width: `${Math.min((scoreValue / 27) * 100, 100)}%` }}
                   />
                 </div>
               )}
@@ -141,15 +148,15 @@ export function AssessmentDetailOverlay({
           )}
 
           {/* Subscale visualization for multi-dimension scores */}
-          {typeof scoring.state_anxiety === "number" && typeof scoring.trait_anxiety === "number" && (
+          {stateAnxiety !== null && traitAnxiety !== null && (
             <div className="space-y-3">
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
                 <TrendingUp className="h-3.5 w-3.5" />
                 Componente
               </p>
               {[
-                { label: "Anxietate de stare", value: scoring.state_anxiety, max: 80 },
-                { label: "Anxietate de trăsătură", value: scoring.trait_anxiety, max: 80 },
+                { label: "Anxietate de stare", value: stateAnxiety, max: 80 },
+                { label: "Anxietate de trăsătură", value: traitAnxiety, max: 80 },
               ].map(({ label, value, max }) => {
                 const pct = Math.min((value / max) * 100, 100);
                 const barColor = value < 40 ? "bg-emerald-500" : value < 55 ? "bg-yellow-400" : "bg-red-500";

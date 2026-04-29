@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { startOfMonth, endOfMonth, startOfDay, endOfDay, differenceInDays } from "date-fns";
 import { initialsFromName } from "@/lib/clients/validation";
 import { deriveLocation, type AppointmentStatus, type LocationKind } from "@/lib/appointments/helpers";
@@ -47,7 +48,27 @@ export interface DashboardStats {
   vaultTotalDocs: number;
 }
 
+const EMPTY_DASHBOARD_STATS: DashboardStats = {
+  totalRevenue: 0,
+  expensesMonth: 0,
+  netProfitMonth: 0,
+  appointmentsToday: 0,
+  totalHours: 0,
+  pendingMinorReviews: 0,
+  privatePatients: 0,
+  clinicPatients: 0,
+  minorPatients: 0,
+  adultPatients: 0,
+  b2bPatients: 0,
+  vaultAlertsCount: 0,
+  vaultTotalDocs: 0,
+};
+
 export async function getDashboardStats(): Promise<DashboardStats> {
+  if (!isSupabaseConfigured()) {
+    return EMPTY_DASHBOARD_STATS;
+  }
+
   const supabase = await createSupabaseServerClient();
   const now = new Date();
   const startMonth = startOfMonth(now).toISOString();
@@ -133,6 +154,10 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 }
 
 export async function getUnpaidInvoices() {
+  if (!isSupabaseConfigured()) {
+    return [];
+  }
+
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("invoices")
@@ -172,6 +197,10 @@ export async function getUnpaidInvoices() {
 }
 
 export async function getAppointmentsToday() {
+  if (!isSupabaseConfigured()) {
+    return [];
+  }
+
   const supabase = await createSupabaseServerClient();
   const now = new Date();
   const { data } = await supabase
@@ -208,6 +237,10 @@ export async function getAppointmentsToday() {
 }
 
 export async function getUpcomingAppointments() {
+  if (!isSupabaseConfigured()) {
+    return [];
+  }
+
   const supabase = await createSupabaseServerClient();
   const now = new Date();
   const tomorrow = new Date(now);

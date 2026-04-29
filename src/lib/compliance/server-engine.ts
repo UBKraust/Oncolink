@@ -1,21 +1,35 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { 
   ClientComplianceResult, 
   ComplianceSummary, 
   ComplianceIssue,
 } from "./engine";
 
+function emptyComplianceSummary(): ComplianceSummary {
+  return {
+    totalClients: 0,
+    compliantCount: 0,
+    warningCount: 0,
+    criticalCount: 0,
+    overallScore: 100,
+    results: [],
+    lastChecked: new Date().toISOString(),
+  };
+}
+
 export async function runServerComplianceCheck(): Promise<ComplianceSummary> {
+  if (!isSupabaseConfigured()) {
+    return emptyComplianceSummary();
+  }
+
   const supabase = await createSupabaseServerClient();
   
   // Fetch everything needed for compliance
   const { data: clients } = await supabase.from("clients").select("*");
   const { data: docs } = await supabase.from("patient_documents").select("*");
 
-  if (!clients) return {
-    totalClients: 0, compliantCount: 0, warningCount: 0, criticalCount: 0,
-    overallScore: 100, results: [], lastChecked: new Date().toISOString()
-  };
+  if (!clients) return emptyComplianceSummary();
 
   const results: ClientComplianceResult[] = clients.map(client => {
     const issues: ComplianceIssue[] = [];

@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { cn } from "@/lib/utils";
 import { dashboardNavGroups } from "@/components/dashboard/nav-groups";
+import { interactiveState } from "@/components/ui/interactive-state";
+import { cn } from "@/lib/utils";
 
 export function DashboardSidebar() {
   const pathname = usePathname();
@@ -40,10 +41,8 @@ export function DashboardSidebar() {
                     key={href}
                     href={href}
                     className={cn(
-                      "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200",
-                      active
-                        ? "bg-primary/10 text-primary shadow-sm"
-                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                      "ui-nav-item-base transition-all duration-200",
+                      active ? "ui-nav-item-active shadow-sm" : interactiveState.navItemIdle,
                     )}
                   >
                     <Icon className={cn("h-4 w-4", active ? "text-primary" : "text-muted-foreground/70")} />

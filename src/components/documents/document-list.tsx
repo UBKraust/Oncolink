@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { FileText, Loader2, ShieldCheck } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -82,7 +83,7 @@ export function DocumentList({ clients }: DocumentListProps) {
 
   if (clients.length === 0) {
     return (
-      <Card>
+      <Card className="rounded-[1.75rem] border-border/60 shadow-sm">
         <CardContent className="p-8 text-center text-sm text-muted-foreground">
           Niciun client activ găsit pentru generarea documentelor.
         </CardContent>
@@ -91,12 +92,11 @@ export function DocumentList({ clients }: DocumentListProps) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Clienți activi</CardTitle>
+    <Card className="rounded-[1.75rem] border-border/60 shadow-sm">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base font-black tracking-tight">Clienți activi</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -115,9 +115,9 @@ export function DocumentList({ clients }: DocumentListProps) {
                 </TableCell>
                 <TableCell>
                   {c.gdpr_consent_signed ? (
-                    <span className="text-xs text-emerald-600">Da</span>
+                    <Badge variant="success">Semnat</Badge>
                   ) : (
-                    <span className="text-xs text-amber-600">Nu</span>
+                    <Badge variant="warning">Lipsă</Badge>
                   )}
                 </TableCell>
                 <TableCell className="text-right">
@@ -156,7 +156,6 @@ export function DocumentList({ clients }: DocumentListProps) {
             ))}
           </TableBody>
         </Table>
-        </div>
       </CardContent>
     </Card>
   );

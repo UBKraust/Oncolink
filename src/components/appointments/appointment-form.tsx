@@ -61,18 +61,26 @@ export function AppointmentForm({
   const globalErrorId = state.error ? "appointment-form-error" : undefined;
 
   return (
-    <form action={formAction} className="space-y-5">
+    <form action={formAction} className="space-y-6">
       {state.error && (
         <div
           id="appointment-form-error"
           role="alert"
-          className="rounded-md border border-rose-300 bg-rose-50 p-3 text-sm text-rose-900 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200"
+          className="rounded-2xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-900 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200"
         >
           {state.error}
         </div>
       )}
 
-      <div className="grid gap-5 md:grid-cols-2">
+      <div className="rounded-[1.75rem] border border-border/60 bg-card p-5 shadow-sm">
+        <div className="mb-5 space-y-1">
+          <h3 className="text-sm font-black tracking-tight text-foreground">Detalii programare</h3>
+          <p className="text-sm text-muted-foreground">
+            Alege clientul, data, durata și contextul operațional al sesiunii.
+          </p>
+        </div>
+
+        <div className="grid gap-5 md:grid-cols-2">
         {/* Client */}
         <div className="space-y-1.5">
           <Label htmlFor="client_id">
@@ -227,25 +235,34 @@ export function AppointmentForm({
             <p id="meet_link-error" className="text-xs text-rose-600">{state.fieldErrors.meet_link}</p>
           ) : null}
         </div>
+        </div>
       </div>
 
       {/* Personal Notes */}
-      <div className="space-y-1.5">
-        <Label htmlFor="personal_notes">Note Personale (Private)</Label>
-        <Textarea
-          id="personal_notes"
-          name="personal_notes"
-          placeholder="Note despre această ședință, vizibile doar pentru tine..."
-          defaultValue={defaults.personal_notes ?? ""}
-          aria-describedby="personal_notes-hint"
-        />
-        <p id="personal_notes-hint" className="text-[10px] text-muted-foreground italic">
-          Aceste note **NU** sunt partajate cu Google Calendar sau cu clientul.
-        </p>
+      <div className="rounded-[1.75rem] border border-border/60 bg-card p-5 shadow-sm">
+        <div className="space-y-1.5">
+          <Label htmlFor="personal_notes">Note personale (private)</Label>
+          <Textarea
+            id="personal_notes"
+            name="personal_notes"
+            placeholder="Note despre această ședință, vizibile doar pentru tine..."
+            defaultValue={defaults.personal_notes ?? ""}
+            aria-describedby="personal_notes-hint"
+          />
+          <p id="personal_notes-hint" className="text-[11px] text-muted-foreground">
+            Aceste note nu sunt partajate cu Google Calendar sau cu clientul.
+          </p>
+        </div>
       </div>
 
       {/* Reminders Configuration */}
-      <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+      <div className="rounded-[1.75rem] border border-border/60 bg-card p-5 shadow-sm space-y-4">
+        <div className="space-y-1">
+          <h3 className="text-sm font-black tracking-tight text-foreground">Mementouri</h3>
+          <p className="text-sm text-muted-foreground">
+            Configurează notificările personale pentru această programare.
+          </p>
+        </div>
         <label htmlFor="reminders_enabled" className="flex cursor-pointer items-center gap-2.5">
           <Checkbox
             id="reminders_enabled"
@@ -261,7 +278,7 @@ export function AppointmentForm({
         </label>
         
         <div className="pl-6.5 space-y-1.5">
-          <Label htmlFor="reminder_minutes" className="text-xs text-muted-foreground">Anunță-mă cu:</Label>
+          <Label htmlFor="reminder_minutes" className="text-xs text-muted-foreground">Anunță-mă cu</Label>
           <Select
             id="reminder_minutes"
             name="reminder_minutes"
@@ -273,7 +290,7 @@ export function AppointmentForm({
             <option value="120">2 ore înainte</option>
             <option value="1440">24 ore înainte</option>
           </Select>
-          <p className="text-[10px] text-muted-foreground italic">
+          <p className="text-[11px] text-muted-foreground">
             Notificare Google Calendar (Popup/Mobile).
           </p>
         </div>
@@ -281,7 +298,13 @@ export function AppointmentForm({
 
       {/* Recurring — shown only on new appointment */}
       {showRecurring && (
-        <div className="rounded-lg border p-4 space-y-3">
+        <div className="rounded-[1.75rem] border border-border/60 bg-card p-5 shadow-sm space-y-4">
+          <div className="space-y-1">
+            <h3 className="text-sm font-black tracking-tight text-foreground">Recurență</h3>
+            <p className="text-sm text-muted-foreground">
+              Generează dintr-o singură acțiune mai multe ședințe programate.
+            </p>
+          </div>
           <label htmlFor="recurring" className="flex cursor-pointer items-center gap-2.5">
             <Checkbox
               id="recurring"
@@ -334,7 +357,7 @@ export function AppointmentForm({
         </div>
       )}
 
-      <div className="flex items-center justify-end gap-3 border-t pt-5">
+      <div className="flex items-center justify-end gap-3 border-t border-border/60 pt-5">
         <Button type="button" variant="outline" asChild>
           <Link href={cancelHref}>Anulează</Link>
         </Button>

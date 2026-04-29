@@ -2,36 +2,44 @@ import Link from "next/link";
 import { CalendarDays, Plus } from "lucide-react";
 import { AppointmentRow } from "@/components/dashboard/appointment-row";
 import type { DashboardAppointment } from "@/lib/mock/dashboard";
+import { EmptyState, SectionCard } from "@/components/app/page-shell";
 
 export function AppointmentsToday({ appointments }: { appointments: DashboardAppointment[] }) {
   return (
-    <div className="rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-50">
-        <div>
-          <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
-            <CalendarDays className="h-4 w-4 text-primary" />
-            Programul de azi
-          </h3>
-          <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+    <SectionCard
+      title="Programul de azi"
+      description={
+        appointments.length
+          ? `${appointments.length} programări · include gărzi externe`
+          : "Nicio programare astăzi"
+      }
+      icon={CalendarDays}
+    >
+      <div className="flex items-center justify-between border-b border-border/60 px-6 py-4">
+        <div className="text-[11px] font-medium text-muted-foreground">
             {appointments.length
               ? `${appointments.length} programări · include gărzi externe`
               : "Nicio programare astăzi"}
-          </p>
         </div>
         <Link
           href="/dashboard/appointments/new"
-          className="flex items-center gap-1.5 rounded-xl bg-primary/10 px-3 py-1.5 text-[11px] font-black text-primary hover:bg-primary/20 transition-colors"
+          className="flex items-center gap-1.5 rounded-xl bg-primary/10 px-3 py-1.5 text-[11px] font-black text-primary transition-colors hover:bg-primary/20"
         >
           <Plus className="h-3.5 w-3.5" /> Adaugă
         </Link>
       </div>
-      <div className="p-4 space-y-2">
+      <div className="space-y-2 p-4">
         {appointments.length === 0 ? (
-          <p className="text-sm text-slate-400 text-center py-6">Agendă liberă.</p>
+          <EmptyState
+            title="Agendă liberă"
+            description="Nu există programări pentru astăzi. Poți adăuga rapid una nouă din această secțiune."
+            icon={CalendarDays}
+            action={{ label: "Adaugă programare", href: "/dashboard/appointments/new" }}
+          />
         ) : (
           appointments.map((a) => <AppointmentRow key={a.id} appointment={a} />)
         )}
       </div>
-    </div>
+    </SectionCard>
   );
 }

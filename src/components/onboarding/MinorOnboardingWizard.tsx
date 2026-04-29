@@ -142,7 +142,7 @@ export function MinorOnboardingWizard({ therapistSlug }: { therapistSlug?: strin
   return (
     <div className="mx-auto max-w-2xl space-y-8 p-1">
       {/* Header & Progress */}
-      <div className="space-y-5">
+      <div className="space-y-5 rounded-[2rem] border border-border/60 bg-card px-6 py-6 shadow-sm">
         <div className="space-y-2 text-center">
           <h1 className="text-3xl font-black tracking-tight text-slate-900">Înregistrare Minor</h1>
           <p className="text-sm text-slate-500 font-medium">Pasul {step} din 5: Acte legale și reprezentare</p>
@@ -163,7 +163,7 @@ export function MinorOnboardingWizard({ therapistSlug }: { therapistSlug?: strin
         <input type="text" tabIndex={-1} autoComplete="off" className="hidden" {...register("website")} />
         {/* Step 1: Parent Info */}
         {step === 1 && (
-          <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+          <div className="space-y-6 rounded-[1.75rem] border border-border/60 bg-card p-6 shadow-sm animate-in slide-in-from-right-4 duration-300">
             <div className="rounded-2xl border border-blue-100 bg-blue-50/50 p-4 flex gap-3 text-sm text-blue-700">
               <Info className="h-5 w-5 shrink-0" />
               <p>Acest formular trebuie completat de părintele sau reprezentantul legal al minorului.</p>
@@ -202,7 +202,7 @@ export function MinorOnboardingWizard({ therapistSlug }: { therapistSlug?: strin
 
         {/* Step 2: Minor Info */}
         {step === 2 && (
-          <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+          <div className="space-y-6 rounded-[1.75rem] border border-border/60 bg-card p-6 shadow-sm animate-in slide-in-from-right-4 duration-300">
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="full_name">Nume Complet Minor (Pacient)</Label>
@@ -220,7 +220,7 @@ export function MinorOnboardingWizard({ therapistSlug }: { therapistSlug?: strin
 
         {/* Step 3: Legal Situation (The "Bomb" Step) */}
         {step === 3 && (
-          <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+          <div className="space-y-6 rounded-[1.75rem] border border-border/60 bg-card p-6 shadow-sm animate-in slide-in-from-right-4 duration-300">
             <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 flex gap-3 text-sm text-amber-800">
               <AlertTriangle className="h-5 w-5 shrink-0 text-amber-600" />
               <div>
@@ -290,7 +290,7 @@ export function MinorOnboardingWizard({ therapistSlug }: { therapistSlug?: strin
 
         {/* Step 4: Referral Info */}
         {step === 4 && (
-          <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+          <div className="space-y-6 rounded-[1.75rem] border border-border/60 bg-card p-6 shadow-sm animate-in slide-in-from-right-4 duration-300">
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="referral_source">Cum ați aflat despre cabinetul nostru?</Label>
@@ -314,7 +314,7 @@ export function MinorOnboardingWizard({ therapistSlug }: { therapistSlug?: strin
 
         {/* Step 5: Consents & Liability */}
         {step === 5 && (
-          <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+          <div className="space-y-6 rounded-[1.75rem] border border-border/60 bg-card p-6 shadow-sm animate-in slide-in-from-right-4 duration-300">
              <div className="rounded-2xl border-4 border-rose-600 bg-rose-50 p-6 space-y-4">
                 <div className="flex items-start gap-4">
                    <div className="h-8 w-8 bg-rose-600 rounded-full flex items-center justify-center shrink-0">
@@ -360,7 +360,7 @@ export function MinorOnboardingWizard({ therapistSlug }: { therapistSlug?: strin
         )}
 
         {/* Navigation Buttons */}
-        <div className="flex items-center justify-between pt-6">
+        <div className="flex items-center justify-between border-t border-border/60 pt-6">
           <Button
             type="button"
             variant="ghost"

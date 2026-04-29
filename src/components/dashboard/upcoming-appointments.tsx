@@ -1,24 +1,26 @@
 import { CalendarRange } from "lucide-react";
 import { AppointmentRow } from "@/components/dashboard/appointment-row";
 import type { DashboardAppointment } from "@/lib/mock/dashboard";
+import { EmptyState, SectionCard } from "@/components/app/page-shell";
 
 export function UpcomingAppointments({ appointments }: { appointments: DashboardAppointment[] }) {
   return (
-    <div className="rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
-      <div className="px-6 py-4 border-b border-slate-50">
-        <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
-          <CalendarRange className="h-4 w-4 text-primary" />
-          Săptămâna următoare
-        </h3>
-        <p className="text-[11px] text-slate-400 font-medium mt-0.5">Următoarele programări confirmate</p>
-      </div>
-      <div className="p-4 space-y-2">
+    <SectionCard
+      title="Săptămâna următoare"
+      description="Următoarele programări confirmate."
+      icon={CalendarRange}
+    >
+      <div className="space-y-2 p-4">
         {appointments.length === 0 ? (
-          <p className="text-sm text-slate-400 text-center py-6">Nicio programare în vedere.</p>
+          <EmptyState
+            title="Nicio programare în vedere"
+            description="După confirmarea următoarelor sesiuni, ele vor apărea aici în ordinea apropiată."
+            icon={CalendarRange}
+          />
         ) : (
           appointments.map((a) => <AppointmentRow key={a.id} appointment={a} showDate />)
         )}
       </div>
-    </div>
+    </SectionCard>
   );
 }

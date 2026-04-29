@@ -24,6 +24,7 @@ import {
   updateCasSettings,
   updatePinSettings,
 } from "@/app/dashboard/settings/settings-actions";
+import { SetupBanner } from "@/components/app/page-shell";
 
 const DAYS: { key: keyof WorkSchedule; label: string }[] = [
   { key: "monday",    label: "Luni" },
@@ -48,6 +49,10 @@ function SaveFeedback({ saved, error }: { saved: boolean; error: string | null }
   );
   return null;
 }
+
+const settingsCardClassName = "rounded-[1.75rem] border-border/60 shadow-sm";
+const settingsCardHeaderClassName = "border-b border-border/60 bg-muted/20 pb-4";
+const settingsFooterClassName = "border-t border-border/60 pt-4 flex items-center gap-4 flex-wrap";
 
 // ─── Tab: Profil ─────────────────────────────────────────────────────────────
 
@@ -79,7 +84,7 @@ function ProfileTab({ s }: { s: TherapistSettings }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <Card>
+      <Card className={settingsCardClassName}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <UserCircle className="h-5 w-5 text-primary" />
@@ -87,7 +92,7 @@ function ProfileTab({ s }: { s: TherapistSettings }) {
           </CardTitle>
           <CardDescription>Informațiile care vor apărea pe documentele emise (inclusiv facturi).</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-5 pt-6">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="full_name">Nume Complet Titular</Label>
@@ -127,7 +132,7 @@ function ProfileTab({ s }: { s: TherapistSettings }) {
             </div>
           </div>
         </CardContent>
-        <CardFooter className="border-t pt-4 flex items-center gap-4">
+        <CardFooter className={settingsFooterClassName}>
           <Button disabled={isPending}>{isPending ? "Se salvează…" : "Salvează Profilul"}</Button>
           <SaveFeedback saved={saved} error={error} />
         </CardFooter>
@@ -179,7 +184,7 @@ function PricingTab({ s }: { s: TherapistSettings }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <Card>
+      <Card className={settingsCardClassName}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Euro className="h-5 w-5 text-primary" />
@@ -187,10 +192,10 @@ function PricingTab({ s }: { s: TherapistSettings }) {
           </CardTitle>
           <CardDescription>Configurează tipurile de ședințe și prețul lor implicit (RON).</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-5 pt-6">
           <div className="space-y-2">
             {sessionTypes.map((row, i) => (
-              <div key={i} className="flex items-center gap-2">
+              <div key={i} className="flex items-center gap-2 rounded-2xl border border-border/60 bg-muted/20 p-2">
                 <Input
                   value={row.name}
                   onChange={e => updateRow(i, "name", e.target.value)}
@@ -224,7 +229,7 @@ function PricingTab({ s }: { s: TherapistSettings }) {
             <Plus className="h-4 w-4" /> Adaugă Tarif
           </Button>
 
-          <div className="flex items-center gap-3 pt-2 border-t">
+          <div className="flex items-center gap-3 border-t border-border/60 pt-4">
             <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
             <Label htmlFor="duration" className="shrink-0">Durată implicită ședință</Label>
             <Input
@@ -240,7 +245,7 @@ function PricingTab({ s }: { s: TherapistSettings }) {
             <span className="text-sm text-muted-foreground">minute</span>
           </div>
         </CardContent>
-        <CardFooter className="border-t pt-4 flex items-center gap-4">
+        <CardFooter className={settingsFooterClassName}>
           <Button disabled={isPending}>{isPending ? "Se salvează…" : "Salvează Tarifele"}</Button>
           <SaveFeedback saved={saved} error={error} />
         </CardFooter>
@@ -284,7 +289,7 @@ function ScheduleTab({ s }: { s: TherapistSettings }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <Card>
+      <Card className={settingsCardClassName}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5 text-primary" />
@@ -295,7 +300,7 @@ function ScheduleTab({ s }: { s: TherapistSettings }) {
             programări în intervalele active.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <div className="space-y-1">
             {/* Header */}
             <div className="grid grid-cols-[100px_1fr] gap-3 px-2 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -305,7 +310,7 @@ function ScheduleTab({ s }: { s: TherapistSettings }) {
             {DAYS.map(({ key, label }) => {
               const day = schedule[key];
               return (
-                <div key={key} className={`grid grid-cols-[100px_1fr] gap-3 rounded-lg px-2 py-2.5 ${day.enabled ? "bg-muted/30" : "opacity-50"}`}>
+                <div key={key} className={`grid grid-cols-[100px_1fr] gap-3 rounded-2xl border px-3 py-3 ${day.enabled ? "border-border/60 bg-muted/20" : "border-border/40 opacity-50"}`}>
                   {/* Toggle + label */}
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -363,7 +368,7 @@ function ScheduleTab({ s }: { s: TherapistSettings }) {
             })}
           </div>
         </CardContent>
-        <CardFooter className="border-t pt-4 flex items-center gap-4">
+        <CardFooter className={settingsFooterClassName}>
           <Button disabled={isPending}>{isPending ? "Se salvează…" : "Salvează Orarul"}</Button>
           <SaveFeedback saved={saved} error={error} />
         </CardFooter>
@@ -413,8 +418,8 @@ function IntegrationsTab({ s }: { s: TherapistSettings }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Google */}
-      <Card>
-        <CardHeader className="bg-muted/20 border-b pb-4">
+      <Card className={settingsCardClassName}>
+        <CardHeader className={settingsCardHeaderClassName}>
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
@@ -433,8 +438,8 @@ function IntegrationsTab({ s }: { s: TherapistSettings }) {
       </Card>
 
       {/* SmartBill */}
-      <Card>
-        <CardHeader className="bg-muted/20 border-b pb-4">
+      <Card className={settingsCardClassName}>
+        <CardHeader className={settingsCardHeaderClassName}>
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
@@ -467,7 +472,7 @@ function IntegrationsTab({ s }: { s: TherapistSettings }) {
       </Card>
 
       {/* Historical Import Entry */}
-      <Card className="border-primary/20 bg-primary/5">
+      <Card className="rounded-[1.75rem] border-primary/20 bg-primary/5 shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-bold flex items-center gap-2">
             <History className="h-4 w-4 text-primary" />
@@ -488,8 +493,8 @@ function IntegrationsTab({ s }: { s: TherapistSettings }) {
 
 
       {/* Twilio */}
-      <Card>
-        <CardHeader className="bg-muted/20 border-b pb-4">
+      <Card className={settingsCardClassName}>
+        <CardHeader className={settingsCardHeaderClassName}>
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
@@ -550,7 +555,7 @@ function SecurityTab({ s }: { s: TherapistSettings }) {
   }
 
   return (
-    <Card className="border-amber-200 bg-amber-50/30">
+    <Card className="rounded-[1.75rem] border-amber-200 bg-amber-50/30 shadow-sm">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-amber-800">
           <Shield className="h-5 w-5" />
@@ -561,7 +566,7 @@ function SecurityTab({ s }: { s: TherapistSettings }) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex items-start gap-4 p-4 rounded-md bg-background border mb-6">
+        <div className="mb-6 flex items-start gap-4 rounded-2xl border border-border/60 bg-background p-4">
           <div className="p-2 bg-emerald-100 rounded-full shrink-0">
             <CheckCircle2 className="h-5 w-5 text-emerald-600" />
           </div>
@@ -652,7 +657,7 @@ function CasTab({ s }: { s: TherapistSettings }) {
 
   return (
     <form onSubmit={handleSubmit}>
-      <Card className="border-blue-200 bg-blue-50/30">
+      <Card className="rounded-[1.75rem] border-blue-200 bg-blue-50/30 shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-blue-800">
             <Hospital className="h-5 w-5" />
@@ -664,7 +669,7 @@ function CasTab({ s }: { s: TherapistSettings }) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <label className="flex items-center gap-3 p-4 rounded-md bg-background border cursor-pointer hover:bg-muted/20 transition-colors">
+          <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-border/60 bg-background p-4 transition-colors hover:bg-muted/20">
             <input
               type="checkbox"
               checked={form.cas_active}
@@ -714,8 +719,12 @@ function CasTab({ s }: { s: TherapistSettings }) {
 export function SettingsClient({ settings }: { settings: TherapistSettings }) {
   return (
     <Tabs defaultValue="profile" className="w-full">
+      <SetupBanner
+        title="Setări cabinet"
+        description="Configurează identitatea profesională, tarifele, orarul și integrările într-un singur loc. Modificările se aplică fluxurilor de programare, facturare și documente."
+      />
       <div className="mb-4 overflow-x-auto pb-2">
-      <TabsList className="flex min-w-max gap-2">
+      <TabsList className="flex min-w-max gap-2 rounded-2xl border border-border/60 bg-card p-1 shadow-sm">
         <TabsTrigger value="profile">Profil</TabsTrigger>
         <TabsTrigger value="pricing">Tarife</TabsTrigger>
         <TabsTrigger value="schedule">Orar</TabsTrigger>

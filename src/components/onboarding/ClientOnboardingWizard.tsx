@@ -115,7 +115,7 @@ export function ClientOnboardingWizard({ token, clientName }: ClientOnboardingWi
   return (
     <div className="mx-auto max-w-xl space-y-8 p-1">
       {/* Header & Progress */}
-      <div className="space-y-4">
+      <div className="space-y-4 rounded-[2rem] border border-border/60 bg-card px-6 py-6 shadow-sm">
         <div className="space-y-2 text-center">
           <h1 className="text-3xl font-black tracking-tight">Bun venit, {clientName}</h1>
           <p className="text-sm text-muted-foreground">
@@ -137,8 +137,8 @@ export function ClientOnboardingWizard({ token, clientName }: ClientOnboardingWi
         <input type="text" tabIndex={-1} autoComplete="off" className="hidden" {...register("website")} />
         {/* Step 1: Billing */}
         {step === 1 && (
-          <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
-            <div className="flex items-center gap-2 rounded-lg bg-amber-50 p-3 text-xs text-amber-800 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-100 dark:border-amber-900">
+          <div className="space-y-6 rounded-[1.75rem] border border-border/60 bg-card p-6 shadow-sm animate-in slide-in-from-right-4 duration-300">
+            <div className="flex items-center gap-2 rounded-2xl bg-amber-50 p-3 text-xs text-amber-800 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-100 dark:border-amber-900">
               <Info className="h-4 w-4" />
               Datele sunt necesare conform legislației ANAF pentru emiterea facturii ședinței.
             </div>
@@ -163,8 +163,8 @@ export function ClientOnboardingWizard({ token, clientName }: ClientOnboardingWi
 
         {/* Step 2: Emergency Contact */}
         {step === 2 && (
-          <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
-            <div className="flex items-center gap-2 rounded-lg bg-emerald-50 p-3 text-xs text-emerald-800 dark:bg-emerald-950/20 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900">
+          <div className="space-y-6 rounded-[1.75rem] border border-border/60 bg-card p-6 shadow-sm animate-in slide-in-from-right-4 duration-300">
+            <div className="flex items-center gap-2 rounded-2xl bg-emerald-50 p-3 text-xs text-emerald-800 dark:bg-emerald-950/20 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900">
               <ShieldCheck className="h-4 w-4" />
               Acest contact va fi apelat doar în situații de urgență medicală sau risc iminent.
             </div>
@@ -192,7 +192,7 @@ export function ClientOnboardingWizard({ token, clientName }: ClientOnboardingWi
 
         {/* Step 3: Referral */}
         {step === 3 && (
-          <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+          <div className="space-y-6 rounded-[1.75rem] border border-border/60 bg-card p-6 shadow-sm animate-in slide-in-from-right-4 duration-300">
             <div className="space-y-2">
               <Label htmlFor="referral_source">Cum ai aflat despre noi?</Label>
               <Select 
@@ -226,8 +226,8 @@ export function ClientOnboardingWizard({ token, clientName }: ClientOnboardingWi
 
         {/* Step 4: Consent */}
         {step === 4 && (
-          <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
-            <div className="space-y-4 rounded-xl border border-primary/20 bg-muted/30 p-6">
+          <div className="space-y-6 rounded-[1.75rem] border border-border/60 bg-card p-6 shadow-sm animate-in slide-in-from-right-4 duration-300">
+            <div className="space-y-4 rounded-2xl border border-primary/20 bg-muted/30 p-6">
               <div className="flex items-start space-x-3">
                 <Checkbox 
                   id="gdpr_consent" 
@@ -264,7 +264,7 @@ export function ClientOnboardingWizard({ token, clientName }: ClientOnboardingWi
         )}
 
         {/* Navigation Buttons */}
-        <div className="flex items-center justify-between pt-4">
+        <div className="flex items-center justify-between border-t border-border/60 pt-5">
           <Button
             type="button"
             variant="ghost"

@@ -28,13 +28,14 @@ interface MonthlySummary {
   totalSessions: number; totalHours: number;
   totalAmount: number; collectedAmount: number; uncollectedAmount: number;
   clients: ClientRow[];
-  isDemo?: boolean;
+  setupRequired?: boolean;
 }
 
 interface ForecastMonth { label: string; projected: number; sessions: number; }
 interface HistoryMonth  { label: string; actual: number;    sessions: number; }
 
 interface Forecast { history: HistoryMonth[]; forecast: ForecastMonth[]; }
+interface ForecastPayload extends Forecast { setupRequired?: boolean; }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -98,7 +99,7 @@ function normalizeMonthlySummary(payload: unknown, fallbackYear: number, fallbac
     collectedAmount: asNumber(source.collectedAmount),
     uncollectedAmount: asNumber(source.uncollectedAmount),
     clients,
-    isDemo: source.isDemo,
+    setupRequired: Boolean(source.setupRequired),
   };
 }
 
@@ -109,7 +110,7 @@ export default function BillingPage() {
   const [year,  setYear]  = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [data,  setData]  = useState<MonthlySummary | null>(null);
-  const [forecast, setForecast] = useState<Forecast | null>(null);
+  const [forecast, setForecast] = useState<ForecastPayload | null>(null);
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
@@ -127,7 +128,7 @@ export default function BillingPage() {
 
   const loadForecast = useCallback(async () => {
     const res = await fetch("/api/billing/revenue-forecast?months=2");
-    setForecast(await res.json());
+    setForecast(await res.json() as ForecastPayload);
   }, []);
 
   useEffect(() => {
@@ -182,6 +183,7 @@ export default function BillingPage() {
   const clients = data?.clients ?? [];
   const unpaidClients = clients.filter(c => c.invoiceStatus !== "ACHITAT");
   const collectionRate = data ? Math.round((data.collectedAmount / (data.totalAmount || 1)) * 100) : 0;
+  const setupRequired = Boolean(data?.setupRequired || forecast?.setupRequired);
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6 pb-10">
@@ -219,6 +221,12 @@ export default function BillingPage() {
           )}
         </div>
       </div>
+
+      {setupRequired && (
+        <div className="rounded-3xl border border-amber-200 bg-amber-50/80 px-5 py-4 text-sm text-amber-950 shadow-sm">
+          Raportarea financiară folosește acum doar date reale. Configurează Supabase pentru a încărca încasările și prognoza.
+        </div>
+      )}
 
       {/* Summary cards */}
       {data && (

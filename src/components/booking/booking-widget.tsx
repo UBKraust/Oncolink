@@ -34,9 +34,20 @@ export function BookingWidget({ therapistSlug }: { therapistSlug?: string | null
   useEffect(() => {
     const qs = therapistSlug ? `?therapist=${encodeURIComponent(therapistSlug)}` : "";
     fetch(`/api/book${qs}`)
-      .then((r) => r.json())
-      .then((d: { slots?: Slot[] }) => setSlots(d.slots ?? []))
-      .catch(() => setError("Nu am putut încărca orarul disponibil."))
+      .then(async (r) => {
+        const data = (await r.json()) as { slots?: Slot[]; error?: string };
+        if (!r.ok) {
+          throw new Error(data.error ?? "Nu am putut încărca orarul disponibil.");
+        }
+        setSlots(data.slots ?? []);
+      })
+      .catch((caught) =>
+        setError(
+          caught instanceof Error
+            ? caught.message
+            : "Nu am putut încărca orarul disponibil.",
+        ),
+      )
       .finally(() => setLoadingSlots(false));
   }, [therapistSlug]);
 

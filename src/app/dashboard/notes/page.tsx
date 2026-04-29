@@ -6,11 +6,7 @@ import { CalendarCheck, FileLock2, Lock, NotebookPen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   Table,
@@ -24,6 +20,7 @@ import { listAppointments } from "@/lib/appointments/queries";
 import { deriveLocation, locationLabel } from "@/lib/appointments/helpers";
 import { listNotesMetadata } from "@/lib/notes/queries";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { DashboardPage, EmptyState, PageHeader, SectionCard, SetupBanner } from "@/components/app/page-shell";
 
 export default async function NotesIndexPage() {
   const configured = isSupabaseConfigured();
@@ -43,25 +40,20 @@ export default async function NotesIndexPage() {
     );
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Note clinice</h1>
-          <p className="text-sm text-muted-foreground">
-            {sessions.length} ședințe · {notes.length} note criptate local
-          </p>
-        </div>
-        <Badge variant="secondary" className="gap-1 self-start">
-          <Lock className="h-3 w-3" />
-          End-to-end · PIN local
-        </Badge>
-      </div>
+    <DashboardPage className="max-w-6xl">
+      <PageHeader
+        title="Note clinice"
+        description={`${sessions.length} ședințe · ${notes.length} note criptate local`}
+        action={
+          <Badge variant="secondary" className="gap-1 self-start">
+            <Lock className="h-3 w-3" />
+            End-to-end · PIN local
+          </Badge>
+        }
+      />
 
       {!configured && (
-        <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-          Mod demo — ciphertext-urile de exemplu nu se pot decripta cu PIN-ul
-          tău. Setează Supabase pentru a scrie note reale.
-        </div>
+        <SetupBanner description="Editorul de note clinice folosește acum doar note reale. După configurarea Supabase poți crea și cripta notele cabinetului." />
       )}
 
       <div className="rounded-md border bg-muted/40 p-4 text-xs text-muted-foreground">
@@ -76,18 +68,17 @@ export default async function NotesIndexPage() {
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Ședințe</CardTitle>
-          <CardDescription>
-            Alege o ședință pentru a deschide editorul criptat.
-          </CardDescription>
-        </CardHeader>
+      <SectionCard
+        title="Ședințe"
+        description="Alege o ședință pentru a deschide editorul criptat."
+      >
         <CardContent className="p-0">
           {sessions.length === 0 ? (
-            <p className="p-6 text-sm text-muted-foreground">
-              Nicio ședință.
-            </p>
+            <EmptyState
+              title="Nu există ședințe disponibile"
+              description="Notele apar după ce ai programări reale și acces la baza de date configurată."
+              icon={NotebookPen}
+            />
           ) : (
             <Table>
               <TableHeader>
@@ -158,7 +149,7 @@ export default async function NotesIndexPage() {
             </Table>
           )}
         </CardContent>
-      </Card>
-    </div>
+      </SectionCard>
+    </DashboardPage>
   );
 }

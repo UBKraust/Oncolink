@@ -24,8 +24,10 @@ import {
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   if (!isSupabaseConfigured()) {
-    const slots = getAvailableSlots([], 14);
-    return NextResponse.json({ slots: slots.map((s) => ({ start: s.startISO, end: s.endISO })) });
+    return NextResponse.json(
+      { error: "Booking public indisponibil până la configurarea Supabase." },
+      { status: 503 },
+    );
   }
 
   const rateLimit = await enforceRateLimit({

@@ -3,8 +3,6 @@ export const runtime = "edge";
 import { NextRequest, NextResponse } from "next/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { mockAppointments } from "@/lib/mock/appointments";
-import { mockClients } from "@/lib/mock/clients";
 import { initialsFromName } from "@/lib/clients/validation";
 
 /**
@@ -22,24 +20,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   type Row = { date: string; initials: string; service: string; duration: number; location: string };
   const rows: Row[] = [];
 
-  if (!isSupabaseConfigured()) {
-    const finalized = mockAppointments.filter((a) => {
-      if (a.status !== "FINALIZAT") return false;
-      if (from && new Date(a.appointment_date) < new Date(from)) return false;
-      if (to && new Date(a.appointment_date) > new Date(to + "T23:59:59")) return false;
-      return true;
-    });
-    for (const a of finalized) {
-      const client = mockClients.find((c) => c.id === a.client_id);
-      rows.push({
-        date: new Date(a.appointment_date).toLocaleDateString("ro-RO"),
-        initials: client?.full_name ? initialsFromName(client.full_name) : "—",
-        service: "Psihoterapie individuală",
-        duration: a.duration_minutes,
-        location: a.meet_link ? "Online" : a.is_external_duty ? "Policlinică" : "Cabinet privat",
-      });
-    }
-  } else {
+  if (isSupabaseConfigured()) {
     const supabase = await createSupabaseServerClient();
     let query = supabase
       .from("appointments")

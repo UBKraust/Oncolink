@@ -2,8 +2,8 @@
 // Predicts next N months revenue from confirmed future appointments
 
 import { NextRequest, NextResponse } from "next/server";
-import { mockPayments } from "@/lib/mock/payments";
-import { mockClients } from "@/lib/mock/clients";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const runtime = "edge";
 
@@ -12,58 +12,94 @@ export async function GET(req: NextRequest) {
   const ahead = Math.min(parseInt(searchParams.get("months") ?? "2"), 4);
 
   const now  = new Date();
-  const result: { label: string; projected: number; sessions: number }[] = [];
+  const emptyHistory: { label: string; actual: number; sessions: number }[] = [];
+  const emptyForecast: { label: string; projected: number; sessions: number }[] = [];
 
-  // Build client price map
-  const priceMap = Object.fromEntries(
-    mockClients.map(c => [c.id, parseFloat(c.session_price ?? "0") || 0])
-  );
-
-  // For next N months, project assuming the client keeps their current session_frequency
-  const FREQ_MAP: Record<string, number> = {
-    SAPTAMANAL: 4,  // ~4 sessions/month
-    BILUNAR:    2,
-    LUNAR:      1,
-    OCAZIONAL:  0.5,
-  };
-
-  for (let i = 1; i <= ahead; i++) {
-    const dt    = new Date(now.getFullYear(), now.getMonth() + i, 1);
-    const label = dt.toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
-
-    let projected = 0;
-    let sessions  = 0;
-
-    for (const client of mockClients) {
-      const freq  = FREQ_MAP[(client.session_frequency ?? "OCAZIONAL")] ?? 0;
-      const price = priceMap[client.id] ?? 0;
-      const s = Math.round(freq);
-      sessions  += s;
-      projected += s * price;
-    }
-
-    result.push({ label, projected, sessions });
+  if (!isSupabaseConfigured()) {
+    return NextResponse.json({ history: emptyHistory, forecast: emptyForecast, setupRequired: true });
   }
 
-  // Also gather last 3 months actuals for comparison
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError) {
+    return NextResponse.json({ error: userError.message }, { status: 500 });
+  }
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const startHistory = new Date(now.getFullYear(), now.getMonth() - 3, 1).toISOString();
+  const endForecast = new Date(now.getFullYear(), now.getMonth() + ahead + 1, 1).toISOString();
+
+  const [{ data: appointments, error: appointmentError }, { data: invoices, error: invoiceError }] =
+    await Promise.all([
+      supabase
+        .from("appointments")
+        .select("appointment_date,status")
+        .eq("therapist_id", user.id)
+        .gte("appointment_date", startHistory)
+        .lt("appointment_date", endForecast),
+      supabase
+        .from("invoices")
+        .select("issued_at,amount")
+        .eq("therapist_id", user.id)
+        .gte("issued_at", startHistory)
+        .lt("issued_at", endForecast),
+    ]);
+
+  if (appointmentError || invoiceError) {
+    return NextResponse.json(
+      { error: appointmentError?.message ?? invoiceError?.message ?? "Nu am putut calcula prognoza." },
+      { status: 500 },
+    );
+  }
+
   const history: { label: string; actual: number; sessions: number }[] = [];
   for (let i = 3; i >= 1; i--) {
-    const dt    = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const y     = dt.getFullYear();
-    const m     = dt.getMonth() + 1;
+    const dt = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const next = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
     const label = dt.toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
-
-    const monthPay = mockPayments.filter(p => {
-      const d = new Date(p.appointment_date);
-      return d.getFullYear() === y && d.getMonth() + 1 === m;
+    const monthInvoices = (invoices ?? []).filter((invoice) => {
+      const issuedAt = new Date(invoice.issued_at);
+      return issuedAt >= dt && issuedAt < next;
     });
-
+    const monthAppointments = (appointments ?? []).filter((appointment) => {
+      const appointmentDate = new Date(appointment.appointment_date);
+      return appointmentDate >= dt && appointmentDate < next && appointment.status === "FINALIZAT";
+    });
     history.push({
       label,
-      actual: monthPay.reduce((s, p) => s + p.amount, 0),
-      sessions: monthPay.length,
+      actual: monthInvoices.reduce((sum, invoice) => sum + Number(invoice.amount ?? 0), 0),
+      sessions: monthAppointments.length,
     });
   }
 
-  return NextResponse.json({ history, forecast: result });
+  const forecast: { label: string; projected: number; sessions: number }[] = [];
+  for (let i = 1; i <= ahead; i++) {
+    const dt = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    const next = new Date(now.getFullYear(), now.getMonth() + i + 1, 1);
+    const label = dt.toLocaleDateString("ro-RO", { month: "long", year: "numeric" });
+    const monthAppointments = (appointments ?? []).filter((appointment) => {
+      const appointmentDate = new Date(appointment.appointment_date);
+      return appointmentDate >= dt && appointmentDate < next && appointment.status !== "ANULAT";
+    });
+    const referenceRevenue = history.at(-1)?.actual ?? 0;
+    const projected =
+      i === 1
+        ? referenceRevenue
+        : Math.round((referenceRevenue / Math.max(history.at(-1)?.sessions ?? 1, 1)) * monthAppointments.length);
+
+    forecast.push({
+      label,
+      projected,
+      sessions: monthAppointments.length,
+    });
+  }
+
+  return NextResponse.json({ history, forecast });
 }

@@ -6,11 +6,7 @@ import { Building2, CalendarPlus, ExternalLink, Home, Video } from "lucide-react
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   Table,
@@ -34,6 +30,7 @@ import { getNoteByAppointment } from "@/lib/notes/queries";
 import { SessionDrawer } from "@/components/appointments/SessionDrawer";
 import { AppointmentsViewManager } from "@/components/appointments/AppointmentsViewManager";
 import { cn } from "@/lib/utils";
+import { DashboardPage, EmptyState, PageHeader, SectionCard, SetupBanner } from "@/components/app/page-shell";
 
 const locationIcon = {
   PRIVAT: Home,
@@ -98,28 +95,22 @@ export default async function AppointmentsPage({
   const closeUrl = `/dashboard/appointments${closeParams.size ? `?${closeParams}` : ""}`;
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Programări</h1>
-          <p className="text-sm text-muted-foreground">
-            {appointments.length} intrări ·{" "}
-            {counts["CONFIRMAT"] ?? 0} confirmate ·{" "}
-            {counts["PROGRAMAT"] ?? 0} în așteptare
-          </p>
-        </div>
-        <Button asChild>
-          <Link href="/dashboard/appointments/new">
-            <CalendarPlus className="h-4 w-4" />
-            Programare nouă
-          </Link>
-        </Button>
-      </div>
+    <DashboardPage className="max-w-6xl">
+      <PageHeader
+        title="Programări"
+        description={`${appointments.length} intrări · ${counts["CONFIRMAT"] ?? 0} confirmate · ${counts["PROGRAMAT"] ?? 0} în așteptare`}
+        action={
+          <Button asChild>
+            <Link href="/dashboard/appointments/new">
+              <CalendarPlus className="h-4 w-4" />
+              Programare nouă
+            </Link>
+          </Button>
+        }
+      />
 
       {!configured && (
-        <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-          Mod demo — afișez date de mostră.
-        </div>
+        <SetupBanner description="Calendarul clinic va afișa doar date reale. Datele demo au fost eliminate din această secțiune." />
       )}
 
       {/* Status filter tabs */}
@@ -144,27 +135,18 @@ export default async function AppointmentsPage({
 
       {/* View Manager (Calendar/List toggle) */}
       <AppointmentsViewManager appointments={appointments}>
-        <Card>
-          <CardHeader>
-            <CardTitle>Lista programărilor</CardTitle>
-            <CardDescription>
-              Click pe o programare pentru a o deschide rapid. Sortate
-              descrescător după dată.
-            </CardDescription>
-          </CardHeader>
+        <SectionCard
+          title="Lista programărilor"
+          description="Deschide rapid o programare sau schimbă vizualizarea în calendar."
+        >
           <CardContent className="p-0">
             {appointments.length === 0 ? (
-              <div className="p-8 text-center">
-                <p className="text-sm text-muted-foreground">
-                  Nicio programare găsită pentru filtrele curente.
-                </p>
-                <Button asChild variant="outline" className="mt-4">
-                  <Link href="/dashboard/appointments/new">
-                    <CalendarPlus className="h-4 w-4" />
-                    Creează o programare
-                  </Link>
-                </Button>
-              </div>
+              <EmptyState
+                title="Nu există programări pentru selecția curentă"
+                description="Ajustează filtrele sau creează prima programare pentru a începe planificarea clinică."
+                action={{ label: "Creează o programare", href: "/dashboard/appointments/new" }}
+                icon={CalendarPlus}
+              />
             ) : (
               <div className="overflow-x-auto">
               <Table>
@@ -287,7 +269,7 @@ export default async function AppointmentsPage({
               </div>
             )}
           </CardContent>
-        </Card>
+        </SectionCard>
       </AppointmentsViewManager>
 
 
@@ -300,7 +282,7 @@ export default async function AppointmentsPage({
           closeUrl={closeUrl}
         />
       )}
-    </div>
+    </DashboardPage>
   );
 }
 

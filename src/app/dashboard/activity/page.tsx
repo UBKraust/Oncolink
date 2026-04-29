@@ -3,11 +3,7 @@ import { ro } from "date-fns/locale";
 import { Activity } from "lucide-react";
 
 import {
-  Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   Table,
@@ -21,6 +17,7 @@ import { listAppointments } from "@/lib/appointments/queries";
 import { initialsFromName } from "@/lib/clients/validation";
 import { ActivityExportButton } from "@/components/activity/export-button";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { DashboardPage, EmptyState, PageHeader, SectionCard, SetupBanner } from "@/components/app/page-shell";
 
 export default async function ActivityPage({
   searchParams,
@@ -33,23 +30,15 @@ export default async function ActivityPage({
   const appointments = await listAppointments({ status: "FINALIZAT", from, to });
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Registru activitate
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Export CPR · {appointments.length} ședințe finalizate · fără PII
-          </p>
-        </div>
-        <ActivityExportButton from={from} to={to} />
-      </div>
+    <DashboardPage className="max-w-5xl">
+      <PageHeader
+        title="Registru activitate"
+        description={`Export CPR · ${appointments.length} ședințe finalizate · fără PII`}
+        action={<ActivityExportButton from={from} to={to} />}
+      />
 
       {!configured && (
-        <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-          Mod demo — date de mostră.
-        </div>
+        <SetupBanner description="Exportul de activitate va deveni disponibil după configurarea Supabase. Datele demo au fost eliminate." />
       )}
 
       {/* Date range filter */}
@@ -88,22 +77,18 @@ export default async function ActivityPage({
         )}
       </form>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Activity className="h-5 w-5" />
-            Ședințe finalizate
-          </CardTitle>
-          <CardDescription>
-            Coloanele exportate: Data, Inițiale client, Tip serviciu, Durată,
-            Locație — fără date personale identificabile.
-          </CardDescription>
-        </CardHeader>
+      <SectionCard
+        title="Ședințe finalizate"
+        description="Coloanele exportate: data, inițiale client, tip serviciu, durată și locație."
+        icon={Activity}
+      >
         <CardContent className="p-0">
           {appointments.length === 0 ? (
-            <p className="p-6 text-sm text-muted-foreground">
-              Nicio ședință finalizată în intervalul selectat.
-            </p>
+            <EmptyState
+              title="Nu există ședințe finalizate în intervalul selectat"
+              description="Ajustează perioada sau finalizează programări pentru a genera registrul CPR."
+              icon={Activity}
+            />
           ) : (
             <Table>
               <TableHeader>
@@ -151,7 +136,7 @@ export default async function ActivityPage({
             </Table>
           )}
         </CardContent>
-      </Card>
-    </div>
+      </SectionCard>
+    </DashboardPage>
   );
 }

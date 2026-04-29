@@ -12,13 +12,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { mockAssessments } from "@/lib/mock/assessments";
-import { mockClients } from "@/lib/mock/clients";
-import { seededTests } from "@/lib/assessments/seededTests";
+import { DashboardPage, EmptyState, PageHeader, SectionCard, SetupBanner } from "@/components/app/page-shell";
 type AssessmentRegistryRow = {
   id: string;
   client_id: string | null;
@@ -49,67 +47,48 @@ export default async function AssessmentsRegistryPage() {
       `)
       .order("created_at", { ascending: false });
     assessments = (data ?? []) as AssessmentRegistryRow[];
-  } else {
-    // Enrich mock assessments with seeded test names for display
-    assessments = mockAssessments.map((a) => {
-      const testType = String(a.scoring_data.test_type ?? "").toLowerCase();
-      const test = seededTests.find((t) => t.name.toLowerCase().includes(testType));
-      const client = mockClients.find((c) => c.id === a.client_id);
-      return {
-        ...a,
-        client: { full_name: client?.full_name ?? "Client demo" },
-        test: { name: test?.name ?? "Test Standard" },
-        calculated_score: null,
-      };
-    });
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Evaluări Psihologice</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Registrul complet al diagnosticelor și evaluărilor periodice.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" asChild>
-            <Link href="/dashboard/tests">
-              <ClipboardList className="mr-2 h-4 w-4" />
-              Catalog Teste
-            </Link>
-          </Button>
-          <Button asChild>
-            <Link href="/dashboard/assessments/new">
-              <Plus className="mr-2 h-4 w-4" />
-              Evaluare Nouă
-            </Link>
-          </Button>
-        </div>
-      </div>
+    <DashboardPage className="max-w-5xl">
+      <PageHeader
+        title="Evaluări psihologice"
+        description="Registrul complet al diagnosticelor și evaluărilor periodice."
+        action={
+          <>
+            <Button variant="outline" asChild>
+              <Link href="/dashboard/tests">
+                <ClipboardList className="mr-2 h-4 w-4" />
+                Catalog teste
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link href="/dashboard/assessments/new">
+                <Plus className="mr-2 h-4 w-4" />
+                Evaluare nouă
+              </Link>
+            </Button>
+          </>
+        }
+      />
 
-      {!configured && (
-        <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
-          Mod demo — date de mostră.
-        </div>
-      )}
+      {!configured ? (
+        <SetupBanner description="Istoricul evaluărilor va apărea aici după configurarea Supabase și a testelor reale." />
+      ) : null}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <History className="h-5 w-5" />
-            Istoric Evaluări
-          </CardTitle>
-          <CardDescription>
-            Toate testele administrate în cadrul cabinetului, cu scoruri calculate și interpretări.
-          </CardDescription>
-        </CardHeader>
+      <SectionCard
+        title="Istoric evaluări"
+        description="Toate testele administrate în cadrul cabinetului, cu scoruri calculate și interpretări."
+        icon={History}
+      >
         <CardContent className="p-0">
           {assessments.length === 0 ? (
-            <div className="p-10 text-center text-muted-foreground italic">
-              Nicio evaluare înregistrată momentan.
-            </div>
+            <EmptyState
+              title="Nu există evaluări înregistrate"
+              description="Când începi să administrezi teste reale, rezultatele și istoricul lor vor apărea aici."
+              action={{ label: "Creează o evaluare", href: "/dashboard/assessments/new" }}
+              icon={ClipboardCheck}
+            />
           ) : (
             <Table>
               <TableHeader>
@@ -172,7 +151,7 @@ export default async function AssessmentsRegistryPage() {
             </Table>
           )}
         </CardContent>
-      </Card>
-    </div>
+      </SectionCard>
+    </DashboardPage>
   );
 }

@@ -58,34 +58,9 @@ const DEFAULT_SCHEDULE: WorkSchedule = {
   sunday:    { enabled: false, start: "10:00", end: "14:00", break_start: null,    break_end: null    },
 };
 
-const MOCK_SETTINGS: TherapistSettings = {
-  full_name: "Ioana Cosmina Terente",
-  cif: "41185364",
-  cpr_code: "123456",
-  iban: "RO89INGB0000000000000000",
-  practice_name: "TERENTE IOANA-COSMINA CABINET INDIVIDUAL DE PSIHOLOGIE",
-  practice_address: "Str. Mihail Sebastian 23, Bloc S13, Sc. 1, Et. 6, Ap. 22, Sector 5, Bucuresti",
-  practice_phone: "0760 27 95 31",
-  practice_email: "ioana.terente@gmail.com",
-  practice_caen: "8690 - Alte activitati de asistenta medicala",
-  default_session_price: 250,
-  default_session_duration_minutes: 50,
-  session_types_pricing: { "Ședință Individuală": 250, "Consiliere Cuplu": 350 },
-  currency: "RON",
-  work_schedule: DEFAULT_SCHEDULE,
-  smartbill_username: "cabinet@terente.ro",
-  smartbill_cif: "42880000",
-  twilio_account_sid: null,
-  twilio_phone_number: null,
-  cas_active: true,
-  cas_contract_number: "3456/2024",
-  cas_county: "B",
-  has_pin: true,
-};
-
 function mergeWithDefaultSettings(
   partial?: Partial<TherapistSettings> | null,
-  base: TherapistSettings = MOCK_SETTINGS,
+  base: TherapistSettings = EMPTY_REMOTE_SETTINGS,
 ): TherapistSettings {
   return {
     ...base,
@@ -166,7 +141,7 @@ async function upsertTherapistSettingsRow(
 }
 
 export async function getTherapistSettings(): Promise<TherapistSettings> {
-  if (!isSupabaseConfigured()) return MOCK_SETTINGS;
+  if (!isSupabaseConfigured()) return EMPTY_REMOTE_SETTINGS;
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -217,7 +192,9 @@ export async function updateProfileSettings(data: {
   practice_email: string;
   practice_caen: string;
 }): Promise<{ success: boolean; error?: string }> {
-  if (!isSupabaseConfigured()) return { success: true };
+  if (!isSupabaseConfigured()) {
+    return { success: false, error: "Supabase nu este configurat. Setările nu pot fi salvate încă." };
+  }
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -234,7 +211,9 @@ export async function updatePricingSettings(data: {
   default_session_price: number;
   default_session_duration_minutes: number;
 }): Promise<{ success: boolean; error?: string }> {
-  if (!isSupabaseConfigured()) return { success: true };
+  if (!isSupabaseConfigured()) {
+    return { success: false, error: "Supabase nu este configurat. Tarifele nu pot fi salvate încă." };
+  }
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -249,7 +228,9 @@ export async function updatePricingSettings(data: {
 export async function updateScheduleSettings(
   work_schedule: WorkSchedule,
 ): Promise<{ success: boolean; error?: string }> {
-  if (!isSupabaseConfigured()) return { success: true };
+  if (!isSupabaseConfigured()) {
+    return { success: false, error: "Supabase nu este configurat. Programul nu poate fi salvat încă." };
+  }
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -269,7 +250,9 @@ export async function updateIntegrationsSettings(data: {
   twilio_auth_token?: string;
   twilio_phone_number?: string;
 }): Promise<{ success: boolean; error?: string }> {
-  if (!isSupabaseConfigured()) return { success: true };
+  if (!isSupabaseConfigured()) {
+    return { success: false, error: "Supabase nu este configurat. Integrările nu pot fi salvate încă." };
+  }
 
   const supabase = await createClient();
   const patch: Record<string, string> = { updated_at: new Date().toISOString() };
@@ -294,7 +277,9 @@ export async function updateCasSettings(data: {
   cas_contract_number: string;
   cas_county: string;
 }): Promise<{ success: boolean; error?: string }> {
-  if (!isSupabaseConfigured()) return { success: true };
+  if (!isSupabaseConfigured()) {
+    return { success: false, error: "Supabase nu este configurat. Setările CAS nu pot fi salvate încă." };
+  }
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -310,7 +295,9 @@ export async function updatePinSettings(
   currentPin: string,
   newPin: string,
 ): Promise<{ success: boolean; error?: string }> {
-  if (!isSupabaseConfigured()) return { success: true };
+  if (!isSupabaseConfigured()) {
+    return { success: false, error: "Supabase nu este configurat. PIN-ul nu poate fi salvat încă." };
+  }
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();

@@ -3,8 +3,11 @@ import { listClients } from "@/lib/clients/queries";
 import { ClientsClient } from "@/components/clients/ClientsClient";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { DashboardPage, EmptyState, PageHeader, SetupBanner } from "@/components/app/page-shell";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 export default async function ClientsPage() {
+  const configured = isSupabaseConfigured();
   const clients = await listClients();
 
   const activeCount = clients.filter((c) => !c.notes_anonymized_at).length;
@@ -47,12 +50,15 @@ export default async function ClientsPage() {
   ];
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-8 pb-20">
-      {/* Header Section */}
-      <div className="flex flex-col gap-1">
-         <h1 className="text-3xl font-black tracking-tight text-slate-900">Consolă Pacienți</h1>
-         <p className="text-sm font-medium text-slate-500">Gestionare dosare, status legal și evidență clinică centralizată.</p>
-      </div>
+    <DashboardPage className="space-y-8 pb-20">
+      <PageHeader
+        title="Consolă pacienți"
+        description="Gestionare dosare, status legal și evidență clinică centralizată."
+      />
+
+      {!configured ? (
+        <SetupBanner description="Pacienții reali apar aici după configurarea Supabase. Am eliminat datele demo din această secțiune." />
+      ) : null}
 
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -78,9 +84,19 @@ export default async function ClientsPage() {
       </div>
 
 
-      {/* Main Content Area */}
-      <ClientsClient initialClients={clients} />
-    </div>
+      {configured ? (
+        <ClientsClient initialClients={clients} />
+      ) : (
+        <Card className="rounded-[2rem] border-border/60 shadow-sm">
+          <CardContent className="p-0">
+            <EmptyState
+              title="Registrul de pacienți este gol momentan"
+              description="Configurează conexiunea Supabase pentru a încărca pacienții existenți și a începe onboarding-ul din interfața reală."
+            />
+          </CardContent>
+        </Card>
+      )}
+    </DashboardPage>
   );
 }
 

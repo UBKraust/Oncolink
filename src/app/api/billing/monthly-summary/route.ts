@@ -2,8 +2,6 @@
 // Aggregates sessions, hours, revenue and per-client breakdown for a given month
 
 import { NextRequest, NextResponse } from "next/server";
-import { mockPayments } from "@/lib/mock/payments";
-import { mockClients } from "@/lib/mock/clients";
 import { isPaidInvoiceStatus } from "@/lib/invoices/status";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -77,60 +75,15 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(buildSummary(appts ?? [], invoices ?? [], year, month));
   }
 
-  // ── Demo / mock path ──────────────────────────────────────────────────────
-  const filtered = mockPayments.filter(p => {
-    const d = new Date(p.appointment_date);
-    return d.getFullYear() === year && d.getMonth() + 1 === month;
-  });
-
-  const clientMap = Object.fromEntries(mockClients.map(c => [c.id, c]));
-
-  const perClient: Record<string, {
-    clientId: string; clientName: string;
-    sessions: number; totalMinutes: number;
-    totalAmount: number; collectedAmount: number;
-    invoiceStatus: "ACHITAT" | "PARTIAL" | "NEEMIS";
-  }> = {};
-
-  for (const p of filtered) {
-    if (!perClient[p.client_id]) {
-      perClient[p.client_id] = {
-        clientId: p.client_id,
-        clientName: clientMap[p.client_id]?.full_name ?? "Client necunoscut",
-        sessions: 0, totalMinutes: 0,
-        totalAmount: 0, collectedAmount: 0,
-        invoiceStatus: "NEEMIS",
-      };
-    }
-    const row = perClient[p.client_id];
-    row.sessions++;
-    row.totalMinutes += p.duration_minutes;
-    row.totalAmount  += p.amount;
-    if (p.invoice_status === "ACHITATĂ") row.collectedAmount += p.amount;
-  }
-
-  // Determine per-client invoice status
-  for (const row of Object.values(perClient)) {
-    if (row.collectedAmount >= row.totalAmount) row.invoiceStatus = "ACHITAT";
-    else if (row.collectedAmount > 0)           row.invoiceStatus = "PARTIAL";
-    else                                         row.invoiceStatus = "NEEMIS";
-  }
-
-  const clients = Object.values(perClient);
-  const totalSessions  = clients.reduce((s, c) => s + c.sessions, 0);
-  const totalMinutes   = clients.reduce((s, c) => s + c.totalMinutes, 0);
-  const totalAmount    = clients.reduce((s, c) => s + c.totalAmount, 0);
-  const collectedAmount = clients.reduce((s, c) => s + c.collectedAmount, 0);
-
   return NextResponse.json({
     year, month,
-    totalSessions,
-    totalHours: Math.round((totalMinutes / 60) * 10) / 10,
-    totalAmount,
-    collectedAmount,
-    uncollectedAmount: totalAmount - collectedAmount,
-    clients,
-    isDemo: true,
+    totalSessions: 0,
+    totalHours: 0,
+    totalAmount: 0,
+    collectedAmount: 0,
+    uncollectedAmount: 0,
+    clients: [],
+    setupRequired: true,
   });
 }
 

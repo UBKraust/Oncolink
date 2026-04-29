@@ -2,10 +2,6 @@
 // Comprehensive monthly KPI aggregation for the therapist's executive summary
 
 import { NextRequest, NextResponse } from "next/server";
-import { mockClients } from "@/lib/mock/clients";
-import { mockPayments } from "@/lib/mock/payments";
-import { mockPatientDocuments } from "@/lib/mock/patientFiles";
-import { getMockExpenses } from "@/lib/mock/expenses";
 import { isPaidInvoiceStatus } from "@/lib/invoices/status";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -47,7 +43,7 @@ export interface MonthlyReview {
     revenue: number;
   }[];
 
-  isDemo: boolean;
+  setupRequired?: boolean;
 }
 
 type ReviewAppointmentRow = {
@@ -152,88 +148,25 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  // ── Demo/mock path ────────────────────────────────────────────────────────
-  const startDate = new Date(year, month - 1, 1);
-  const endDate   = new Date(year, month, 1);
-
-  const monthPayments = mockPayments.filter(p => {
-    const d = new Date(p.appointment_date);
-    return d >= startDate && d < endDate;
-  });
-
-  // Simulate some cancellations (20% of month sessions)
-  const cancelledCount = Math.round(monthPayments.length * 0.2);
-
-  const uniqueClientIds = [...new Set(monthPayments.map(p => p.client_id))];
-  const totalMin = monthPayments.reduce((s,p) => s + p.duration_minutes, 0);
-  const collected = monthPayments
-    .filter((payment) => isPaidInvoiceStatus(payment.invoice_status))
-    .reduce((sum, payment) => sum + payment.amount, 0);
-  const outstanding = monthPayments
-    .filter((payment) => !isPaidInvoiceStatus(payment.invoice_status))
-    .reduce((sum, payment) => sum + payment.amount, 0);
-  const total = monthPayments.reduce((s,p) => s + p.amount, 0);
-
-  // Compliance alerts
-  const newClientsThisMonth = mockClients.filter((client) => {
-    const d = new Date(client.created_at);
-    return d >= startDate && d < endDate;
-  });
-  const missingGdpr = newClientsThisMonth.filter(
-    (client) => !client.gdpr_consent_signed,
-  );
-  const minorsMissingConsent = newClientsThisMonth.filter((client) =>
-    client.is_minor &&
-    !mockPatientDocuments.some(d => d.client_id === client.id && d.document_type === "ACORD_PARINTI")
-  );
-  const unpaidClients = [...new Set(
-    monthPayments
-      .filter((payment) => !isPaidInvoiceStatus(payment.invoice_status))
-      .map((payment) => payment.client_id)
-  )];
-
-  const alerts = [];
-  if (missingGdpr.length) alerts.push({ id:"A1", severity:"CRITICAL" as const, message:"Pacienți fără acord GDPR semnat", count: missingGdpr.length, clientIds: missingGdpr.map(c=>c.id) });
-  if (minorsMissingConsent.length) alerts.push({ id:"A2", severity:"CRITICAL" as const, message:"Minori fără acord ambii părinți", count: minorsMissingConsent.length, clientIds: minorsMissingConsent.map(c=>c.id) });
-  if (unpaidClients.length) alerts.push({ id:"A3", severity:"WARNING" as const, message:"Clienți cu plăți restante luna aceasta", count: unpaidClients.length, clientIds: unpaidClients });
-
-  // Weekly breakdown
-  const weeks = [1,2,3,4,5];
-  const weeklyBreakdown = weeks.map(w => {
-    const wStart = w * 7 - 6;
-    const wEnd   = w * 7;
-    const wPayments = monthPayments.filter(p => {
-      const day = new Date(p.appointment_date).getDate();
-      return day >= wStart && day <= wEnd;
-    });
-    return {
-      week: `S${w}`,
-      sessions: wPayments.length,
-      revenue: wPayments.reduce((s,p) => s + p.amount, 0),
-    };
-  }).filter(w => w.sessions > 0 || w.week === "S1");
-
-    const monthExpenses = getMockExpenses(year, month).reduce((s, e) => s + e.amount, 0);
-    const review: MonthlyReview = {
-      year, month,
-      totalSessions:       monthPayments.length,
-      cancelledSessions:   cancelledCount,
-      noShowRate:          monthPayments.length ? Math.round(cancelledCount / (monthPayments.length + cancelledCount) * 100) : 0,
-      uniqueClients:       uniqueClientIds.length,
-      totalHours:          Math.round(totalMin / 60 * 10) / 10,
-      avgSessionsPerClient: uniqueClientIds.length ? Math.round(monthPayments.length / uniqueClientIds.length * 10) / 10 : 0,
-      totalRevenue:        total,
-      collectedRevenue:    collected,
-      outstandingRevenue:  outstanding,
-      avgRevenuePerSession: monthPayments.length ? Math.round(total / monthPayments.length) : 0,
-      totalExpenses:       monthExpenses,
-      netProfit:           collected - monthExpenses,
-      alerts,
-      weeklyBreakdown,
-      isDemo: true,
-    };
-
-  return NextResponse.json(review);
+  return NextResponse.json({
+    year,
+    month,
+    totalSessions: 0,
+    cancelledSessions: 0,
+    noShowRate: 0,
+    uniqueClients: 0,
+    totalHours: 0,
+    avgSessionsPerClient: 0,
+    totalRevenue: 0,
+    collectedRevenue: 0,
+    outstandingRevenue: 0,
+    avgRevenuePerSession: 0,
+    totalExpenses: 0,
+    netProfit: 0,
+    alerts: [],
+    weeklyBreakdown: [],
+    setupRequired: true,
+  } satisfies MonthlyReview);
 }
 
 function buildReview(
@@ -297,5 +230,5 @@ function buildReview(
     totalRevenue:total, collectedRevenue:collected, outstandingRevenue:outstanding,
     avgRevenuePerSession:done.length?Math.round(total/done.length):0,
     totalExpenses: totalExp, netProfit: collected - totalExp,
-    alerts, weeklyBreakdown, isDemo:false };
+    alerts, weeklyBreakdown };
 }

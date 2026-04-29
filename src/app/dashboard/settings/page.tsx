@@ -1,8 +1,11 @@
 import { SettingsClient } from "@/components/settings/SettingsClient";
 import { getTherapistSettings } from "./settings-actions";
 import { EMPTY_REMOTE_SETTINGS } from "./settings-defaults";
+import { DashboardPage, PageHeader, SetupBanner } from "@/components/app/page-shell";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 export default async function SettingsPage() {
+  const configured = isSupabaseConfigured();
   let settings = EMPTY_REMOTE_SETTINGS;
   let loadError: string | null = null;
 
@@ -13,19 +16,20 @@ export default async function SettingsPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-6 pb-10">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Setări Cabinet</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Gestionează profilul administrativ, orarul, tarifele și integrările externe.
-        </p>
-      </div>
+    <DashboardPage className="max-w-5xl">
+      <PageHeader
+        title="Setări cabinet"
+        description="Gestionează profilul administrativ, orarul, tarifele și integrările externe."
+      />
+      {!configured ? (
+        <SetupBanner description="Setările sunt pregătite pentru completare, dar salvarea este dezactivată până când configurezi Supabase." />
+      ) : null}
       {loadError ? (
         <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           {loadError}
         </div>
       ) : null}
       <SettingsClient settings={settings} />
-    </div>
+    </DashboardPage>
   );
 }

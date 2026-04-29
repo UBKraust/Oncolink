@@ -6,11 +6,7 @@ import { FilePlus, Receipt } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   Table,
@@ -27,6 +23,7 @@ import {
 } from "@/lib/invoices/queries";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isSmartBillConfigured } from "@/lib/smartbill/client";
+import { DashboardPage, EmptyState, PageHeader, SectionCard, SetupBanner } from "@/components/app/page-shell";
 
 export default async function InvoicesPage({
   searchParams,
@@ -52,26 +49,22 @@ export default async function InvoicesPage({
     .reduce((s, i) => s + (i.amount ?? 0), 0);
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Facturi</h1>
-          <p className="text-sm text-muted-foreground">
-            {invoices.length} facturi · {totalAmount.toFixed(2)} RON încasat
-          </p>
-        </div>
-        <Button asChild>
-          <Link href="/dashboard/invoices/new">
-            <FilePlus className="h-4 w-4" />
-            Factură nouă
-          </Link>
-        </Button>
-      </div>
+    <DashboardPage className="max-w-6xl">
+      <PageHeader
+        title="Facturi"
+        description={`${invoices.length} facturi · ${totalAmount.toFixed(2)} RON încasat`}
+        action={
+          <Button asChild>
+            <Link href="/dashboard/invoices/new">
+              <FilePlus className="h-4 w-4" />
+              Factură nouă
+            </Link>
+          </Button>
+        }
+      />
 
       {!configured && (
-        <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-          Mod demo — afișez date de mostră.
-        </div>
+        <SetupBanner description="Registrul de facturi folosește acum doar date reale. Configurează Supabase pentru a vedea activitatea financiară." />
       )}
 
       {configured && !smartbillOk && (
@@ -94,21 +87,19 @@ export default async function InvoicesPage({
         ))}
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Receipt className="h-5 w-5" />
-            Lista facturilor
-          </CardTitle>
-          <CardDescription>
-            e-Factura ANAF · VAT 0% · SmartBill Cloud
-          </CardDescription>
-        </CardHeader>
+      <SectionCard
+        title="Lista facturilor"
+        description="e-Factura ANAF · VAT 0% · SmartBill Cloud"
+        icon={Receipt}
+      >
         <CardContent className="p-0">
           {invoices.length === 0 ? (
-            <p className="p-6 text-sm text-muted-foreground">
-              Nicio factură găsită.
-            </p>
+            <EmptyState
+              title="Nu există facturi înregistrate"
+              description="Prima factură emisă va apărea aici împreună cu statusul ei de încasare."
+              action={{ label: "Creează o factură", href: "/dashboard/invoices/new" }}
+              icon={Receipt}
+            />
           ) : (
             <Table>
               <TableHeader>
@@ -162,8 +153,8 @@ export default async function InvoicesPage({
             </Table>
           )}
         </CardContent>
-      </Card>
-    </div>
+      </SectionCard>
+    </DashboardPage>
   );
 }
 

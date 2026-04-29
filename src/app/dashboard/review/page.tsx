@@ -151,6 +151,12 @@ Scrie direct rezumatul, fără titlu.`;
         <p className="text-center text-muted-foreground py-12">Apasă &quot;Calculează&quot; pentru a genera sumarul lunii.</p>
       )}
 
+      {data?.setupRequired ? (
+        <div className="rounded-3xl border border-amber-200 bg-amber-50/80 px-5 py-4 text-sm text-amber-950 shadow-sm">
+          Sumarul lunar folosește acum doar date reale. Configurează Supabase pentru a calcula indicatorii clinicii.
+        </div>
+      ) : null}
+
       {/* Printable report body */}
       {data && (
         <div ref={reportRef} className="space-y-5 bg-background">
@@ -158,7 +164,6 @@ Scrie direct rezumatul, fără titlu.`;
           {/* Report title (visible in PDF) */}
           <div className="text-xs text-muted-foreground font-mono">
             Cabinet Psihoterapie · {MONTHS_RO[data.month-1]} {data.year}
-            {data.isDemo && <span className="ml-2 text-amber-600">[date demonstrație]</span>}
           </div>
 
           {/* ── KPI Row 1 — Clinical ──────────────────────────────────────── */}

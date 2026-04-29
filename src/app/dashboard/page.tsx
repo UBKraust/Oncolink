@@ -12,6 +12,7 @@ import { FinancialSummary } from "@/components/dashboard/financial-summary";
 import { VaultStatusWidget } from "@/components/dashboard/vault-status-widget";
 import { RealtimeDashboard } from "@/components/dashboard/realtime-dashboard";
 import { Button } from "@/components/ui/button";
+import { DashboardPage as DashboardShell, PageHeader } from "@/components/app/page-shell";
 import {
   getDashboardStats,
   getAppointmentsToday,
@@ -33,24 +34,20 @@ export default async function DashboardPage() {
   ]);
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-6 pb-10">
+    <DashboardShell>
       <RealtimeDashboard />
 
-      {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-xs font-black uppercase tracking-widest text-primary/70">
-            {format(today, "EEEE, d MMMM yyyy", { locale: ro })}
-          </p>
-          <h1 className="text-3xl font-black tracking-tight mt-1 text-slate-900">
-            Bună ziua, {THERAPIST_NAME}
-          </h1>
-        </div>
-        <div className="hidden sm:flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 border border-emerald-100">
-          <ShieldCheck className="h-3.5 w-3.5" />
-          Sistem Online & Securizat
-        </div>
-      </div>
+      <PageHeader
+        eyebrow={format(today, "EEEE, d MMMM yyyy", { locale: ro })}
+        title={`Bună ziua, ${THERAPIST_NAME}`}
+        description="Panoul tău operațional pentru activitatea clinică, administrativă și juridică."
+        action={
+          <div className="hidden items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 sm:flex">
+            <ShieldCheck className="h-3.5 w-3.5" />
+            Sistem online și securizat
+          </div>
+        }
+      />
 
       {/* ── Alert minori ─────────────────────────────────────────────────── */}
       {stats.pendingMinorReviews > 0 && (
@@ -60,8 +57,8 @@ export default async function DashboardPage() {
               <AlertTriangle className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-sm font-black text-amber-900">Validare Juridică Necesară (Minori)</p>
-              <p className="text-xs text-amber-700 mt-0.5">
+              <p className="text-sm font-black text-amber-900">Validare juridică necesară</p>
+              <p className="mt-0.5 text-xs text-amber-700">
                 Există {stats.pendingMinorReviews} dosar de minor nou cu custodie comună ce necesită verificarea documentelor.
               </p>
             </div>
@@ -165,6 +162,6 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-    </div>
+    </DashboardShell>
   );
 }

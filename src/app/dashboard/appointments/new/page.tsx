@@ -1,16 +1,13 @@
 import Link from "next/link";
-import { ChevronLeft } from "lucide-react";
+import { CalendarPlus, ChevronLeft } from "lucide-react";
 
 import { AppointmentForm } from "@/components/appointments/appointment-form";
 import {
-  Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { listClients } from "@/lib/clients/queries";
 import { createAppointment } from "@/app/dashboard/appointments/actions";
+import { DashboardPage, PageHeader, SectionCard } from "@/components/app/page-shell";
 
 export default async function NewAppointmentPage({
   searchParams,
@@ -24,7 +21,7 @@ export default async function NewAppointmentPage({
     .map((c) => ({ id: c.id, full_name: c.full_name, email: c.email }));
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-4">
+    <DashboardPage className="max-w-4xl">
       <Link
         href="/dashboard/appointments"
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
@@ -33,15 +30,17 @@ export default async function NewAppointmentPage({
         Înapoi la programări
       </Link>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Programare nouă</CardTitle>
-          <CardDescription>
-            Alege clientul, data, locația și durata. Sesiunile Online necesită un link
-            Google Meet.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      <PageHeader
+        title="Programare nouă"
+        description="Alege clientul, data, locația și durata. Sesiunile online au nevoie de un link Google Meet valid."
+      />
+
+      <SectionCard
+        title="Detalii sesiune"
+        description="Completează toate datele administrative înainte de salvare."
+        icon={CalendarPlus}
+      >
+        <CardContent className="p-6">
           <AppointmentForm
             action={createAppointment}
             clients={activeClients}
@@ -51,7 +50,7 @@ export default async function NewAppointmentPage({
             showRecurring
           />
         </CardContent>
-      </Card>
-    </div>
+      </SectionCard>
+    </DashboardPage>
   );
 }

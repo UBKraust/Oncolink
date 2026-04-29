@@ -37,6 +37,8 @@ import {
 } from "@/app/dashboard/vault/vault-actions";
 import { cn } from "@/lib/utils";
 import { useOverlayA11y } from "@/components/ui/use-overlay-a11y";
+import { EmptyState, PageHeader, SectionCard, SetupBanner } from "@/components/app/page-shell";
+import { StatCard as DashboardStatCard } from "@/components/dashboard/stat-card";
 
 type VaultGroup = "PROFESIONAL" | "CABINET" | "ADMIN_FISCAL";
 
@@ -245,198 +247,159 @@ export function VaultClient({ initialDocs }: VaultClientProps) {
 
   return (
     <div className="space-y-8">
-      {/* Vault Status & Health */}
+      <PageHeader
+        title="Seif digital"
+        description="Arhivator profesional pentru diplome, acte de cabinet și documente administrative urmărite centralizat."
+        action={
+          <Button onClick={() => setShowUpload(true)} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Încarcă document
+          </Button>
+        }
+      />
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 text-primary">
-                <Lock className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Status Seif</p>
-                <h3 className="text-xl font-bold">Securizat</h3>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className={cn(
-          "transition-colors",
-          urgentDocs.length > 0
-            ? "bg-red-50/50 border-red-200 dark:bg-red-950/20 dark:border-red-900"
-            : "bg-background"
-        )}>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className={cn(
-                "flex h-10 w-10 items-center justify-center rounded-full",
-                urgentDocs.length > 0 ? "bg-red-100 text-red-600 dark:bg-red-900/40" : "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40"
-              )}>
-                {urgentDocs.length > 0 ? <AlertTriangle className="h-5 w-5" /> : <Shield className="h-5 w-5" />}
-              </div>
-              <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Alerte Expirare</p>
-                <h3 className="text-xl font-bold">
-                  {urgentDocs.length > 0 ? `${urgentDocs.length} Documente` : "Nicio alertă"}
-                </h3>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/40">
-                <FileText className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Fișiere</p>
-                <h3 className="text-xl font-bold">{docs.length}</h3>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6 flex items-center justify-center">
-            <Button onClick={() => setShowUpload(true)} className="w-full gap-2 shadow-sm">
-              <Plus className="h-4 w-4" />
-              Încarcă Document
-            </Button>
-          </CardContent>
-        </Card>
+        <DashboardStatCard label="Status seif" value="Securizat" icon={Lock} />
+        <DashboardStatCard
+          label="Alerte expirare"
+          value={urgentDocs.length > 0 ? String(urgentDocs.length) : "0"}
+          hint={urgentDocs.length > 0 ? "documente necesită atenție" : "nicio alertă activă"}
+          icon={urgentDocs.length > 0 ? AlertTriangle : Shield}
+          tone={urgentDocs.length > 0 ? "danger" : "success"}
+        />
+        <DashboardStatCard label="Total fișiere" value={String(docs.length)} icon={FileText} />
+        <DashboardStatCard label="Categorii active" value={String(new Set(docs.map((doc) => doc.category)).size)} icon={LayoutGrid} />
       </div>
 
+      {urgentDocs.length > 0 ? (
+        <SetupBanner
+          title="Documente cu valabilitate apropiată"
+          description={`${urgentDocs.length} document${urgentDocs.length === 1 ? "" : "e"} expiră în curând sau sunt deja expirate. Verifică-le înainte de raportările administrative.`}
+        />
+      ) : null}
+
       {/* Main Navigation Tabs */}
-      <Tabs
-        value={activeGroup}
-        onValueChange={(value) => {
-          const nextGroup = value as VaultGroup | "ALL";
-          setActiveGroup(nextGroup);
-        }}
+      <SectionCard
+        title="Arhivă documente"
+        description="Filtrează documentele pe zone profesionale și verifică rapid istoricul, valabilitatea și acțiunile disponibile."
+        icon={FileText}
       >
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b pb-4">
-          <TabsList className="bg-muted/50 p-1">
-            {GROUPS.map((group) => {
-              const Icon = group.icon;
-              return (
-                <TabsTrigger key={group.value} value={group.value} className="gap-2 px-4">
-                  <Icon className="h-4 w-4" />
-                  <span className="hidden sm:inline">{group.label}</span>
-                </TabsTrigger>
-              );
-            })}
-          </TabsList>
-
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Filter className="h-3.5 w-3.5" />
-            <span>Filtrare după categorie profesională</span>
-          </div>
-        </div>
-
-        <div className="mt-6 space-y-6">
-          <div>
-            <h2 className="text-lg font-semibold">{groupInfo.label}</h2>
-            <p className="text-sm text-muted-foreground">{groupInfo.description}</p>
-          </div>
-
-          {filtered.length === 0 ? (
-            <div className="rounded-xl border border-dashed bg-muted/20 p-12 text-center">
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                <File className="h-6 w-6" />
-              </div>
-              <h3 className="text-sm font-medium">Niciun document găsit</h3>
-              <p className="mt-1 text-xs text-muted-foreground max-w-[250px] mx-auto">
-                Nu ai încărcat niciun document în această secțiune.
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-4"
-                onClick={() => setShowUpload(true)}
-              >
-                Adaugă primul document
-              </Button>
-            </div>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {filtered.map((doc) => {
-                const meta = categoryMeta[doc.category];
-                const CatIcon = meta?.icon ?? File;
+        <Tabs
+          value={activeGroup}
+          onValueChange={(value) => {
+            const nextGroup = value as VaultGroup | "ALL";
+            setActiveGroup(nextGroup);
+          }}
+        >
+          <div className="flex flex-col gap-4 border-b px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+            <TabsList className="bg-muted/50 p-1">
+              {GROUPS.map((group) => {
+                const Icon = group.icon;
                 return (
-                  <Card
-                    key={doc.id}
-                    className="group overflow-hidden transition-all hover:shadow-md hover:border-primary/30"
-                  >
-                    <CardContent className="p-0">
-                      <div className="flex flex-col h-full">
-                        <div className="flex items-start gap-4 p-4">
-                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/5 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                            <CatIcon className="h-6 w-6" />
-                          </div>
-                          <div className="min-w-0 flex-1 space-y-1">
-                            <h4 className="truncate text-sm font-semibold leading-none">{doc.name}</h4>
-                            <p className="text-[11px] text-muted-foreground uppercase tracking-tight font-medium">
-                              {meta?.label}
-                            </p>
-                            {doc.expiry_date && (
-                              <div className="pt-1">
-                                <ExpiryBadge date={doc.expiry_date} />
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="flex items-center justify-between border-t bg-muted/10 px-4 py-2">
-                          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                            <History className="h-3 w-3" />
-                            {new Date(doc.uploaded_at).toLocaleDateString("ro-RO")}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            {(isPdf(doc.file_url) || isImage(doc.file_url)) && (
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-8 w-8 text-muted-foreground hover:text-primary"
-                              onClick={() => setPreviewDoc(doc)}
-                              aria-label={`Previzualizează documentul ${doc.name}`}
-                            >
-                              <ZoomIn className="h-4 w-4" />
-                            </Button>
-                            )}
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-8 w-8 text-muted-foreground hover:text-primary"
-                              asChild
-                            >
-                              <a href={doc.file_url} target="_blank" rel="noopener noreferrer" aria-label={`Deschide documentul ${doc.name} într-un tab nou`}>
-                                <Upload className="h-4 w-4 rotate-180" />
-                              </a>
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                              onClick={() => handleDelete(doc.id)}
-                              disabled={isPending}
-                              aria-label={`Șterge documentul ${doc.name}`}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <TabsTrigger key={group.value} value={group.value} className="gap-2 px-4">
+                    <Icon className="h-4 w-4" />
+                    <span className="hidden sm:inline">{group.label}</span>
+                  </TabsTrigger>
                 );
               })}
+            </TabsList>
+
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Filter className="h-3.5 w-3.5" />
+              <span>Filtrare după categorie profesională</span>
             </div>
-          )}
-        </div>
-      </Tabs>
+          </div>
+          <div className="space-y-6 p-6">
+            <div>
+              <h2 className="text-lg font-black tracking-tight">{groupInfo.label}</h2>
+              <p className="text-sm text-muted-foreground">{groupInfo.description}</p>
+            </div>
+
+            {filtered.length === 0 ? (
+              <EmptyState
+                title="Niciun document găsit"
+                description="Nu ai încărcat încă documente în această secțiune. Primul upload va apărea aici împreună cu istoricul și valabilitatea."
+                icon={File}
+                action={{ label: "Adaugă primul document", onClick: () => setShowUpload(true) }}
+              />
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {filtered.map((doc) => {
+                  const meta = categoryMeta[doc.category];
+                  const CatIcon = meta?.icon ?? File;
+                  return (
+                    <Card
+                      key={doc.id}
+                      className="group overflow-hidden rounded-[1.75rem] border-border/60 transition-all hover:shadow-md hover:border-primary/30"
+                    >
+                      <CardContent className="p-0">
+                        <div className="flex h-full flex-col">
+                          <div className="flex items-start gap-4 p-5">
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                              <CatIcon className="h-6 w-6" />
+                            </div>
+                            <div className="min-w-0 flex-1 space-y-1.5">
+                              <h4 className="truncate text-sm font-semibold leading-none">{doc.name}</h4>
+                              <p className="text-[11px] text-muted-foreground uppercase tracking-tight font-medium">
+                                {meta?.label}
+                              </p>
+                              {doc.expiry_date && (
+                                <div className="pt-1">
+                                  <ExpiryBadge date={doc.expiry_date} />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between border-t bg-muted/10 px-4 py-3">
+                            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                              <History className="h-3 w-3" />
+                              {new Date(doc.uploaded_at).toLocaleDateString("ro-RO")}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              {(isPdf(doc.file_url) || isImage(doc.file_url)) && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                  onClick={() => setPreviewDoc(doc)}
+                                  aria-label={`Previzualizează documentul ${doc.name}`}
+                                >
+                                  <ZoomIn className="h-4 w-4" />
+                                </Button>
+                              )}
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                asChild
+                              >
+                                <a href={doc.file_url} target="_blank" rel="noopener noreferrer" aria-label={`Deschide documentul ${doc.name} într-un tab nou`}>
+                                  <Upload className="h-4 w-4 rotate-180" />
+                                </a>
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                onClick={() => handleDelete(doc.id)}
+                                disabled={isPending}
+                                aria-label={`Șterge documentul ${doc.name}`}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </Tabs>
+      </SectionCard>
 
       {/* Upload Modal */}
       {showUpload && (

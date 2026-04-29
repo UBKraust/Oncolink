@@ -13,6 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { EmptyState, PageHeader, SectionCard, SetupBanner } from "@/components/app/page-shell";
 
 import { ClientEvolutionChart } from "@/components/clients/ClientEvolutionChart";
 import { ClientDriveDocuments } from "@/components/clients/ClientDriveDocuments";
@@ -94,25 +95,56 @@ export function ClientDashboardUI({
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-8 pb-20">
+      <Link
+        href="/dashboard/clients"
+        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+      >
+        <ChevronLeft className="h-4 w-4" />
+        Înapoi la clienți
+      </Link>
 
-      {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex items-start gap-5">
-          <Link
-            href="/dashboard/clients"
-            className="mt-1 flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 hover:bg-primary/10 hover:text-primary transition-all shadow-sm shrink-0"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </Link>
-          <div className="flex items-start gap-5">
-            <div className="flex h-16 w-16 items-center justify-center rounded-[1.5rem] bg-slate-900 border-4 border-white shadow-xl text-xl font-black text-white shrink-0">
+      <PageHeader
+        eyebrow={`Client activ din ${format(new Date(client.created_at), "MMM yyyy", { locale: ro })}`}
+        title={client.full_name ?? "—"}
+        description="Dosarul clinic, financiar și administrativ al clientului într-o singură suprafață."
+        action={
+          <div className="flex items-center gap-2 shrink-0">
+            {!anonymized && (
+              <>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() => setIsContractModalOpen(true)}
+                  className="rounded-2xl font-bold gap-2"
+                >
+                  <FileCheck className="h-4 w-4 text-primary" /> Contract
+                </Button>
+                <Button asChild size="lg" className="rounded-2xl font-black gap-2">
+                  <Link href={`/dashboard/appointments/new?clientId=${client.id}`}>
+                    <Plus className="h-5 w-5" /> Programare Nouă
+                  </Link>
+                </Button>
+              </>
+            )}
+            <Button asChild variant="outline" size="lg" className="rounded-2xl font-bold">
+              <Link href={`/dashboard/clients/${client.id}/edit`}>
+                <Pencil className="h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+        }
+      />
+
+      <section className="rounded-[2rem] border border-border/60 bg-card px-6 py-5 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start gap-4">
+            <div className="flex h-16 w-16 items-center justify-center rounded-[1.5rem] bg-primary text-xl font-black text-primary-foreground shadow-sm shrink-0">
               {client.full_name?.split(" ").map((n: string) => n[0]).join("").slice(0, 2)}
             </div>
-            <div className="space-y-2">
-              <h1 className="text-3xl font-black tracking-tight text-slate-900 leading-none flex flex-wrap items-center gap-2">
-                {client.full_name ?? "—"}
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
                 {anonymized && (
-                  <Badge variant="outline" className="bg-slate-100 text-slate-400 border-slate-200 uppercase text-[10px] h-5">
+                  <Badge variant="outline" className="uppercase text-[10px] h-5">
                     Anonim
                   </Badge>
                 )}
@@ -126,25 +158,6 @@ export function ClientDashboardUI({
                     B2B
                   </Badge>
                 )}
-              </h1>
-              {/* Quick contact chips */}
-              <div className="flex flex-wrap items-center gap-2">
-                {!anonymized && client.phone && (
-                  <a
-                    href={`tel:${client.phone}`}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600 hover:bg-primary/10 hover:text-primary transition-colors"
-                  >
-                    <Phone className="h-3 w-3" /> {client.phone}
-                  </a>
-                )}
-                {!anonymized && client.email && (
-                  <a
-                    href={`mailto:${client.email}`}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600 hover:bg-primary/10 hover:text-primary transition-colors"
-                  >
-                    <Mail className="h-3 w-3" /> {client.email}
-                  </a>
-                )}
                 {sessionFreqLabel && (
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
                     <RefreshCw className="h-3 w-3" /> {sessionFreqLabel}
@@ -156,53 +169,39 @@ export function ClientDashboardUI({
                   </span>
                 )}
               </div>
-              <p className="text-xs font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-widest">
-                <CalendarPlus className="h-3.5 w-3.5" />
-                Client activ din {format(new Date(client.created_at), "MMM yyyy", { locale: ro })}
-              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                {!anonymized && client.phone && (
+                  <a
+                    href={`tel:${client.phone}`}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-xs font-bold text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                  >
+                    <Phone className="h-3 w-3" /> {client.phone}
+                  </a>
+                )}
+                {!anonymized && client.email && (
+                  <a
+                    href={`mailto:${client.email}`}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-xs font-bold text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                  >
+                    <Mail className="h-3 w-3" /> {client.email}
+                  </a>
+                )}
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                  <CalendarPlus className="h-3.5 w-3.5" />
+                  Dosar activ
+                </span>
+              </div>
             </div>
           </div>
         </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          {!anonymized && (
-            <>
-              <Button 
-                variant="outline" 
-                size="lg" 
-                onClick={() => setIsContractModalOpen(true)}
-                className="rounded-2xl font-bold bg-white/50 backdrop-blur-sm border-slate-200 gap-2"
-              >
-                <FileCheck className="h-4 w-4 text-primary" /> Contract
-              </Button>
-              <Button asChild size="lg" className="rounded-2xl font-black shadow-xl shadow-primary/20 gap-2">
-                <Link href={`/dashboard/appointments/new?clientId=${client.id}`}>
-                  <Plus className="h-5 w-5" /> Programare Nouă
-                </Link>
-              </Button>
-            </>
-          )}
-          <Button asChild variant="outline" size="lg" className="rounded-2xl font-bold bg-white/50 backdrop-blur-sm border-slate-200">
-            <Link href={`/dashboard/clients/${client.id}/edit`}>
-              <Pencil className="h-4 w-4" />
-            </Link>
-          </Button>
-        </div>
-      </div>
+      </section>
 
       {/* ── Success banner ────────────────────────────────────────────────── */}
       {justAnonymized && (
-        <div className="rounded-[2rem] border-2 border-emerald-100 bg-emerald-50/50 p-5 flex items-center gap-4 animate-in fade-in zoom-in-95 duration-500">
-          <div className="h-10 w-10 rounded-2xl bg-emerald-500 flex items-center justify-center text-white shadow-lg shadow-emerald-200">
-            <CheckCircle2 className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="text-sm font-black text-emerald-900 uppercase tracking-tight">Anonimizare Reușită</p>
-            <p className="text-xs font-medium text-emerald-700">
-              Datele personale au fost eliminate. Istoricul facturilor rămâne intact pentru conformitate.
-            </p>
-          </div>
-        </div>
+        <SetupBanner
+          title="Anonimizare reușită"
+          description="Datele personale au fost eliminate. Istoricul facturilor și al documentelor administrative a fost păstrat pentru conformitate."
+        />
       )}
 
       {/* ── 4 Widget Cards ────────────────────────────────────────────────── */}
@@ -242,14 +241,13 @@ export function ClientDashboardUI({
       {/* ── Programări ────────────────────────────────────────────────────── */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Upcoming */}
-        <div className="rounded-[2.5rem] bg-white border border-slate-100 shadow-sm p-6 space-y-4">
+        <SectionCard
+          title="Programări viitoare"
+          description="Următoarele sesiuni programate pentru acest client."
+          icon={Calendar}
+        >
+          <div className="space-y-4 p-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 flex items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <Calendar className="h-4 w-4" />
-              </div>
-              <h3 className="text-xs font-black uppercase tracking-widest text-slate-500">Programări Viitoare</h3>
-            </div>
             <Link
               href={`/dashboard/appointments?clientId=${id}`}
               className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline flex items-center gap-1"
@@ -259,17 +257,12 @@ export function ClientDashboardUI({
           </div>
 
           {upcomingAppointments.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <Calendar className="h-8 w-8 text-slate-200 mb-2" />
-              <p className="text-xs font-bold text-slate-400">Nicio programare viitoare</p>
-              {!anonymized && (
-                <Button asChild size="sm" variant="outline" className="mt-3 rounded-xl text-xs font-bold">
-                  <Link href={`/dashboard/appointments/new?clientId=${id}`}>
-                    <Plus className="h-3.5 w-3.5 mr-1" /> Adaugă programare
-                  </Link>
-                </Button>
-              )}
-            </div>
+            <EmptyState
+              title="Nicio programare viitoare"
+              description="Când programezi următoarea sesiune, ea va apărea aici împreună cu durata și tipul întâlnirii."
+              icon={Calendar}
+              action={!anonymized ? { label: "Adaugă programare", href: `/dashboard/appointments/new?clientId=${id}` } : undefined}
+            />
           ) : (
             <div className="space-y-2">
               {upcomingAppointments.map((appt) => (
@@ -277,27 +270,28 @@ export function ClientDashboardUI({
               ))}
             </div>
           )}
-        </div>
+          </div>
+        </SectionCard>
 
         {/* Past */}
-        <div className="rounded-[2.5rem] bg-white border border-slate-100 shadow-sm p-6 space-y-4">
+        <SectionCard
+          title="Istoricul ședințelor"
+          description="Ultimele sesiuni finalizate sau încheiate pentru acest client."
+          icon={Clock}
+        >
+          <div className="space-y-4 p-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 flex items-center justify-center rounded-xl bg-slate-100 text-slate-500">
-                <Clock className="h-4 w-4" />
-              </div>
-              <h3 className="text-xs font-black uppercase tracking-widest text-slate-500">Istoricul Ședințelor</h3>
-            </div>
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
               {appointments.filter(a => isPast(new Date(a.appointment_date))).length} total
             </span>
           </div>
 
           {pastAppointments.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <Clock className="h-8 w-8 text-slate-200 mb-2" />
-              <p className="text-xs font-bold text-slate-400">Nicio ședință anterioară</p>
-            </div>
+            <EmptyState
+              title="Nicio ședință anterioară"
+              description="Istoricul clinic va apărea aici după primele programări finalizate."
+              icon={Clock}
+            />
           ) : (
             <div className="space-y-2">
               {pastAppointments.map((appt) => (
@@ -305,7 +299,8 @@ export function ClientDashboardUI({
               ))}
             </div>
           )}
-        </div>
+          </div>
+        </SectionCard>
       </div>
 
       {/* ── Evolution + Documents ─────────────────────────────────────────── */}
@@ -319,34 +314,37 @@ export function ClientDashboardUI({
       </div>
 
       {/* ── Evaluări Psihologice ─────────────────────────────────────────── */}
-      <div className="space-y-6">
-        <div className="flex items-center justify-between border-b pb-4">
-          <div className="space-y-1">
-            <h2 className="text-2xl font-black tracking-tight text-slate-900">Evaluări Psihologice</h2>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Istoric scoruri și sumar clinic</p>
+      <SectionCard
+        title="Evaluări psihologice"
+        description="Istoric scoruri, sumar clinic și rezultate administrate în timp."
+        icon={Brain}
+      >
+        <div className="space-y-6 p-6">
+          <div className="flex justify-end">
+            {!anonymized && (
+              <Button variant="outline" size="sm" asChild className="rounded-xl font-bold uppercase text-[10px] tracking-widest">
+                <Link href="/dashboard/assessments/new">
+                  <Plus className="mr-1 h-3.5 w-3.5" /> Adaugă
+                </Link>
+              </Button>
+            )}
           </div>
-          {!anonymized && (
-            <Button variant="outline" size="sm" asChild className="rounded-xl font-bold uppercase text-[10px] tracking-widest">
-              <Link href="/dashboard/assessments/new">
-                <Plus className="mr-1 h-3.5 w-3.5" /> Adaugă
-              </Link>
-            </Button>
+
+          {assessments.length === 0 ? (
+            <EmptyState
+              title="Nu există evaluări încă"
+              description="După primele teste administrate, aici vor apărea scorurile și interpretările relevante."
+              icon={Brain}
+            />
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {assessments.map((acc) => (
+                <AssessmentCard key={acc.id} acc={acc} clientId={id} isActive={assessmentParam === acc.id} />
+              ))}
+            </div>
           )}
         </div>
-
-        {assessments.length === 0 ? (
-          <div className="rounded-[2.5rem] border-2 border-dashed p-12 text-center bg-slate-50/50">
-            <Brain className="h-10 w-10 text-slate-200 mx-auto mb-3" />
-            <p className="text-sm font-bold text-slate-400 italic">Nu există evaluări încă.</p>
-          </div>
-        ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {assessments.map((acc) => (
-              <AssessmentCard key={acc.id} acc={acc} clientId={id} isActive={assessmentParam === acc.id} />
-            ))}
-          </div>
-        )}
-      </div>
+      </SectionCard>
 
       {/* ── Floating AI ───────────────────────────────────────────────────── */}
       {!anonymized && <ClientAiAssistant clientContext={aiClientContext} />}
@@ -459,18 +457,18 @@ function WidgetCard({
   return (
     <Link
       href={link}
-      className="group relative flex flex-col p-6 rounded-[2.5rem] bg-white border border-slate-100 shadow-sm transition-all hover:shadow-xl hover:-translate-y-1 hover:border-primary/20"
+      className="group relative flex flex-col rounded-[1.75rem] border border-border/60 bg-card p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 hover:border-primary/20"
     >
       <div className="flex items-center justify-between mb-4">
-        <div className="h-10 w-10 flex items-center justify-center rounded-2xl bg-slate-100 text-slate-500 group-hover:bg-primary/10 group-hover:text-primary transition-all">
+        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-all">
           <Icon className="h-5 w-5" />
         </div>
         {badge && <Badge variant={badgeVariant} className="text-[9px] font-black tracking-widest">{badge}</Badge>}
       </div>
-      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{title}</h3>
-      <p className="text-lg font-black text-slate-800 leading-tight truncate">{value}</p>
-      {subtitle && <p className="text-[11px] font-bold text-slate-400 mt-1 italic leading-none">{subtitle}</p>}
-      <div className="absolute bottom-6 right-6 h-8 w-8 flex items-center justify-center rounded-xl bg-slate-50 opacity-0 group-hover:opacity-100 transition-all text-primary">
+      <h3 className="mb-1 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">{title}</h3>
+      <p className="truncate text-lg font-black leading-tight text-foreground">{value}</p>
+      {subtitle && <p className="mt-1 text-[11px] font-medium leading-none text-muted-foreground">{subtitle}</p>}
+      <div className="absolute bottom-6 right-6 flex h-8 w-8 items-center justify-center rounded-xl bg-muted opacity-0 transition-all text-primary group-hover:opacity-100">
         <ArrowRight className="h-4 w-4" />
       </div>
     </Link>
@@ -497,42 +495,42 @@ function AssessmentCard({
     <Link
       href={`/dashboard/clients/${clientId}?assessment=${acc.id}`}
       className={cn(
-        "group flex flex-col rounded-[2.5rem] bg-white border-2 border-slate-100 p-6 transition-all hover:shadow-xl hover:border-primary/30",
+        "group flex flex-col rounded-[1.75rem] border border-border/60 bg-card p-6 transition-all hover:shadow-md hover:border-primary/30",
         isActive && "border-primary ring-4 ring-primary/5 shadow-2xl"
       )}
     >
       <div className="flex items-center justify-between mb-4">
-        <Badge variant="outline" className="text-[9px] font-black uppercase tracking-widest bg-slate-50 border-slate-200">
+        <Badge variant="outline" className="text-[9px] font-black uppercase tracking-widest bg-muted border-border/60">
           {acc.assessment_type.replace(/_/g, " ")}
         </Badge>
-        <span className="text-[10px] font-bold text-slate-400 tracking-wide">
+        <span className="text-[10px] font-bold text-muted-foreground tracking-wide">
           {format(new Date(acc.created_at), "d MMM yyyy", { locale: ro })}
         </span>
       </div>
       <div className="flex-1 space-y-4">
-        <div className="rounded-3xl bg-slate-50/50 p-4 border border-slate-100">
+        <div className="rounded-3xl border border-border/60 bg-muted/30 p-4">
           <div className="flex items-center gap-2 mb-3">
             <Brain className="h-4 w-4 text-primary" />
-            <span className="text-xs font-black text-slate-800 uppercase tracking-tighter">
+            <span className="text-xs font-black uppercase tracking-tighter text-foreground">
               {scoringTestType}
             </span>
           </div>
           <div className="grid grid-cols-2 gap-x-4 gap-y-2">
             {Object.entries(acc.scoring_data).slice(0, 2).map(([k, v]) => (
               <div key={k} className="flex flex-col">
-                <span className="text-[9px] text-slate-400 uppercase font-bold tracking-tight">{k.replace(/_/g, " ")}</span>
-                <span className="text-xs font-black text-slate-800">{String(v)}</span>
+                <span className="text-[9px] uppercase font-bold tracking-tight text-muted-foreground">{k.replace(/_/g, " ")}</span>
+                <span className="text-xs font-black text-foreground">{String(v)}</span>
               </div>
             ))}
           </div>
         </div>
         {acc.content_summary && (
-          <p className="text-xs font-medium text-slate-500 line-clamp-2 italic leading-relaxed">
+          <p className="line-clamp-2 text-xs font-medium italic leading-relaxed text-muted-foreground">
             &quot;{acc.content_summary}&quot;
           </p>
         )}
       </div>
-      <div className="mt-6 pt-4 border-t border-slate-50 flex items-center justify-between">
+      <div className="mt-6 flex items-center justify-between border-t border-border/60 pt-4">
         <span className="text-[10px] font-black text-primary uppercase tracking-widest group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
           Vezi Detalii <ArrowRight className="h-3 w-3" />
         </span>

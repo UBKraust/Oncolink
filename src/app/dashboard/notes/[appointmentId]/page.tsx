@@ -15,6 +15,7 @@ import {
 } from "@/lib/appointments/helpers";
 import { getNoteByAppointment } from "@/lib/notes/queries";
 import { NoteEditor } from "@/components/notes/note-editor";
+import { DashboardPage, PageHeader, SectionCard } from "@/components/app/page-shell";
 
 export default async function NoteEditorPage({
   params,
@@ -29,44 +30,47 @@ export default async function NoteEditorPage({
   const location = deriveLocation(appointment);
 
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-1">
-          <Link
-            href="/dashboard/notes"
-            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Înapoi la note
-          </Link>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {appointment.client?.full_name ?? "Ședință"}
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {format(new Date(appointment.appointment_date), "EEEE, d MMMM yyyy · HH:mm", {
-              locale: ro,
-            })}{" "}
-            · {appointment.duration_minutes} min · {locationLabel[location]}
-          </p>
-        </div>
-        <div className="flex flex-col items-start gap-2 sm:items-end">
-          <Badge variant={statusVariant[appointment.status as keyof typeof statusVariant]}>
-            {statusLabel[appointment.status as keyof typeof statusLabel] ??
-              appointment.status}
-          </Badge>
-          <Button asChild variant="outline" size="sm">
-            <Link href={`/dashboard/appointments/${appointment.id}`}>
-              Deschide programarea
-            </Link>
-          </Button>
-        </div>
-      </div>
+    <DashboardPage className="max-w-5xl">
+      <Link
+        href="/dashboard/notes"
+        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Înapoi la note
+      </Link>
 
-      <NoteEditor
-        appointmentId={appointment.id}
-        initialCiphertext={note?.encrypted_content ?? null}
-        updatedAt={note?.updated_at ?? null}
+      <PageHeader
+        title={appointment.client?.full_name ?? "Ședință"}
+        description={`${format(new Date(appointment.appointment_date), "EEEE, d MMMM yyyy · HH:mm", {
+          locale: ro,
+        })} · ${appointment.duration_minutes} min · ${locationLabel[location]}`}
+        action={
+          <div className="flex items-center gap-2">
+            <Badge variant={statusVariant[appointment.status as keyof typeof statusVariant]}>
+              {statusLabel[appointment.status as keyof typeof statusLabel] ??
+                appointment.status}
+            </Badge>
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/dashboard/appointments/${appointment.id}`}>
+                Deschide programarea
+              </Link>
+            </Button>
+          </div>
+        }
       />
-    </div>
+
+      <SectionCard
+        title="Notă clinică"
+        description="Conținutul este criptat și rămâne atașat exclusiv acestei programări."
+      >
+        <div className="p-6">
+          <NoteEditor
+            appointmentId={appointment.id}
+            initialCiphertext={note?.encrypted_content ?? null}
+            updatedAt={note?.updated_at ?? null}
+          />
+        </div>
+      </SectionCard>
+    </DashboardPage>
   );
 }

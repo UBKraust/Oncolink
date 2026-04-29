@@ -2,7 +2,7 @@
 // Generates a CSV file ready for manual upload to SIUI portal
 
 import { NextRequest, NextResponse } from "next/server";
-import { mockCasAppointments } from "@/lib/mock/cas";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const runtime = "edge";
 
@@ -17,11 +17,53 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  // Filter sessions for the requested month (mock data)
+  const supabase = await createSupabaseServerClient();
   const [year, mon] = month.split("-").map(Number);
-  const sessions = mockCasAppointments.filter((a) => {
-    const d = new Date(a.appointment_date);
-    return d.getFullYear() === year && d.getMonth() + 1 === mon;
+  const from = `${month}-01T00:00:00.000Z`;
+  const monthEnd = new Date(Date.UTC(year, mon, 0, 23, 59, 59, 999));
+  const to = monthEnd.toISOString();
+
+  const { data, error } = await supabase
+    .from("appointments")
+    .select(`
+      id,
+      appointment_date,
+      duration_minutes,
+      diagnosis_code_cim10,
+      referral_number,
+      referral_date,
+      referring_doctor_code,
+      clients(full_name, cnp_cif)
+    `)
+    .eq("is_cas_subsidized", true)
+    .gte("appointment_date", from)
+    .lte("appointment_date", to)
+    .order("appointment_date", { ascending: true });
+
+  if (error) {
+    return NextResponse.json(
+      { error: "Exportul CAS nu este disponibil fără date reale configurate." },
+      { status: 503 }
+    );
+  }
+
+  const sessions = (data ?? []).map((appointment) => {
+    const clientRelation = Array.isArray(appointment.clients)
+      ? appointment.clients[0]
+      : appointment.clients;
+
+    return {
+      id: appointment.id,
+      cnp: clientRelation?.cnp_cif ?? "",
+      client_name: clientRelation?.full_name ?? "Necunoscut",
+      appointment_date: appointment.appointment_date,
+      duration_minutes: appointment.duration_minutes ?? 50,
+      diagnosis_code_cim10: appointment.diagnosis_code_cim10 ?? "",
+      diagnosis_label: "Diagnostic CAS",
+      referral_number: appointment.referral_number ?? "",
+      referral_date: appointment.referral_date ?? "",
+      referring_doctor_code: appointment.referring_doctor_code ?? "",
+    };
   });
 
   if (sessions.length === 0) {

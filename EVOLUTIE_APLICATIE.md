@@ -129,13 +129,17 @@ Fisiere principale:
 - `lint`: verde
 - `build`: verde
 - fluxurile critice UI atinse pana acum compileaza si tipurile sunt valide
+- shell-ul comun de UI este aplicat pe paginile principale si pe majoritatea suprafetelor publice
+- exportul CAS si panoul de conformitate nu mai depind de mock data in fluxurile reale
 
 ### UX si accesibilitate
 
 - navigatia mobila este functionala
 - formularele mari au legaturi mai bune intre campuri, hint-uri si erori
 - overlay-urile principale au acum comportament coerent la tastatura
+- paginile mari si modulele principale folosesc acum aceeasi familie vizuala la nivel de shell, sectiuni si empty states
 - mai exista loc de verificare manuala pe focus order si interactiuni reale cap-coada
+- urmatorul strat de lucru este micro-polish pe densitate, spacing si consistenta componentelor secundare
 
 ### Stabilitate
 
@@ -146,7 +150,15 @@ Fisiere principale:
 
 ### Urmatorul task recomandat
 
-Verificare manuala si audit final pe fluxuri cap-coada, in special:
+Pass de micro-polish UI/UX pe componente secundare, in special:
+
+- tabele
+- badge-uri
+- formulare
+- spacing-uri secundare
+- densitate vizuala pe carduri si liste
+
+Dupa acest pass:
 
 - creare client
 - onboarding adult si minor
@@ -157,6 +169,7 @@ Verificare manuala si audit final pe fluxuri cap-coada, in special:
 
 ### Dupa acest task
 
+- verificare manuala cap-coada pe fluxurile critice dupa micro-polish
 - verificare focus order si keyboard-only navigation cap-coada
 - contrast si stari de eroare/succes coerente
 - pass final pe responsive pentru ecrane mici
@@ -179,7 +192,7 @@ La fiecare actualizare noua adaugam:
 
 ### Task nou
 
-- Ce s-a facut: am extins auditul comportamental pe `ExpensesClient`, `PatientDocuments`, `AssessmentDetailOverlay` si `ClientAiAssistant`, folosind infrastructura comuna pentru `Esc`, focus initial, focus trap si focus return
+- Ce s-a facut: am unificat shell-ul UI pe paginile ramase de dashboard si public, am curatat mock data din fluxurile reale de conformitate si export CAS si am aliniat componentele mari `ClientDashboardUI`, `CasModuleUI` si `VaultClient` la aceeasi familie vizuala
 - Ce s-a verificat: `npm run lint` si `npm run build`
-- Ce urmeaza imediat: pass final de testare manuala pe fluxurile critice si pe responsive
+- Ce urmeaza imediat: pass de micro-polish pe tabele, badge-uri, formulare si spacing-uri secundare, urmat de verificare manuala cap-coada
 - Status lint/build: ambele verzi

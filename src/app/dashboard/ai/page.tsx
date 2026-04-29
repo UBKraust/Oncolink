@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Bot, Send, User, Loader2, AlertCircle, Trash2, Sparkles, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { DashboardPage, PageHeader, SectionCard, SetupBanner } from "@/components/app/page-shell";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -143,50 +144,50 @@ export default function AiChatPage() {
   // ── Render ────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] max-w-4xl mx-auto w-full">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
-            <Sparkles className="h-4 w-4 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-base font-semibold leading-none">Asistent Clinic AI</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Gemma · exclusiv local · datele nu părăsesc calculatorul
-            </p>
-          </div>
+    <DashboardPage className="max-w-4xl">
+      <PageHeader
+        title="Asistent clinic AI"
+        description="Gemma rulează local și te ajută cu redactare clinică, interpretare și suport operațional fără a trimite datele pe internet."
+      />
+
+      {ollamaOnline === false ? (
+        <SetupBanner description="Ollama pare offline. Pornește `ollama serve` pentru a activa asistentul clinic local." />
+      ) : null}
+
+      <SectionCard
+        title="Conversație clinică"
+        description="Folosește întrebări rapide sau scrie direct în compozitor pentru a porni conversația."
+        icon={Sparkles}
+      >
+      <div className="flex h-[calc(100vh-16rem)] flex-col">
+      <div className="flex items-center justify-between border-b px-4 py-3 shrink-0">
+        <div className={cn(
+          "flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium",
+          ollamaOnline === true  && "border-emerald-300 bg-emerald-50 text-emerald-700",
+          ollamaOnline === false && "border-rose-300 bg-rose-50 text-rose-700",
+          ollamaOnline === null  && "border-muted text-muted-foreground"
+        )}>
+          <span className={cn(
+            "h-1.5 w-1.5 rounded-full",
+            ollamaOnline === true  && "bg-emerald-500",
+            ollamaOnline === false && "bg-rose-500",
+            ollamaOnline === null  && "bg-muted-foreground/50"
+          )} />
+          {ollamaOnline === true ? "Ollama online" : ollamaOnline === false ? "Ollama offline" : "Verificare..."}
         </div>
-        <div className="flex items-center gap-2">
-          <div className={cn(
-            "flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border font-medium",
-            ollamaOnline === true  && "border-emerald-300 bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400",
-            ollamaOnline === false && "border-rose-300 bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-400",
-            ollamaOnline === null  && "border-muted text-muted-foreground"
-          )}>
-            <span className={cn(
-              "h-1.5 w-1.5 rounded-full",
-              ollamaOnline === true  && "bg-emerald-500",
-              ollamaOnline === false && "bg-rose-500",
-              ollamaOnline === null  && "bg-muted-foreground/50"
-            )} />
-            {ollamaOnline === true ? "Ollama Online" : ollamaOnline === false ? "Ollama Offline" : "Verificare..."}
-          </div>
-          {messages.length > 0 && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => { setMessages([]); setError(null); }}
-              title="Șterge conversația"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
+        {messages.length > 0 && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => { setMessages([]); setError(null); }}
+            title="Șterge conversația"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
-      {/* Messages area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full gap-6 text-center pb-10">
@@ -303,6 +304,8 @@ export default function AiChatPage() {
           AI-ul rulează local pe calculatorul tău. Niciun mesaj nu este trimis pe internet.
         </p>
       </div>
-    </div>
+      </div>
+      </SectionCard>
+    </DashboardPage>
   );
 }

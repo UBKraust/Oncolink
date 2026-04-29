@@ -1,33 +1,22 @@
 "use client";
 
-import React from "react";
-import Link from "next/link";
-import { ShieldCheck, ArrowLeft, Printer, Scale, FileText } from "lucide-react";
+import { ShieldCheck, Printer, Scale, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PublicDocumentShell } from "@/components/app/page-shell";
 
 
 
 export default function DeclarationPage() {
   return (
-    <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8 print:bg-white print:py-0 print:px-0">
-      <div className="max-w-3xl mx-auto">
-        <div className="mb-8 print:hidden">
-          <Button asChild variant="ghost" className="gap-2 text-slate-500 hover:text-primary">
-            <Link href="/dashboard">
-              <ArrowLeft className="h-4 w-4" /> Înapoi la Dashboard
-            </Link>
-          </Button>
-        </div>
-
-        <div className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/50 overflow-hidden border border-slate-100 print:shadow-none print:border-none print:rounded-none">
-          <div className="bg-rose-900 p-10 text-white relative overflow-hidden print:bg-white print:text-black print:border-b print:border-slate-200">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-rose-500/20 rounded-full blur-3xl -mr-32 -mt-32 print:hidden" />
-            <ShieldCheck className="h-12 w-12 text-rose-300 mb-4 relative z-10 print:text-slate-900" />
-            <h1 className="text-3xl font-black relative z-10 tracking-tight">Declarație pe proprie răspundere</h1>
-            <p className="text-rose-200 mt-2 relative z-10 font-medium print:text-slate-500">Document Legal · Validare Date Minor</p>
-          </div>
-
-          <div className="p-10 prose prose-slate max-w-none">
+    <PublicDocumentShell
+      backHref="/dashboard"
+      backLabel="Inapoi la dashboard"
+      icon={ShieldCheck}
+      title="Declarație pe proprie răspundere"
+      subtitle="Document legal · validare date minor"
+      accentClassName="bg-rose-900 text-white print:bg-white print:text-black print:border-b print:border-slate-200"
+    >
+          <div className="prose prose-slate max-w-none print:max-w-none">
             <div className="flex items-center gap-3 mb-8 p-6 bg-rose-50 rounded-2xl border border-rose-100 print:bg-slate-50 print:border-slate-200">
               <Scale className="h-6 w-6 text-rose-600 shrink-0" />
               <p className="text-sm font-bold text-rose-900 m-0 print:text-slate-900">
@@ -78,8 +67,6 @@ export default function DeclarationPage() {
               </p>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
+    </PublicDocumentShell>
   );
 }

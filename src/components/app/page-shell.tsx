@@ -146,3 +146,66 @@ export function EmptyState({
     </div>
   );
 }
+
+export function PublicPageShell({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <main className={cn(
+      "min-h-svh bg-[radial-gradient(circle_at_top_left,_rgba(14,116,144,0.08),_transparent_30%),linear-gradient(180deg,_rgba(248,250,252,0.96),_rgba(241,245,249,0.72))] px-4 py-10 sm:px-6 lg:px-8",
+      className,
+    )}>
+      {children}
+    </main>
+  );
+}
+
+export function PublicDocumentShell({
+  backHref,
+  backLabel,
+  icon: Icon,
+  title,
+  subtitle,
+  children,
+  accentClassName = "bg-slate-950 text-white",
+}: {
+  backHref?: string;
+  backLabel?: string;
+  icon: LucideIcon;
+  title: string;
+  subtitle?: string;
+  children: ReactNode;
+  accentClassName?: string;
+}) {
+  return (
+    <PublicPageShell>
+      <div className="mx-auto max-w-4xl">
+        {backHref && backLabel ? (
+          <div className="mb-8">
+            <Button asChild variant="ghost" className="gap-2 text-muted-foreground hover:text-foreground">
+              <a href={backHref}>{backLabel}</a>
+            </Button>
+          </div>
+        ) : null}
+
+        <div className="overflow-hidden rounded-[2.5rem] border border-border/60 bg-card shadow-xl shadow-slate-200/50">
+          <div className={cn("relative overflow-hidden px-8 py-10 sm:px-10", accentClassName)}>
+            <div className="absolute right-0 top-0 h-64 w-64 -translate-y-1/3 translate-x-1/3 rounded-full bg-white/10 blur-3xl" />
+            <div className="relative z-10">
+              <Icon className="mb-4 h-11 w-11" />
+              <h1 className="text-3xl font-black tracking-tight">{title}</h1>
+              {subtitle ? <p className="mt-2 max-w-2xl text-sm/6 opacity-80">{subtitle}</p> : null}
+            </div>
+          </div>
+          <div className="px-6 py-8 sm:px-10 sm:py-10">
+            {children}
+          </div>
+        </div>
+      </div>
+    </PublicPageShell>
+  );
+}

@@ -4,17 +4,13 @@ import { AlertTriangle, ChevronLeft, UserX } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
-  Card,
   CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { anonymizeClient } from "@/app/dashboard/clients/actions";
 import { getClient } from "@/lib/clients/queries";
+import { DashboardPage, EmptyState, PageHeader, SectionCard, SetupBanner } from "@/components/app/page-shell";
 
 const errorMessages: Record<string, string> = {
   confirmation: "Trebuie să scrii exact „ȘTERGE PII” pentru a confirma.",
@@ -35,21 +31,14 @@ export default async function AnonymizePage({
 
   if (client.notes_anonymized_at) {
     return (
-      <div className="mx-auto w-full max-w-xl">
-        <Card>
-          <CardHeader>
-            <CardTitle>Deja anonimizat</CardTitle>
-            <CardDescription>
-              Fișa acestui client a fost deja anonimizată. Acțiunea nu poate fi repetată.
-            </CardDescription>
-          </CardHeader>
-          <CardFooter>
-            <Button asChild variant="outline">
-              <Link href={`/dashboard/clients/${id}`}>Înapoi la fișă</Link>
-            </Button>
-          </CardFooter>
-        </Card>
-      </div>
+      <DashboardPage className="max-w-xl">
+        <EmptyState
+          title="Fișa este deja anonimizată"
+          description="Acțiunea a fost deja executată și nu poate fi repetată."
+          action={{ label: "Înapoi la fișă", href: `/dashboard/clients/${id}` }}
+          icon={UserX}
+        />
+      </DashboardPage>
     );
   }
 
@@ -57,7 +46,7 @@ export default async function AnonymizePage({
   const errorText = error ? (errorMessages[error] ?? decodeURIComponent(error)) : null;
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-4">
+    <DashboardPage className="max-w-2xl">
       <Link
         href={`/dashboard/clients/${id}`}
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
@@ -66,21 +55,20 @@ export default async function AnonymizePage({
         Înapoi la fișă
       </Link>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-200">
-              <AlertTriangle className="h-5 w-5" />
-            </div>
-            <div>
-              <CardTitle>Forget Client — GDPR</CardTitle>
-              <CardDescription>
-                Ireversibil. Șterge numele, emailul, telefonul, CNP/CIF și adresa din
-                fișa lui <span className="font-medium">{client.full_name}</span>.
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
+      <PageHeader
+        title="Forget Client — GDPR"
+        description={`Acțiune ireversibilă pentru ${client.full_name}. Elimină datele personale din fișa clientului.`}
+      />
+
+      {error === "demo" ? (
+        <SetupBanner description="Anonimizarea necesită o conexiune Supabase activă. Fluxul demo a fost eliminat." />
+      ) : null}
+
+      <SectionCard
+        title="Confirmare anonimizare"
+        description="Revizuiește exact ce se păstrează și ce se șterge înainte de a continua."
+        icon={AlertTriangle}
+      >
 
         <CardContent className="space-y-4 text-sm">
           <div className="rounded-md border bg-muted/40 p-3">
@@ -131,7 +119,7 @@ export default async function AnonymizePage({
             </div>
           </form>
         </CardContent>
-      </Card>
-    </div>
+      </SectionCard>
+    </DashboardPage>
   );
 }

@@ -4,14 +4,11 @@ import { ChevronLeft } from "lucide-react";
 
 import { ClientForm } from "@/components/clients/client-form";
 import {
-  Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { updateClient } from "@/app/dashboard/clients/actions";
 import { getClient } from "@/lib/clients/queries";
+import { DashboardPage, PageHeader, SectionCard } from "@/components/app/page-shell";
 
 export default async function EditClientPage({
   params,
@@ -25,7 +22,7 @@ export default async function EditClientPage({
   const boundUpdate = updateClient.bind(null, id);
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-4">
+    <DashboardPage className="max-w-3xl">
       <Link
         href={`/dashboard/clients/${id}`}
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
@@ -34,13 +31,15 @@ export default async function EditClientPage({
         Înapoi la fișă
       </Link>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Editează {client.full_name ?? "client"}</CardTitle>
-          <CardDescription>
-            Modificările sunt auditate în activity_logs și reflectate în documente.
-          </CardDescription>
-        </CardHeader>
+      <PageHeader
+        title={`Editează ${client.full_name ?? "client"}`}
+        description="Modificările sunt auditate și reflectate în documentele și fluxurile administrative aferente."
+      />
+
+      <SectionCard
+        title="Date pacient"
+        description="Actualizează profilul clinic și administrativ al clientului."
+      >
         <CardContent>
           <ClientForm
             action={boundUpdate}
@@ -82,7 +81,7 @@ export default async function EditClientPage({
             cancelHref={`/dashboard/clients/${id}`}
           />
         </CardContent>
-      </Card>
-    </div>
+      </SectionCard>
+    </DashboardPage>
   );
 }

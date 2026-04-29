@@ -32,6 +32,7 @@ import {
 import { updateAppointmentStatus } from "@/app/dashboard/appointments/actions";
 import { getInvoiceByAppointment } from "@/lib/invoices/queries";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { DashboardPage, PageHeader, SetupBanner } from "@/components/app/page-shell";
 
 const locationIcon = {
   PRIVAT: Home,
@@ -70,7 +71,7 @@ export default async function AppointmentDetailPage({
   const configured = isSupabaseConfigured();
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-5">
+    <DashboardPage className="max-w-5xl space-y-5">
       <Link
         href="/dashboard/appointments"
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
@@ -80,39 +81,37 @@ export default async function AppointmentDetailPage({
       </Link>
 
       {demo && (
-        <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-          Mod demo: modificările de status nu sunt persistate.
-        </div>
+        <SetupBanner description="Modul demo pentru modificarea statusului nu mai persistă date. Activează Supabase pentru editări reale." />
       )}
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-4">
+      <PageHeader
+        title={format(new Date(appointment.appointment_date), "EEEE, d MMMM yyyy", { locale: ro })}
+        description={`${format(new Date(appointment.appointment_date), "HH:mm")} · ${appointment.duration_minutes} min · ${appointment.is_external_duty ? "Gardă externă" : appointment.client?.full_name ?? "—"}`}
+        action={
+          <div className="flex items-center gap-2">
+            <Badge variant={statusVariant[appointment.status as keyof typeof statusVariant]} className="text-sm px-3 py-1">
+              {statusLabel[appointment.status as keyof typeof statusLabel] ?? appointment.status}
+            </Badge>
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/dashboard/appointments/${id}/edit`}>
+                <Pencil className="h-4 w-4" />
+                Editează
+              </Link>
+            </Button>
+          </div>
+        }
+      />
+
+      <div className="flex items-center gap-4 rounded-[1.75rem] border border-border/60 bg-card px-5 py-4 shadow-sm">
           <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <CalendarClock className="h-6 w-6" />
           </div>
-          <div>
-            <h1 className="text-xl font-semibold">
-              {format(new Date(appointment.appointment_date), "EEEE, d MMMM yyyy", { locale: ro })}
-            </h1>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-foreground">Rezumat programare</p>
             <p className="text-sm text-muted-foreground">
-              {format(new Date(appointment.appointment_date), "HH:mm")} ·{" "}
-              {appointment.duration_minutes} min ·{" "}
-              {appointment.is_external_duty ? "Gardă externă" : appointment.client?.full_name ?? "—"}
+              {locationLabel[location]} · {appointment.meet_link ? "sesiune online disponibilă" : "fără link online"}
             </p>
           </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Badge variant={statusVariant[appointment.status as keyof typeof statusVariant]} className="text-sm px-3 py-1">
-            {statusLabel[appointment.status as keyof typeof statusLabel] ?? appointment.status}
-          </Badge>
-          <Button asChild variant="outline" size="sm">
-            <Link href={`/dashboard/appointments/${id}/edit`}>
-              <Pencil className="h-4 w-4" />
-              Editează
-            </Link>
-          </Button>
-        </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
@@ -248,7 +247,7 @@ export default async function AppointmentDetailPage({
           )}
         </div>
       </div>
-    </div>
+    </DashboardPage>
   );
 }
 

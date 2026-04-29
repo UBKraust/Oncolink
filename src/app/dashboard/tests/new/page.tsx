@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import type { TestTemplate } from "@/lib/assessments/types";
 import { saveTestTemplate } from "@/app/dashboard/tests/test-actions";
 import { toast } from "@/components/ui/toast";
+import { DashboardPage, EmptyState, PageHeader, SectionCard } from "@/components/app/page-shell";
 
 export default function NewTestPage() {
   const [isSaving, setIsSaving] = useState(false);
@@ -31,7 +32,7 @@ export default function NewTestPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-5 pb-10">
+    <DashboardPage className="max-w-3xl">
       <Link
         href="/dashboard/tests"
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
@@ -40,15 +41,17 @@ export default function NewTestPage() {
         Catalog Teste
       </Link>
 
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Creare Test Personalizat</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Construiește propriul inventar clinic cu întrebări, ponderi și sub-scale personalizate.
-        </p>
-      </div>
+      <PageHeader
+        title="Creare test personalizat"
+        description="Construiește propriul inventar clinic cu întrebări, ponderi și sub-scale personalizate."
+      />
 
       {!saved ? (
-        <div className={isSaving ? "opacity-50 pointer-events-none" : ""}>
+        <SectionCard
+          title="Builder test"
+          description="Definește structura întrebărilor și logica de scoring înainte de salvare."
+        >
+        <div className={isSaving ? "pointer-events-none opacity-50" : ""}>
           <TestBuilderForm onSave={handleSave} />
           {isSaving && (
             <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
@@ -57,16 +60,15 @@ export default function NewTestPage() {
             </div>
           )}
         </div>
+        </SectionCard>
       ) : (
-        <div className="rounded-md border border-emerald-300 bg-emerald-50/50 p-6 text-center space-y-3">
-          <div className="flex justify-center">
-            <CheckCircle2 className="h-10 w-10 text-emerald-600" />
-          </div>
-          <p className="text-lg font-semibold text-emerald-800">Testul a fost salvat!</p>
-          <p className="text-sm text-emerald-700">
-            <strong>{saved.name}</strong> — {saved.questions.length} întrebări, logică: {saved.scoring_logic.type}
-          </p>
-          <div className="flex gap-3 justify-center pt-4">
+        <div className="rounded-[2rem] border border-emerald-200 bg-emerald-50/70 p-2">
+          <EmptyState
+            title="Testul a fost salvat"
+            description={`${saved.name} — ${saved.questions.length} întrebări, logică: ${saved.scoring_logic.type}`}
+            icon={CheckCircle2}
+          />
+          <div className="flex justify-center gap-3 pb-6">
             <Button asChild variant="outline">
               <Link href="/dashboard/tests">
                 Înapoi la catalog
@@ -80,6 +82,6 @@ export default function NewTestPage() {
           </div>
         </div>
       )}
-    </div>
+    </DashboardPage>
   );
 }

@@ -4,24 +4,23 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { seededTests } from "@/lib/assessments/seededTests";
+import { DashboardPage, PageHeader } from "@/components/app/page-shell";
 
 export default function TestsCatalogPage() {
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-6 pb-10">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Catalog Teste Psihologice</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Administrează inventarele standardizate și creează teste proprii.
-          </p>
-        </div>
-        <Button asChild>
-          <Link href="/dashboard/tests/new">
-            <Plus className="mr-2 h-4 w-4" />
-            Test Nou (Custom)
-          </Link>
-        </Button>
-      </div>
+    <DashboardPage className="max-w-5xl">
+      <PageHeader
+        title="Catalog teste psihologice"
+        description="Administrează inventarele standardizate și creează teste proprii pentru evaluări."
+        action={
+          <Button asChild>
+            <Link href="/dashboard/tests/new">
+              <Plus className="mr-2 h-4 w-4" />
+              Test nou (custom)
+            </Link>
+          </Button>
+        }
+      />
 
       <div className="grid gap-4 md:grid-cols-2">
         {seededTests.map((test) => {
@@ -74,6 +73,6 @@ export default function TestsCatalogPage() {
           );
         })}
       </div>
-    </div>
+    </DashboardPage>
   );
 }

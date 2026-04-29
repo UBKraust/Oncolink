@@ -6,12 +6,9 @@ import { getClient } from "@/lib/clients/queries";
 import { OnboardingForm } from "@/components/clients/OnboardingForm";
 import type { ClientProfile } from "@/components/clients/types";
 import {
-  Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
+import { DashboardPage, EmptyState, PageHeader, SectionCard } from "@/components/app/page-shell";
 
 export default async function ClientOnboardingPage({
   params,
@@ -25,16 +22,18 @@ export default async function ClientOnboardingPage({
 
   if (client.notes_anonymized_at) {
     return (
-      <div className="mx-auto w-full max-w-2xl space-y-4">
-        <p className="text-sm text-muted-foreground">
-          Clientul a fost anonimizat — onboarding indisponibil.
-        </p>
-      </div>
+      <DashboardPage className="max-w-2xl">
+        <EmptyState
+          title="Onboarding indisponibil"
+          description="Clientul a fost anonimizat, deci fluxul de onboarding nu mai poate fi completat."
+          icon={ClipboardList}
+        />
+      </DashboardPage>
     );
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-4">
+    <DashboardPage className="max-w-2xl">
       <Link
         href={`/dashboard/clients/${id}`}
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
@@ -43,17 +42,16 @@ export default async function ClientOnboardingPage({
         Înapoi la fișa clientului
       </Link>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ClipboardList className="h-5 w-5 text-primary" />
-            Onboarding — {client.full_name}
-          </CardTitle>
-          <CardDescription>
-            Completează datele administrative, contactul de urgență, sursa trimiterii
-            și confirmă consimțământul GDPR.
-          </CardDescription>
-        </CardHeader>
+      <PageHeader
+        title={`Onboarding — ${client.full_name}`}
+        description="Completează datele administrative, contactul de urgență, sursa trimiterii și consimțământul GDPR."
+      />
+
+      <SectionCard
+        title="Formular onboarding"
+        description="Aceste informații completează dosarul administrativ înainte de primele ședințe."
+        icon={ClipboardList}
+      >
         <CardContent>
           <OnboardingForm
             clientId={id}
@@ -70,7 +68,7 @@ export default async function ClientOnboardingPage({
             }}
           />
         </CardContent>
-      </Card>
-    </div>
+      </SectionCard>
+    </DashboardPage>
   );
 }

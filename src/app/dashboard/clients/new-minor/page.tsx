@@ -3,16 +3,13 @@ import { ChevronLeft, Baby } from "lucide-react";
 
 import { MinorOnboardingForm } from "@/components/clients/MinorOnboardingForm";
 import {
-  Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
+import { DashboardPage, PageHeader, SectionCard } from "@/components/app/page-shell";
 
 export default function NewMinorClientPage() {
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-4">
+    <DashboardPage className="max-w-2xl">
       <Link
         href="/dashboard/clients"
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
@@ -21,21 +18,20 @@ export default function NewMinorClientPage() {
         Înapoi la clienți
       </Link>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Baby className="h-5 w-5 text-primary" />
-            Pacient Minor Nou
-          </CardTitle>
-          <CardDescription>
-            Onboarding pacient minor — date personale, date părinți / tutori legali,
-            status marital și documente legale de custodie.
-          </CardDescription>
-        </CardHeader>
+      <PageHeader
+        title="Pacient minor nou"
+        description="Onboarding pentru pacient minor: date personale, reprezentare legală și documentația de custodie."
+      />
+
+      <SectionCard
+        title="Înregistrare pacient minor"
+        description="Completează datele minorului și ale reprezentanților legali înainte de activarea fișei."
+        icon={Baby}
+      >
         <CardContent>
           <MinorOnboardingForm />
         </CardContent>
-      </Card>
-    </div>
+      </SectionCard>
+    </DashboardPage>
   );
 }

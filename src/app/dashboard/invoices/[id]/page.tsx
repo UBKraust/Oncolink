@@ -7,15 +7,12 @@ import { ArrowLeft, CreditCard, ExternalLink, FileDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { getInvoice, invoiceStatusVariant } from "@/lib/invoices/queries";
 import { InvoiceActions } from "@/components/invoices/invoice-actions";
+import { DashboardPage, PageHeader, SectionCard } from "@/components/app/page-shell";
 
 export default async function InvoiceDetailPage({
   params,
@@ -29,40 +26,37 @@ export default async function InvoiceDetailPage({
   const seriesNum = `${invoice.smartbill_series ?? "—"}/${invoice.smartbill_number ?? "—"}`;
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <Link
-            href="/dashboard/invoices"
-            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Înapoi la facturi
-          </Link>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight font-mono">
-            {seriesNum}
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {format(new Date(invoice.issued_at), "d MMMM yyyy", { locale: ro })}
-          </p>
-        </div>
-        <Badge
-          variant={
-            invoiceStatusVariant[
-              invoice.status as keyof typeof invoiceStatusVariant
-            ] ?? "secondary"
-          }
-          className="self-start text-sm px-3 py-1"
-        >
-          {invoice.status}
-        </Badge>
-      </div>
+    <DashboardPage className="max-w-2xl">
+      <Link
+        href="/dashboard/invoices"
+        className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" />
+        Înapoi la facturi
+      </Link>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Detalii factură</CardTitle>
-          <CardDescription>e-Factura ANAF · TVA 0%</CardDescription>
-        </CardHeader>
+      <PageHeader
+        title={seriesNum}
+        description={format(new Date(invoice.issued_at), "d MMMM yyyy", { locale: ro })}
+        action={
+          <Badge
+            variant={
+              invoiceStatusVariant[
+                invoice.status as keyof typeof invoiceStatusVariant
+              ] ?? "secondary"
+            }
+            className="self-start px-3 py-1 text-sm"
+          >
+            {invoice.status}
+          </Badge>
+        }
+      />
+
+      <SectionCard
+        title="Detalii factură"
+        description="e-Factura ANAF · TVA 0%"
+        icon={FileDown}
+      >
         <CardContent className="space-y-4">
           <Row label="Client" value={invoice.client_name ?? "—"} />
           <Separator />
@@ -87,7 +81,7 @@ export default async function InvoiceDetailPage({
             })}
           />
         </CardContent>
-      </Card>
+      </SectionCard>
 
       <div className="flex flex-wrap gap-2">
         {invoice.pdf_url ? (
@@ -123,7 +117,7 @@ export default async function InvoiceDetailPage({
       </div>
 
       <InvoiceActions invoice={invoice} />
-    </div>
+    </DashboardPage>
   );
 }
 

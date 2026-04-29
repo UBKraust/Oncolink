@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { MinorOnboardingWizard } from "@/components/onboarding/MinorOnboardingWizard";
 import { ShieldCheck, Baby } from "lucide-react";
+import { PublicPageShell } from "@/components/app/page-shell";
 
 export const metadata: Metadata = {
   title: "Onboarding Minor | Securitate Juridică | Ce`ai Pățit?",
@@ -15,7 +16,7 @@ export default async function MinorOnboardingPage({
   const { therapist } = await searchParams;
 
   return (
-    <main className="min-h-screen bg-[#F8FAFC] selection:bg-rose-100">
+    <PublicPageShell className="selection:bg-rose-100">
       {/* Visual Background Pattern */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none opacity-20">
          <div className="absolute top-[5%] left-[10%] w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
@@ -58,6 +59,6 @@ export default async function MinorOnboardingPage({
            </p>
         </div>
       </div>
-    </main>
+    </PublicPageShell>
   );
 }

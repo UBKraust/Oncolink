@@ -1,29 +1,17 @@
-import React from "react";
-import Link from "next/link";
-import { Shield, ArrowLeft, Scale, Lock, Eye, FileText, Server, Mail } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Shield, Scale, Lock, Eye, FileText, Server, Mail } from "lucide-react";
+import { PublicDocumentShell } from "@/components/app/page-shell";
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
-          <Button asChild variant="ghost" className="gap-2 text-slate-500 hover:text-primary">
-            <Link href="/dashboard">
-              <ArrowLeft className="h-4 w-4" /> Înapoi la Dashboard
-            </Link>
-          </Button>
-        </div>
-
-        <div className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/50 overflow-hidden border border-slate-100">
-          <div className="bg-slate-900 p-10 text-white relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-3xl -mr-32 -mt-32" />
-            <Shield className="h-12 w-12 text-primary mb-4 relative z-10" />
-            <h1 className="text-3xl font-black relative z-10">Anexă GDPR / Politica de Confidențialitate</h1>
-            <p className="text-slate-400 mt-2 relative z-10">Ultima actualizare: 25 Aprilie 2026</p>
-          </div>
-
-          <div className="p-10 prose prose-slate max-w-none">
+    <PublicDocumentShell
+      backHref="/dashboard"
+      backLabel="Inapoi la dashboard"
+      icon={Shield}
+      title="Anexă GDPR / Politica de Confidențialitate"
+      subtitle="Ultima actualizare: 25 Aprilie 2026"
+      accentClassName="bg-slate-950 text-white"
+    >
+          <div className="prose prose-slate max-w-none">
             <section className="mb-10">
               <h2 className="text-xl font-black text-slate-800 flex items-center gap-2 mb-4">
                 <Lock className="h-5 w-5 text-primary" /> 1. Operatorul și scopul documentului
@@ -124,8 +112,6 @@ export default function PrivacyPage() {
               </p>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
+    </PublicDocumentShell>
   );
 }

@@ -4,16 +4,13 @@ import { ChevronLeft } from "lucide-react";
 
 import { AppointmentForm } from "@/components/appointments/appointment-form";
 import {
-  Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { getAppointment } from "@/lib/appointments/queries";
 import { listClients } from "@/lib/clients/queries";
 import { deriveLocation } from "@/lib/appointments/helpers";
 import { updateAppointment } from "@/app/dashboard/appointments/actions";
+import { DashboardPage, PageHeader, SectionCard } from "@/components/app/page-shell";
 
 export default async function EditAppointmentPage({
   params,
@@ -34,7 +31,7 @@ export default async function EditAppointmentPage({
   const boundUpdate = updateAppointment.bind(null, id);
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-4">
+    <DashboardPage className="max-w-3xl">
       <Link
         href={`/dashboard/appointments/${id}`}
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
@@ -43,13 +40,15 @@ export default async function EditAppointmentPage({
         Înapoi la programare
       </Link>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Editează programarea</CardTitle>
-          <CardDescription>
-            Modificările sunt reflectate imediat în calendar și notificări.
-          </CardDescription>
-        </CardHeader>
+      <PageHeader
+        title="Editează programarea"
+        description="Modificările sunt reflectate imediat în calendar, fișa clientului și notificările aferente."
+      />
+
+      <SectionCard
+        title="Date programare"
+        description="Actualizează intervalul, locația și statusul ședinței."
+      >
         <CardContent>
           <AppointmentForm
             action={boundUpdate}
@@ -66,7 +65,7 @@ export default async function EditAppointmentPage({
             cancelHref={`/dashboard/appointments/${id}`}
           />
         </CardContent>
-      </Card>
-    </div>
+      </SectionCard>
+    </DashboardPage>
   );
 }

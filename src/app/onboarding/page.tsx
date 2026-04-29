@@ -3,6 +3,7 @@ import { Activity, Heart } from "lucide-react";
 
 import { getClientForOnboardingToken } from "@/app/dashboard/clients/onboarding-actions";
 import { ClientOnboardingWizard } from "@/components/onboarding/ClientOnboardingWizard";
+import { PublicPageShell } from "@/components/app/page-shell";
 
 export const metadata: Metadata = {
   title: "Onboarding Pacient | Ce`ai Pățit?",
@@ -22,7 +23,7 @@ export default async function OnboardingPage({
 
   if (error || !client) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
+      <PublicPageShell className="flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-background rounded-3xl border border-rose-100 shadow-2xl p-8 text-center space-y-4">
           <div className="mx-auto w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center text-rose-500">
             <Activity className="h-8 w-8" />
@@ -32,12 +33,12 @@ export default async function OnboardingPage({
             Acest link de înrolare nu mai este activ sau a expirat. Te rugăm să contactezi terapeutul tău pentru un link nou.
           </p>
         </div>
-      </div>
+      </PublicPageShell>
     );
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 selection:bg-primary/10">
+    <PublicPageShell className="selection:bg-primary/10">
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-3xl opacity-30 animate-pulse" />
         <div className="absolute top-[20%] -right-[5%] w-[30%] h-[30%] bg-emerald-500/5 rounded-full blur-3xl opacity-20" />
@@ -62,6 +63,6 @@ export default async function OnboardingPage({
           Datele transmise prin acest formular sunt procesate prin fluxurile de securitate ale platformei Ce`ai Pățit?. Configurarea finală și utilizarea clinică trebuie validate de cabinetul operator.
         </p>
       </div>
-    </main>
+    </PublicPageShell>
   );
 }

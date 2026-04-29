@@ -3,17 +3,14 @@ import { ChevronLeft } from "lucide-react";
 
 import { ClientForm } from "@/components/clients/client-form";
 import {
-  Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { createClient } from "@/app/dashboard/clients/actions";
+import { DashboardPage, PageHeader, SectionCard } from "@/components/app/page-shell";
 
 export default function NewClientPage() {
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-4">
+    <DashboardPage className="max-w-3xl">
       <Link
         href="/dashboard/clients"
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
@@ -22,14 +19,15 @@ export default function NewClientPage() {
         Înapoi la clienți
       </Link>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Client nou</CardTitle>
-          <CardDescription>
-            Datele introduse vor fi stocate criptat la rest și utilizate pentru
-            Contract, Consimțământ GDPR și facturare SmartBill.
-          </CardDescription>
-        </CardHeader>
+      <PageHeader
+        title="Client nou"
+        description="Datele introduse vor fi folosite în fișa clinică, documente legale și facturare."
+      />
+
+      <SectionCard
+        title="Date inițiale client"
+        description="Completează profilul administrativ de bază pentru a crea fișa clientului."
+      >
         <CardContent>
           <ClientForm
             action={createClient}
@@ -37,7 +35,7 @@ export default function NewClientPage() {
             cancelHref="/dashboard/clients"
           />
         </CardContent>
-      </Card>
-    </div>
+      </SectionCard>
+    </DashboardPage>
   );
 }

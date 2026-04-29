@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import { Activity } from "lucide-react";
+import { PublicPageShell } from "@/components/app/page-shell";
 
 export const metadata: Metadata = {
   title: "Onboarding Pacient | Ce`ai Pățit?",
@@ -8,7 +9,7 @@ export const metadata: Metadata = {
 
 export default async function LegacyOnboardingPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
+    <PublicPageShell className="flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-background rounded-3xl border border-rose-100 shadow-2xl p-8 text-center space-y-4">
         <div className="mx-auto w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center text-rose-500">
           <Activity className="h-8 w-8" />
@@ -18,6 +19,6 @@ export default async function LegacyOnboardingPage() {
           Linkurile vechi de onboarding nu mai sunt acceptate. Te rugăm să contactezi terapeutul pentru un link securizat nou.
         </p>
       </div>
-    </div>
+    </PublicPageShell>
   );
 }

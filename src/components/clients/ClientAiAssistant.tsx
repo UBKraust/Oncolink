@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Bot, Send, Loader2, Sparkles, Trash2, User, AlertCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useOverlayA11y } from "@/components/ui/use-overlay-a11y";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -84,17 +85,15 @@ export function ClientAiAssistant({ clientContext }: Props) {
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   const contextString = buildClientContext(clientContext);
 
   useEffect(() => {
     if (open) {
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "auto";
     }
-    return () => { document.body.style.overflow = "auto"; };
   }, [messages, open]);
 
   useEffect(() => {
@@ -172,6 +171,13 @@ export function ClientAiAssistant({ clientContext }: Props) {
     }
   }
 
+  useOverlayA11y({
+    open,
+    onClose: () => setOpen(false),
+    containerRef: panelRef,
+    initialFocusRef: textareaRef,
+  });
+
   return (
     <>
       {/* Floating Toggle Button */}
@@ -200,10 +206,17 @@ export function ClientAiAssistant({ clientContext }: Props) {
         />
 
         {/* Panel */}
-        <div className={cn(
+        <div
+          ref={panelRef}
+          className={cn(
           "relative flex h-full w-full max-w-md flex-col bg-background shadow-2xl transition-transform duration-500 ease-out",
           open ? "translate-x-0" : "translate-x-full"
-        )}>
+          )}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="client-ai-assistant-title"
+          tabIndex={-1}
+        >
           {/* Header */}
           <div className="flex items-center justify-between border-b px-5 py-4 bg-slate-50/50">
             <div className="flex items-center gap-3">
@@ -211,13 +224,16 @@ export function ClientAiAssistant({ clientContext }: Props) {
                 <Sparkles className="h-5 w-5" />
               </div>
               <div>
-                <h2 className="text-sm font-black text-slate-900 uppercase tracking-tight">Asistent AI Contextual</h2>
+                <h2 id="client-ai-assistant-title" className="text-sm font-black text-slate-900 uppercase tracking-tight">Asistent AI Contextual</h2>
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{clientContext.name ?? "Pacient"}</p>
               </div>
             </div>
             <button
+              ref={closeButtonRef}
+              type="button"
               onClick={() => setOpen(false)}
               className="rounded-full p-2 hover:bg-slate-200 transition-colors"
+              aria-label="Închide asistentul AI"
             >
               <X className="h-5 w-5 text-slate-500" />
             </button>
@@ -236,6 +252,7 @@ export function ClientAiAssistant({ clientContext }: Props) {
                   {CLIENT_QUICK_PROMPTS.map((p) => (
                     <button
                       key={p}
+                      type="button"
                       onClick={() => handleSend(p)}
                       className="group text-left text-[11px] border bg-white rounded-xl px-4 py-3 hover:bg-primary hover:text-white hover:border-primary transition-all duration-200 font-medium shadow-sm active:scale-[0.98]"
                     >
@@ -290,13 +307,16 @@ export function ClientAiAssistant({ clientContext }: Props) {
                 placeholder="Ex: Sugerează obiective terapeutice..."
                 className="flex-1 resize-none bg-transparent text-sm outline-none placeholder:text-slate-400 py-1 min-h-[24px] max-h-[150px] font-medium"
                 disabled={isLoading}
+                aria-label="Mesaj pentru asistentul AI"
               />
               <div className="flex items-center gap-2">
                 {messages.length > 0 && (
                   <button
+                    type="button"
                     onClick={() => { setMessages([]); setError(null); }}
                     className="p-1.5 text-slate-400 hover:text-rose-500 transition-colors"
                     title="Șterge conversația"
+                    aria-label="Șterge conversația"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>

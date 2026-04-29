@@ -9,7 +9,9 @@ export interface SendEmailParams {
   from?: string;
 }
 
-export async function sendEmail(params: SendEmailParams): Promise<{ id: string } | { error: any }> {
+type SendEmailResult = { id: string } | { error: unknown };
+
+export async function sendEmail(params: SendEmailParams): Promise<SendEmailResult> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     console.error("[Mail] RESEND_API_KEY is not configured.");

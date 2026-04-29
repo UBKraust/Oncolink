@@ -33,7 +33,9 @@ export function AppointmentsViewManager({ appointments, children }: Appointments
       <div className="flex items-center justify-end">
         <div className="inline-flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200 shadow-inner">
           <button
+            type="button"
             onClick={() => setView("calendar")}
+            aria-pressed={view === "calendar"}
             className={cn(
               "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-tight transition-all",
               view === "calendar" 
@@ -44,7 +46,9 @@ export function AppointmentsViewManager({ appointments, children }: Appointments
             <CalendarIcon className="h-3.5 w-3.5" /> Calendar
           </button>
           <button
+            type="button"
             onClick={() => setView("list")}
+            aria-pressed={view === "list"}
             className={cn(
               "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-tight transition-all",
               view === "list" 

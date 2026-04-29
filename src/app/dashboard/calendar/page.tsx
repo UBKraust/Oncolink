@@ -39,7 +39,22 @@ export default async function CalendarPage({
         </div>
       )}
 
+      {appointments.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-900">Nu ai încă programări în calendar</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Creează prima programare pentru a începe planificarea săptămânală.
+          </p>
+          <Button asChild className="mt-4">
+            <Link href="/dashboard/appointments/new">
+              <CalendarPlus className="h-4 w-4" />
+              Adaugă prima programare
+            </Link>
+          </Button>
+        </div>
+      ) : (
       <WeekView appointments={appointments} initialDate={date} />
+      )}
     </div>
   );
 }

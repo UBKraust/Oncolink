@@ -13,7 +13,6 @@ const MARGIN = 20;
 const PAGE_W = 210; // A4 mm
 const CONTENT_W = PAGE_W - MARGIN * 2;
 const PRIMARY = "#1a3c5e";
-const SECONDARY = "#6b7c93";
 const BORDER = "#d9e2ec";
 const SOFT_BG = "#f6f8fb";
 let pageHeaderRenderer: ((doc: jsPDF) => void) | null = null;

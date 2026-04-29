@@ -60,10 +60,14 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
     initialClients.find(c => c.id === contractClientId) || null
   , [initialClients, contractClientId]);
 
+  const activeFiltersLabel = searchQuery
+    ? `Filtrare activă: ${filteredClients.length} rezultat${filteredClients.length === 1 ? "" : "e"}`
+    : `${initialClients.length} pacienți în registru`;
+
   return (
     <div className="space-y-6">
       {/* Search & Actions Bar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white p-4 rounded-3xl border border-slate-100 shadow-sm">
+      <div className="flex flex-col gap-4 rounded-3xl border border-slate-100 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
         <div className="relative flex-1 max-w-md group">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
           <Input 
@@ -73,10 +77,10 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <div className="flex items-center gap-2">
-           <Button variant="outline" className="h-11 px-4 rounded-2xl border-slate-200 text-slate-600 gap-2 font-bold">
-              <Filter className="h-4 w-4" /> Filtrează
-           </Button>
+        <div className="flex flex-wrap items-center gap-2">
+           <Badge variant="secondary" className="h-11 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-xs font-bold text-slate-600">
+              <Filter className="mr-2 h-4 w-4" /> {activeFiltersLabel}
+           </Badge>
            <Button asChild className="h-11 px-6 rounded-2xl font-black shadow-xl shadow-primary/20 gap-2">
              <Link href="/dashboard/clients/new">
                 <Plus className="h-5 w-5" /> Adaugă Client
@@ -85,8 +89,99 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
         </div>
       </div>
 
+      <div className="grid gap-4 md:hidden">
+        {filteredClients.length === 0 ? (
+          <div className="rounded-[2rem] border border-slate-100 bg-white px-6 py-12 text-center shadow-sm">
+            <div className="flex flex-col items-center gap-3 text-slate-400">
+              <Users className="h-12 w-12 opacity-20" />
+              <p className="font-medium">Nu am găsit niciun client cu acest nume.</p>
+            </div>
+          </div>
+        ) : (
+          filteredClients.map((client) => {
+            const anonymized = !!client.notes_anonymized_at;
+            return (
+              <article
+                key={client.id}
+                className="rounded-[2rem] border border-slate-100 bg-white p-5 shadow-sm"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 text-xs font-black text-slate-700">
+                    {initialsFromName(client.full_name)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-bold text-slate-800">{client.full_name}</p>
+                    <p className="truncate text-xs text-slate-400">
+                      {anonymized ? "REDACTED@cepaipatit.ro" : client.email || "fără email"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {client.is_minor && (
+                    <Badge variant="secondary" className="bg-amber-100/60 text-amber-700">
+                      <Baby className="mr-1 h-3 w-3" /> Minor
+                    </Badge>
+                  )}
+                  {client.billing_type === "B2B_COMPANY" && (
+                    <Badge variant="outline" className="border-blue-100 bg-blue-50/60 text-blue-700">
+                      <Building className="mr-1 h-3 w-3" /> B2B
+                    </Badge>
+                  )}
+                  <Badge variant={client.gdpr_consent_signed ? "success" : "warning"}>
+                    {client.gdpr_consent_signed ? (
+                      <ShieldCheck className="mr-1 h-3 w-3" />
+                    ) : (
+                      <ShieldOff className="mr-1 h-3 w-3" />
+                    )}
+                    {client.gdpr_consent_signed ? "GDPR semnat" : "GDPR lipsă"}
+                  </Badge>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-3 rounded-2xl bg-slate-50 p-3 text-xs">
+                  <div>
+                    <p className="font-black uppercase tracking-widest text-slate-400">Locație</p>
+                    <p className="mt-1 flex items-center gap-1 font-medium text-slate-600">
+                      <MapPin className="h-3 w-3" />
+                      {client.location === "CLINICA" ? "Clinică" : "Cabinet"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-black uppercase tracking-widest text-slate-400">Vechime</p>
+                    <p className="mt-1 font-medium text-slate-600">
+                      {format(new Date(client.created_at), "MMM yyyy", { locale: ro })}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex gap-2">
+                  {!anonymized && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="flex-1 rounded-2xl"
+                      onClick={() => setContractClientId(client.id)}
+                    >
+                      <FileCheck className="h-4 w-4" />
+                      Contract
+                    </Button>
+                  )}
+                  <Button
+                    type="button"
+                    className="flex-1 rounded-2xl"
+                    onClick={() => setSelectedClientId(client.id)}
+                  >
+                    Deschide fișa
+                  </Button>
+                </div>
+              </article>
+            );
+          })
+        )}
+      </div>
+
       {/* Modern Dense Table */}
-      <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden">
+      <div className="hidden overflow-x-auto rounded-[2.5rem] border border-slate-100 bg-white shadow-xl shadow-slate-200/40 md:block">
         <Table>
           <TableHeader className="bg-slate-50/50">
             <TableRow className="hover:bg-transparent border-b-slate-100">
@@ -192,6 +287,11 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
                            variant="ghost" 
                            size="icon" 
                            className="h-9 w-9 rounded-xl text-slate-400 group-hover:text-primary group-hover:bg-primary/5 transition-all"
+                           onClick={(e) => {
+                             e.stopPropagation();
+                             setSelectedClientId(client.id);
+                           }}
+                           aria-label={`Deschide fișa pentru ${client.full_name ?? "client"}`}
                          >
                             <ChevronRight className="h-5 w-5" />
                          </Button>

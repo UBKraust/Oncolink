@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { format, startOfWeek, addDays, startOfDay, addMinutes, differenceInMinutes, isSameDay, setHours, setMinutes } from "date-fns";
+import { format, startOfWeek, addDays, startOfDay, isSameDay, setHours, setMinutes } from "date-fns";
 import { ro } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";

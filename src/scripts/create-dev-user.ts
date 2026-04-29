@@ -24,7 +24,7 @@ async function createDevUser() {
 
   console.log(`Creating user: ${email}...`)
 
-  const { data, error } = await supabase.auth.admin.createUser({
+  const { error } = await supabase.auth.admin.createUser({
     email,
     password,
     email_confirm: true
@@ -33,7 +33,7 @@ async function createDevUser() {
   if (error) {
     if (error.message.includes('already registered')) {
       console.log('User already exists. Attempting to update password...')
-      const { error: updateError } = await supabase.auth.admin.updateUserById(
+      await supabase.auth.admin.updateUserById(
         // We'd need the ID to update, but signup failure is fine if it exists.
         'existing', 
         { password }

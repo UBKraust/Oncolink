@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { 
   Plus, 
@@ -8,7 +8,6 @@ import {
   Baby, 
   Calendar, 
   Receipt, 
-  Copy, 
   Check, 
   X,
   Zap
@@ -53,7 +52,7 @@ export function QuickActionsWheel() {
       label: "Onboarding Adult",
       icon: UserPlus,
       color: "bg-blue-500 shadow-blue-200",
-      action: () => copyLink("/onboarding/adult", "Adult"),
+      action: () => copyLink("/onboarding", "Adult"),
     },
     {
       id: "app",

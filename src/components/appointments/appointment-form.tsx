@@ -5,9 +5,11 @@ import { useActionState, useState } from "react";
 import { Bell, RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import type { AppointmentFormState } from "@/lib/appointments/form-state";
 import {
   APPOINTMENT_STATUSES,
@@ -55,11 +57,17 @@ export function AppointmentForm({
   const [state, formAction, pending] = useActionState(action, initialState);
   const [location, setLocation] = useState(defaults.location ?? "PRIVAT");
   const [recurring, setRecurring] = useState(false);
+  const [recurringCount, setRecurringCount] = useState("8");
+  const globalErrorId = state.error ? "appointment-form-error" : undefined;
 
   return (
     <form action={formAction} className="space-y-5">
       {state.error && (
-        <div className="rounded-md border border-rose-300 bg-rose-50 p-3 text-sm text-rose-900 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">
+        <div
+          id="appointment-form-error"
+          role="alert"
+          className="rounded-md border border-rose-300 bg-rose-50 p-3 text-sm text-rose-900 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200"
+        >
           {state.error}
         </div>
       )}
@@ -76,6 +84,11 @@ export function AppointmentForm({
             required
             defaultValue={defaults.client_id ?? ""}
             aria-invalid={!!state.fieldErrors.client_id}
+            aria-describedby={
+              state.fieldErrors.client_id
+                ? "client_id-error"
+                : globalErrorId
+            }
           >
             <option value="">— Selectează client —</option>
             {clients.map((c) => (
@@ -85,7 +98,7 @@ export function AppointmentForm({
             ))}
           </Select>
           {state.fieldErrors.client_id && (
-            <p className="text-xs text-rose-600">{state.fieldErrors.client_id}</p>
+            <p id="client_id-error" className="text-xs text-rose-600">{state.fieldErrors.client_id}</p>
           )}
         </div>
 
@@ -105,9 +118,14 @@ export function AppointmentForm({
                 : ""
             }
             aria-invalid={!!state.fieldErrors.appointment_date}
+            aria-describedby={
+              state.fieldErrors.appointment_date
+                ? "appointment_date-error"
+                : globalErrorId
+            }
           />
           {state.fieldErrors.appointment_date && (
-            <p className="text-xs text-rose-600">
+            <p id="appointment_date-error" className="text-xs text-rose-600">
               {state.fieldErrors.appointment_date}
             </p>
           )}
@@ -193,13 +211,20 @@ export function AppointmentForm({
             defaultValue={defaults.meet_link ?? ""}
             disabled={location !== "ONLINE"}
             aria-invalid={!!state.fieldErrors.meet_link}
+            aria-describedby={
+              location !== "ONLINE"
+                ? "meet_link-hint"
+                : state.fieldErrors.meet_link
+                  ? "meet_link-error"
+                  : globalErrorId
+            }
           />
           {location !== "ONLINE" ? (
-            <p className="text-xs text-muted-foreground">
+            <p id="meet_link-hint" className="text-xs text-muted-foreground">
               Completat automat pentru sesiuni Online.
             </p>
           ) : state.fieldErrors.meet_link ? (
-            <p className="text-xs text-rose-600">{state.fieldErrors.meet_link}</p>
+            <p id="meet_link-error" className="text-xs text-rose-600">{state.fieldErrors.meet_link}</p>
           ) : null}
         </div>
       </div>
@@ -207,27 +232,27 @@ export function AppointmentForm({
       {/* Personal Notes */}
       <div className="space-y-1.5">
         <Label htmlFor="personal_notes">Note Personale (Private)</Label>
-        <textarea
+        <Textarea
           id="personal_notes"
           name="personal_notes"
-          className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           placeholder="Note despre această ședință, vizibile doar pentru tine..."
           defaultValue={defaults.personal_notes ?? ""}
+          aria-describedby="personal_notes-hint"
         />
-        <p className="text-[10px] text-muted-foreground italic">
+        <p id="personal_notes-hint" className="text-[10px] text-muted-foreground italic">
           Aceste note **NU** sunt partajate cu Google Calendar sau cu clientul.
         </p>
       </div>
 
       {/* Reminders Configuration */}
       <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
-        <label className="flex cursor-pointer items-center gap-2.5">
-          <input
+        <label htmlFor="reminders_enabled" className="flex cursor-pointer items-center gap-2.5">
+          <Checkbox
+            id="reminders_enabled"
             type="checkbox"
             name="reminders_enabled"
             value="true"
             defaultChecked={defaults.reminders_enabled ?? true}
-            className="h-4 w-4 rounded"
           />
           <span className="flex items-center gap-1.5 text-sm font-medium">
             <Bell className="h-4 w-4 text-primary" />
@@ -257,14 +282,14 @@ export function AppointmentForm({
       {/* Recurring — shown only on new appointment */}
       {showRecurring && (
         <div className="rounded-lg border p-4 space-y-3">
-          <label className="flex cursor-pointer items-center gap-2.5">
-            <input
+          <label htmlFor="recurring" className="flex cursor-pointer items-center gap-2.5">
+            <Checkbox
+              id="recurring"
               type="checkbox"
               name="recurring"
               value="true"
               checked={recurring}
               onChange={(e) => setRecurring(e.target.checked)}
-              className="h-4 w-4 rounded"
             />
             <span className="flex items-center gap-1.5 text-sm font-medium">
               <RefreshCw className="h-4 w-4 text-muted-foreground" />
@@ -290,7 +315,8 @@ export function AppointmentForm({
                 <Select
                   id="recurring_count"
                   name="recurring_count"
-                  defaultValue="8"
+                  value={recurringCount}
+                  onChange={(e) => setRecurringCount(e.target.value)}
                 >
                   {[4, 8, 12, 16, 24].map((n) => (
                     <option key={n} value={n}>
@@ -316,7 +342,7 @@ export function AppointmentForm({
           {pending
             ? "Se salvează…"
             : recurring
-              ? `Creează ${document?.querySelector<HTMLSelectElement>('[name="recurring_count"]')?.value ?? "8"} ședințe`
+              ? `Creează ${recurringCount} ședințe`
               : submitLabel}
         </Button>
       </div>

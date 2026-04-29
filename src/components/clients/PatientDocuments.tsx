@@ -1,16 +1,17 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useRef, useState } from "react";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
 import {
-  FileText, Upload, Trash2, ExternalLink, AlertTriangle,
+  FileText, Upload, Trash2, ExternalLink,
   FileImage, FileScan, Plus, ShieldAlert, X,
 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { useOverlayA11y } from "@/components/ui/use-overlay-a11y";
 import {
   MockPatientDocument, DocumentType,
   DOCUMENT_TYPE_CONFIG
@@ -38,6 +39,8 @@ export function PatientDocuments({ clientId, isMinor, documents }: Props) {
   const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const [previewDoc, setPreviewDoc] = useState<MockPatientDocument | null>(null);
+  const previewPanelRef = useRef<HTMLDivElement>(null);
+  const previewCloseButtonRef = useRef<HTMLButtonElement>(null);
 
   // Check missing minor documents
   const missingMinorDocs = isMinor
@@ -54,6 +57,13 @@ export function PatientDocuments({ clientId, isMinor, documents }: Props) {
     },
     {}
   );
+
+  useOverlayA11y({
+    open: Boolean(previewDoc),
+    onClose: () => setPreviewDoc(null),
+    containerRef: previewPanelRef,
+    initialFocusRef: previewCloseButtonRef,
+  });
 
   async function handleUpload() {
     if (!selectedFile) return;
@@ -194,18 +204,28 @@ export function PatientDocuments({ clientId, isMinor, documents }: Props) {
             className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px]"
             onClick={() => setPreviewDoc(null)}
           />
-          <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col bg-background shadow-2xl">
+          <div
+            ref={previewPanelRef}
+            className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col bg-background shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="patient-document-preview-title"
+            tabIndex={-1}
+          >
             {/* Header */}
             <div className="flex items-start justify-between border-b px-5 py-4">
               <div className="space-y-1 min-w-0 pr-3">
-                <p className="font-semibold text-sm truncate">{previewDoc.file_name}</p>
+                <p id="patient-document-preview-title" className="font-semibold text-sm truncate">{previewDoc.file_name}</p>
                 <p className="text-xs text-muted-foreground">
                   {DOCUMENT_TYPE_CONFIG[previewDoc.document_type]?.label}
                 </p>
               </div>
               <button
+                ref={previewCloseButtonRef}
+                type="button"
                 onClick={() => setPreviewDoc(null)}
                 className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                aria-label="Închide previzualizarea documentului"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -292,12 +312,21 @@ export function PatientDocuments({ clientId, isMinor, documents }: Props) {
                       {doc.document_url && (
                         <Button asChild variant="ghost" size="icon" className="h-7 w-7"
                           onClick={(e) => e.stopPropagation()}>
-                          <a href={doc.document_url} target="_blank" rel="noopener noreferrer">
+                          <a
+                            href={doc.document_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label={`Deschide documentul ${doc.file_name} într-o filă nouă`}
+                          >
                             <ExternalLink className="h-3.5 w-3.5" />
                           </a>
                         </Button>
                       )}
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-rose-500"
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-rose-500"
+                        aria-label={`Șterge documentul ${doc.file_name}`}
                         onClick={(e) => { e.stopPropagation(); handleRemove(doc.id); }}>
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>

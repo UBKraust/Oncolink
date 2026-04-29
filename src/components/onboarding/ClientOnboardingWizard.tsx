@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Check, ChevronRight, ChevronLeft, ShieldCheck, Heart, UserPlus, Info } from "lucide-react";
+import { Check, ChevronRight, ChevronLeft, ShieldCheck, UserPlus, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -44,7 +44,7 @@ export function ClientOnboardingWizard({ token, clientName }: ClientOnboardingWi
     register,
     handleSubmit,
     setValue,
-    watch,
+    control,
     formState: { errors },
   } = useForm<OnboardingFormValues>({
     resolver: zodResolver(onboardingSchema),
@@ -54,7 +54,10 @@ export function ClientOnboardingWizard({ token, clientName }: ClientOnboardingWi
     },
   });
 
-  const referralSource = watch("referral_source");
+  const referralSource = useWatch({
+    control,
+    name: "referral_source",
+  });
   const progress = (step / 4) * 100;
 
   const onSubmit = async (values: OnboardingFormValues) => {

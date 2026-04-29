@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { format } from "date-fns";
@@ -37,6 +37,7 @@ import type { AppointmentWithClient } from "@/lib/appointments/queries";
 import type { InvoiceRow } from "@/lib/invoices/queries";
 import { updateStatusInline, updateAppointmentFields } from "@/app/dashboard/appointments/session-actions";
 import type { AppointmentStatus } from "@/lib/appointments/helpers";
+import { useOverlayA11y } from "@/components/ui/use-overlay-a11y";
 
 const STATUS_TRANSITIONS: Record<string, AppointmentStatus[]> = {
   PROGRAMAT: ["CONFIRMAT", "ANULAT"],
@@ -70,6 +71,8 @@ export function SessionDrawer({
   closeUrl,
 }: SessionDrawerProps) {
   const router = useRouter();
+  const panelRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
   const [isPending, startTransition] = useTransition();
   const [activeTab, setActiveTab] = useState<Tab>("details");
   const [autoResult, setAutoResult] = useState<{
@@ -80,6 +83,17 @@ export function SessionDrawer({
   const location = deriveLocation(appointment);
   const LocIcon = locationIcon[location];
   const transitions = STATUS_TRANSITIONS[appointment.status] ?? [];
+
+  function handleClose() {
+    router.push(closeUrl);
+  }
+
+  useOverlayA11y({
+    open: true,
+    onClose: handleClose,
+    containerRef: panelRef,
+    initialFocusRef: closeButtonRef,
+  });
 
   function handleStatusChange(newStatus: AppointmentStatus) {
     startTransition(async () => {
@@ -100,18 +114,26 @@ export function SessionDrawer({
   return (
     <>
       {/* Backdrop */}
-      <Link
-        href={closeUrl}
+      <button
+        type="button"
         className="fixed inset-0 z-40 bg-black/40"
+        onClick={handleClose}
         aria-label="Închide"
       />
 
       {/* Panel */}
-      <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col bg-background shadow-2xl">
+      <div
+        ref={panelRef}
+        className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col bg-background shadow-2xl"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="session-drawer-title"
+        tabIndex={-1}
+      >
         {/* Header */}
         <div className="flex items-start justify-between border-b p-4">
           <div className="min-w-0 flex-1">
-            <h2 className="truncate text-base font-semibold">
+            <h2 id="session-drawer-title" className="truncate text-base font-semibold">
               {appointment.is_external_duty
                 ? "Gardă externă"
                 : (appointment.client?.full_name ?? "—")}
@@ -138,21 +160,25 @@ export function SessionDrawer({
               </Badge>
             </div>
           </div>
-          <Link
-            href={closeUrl}
+          <button
+            ref={closeButtonRef}
+            type="button"
             className="ml-3 rounded-sm p-1 text-muted-foreground hover:text-foreground"
+            onClick={handleClose}
+            aria-label="Închide panoul sesiunii"
           >
             <X className="h-5 w-5" />
-            <span className="sr-only">Închide</span>
-          </Link>
+          </button>
         </div>
 
         {/* Tabs */}
         <div className="flex border-b">
-          {(["details", "note", "invoice"] as Tab[]).map((tab) => (
+          {(["details", "note", "invoice", "config"] as Tab[]).map((tab) => (
             <button
               key={tab}
+              type="button"
               onClick={() => setActiveTab(tab)}
+              aria-pressed={activeTab === tab}
               className={`flex-1 py-2.5 text-xs font-medium transition-colors ${
                 activeTab === tab
                   ? "border-b-2 border-primary text-primary"
@@ -377,6 +403,7 @@ export function SessionDrawer({
                     {[null, "#cabinet", "#Clinica"].map((tag) => (
                       <button
                         key={String(tag)}
+                        type="button"
                         onClick={() => startTransition(() => {
                           void updateAppointmentFields(appointment.id, { location_tag: tag });
                         })}
@@ -416,6 +443,7 @@ export function SessionDrawer({
                       <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Notificări App</p>
                     </div>
                     <button
+                      type="button"
                       onClick={() => startTransition(() => {
                         void updateAppointmentFields(appointment.id, { reminders_enabled: !appointment.reminders_enabled });
                       })}
@@ -423,6 +451,8 @@ export function SessionDrawer({
                         "h-5 w-10 rounded-full transition-all relative",
                         appointment.reminders_enabled ? "bg-emerald-500" : "bg-slate-300"
                       )}
+                      aria-pressed={Boolean(appointment.reminders_enabled)}
+                      aria-label={appointment.reminders_enabled ? "Dezactivează notificările aplicației" : "Activează notificările aplicației"}
                     >
                       <div className={cn(
                         "absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all",

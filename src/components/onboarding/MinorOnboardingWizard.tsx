@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { 
@@ -65,7 +65,7 @@ export function MinorOnboardingWizard({ therapistSlug }: { therapistSlug?: strin
     register,
     handleSubmit,
     setValue,
-    watch,
+    control,
     formState: { errors },
   } = useForm<MinorOnboardingValues>({
     resolver: zodResolver(minorOnboardingSchema),
@@ -75,7 +75,10 @@ export function MinorOnboardingWizard({ therapistSlug }: { therapistSlug?: strin
     },
   });
 
-  const maritalStatus = watch("parents_marital_status");
+  const maritalStatus = useWatch({
+    control,
+    name: "parents_marital_status",
+  });
   const progress = (step / 5) * 100;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -127,7 +130,7 @@ export function MinorOnboardingWizard({ therapistSlug }: { therapistSlug?: strin
           </p>
         </div>
         <div className="rounded-2xl border border-primary/10 bg-primary/5 p-8 flex flex-col gap-4">
-          <p className="text-sm font-medium italic">"Siguranța legala a copilului este prioritatea noastră."</p>
+          <p className="text-sm font-medium italic">&ldquo;Siguranța legala a copilului este prioritatea noastră.&rdquo;</p>
           <Button asChild className="w-full font-bold">
             <a href="https://cepaipatit.ro">Reveniți la site</a>
           </Button>

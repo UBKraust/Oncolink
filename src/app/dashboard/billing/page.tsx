@@ -198,11 +198,13 @@ export default function BillingPage() {
         </div>
         <div className="flex flex-wrap gap-2 items-center">
           {/* Month picker */}
-          <select value={month} onChange={e => setMonth(+e.target.value)}
+          <label htmlFor="billing-month" className="sr-only">Selectează luna raportului</label>
+          <select id="billing-month" value={month} onChange={e => setMonth(+e.target.value)}
             className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm">
             {MONTHS_RO.map((lbl, i) => <option key={i+1} value={i+1}>{lbl}</option>)}
           </select>
-          <select value={year} onChange={e => setYear(+e.target.value)}
+          <label htmlFor="billing-year" className="sr-only">Selectează anul raportului</label>
+          <select id="billing-year" value={year} onChange={e => setYear(+e.target.value)}
             className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm">
             {[2023,2024,2025,2026].map(y => <option key={y}>{y}</option>)}
           </select>
@@ -211,7 +213,7 @@ export default function BillingPage() {
             Calculează
           </Button>
           {data && (
-            <Button variant="outline" size="icon" onClick={exportCsv} title="Export CSV">
+            <Button variant="outline" size="icon" onClick={exportCsv} title="Export CSV" aria-label="Exportă raportul în format CSV">
               <Download className="h-4 w-4" />
             </Button>
           )}
@@ -282,6 +284,12 @@ export default function BillingPage() {
               <CardDescription>Bifați clienții pentru facturare în masă.</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
+              {clients.length === 0 ? (
+                <div className="p-8 text-center text-sm text-muted-foreground">
+                  Nu există date de facturare pentru perioada selectată.
+                </div>
+              ) : (
+              <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b bg-muted/40 text-xs text-muted-foreground">
@@ -305,6 +313,7 @@ export default function BillingPage() {
                           {c.invoiceStatus !== "ACHITAT" && (
                             <input type="checkbox" checked={isChecked}
                               onChange={() => toggleSelect(c.clientId)}
+                              aria-label={`Selectează clientul ${c.clientName} pentru facturare`}
                               className="rounded accent-primary h-4 w-4 cursor-pointer" />
                           )}
                           {c.invoiceStatus === "ACHITAT" && (
@@ -340,6 +349,8 @@ export default function BillingPage() {
                   </tr>
                 </tfoot>
               </table>
+              </div>
+              )}
             </CardContent>
           </Card>
         </>

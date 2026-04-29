@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useRef } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useOverlayA11y } from "@/components/ui/use-overlay-a11y";
 
 interface SectionDetailOverlayProps {
   isOpen: boolean;
@@ -25,12 +26,15 @@ export function SectionDetailOverlay({
   footer,
   maxWidth = "max-w-xl",
 }: SectionDetailOverlayProps) {
-  useEffect(() => {
-    document.body.style.overflow = isOpen ? "hidden" : "auto";
-    return () => {
-      document.body.style.overflow = "auto";
-    };
-  }, [isOpen]);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  useOverlayA11y({
+    open: isOpen,
+    onClose,
+    containerRef: panelRef,
+    initialFocusRef: closeButtonRef,
+  });
 
   if (!isOpen) return null;
 
@@ -46,11 +50,18 @@ export function SectionDetailOverlay({
       />
 
       {/* Pane */}
-      <div className={cn(
+      <div
+        ref={panelRef}
+        className={cn(
         "relative h-full w-full bg-white shadow-2xl transition-transform duration-500 ease-out flex flex-col",
         maxWidth,
         "translate-x-0"
-      )}>
+        )}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="section-detail-title"
+        tabIndex={-1}
+      >
         {/* Header */}
         <div className="flex items-center justify-between border-b px-6 py-5 bg-slate-50/50">
           <div className="flex items-center gap-4">
@@ -58,7 +69,7 @@ export function SectionDetailOverlay({
               <Icon className="h-6 w-6" />
             </div>
             <div>
-              <h2 className="text-lg font-black text-slate-900 uppercase tracking-tight leading-none">
+              <h2 id="section-detail-title" className="text-lg font-black text-slate-900 uppercase tracking-tight leading-none">
                 {title}
               </h2>
               {subtitle && (
@@ -68,9 +79,12 @@ export function SectionDetailOverlay({
               )}
             </div>
           </div>
-          <button 
+          <button
+            ref={closeButtonRef}
+            type="button"
             onClick={onClose}
             className="p-2 rounded-full hover:bg-slate-200 text-slate-400 transition-colors"
+            aria-label={`Închide secțiunea ${title}`}
           >
             <X className="h-5 w-5" />
           </button>

@@ -9,8 +9,7 @@ import {
   XCircle, Receipt, Plus, X, Download, StickyNote,
 } from "lucide-react";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import type { MockSessionPayment } from "@/lib/mock/payments";
 

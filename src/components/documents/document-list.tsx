@@ -82,9 +82,11 @@ export function DocumentList({ clients }: DocumentListProps) {
 
   if (clients.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">
-        Niciun client activ găsit.
-      </p>
+      <Card>
+        <CardContent className="p-8 text-center text-sm text-muted-foreground">
+          Niciun client activ găsit pentru generarea documentelor.
+        </CardContent>
+      </Card>
     );
   }
 
@@ -94,6 +96,7 @@ export function DocumentList({ clients }: DocumentListProps) {
         <CardTitle>Clienți activi</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
+        <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -124,6 +127,7 @@ export function DocumentList({ clients }: DocumentListProps) {
                       size="sm"
                       disabled={!!loading}
                       onClick={() => handleContract(c)}
+                      aria-label={`Generează contractul pentru ${c.full_name ?? "client"}`}
                     >
                       {loading === `contract-${c.id}` ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -137,6 +141,7 @@ export function DocumentList({ clients }: DocumentListProps) {
                       size="sm"
                       disabled={!!loading}
                       onClick={() => handleGdpr(c)}
+                      aria-label={`Generează acordul GDPR pentru ${c.full_name ?? "client"}`}
                     >
                       {loading === `gdpr-${c.id}` ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -151,6 +156,7 @@ export function DocumentList({ clients }: DocumentListProps) {
             ))}
           </TableBody>
         </Table>
+        </div>
       </CardContent>
     </Card>
   );

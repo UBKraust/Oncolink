@@ -69,6 +69,7 @@ export function ClientForm({ action, defaults = {}, submitLabel, cancelHref }: C
   const [billingType, setBillingType] = useState(defaults.billing_type ?? "INDIVIDUAL");
   const [dismissedSuccess, setDismissedSuccess] = useState(false);
   const showSuccess = Boolean(state.success && state.clientId) && !dismissedSuccess;
+  const globalErrorId = state.error ? "client-form-error" : undefined;
 
   const copyOnboardingLink = async () => {
     if (typeof window === "undefined" || !state.clientId) return;
@@ -87,7 +88,11 @@ export function ClientForm({ action, defaults = {}, submitLabel, cancelHref }: C
     <>
       <form action={formAction} className="space-y-6">
         {state.error ? (
-          <div className="rounded-md border border-rose-300 bg-rose-50 p-3 text-sm text-rose-900 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">
+          <div
+            id="client-form-error"
+            role="alert"
+            className="rounded-md border border-rose-300 bg-rose-50 p-3 text-sm text-rose-900 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200"
+          >
             {state.error}
           </div>
         ) : null}
@@ -261,9 +266,15 @@ export function ClientForm({ action, defaults = {}, submitLabel, cancelHref }: C
                       name="parent_address"
                       rows={2}
                       defaultValue={defaults.parent_address ?? ""}
+                      aria-invalid={state.fieldErrors.parent_address ? true : undefined}
+                      aria-describedby={
+                        state.fieldErrors.parent_address
+                          ? "parent_address-error"
+                          : globalErrorId
+                      }
                     />
                     {state.fieldErrors.parent_address ? (
-                      <p className="text-xs text-rose-600">{state.fieldErrors.parent_address}</p>
+                      <p id="parent_address-error" className="text-xs text-rose-600">{state.fieldErrors.parent_address}</p>
                     ) : null}
                   </div>
                 </div>
@@ -301,9 +312,15 @@ export function ClientForm({ action, defaults = {}, submitLabel, cancelHref }: C
                       name="company_address"
                       rows={2}
                       defaultValue={defaults.company_address ?? ""}
+                      aria-invalid={state.fieldErrors.company_address ? true : undefined}
+                      aria-describedby={
+                        state.fieldErrors.company_address
+                          ? "company_address-error"
+                          : globalErrorId
+                      }
                     />
                     {state.fieldErrors.company_address ? (
-                      <p className="text-xs text-rose-600">{state.fieldErrors.company_address}</p>
+                      <p id="company_address-error" className="text-xs text-rose-600">{state.fieldErrors.company_address}</p>
                     ) : null}
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">
@@ -525,6 +542,7 @@ interface FieldProps {
 }
 
 function Field({ label, name, type = "text", required, defaultValue, placeholder, hint, error }: FieldProps) {
+  const descriptionId = error ? `${name}-error` : hint ? `${name}-hint` : undefined;
   return (
     <div className="space-y-1.5">
       <Label htmlFor={name}>
@@ -539,11 +557,12 @@ function Field({ label, name, type = "text", required, defaultValue, placeholder
         defaultValue={defaultValue ?? ""}
         placeholder={placeholder}
         aria-invalid={error ? true : undefined}
+        aria-describedby={descriptionId}
       />
       {error ? (
-        <p className="text-xs text-rose-600">{error}</p>
+        <p id={`${name}-error`} className="text-xs text-rose-600">{error}</p>
       ) : hint ? (
-        <p className="text-xs text-muted-foreground">{hint}</p>
+        <p id={`${name}-hint`} className="text-xs text-muted-foreground">{hint}</p>
       ) : null}
     </div>
   );

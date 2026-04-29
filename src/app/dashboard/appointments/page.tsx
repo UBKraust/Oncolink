@@ -55,6 +55,9 @@ export default async function AppointmentsPage({
 }) {
   const { status, from, to, session } = await searchParams;
   const configured = isSupabaseConfigured();
+  const baseParams = new URLSearchParams();
+  if (from) baseParams.set("from", from);
+  if (to) baseParams.set("to", to);
 
   const appointments = await listAppointments({ status, from, to });
 
@@ -122,14 +125,17 @@ export default async function AppointmentsPage({
       {/* Status filter tabs */}
       <div className="flex flex-wrap gap-2">
         <FilterLink
-          href="/dashboard/appointments"
+          href={`/dashboard/appointments${baseParams.size ? `?${baseParams.toString()}` : ""}`}
           active={!status}
           label="Toate"
         />
         {APPOINTMENT_STATUSES.map((s) => (
           <FilterLink
             key={s}
-            href={`/dashboard/appointments?status=${s}`}
+            href={`/dashboard/appointments?${new URLSearchParams({
+              ...Object.fromEntries(baseParams.entries()),
+              status: s,
+            }).toString()}`}
             active={status === s}
             label={`${statusLabel[s]} (${counts[s] ?? 0})`}
           />
@@ -148,10 +154,19 @@ export default async function AppointmentsPage({
           </CardHeader>
           <CardContent className="p-0">
             {appointments.length === 0 ? (
-              <p className="p-6 text-sm text-muted-foreground">
-                Nicio programare găsită.
-              </p>
+              <div className="p-8 text-center">
+                <p className="text-sm text-muted-foreground">
+                  Nicio programare găsită pentru filtrele curente.
+                </p>
+                <Button asChild variant="outline" className="mt-4">
+                  <Link href="/dashboard/appointments/new">
+                    <CalendarPlus className="h-4 w-4" />
+                    Creează o programare
+                  </Link>
+                </Button>
+              </div>
             ) : (
+              <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -256,6 +271,9 @@ export default async function AppointmentsPage({
                             {/* Full detail page */}
                             <Button asChild variant="ghost" size="sm">
                               <Link href={`/dashboard/appointments/${a.id}`}>
+                                <span className="sr-only">
+                                  Deschide pagina programării pentru {a.client?.full_name ?? "programare"}
+                                </span>
                                 <ExternalLink className="h-3.5 w-3.5" />
                               </Link>
                             </Button>
@@ -266,6 +284,7 @@ export default async function AppointmentsPage({
                   })}
                 </TableBody>
               </Table>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -297,6 +316,7 @@ function FilterLink({
   return (
     <Link
       href={href}
+      aria-current={active ? "page" : undefined}
       className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
         active
           ? "border-primary bg-primary text-primary-foreground"

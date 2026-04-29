@@ -39,7 +39,7 @@ export default function DeclarationPage() {
               <div className="relative">
                 <div className="absolute -left-4 top-0 bottom-0 w-1 bg-rose-600 rounded-full opacity-20 print:hidden" />
                 <p className="text-xl leading-relaxed text-slate-800 font-medium italic">
-                  "Prin prezenta declar că datele furnizate cu privire la identitatea minorului și regimul său juridic sunt conforme cu realitatea. Înțeleg că furnizarea de informații false despre custodia copilului poate atrage răspunderea civilă sau penală conform Codului Civil Român."
+                  &ldquo;Prin prezenta declar că datele furnizate cu privire la identitatea minorului și regimul său juridic sunt conforme cu realitatea. Înțeleg că furnizarea de informații false despre custodia copilului poate atrage răspunderea civilă sau penală conform Codului Civil Român.&rdquo;
                 </p>
               </div>
 

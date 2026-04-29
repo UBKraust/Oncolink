@@ -714,7 +714,8 @@ function CasTab({ s }: { s: TherapistSettings }) {
 export function SettingsClient({ settings }: { settings: TherapistSettings }) {
   return (
     <Tabs defaultValue="profile" className="w-full">
-      <TabsList className="mb-4 grid w-full grid-cols-3 md:grid-cols-6 md:w-auto">
+      <div className="mb-4 overflow-x-auto pb-2">
+      <TabsList className="flex min-w-max gap-2">
         <TabsTrigger value="profile">Profil</TabsTrigger>
         <TabsTrigger value="pricing">Tarife</TabsTrigger>
         <TabsTrigger value="schedule">Orar</TabsTrigger>
@@ -722,6 +723,7 @@ export function SettingsClient({ settings }: { settings: TherapistSettings }) {
         <TabsTrigger value="security">Securitate</TabsTrigger>
         <TabsTrigger value="cas">CAS</TabsTrigger>
       </TabsList>
+      </div>
 
       <TabsContent value="profile"      className="animate-in fade-in duration-300"><ProfileTab      s={settings} /></TabsContent>
       <TabsContent value="pricing"      className="animate-in fade-in duration-300"><PricingTab      s={settings} /></TabsContent>

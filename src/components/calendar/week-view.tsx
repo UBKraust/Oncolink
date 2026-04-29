@@ -2,9 +2,9 @@
 
 import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
-import { format, addDays, startOfWeek, isSameDay, isToday } from "date-fns";
+import { format, addDays, startOfWeek, isToday } from "date-fns";
 import { ro } from "date-fns/locale";
-import { Activity, Bell, CalendarDays, ChevronLeft, ChevronRight, FileText, MapPin, MoreVertical, Notebook, User } from "lucide-react";
+import { Activity, CalendarDays, ChevronLeft, ChevronRight, MapPin, Notebook, User } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +13,6 @@ import { cn } from "@/lib/utils";
 import type { AppointmentWithClient } from "@/lib/appointments/queries";
 import {
   deriveLocation,
-  statusVariant,
   statusLabel,
   locationLabel,
 } from "@/lib/appointments/helpers";
@@ -288,7 +287,7 @@ export function WeekView({ appointments, initialDate }: WeekViewProps) {
                     Note Personale (Private)
                   </div>
                   <p className="text-sm text-amber-900 leading-relaxed italic">
-                    "{selectedAppt.personal_notes}"
+                    &ldquo;{selectedAppt.personal_notes}&rdquo;
                   </p>
                 </div>
               )}

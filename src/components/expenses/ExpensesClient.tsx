@@ -1,16 +1,14 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
   Building2,
   Calculator,
-  Calendar,
   CheckCircle2,
   FileText,
   GraduationCap,
-  History,
   Laptop,
   Loader2,
   Plus,
@@ -19,12 +17,10 @@ import {
   Shield,
   ShoppingCart,
   Trash2,
-  Upload,
   X,
   Zap,
 } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -40,9 +36,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { cn } from "@/lib/utils";
 import type { Expense, ExpenseCategory } from "@/app/dashboard/expenses/actions";
 import { createExpense, deleteExpense } from "@/app/dashboard/expenses/actions";
+import { useOverlayA11y } from "@/components/ui/use-overlay-a11y";
 
 const MONTHS_RO = [
   "Ianuarie",
@@ -98,6 +94,8 @@ export function ExpensesClient({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const addDialogRef = useRef<HTMLDivElement>(null);
+  const addCloseButtonRef = useRef<HTMLButtonElement>(null);
 
   const filteredExpenses = useMemo(() => {
     if (!searchTerm) return expenses;
@@ -113,6 +111,13 @@ export function ExpensesClient({
     () => filteredExpenses.reduce((sum, e) => sum + e.amount, 0),
     [filteredExpenses],
   );
+
+  useOverlayA11y({
+    open: showAdd,
+    onClose: () => setShowAdd(false),
+    containerRef: addDialogRef,
+    initialFocusRef: addCloseButtonRef,
+  });
 
   function handleFilterChange(newYear: number, newMonth: number) {
     setYear(newYear);
@@ -292,13 +297,26 @@ export function ExpensesClient({
             className="absolute inset-0 bg-background/80 backdrop-blur-sm"
             onClick={() => setShowAdd(false)}
           />
-          <Card className="relative w-full max-w-lg border-primary/20 shadow-2xl animate-in fade-in zoom-in duration-200">
+          <Card
+            ref={addDialogRef}
+            className="relative w-full max-w-lg border-primary/20 shadow-2xl animate-in fade-in zoom-in duration-200"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="expense-dialog-title"
+            tabIndex={-1}
+          >
             <div className="flex items-center justify-between border-b p-4">
               <div className="flex items-center gap-2">
                 <Receipt className="h-5 w-5 text-primary" />
-                <h2 className="text-lg font-semibold">Adaugă Cheltuială</h2>
+                <h2 id="expense-dialog-title" className="text-lg font-semibold">Adaugă Cheltuială</h2>
               </div>
-              <Button variant="ghost" size="icon" onClick={() => setShowAdd(false)}>
+              <Button
+                ref={addCloseButtonRef}
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowAdd(false)}
+                aria-label="Închide formularul de cheltuială"
+              >
                 <X className="h-4 w-4" />
               </Button>
             </div>

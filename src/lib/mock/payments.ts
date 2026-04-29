@@ -52,7 +52,7 @@ function generateMockPayments(): MockSessionPayment[] {
     const price = client.session_price ? parseFloat(client.session_price) : 200;
     
     // Generate sessions from start date until now
-    let current = new Date(startDate);
+    const current = new Date(startDate);
     // Add a random offset for each client so they don't all have sessions on the same day
     current.setDate(current.getDate() + Math.floor(rand() * freqDays));
 

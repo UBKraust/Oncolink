@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { 
   X, 
   Phone, 
@@ -36,6 +36,7 @@ import {
   sendOnboardingEmail 
 } from "@/app/dashboard/clients/actions";
 import { toast } from "@/components/ui/toast";
+import { useOverlayA11y } from "@/components/ui/use-overlay-a11y";
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -54,6 +55,8 @@ interface ClientDetailOverlayProps {
 }
 
 export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProps) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
   const [isPending, setIsPending] = useState(false);
   const [isNotifying, setIsNotifying] = useState(false);
   const [overrideScheduledState, setOverrideScheduledState] = useState<{
@@ -88,14 +91,12 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
     };
   }, [client]);
 
-  useEffect(() => {
-    if (!client) return;
-
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = "auto";
-    };
-  }, [client]);
+  useOverlayA11y({
+    open: Boolean(client),
+    onClose,
+    containerRef: panelRef,
+    initialFocusRef: closeButtonRef,
+  });
 
   if (!client) return null;
   const currentClient = client;
@@ -208,7 +209,7 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
     <div className={cn(
       "fixed inset-0 z-[110] flex justify-end transition-opacity duration-300",
       "opacity-100"
-    )}>
+    )} role="dialog" aria-modal="true" aria-labelledby="client-overlay-title">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" 
@@ -216,10 +217,14 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
       />
 
       {/* Pane */}
-      <div className={cn(
+      <div
+        ref={panelRef}
+        className={cn(
         "relative h-full w-full max-w-xl bg-white shadow-2xl transition-transform duration-500 ease-out flex flex-col",
         "translate-x-0"
-      )}>
+        )}
+        tabIndex={-1}
+      >
         {/* Header */}
         <div className="relative h-48 shrink-0 overflow-hidden bg-slate-900">
            <div className="absolute inset-0 bg-gradient-to-br from-primary/40 to-slate-900 opacity-80" />
@@ -228,9 +233,12 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
            <div className="absolute bottom-0 left-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl -ml-10 -mb-10" />
            
            <div className="relative h-full p-8 flex flex-col justify-end gap-4">
-              <button 
+              <button
+                ref={closeButtonRef}
+                type="button"
                 onClick={onClose}
                 className="absolute top-6 right-6 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+                aria-label="Închide fișa clientului"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -240,7 +248,7 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
                     {initialsFromName(client.full_name)}
                  </div>
                  <div className="space-y-1">
-                    <h2 className="text-2xl font-black text-white tracking-tight leading-none">
+                    <h2 id="client-overlay-title" className="text-2xl font-black text-white tracking-tight leading-none">
                       {client.full_name ?? "Client"}
                     </h2>
                     <div className="flex items-center gap-2">
@@ -354,8 +362,21 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
                        <Mail className="h-4 w-4 text-slate-400" />
                        <span className="text-sm font-medium text-slate-600">{anonymized ? "REDACTED" : client.email || "nespecificat"}</span>
                     </div>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-primary">
-                       <MessageCircle className="h-4 w-4" />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-slate-400 hover:text-primary"
+                      disabled={anonymized || !client.email}
+                      aria-label="Trimite email clientului"
+                      asChild={!anonymized && !!client.email}
+                    >
+                      {anonymized || !client.email ? (
+                        <MessageCircle className="h-4 w-4" />
+                      ) : (
+                        <a href={`mailto:${client.email}`}>
+                          <MessageCircle className="h-4 w-4" />
+                        </a>
+                      )}
                     </Button>
                  </div>
                  <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
@@ -363,8 +384,21 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
                        <Phone className="h-4 w-4 text-slate-400" />
                        <span className="text-sm font-medium text-slate-600">{anonymized ? "REDACTED" : client.phone || "nespecificat"}</span>
                     </div>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-primary">
-                       <Phone className="h-4 w-4" />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-slate-400 hover:text-primary"
+                      disabled={anonymized || !client.phone}
+                      aria-label="Apelează clientul"
+                      asChild={!anonymized && !!client.phone}
+                    >
+                      {anonymized || !client.phone ? (
+                        <Phone className="h-4 w-4" />
+                      ) : (
+                        <a href={`tel:${client.phone}`}>
+                          <Phone className="h-4 w-4" />
+                        </a>
+                      )}
                     </Button>
                  </div>
                  <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
@@ -451,7 +485,7 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
                               Vezi Doc
                            </a>
                         </Button>
-                     </div>
+                    </div>
                   </div>
                )}
 

@@ -2,67 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Activity,
-  BarChart3,
-  BotMessageSquare,
-  CalendarCheck,
-  CalendarDays,
-  CalendarRange,
-  ClipboardList,
-  FileText,
-  Hospital,
-  LayoutDashboard,
-  Lock,
-  NotebookPen,
-  Receipt,
-  Scale,
-  Settings,
-  Users,
-  Wallet,
-} from "lucide-react";
 
 import { cn } from "@/lib/utils";
-
-const groups = [
-  {
-    title: "Activitate Zilnică",
-    items: [
-      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-      { href: "/dashboard/appointments", label: "Programări", icon: CalendarCheck },
-      { href: "/dashboard/calendar", label: "Calendar", icon: CalendarDays },
-      { href: "/dashboard/notes", label: "Note clinice", icon: NotebookPen },
-      { href: "/dashboard/ai", label: "Asistent AI", icon: BotMessageSquare },
-    ],
-  },
-  {
-    title: "Management Clienți",
-    items: [
-      { href: "/dashboard/clients", label: "Clienți", icon: Users },
-      { href: "/dashboard/documents", label: "Documente", icon: FileText },
-      { href: "/dashboard/assessments", label: "Evaluări", icon: ClipboardList },
-      { href: "/dashboard/vault", label: "Seif Cabinet", icon: Lock },
-    ],
-  },
-  {
-    title: "Financiar & Administrativ",
-    items: [
-      { href: "/dashboard/invoices", label: "Facturi", icon: Receipt },
-      { href: "/dashboard/expenses", label: "Cheltuieli", icon: Wallet },
-      { href: "/dashboard/billing", label: "Raportare Lună", icon: BarChart3 },
-      { href: "/dashboard/review", label: "Sumar Lunar", icon: CalendarRange },
-      { href: "/dashboard/cas", label: "Modul CAS", icon: Hospital },
-    ],
-  },
-  {
-    title: "Legal & Configurare",
-    items: [
-      { href: "/dashboard/activity", label: "Registru", icon: Activity },
-      { href: "/dashboard/compliance", label: "Conformitate", icon: Scale },
-      { href: "/dashboard/settings", label: "Setări", icon: Settings },
-    ],
-  },
-];
+import { dashboardNavGroups } from "@/components/dashboard/nav-groups";
 
 export function DashboardSidebar() {
   const pathname = usePathname();
@@ -82,7 +24,7 @@ export function DashboardSidebar() {
       </div>
 
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6 custom-scrollbar">
-        {groups.map((group) => (
+        {dashboardNavGroups.map((group) => (
           <div key={group.title} className="space-y-1">
             <h3 className="px-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 mb-2">
               {group.title}

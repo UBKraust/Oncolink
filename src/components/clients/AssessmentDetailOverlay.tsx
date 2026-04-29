@@ -1,6 +1,7 @@
 "use client";
 
-import Link from "next/link";
+import { useRef } from "react";
+import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
 import {
@@ -14,6 +15,7 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import type { ClientAssessment } from "./types";
+import { useOverlayA11y } from "@/components/ui/use-overlay-a11y";
 
 const SEVERITY_CONFIG = {
   minimal: { label: "Minimal", bar: "bg-emerald-500", text: "text-emerald-700", bg: "bg-emerald-50 dark:bg-emerald-950/30", border: "border-emerald-200 dark:border-emerald-800" },
@@ -43,6 +45,9 @@ export function AssessmentDetailOverlay({
   sendReportToParent,
   closeUrl,
 }: Props) {
+  const router = useRouter();
+  const panelRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
   const scoring = assessment.scoring_data;
   const severityRaw =
     typeof scoring.severity === "string" ? scoring.severity.toLowerCase() : undefined;
@@ -63,17 +68,36 @@ export function AssessmentDetailOverlay({
     ([k]) => k !== "test_type" && k !== "severity"
   );
 
+  function handleClose() {
+    router.push(closeUrl);
+  }
+
+  useOverlayA11y({
+    open: true,
+    onClose: handleClose,
+    containerRef: panelRef,
+    initialFocusRef: closeButtonRef,
+  });
+
   return (
     <>
       {/* Backdrop */}
-      <Link
-        href={closeUrl}
+      <button
+        type="button"
         className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px]"
+        onClick={handleClose}
         aria-label="Închide"
       />
 
       {/* Drawer panel */}
-      <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col bg-background shadow-2xl">
+      <div
+        ref={panelRef}
+        className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col bg-background shadow-2xl"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="assessment-overlay-title"
+        tabIndex={-1}
+      >
         {/* Header */}
         <div className="flex items-start justify-between border-b px-5 py-4">
           <div className="space-y-1">
@@ -83,14 +107,17 @@ export function AssessmentDetailOverlay({
             <p className="text-xs text-muted-foreground">
               {format(new Date(assessment.created_at), "d MMMM yyyy, HH:mm", { locale: ro })}
             </p>
-            <p className="text-sm font-medium">{clientName}</p>
+            <p id="assessment-overlay-title" className="text-sm font-medium">{clientName}</p>
           </div>
-          <Link
-            href={closeUrl}
+          <button
+            ref={closeButtonRef}
+            type="button"
             className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            onClick={handleClose}
+            aria-label="Închide evaluarea"
           >
             <X className="h-4 w-4" />
-          </Link>
+          </button>
         </div>
 
         {/* Body */}

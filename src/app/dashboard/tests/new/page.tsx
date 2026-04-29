@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ChevronLeft, Loader2, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { TestBuilderForm } from "@/components/assessments/TestBuilderForm";
+import { Button } from "@/components/ui/button";
 import type { TestTemplate } from "@/lib/assessments/types";
 import { saveTestTemplate } from "@/app/dashboard/tests/test-actions";
 import { toast } from "@/components/ui/toast";
@@ -22,7 +23,7 @@ export default function NewTestPage() {
       } else {
         toast.error(res.error || "Eroare la salvare.");
       }
-    } catch (err) {
+    } catch {
       toast.error("Eroare tehnică la salvare.");
     } finally {
       setIsSaving(false);
@@ -80,22 +81,5 @@ export default function NewTestPage() {
         </div>
       )}
     </div>
-  );
-}
-
-// Small helper component if needed, or I'll just use raw buttons
-function Button({ children, asChild, variant, ...props }: any) {
-  if (asChild) return children;
-  return (
-    <button 
-      className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-        variant === 'outline' 
-          ? 'border border-input bg-background hover:bg-accent' 
-          : 'bg-primary text-primary-foreground hover:bg-primary/90'
-      }`}
-      {...props}
-    >
-      {children}
-    </button>
   );
 }

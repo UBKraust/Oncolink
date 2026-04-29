@@ -36,6 +36,7 @@ import {
   uploadVaultDocument,
 } from "@/app/dashboard/vault/vault-actions";
 import { cn } from "@/lib/utils";
+import { useOverlayA11y } from "@/components/ui/use-overlay-a11y";
 
 type VaultGroup = "PROFESIONAL" | "CABINET" | "ADMIN_FISCAL";
 
@@ -151,6 +152,10 @@ export function VaultClient({ initialDocs }: VaultClientProps) {
   const [dragOver, setDragOver] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadDialogRef = useRef<HTMLDivElement>(null);
+  const uploadCloseButtonRef = useRef<HTMLButtonElement>(null);
+  const previewDialogRef = useRef<HTMLDivElement>(null);
+  const previewCloseButtonRef = useRef<HTMLButtonElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const groupInfo = GROUPS.find((g) => g.value === activeGroup)!;
@@ -224,6 +229,20 @@ export function VaultClient({ initialDocs }: VaultClientProps) {
   const isImage = (url: string) =>
     /\.(png|jpe?g|gif|webp|svg)(\?|$)/i.test(url);
 
+  useOverlayA11y({
+    open: showUpload,
+    onClose: () => setShowUpload(false),
+    containerRef: uploadDialogRef,
+    initialFocusRef: uploadCloseButtonRef,
+  });
+
+  useOverlayA11y({
+    open: Boolean(previewDoc),
+    onClose: () => setPreviewDoc(null),
+    containerRef: previewDialogRef,
+    initialFocusRef: previewCloseButtonRef,
+  });
+
   return (
     <div className="space-y-8">
       {/* Vault Status & Health */}
@@ -291,7 +310,13 @@ export function VaultClient({ initialDocs }: VaultClientProps) {
       </div>
 
       {/* Main Navigation Tabs */}
-      <Tabs value={activeGroup} onValueChange={(v) => setActiveGroup(v as any)}>
+      <Tabs
+        value={activeGroup}
+        onValueChange={(value) => {
+          const nextGroup = value as VaultGroup | "ALL";
+          setActiveGroup(nextGroup);
+        }}
+      >
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b pb-4">
           <TabsList className="bg-muted/50 p-1">
             {GROUPS.map((group) => {
@@ -371,14 +396,15 @@ export function VaultClient({ initialDocs }: VaultClientProps) {
                           </div>
                           <div className="flex items-center gap-1">
                             {(isPdf(doc.file_url) || isImage(doc.file_url)) && (
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-8 w-8 text-muted-foreground hover:text-primary"
-                                onClick={() => setPreviewDoc(doc)}
-                              >
-                                <ZoomIn className="h-4 w-4" />
-                              </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 text-muted-foreground hover:text-primary"
+                              onClick={() => setPreviewDoc(doc)}
+                              aria-label={`Previzualizează documentul ${doc.name}`}
+                            >
+                              <ZoomIn className="h-4 w-4" />
+                            </Button>
                             )}
                             <Button
                               size="icon"
@@ -386,7 +412,7 @@ export function VaultClient({ initialDocs }: VaultClientProps) {
                               className="h-8 w-8 text-muted-foreground hover:text-primary"
                               asChild
                             >
-                              <a href={doc.file_url} target="_blank" rel="noopener noreferrer">
+                              <a href={doc.file_url} target="_blank" rel="noopener noreferrer" aria-label={`Deschide documentul ${doc.name} într-un tab nou`}>
                                 <Upload className="h-4 w-4 rotate-180" />
                               </a>
                             </Button>
@@ -396,6 +422,7 @@ export function VaultClient({ initialDocs }: VaultClientProps) {
                               className="h-8 w-8 text-muted-foreground hover:text-destructive"
                               onClick={() => handleDelete(doc.id)}
                               disabled={isPending}
+                              aria-label={`Șterge documentul ${doc.name}`}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -418,15 +445,22 @@ export function VaultClient({ initialDocs }: VaultClientProps) {
             className="absolute inset-0 bg-background/80 backdrop-blur-sm"
             onClick={() => setShowUpload(false)}
           />
-          <Card className="relative w-full max-w-lg border-primary/20 shadow-2xl animate-in fade-in zoom-in duration-200">
+          <Card
+            ref={uploadDialogRef}
+            className="relative w-full max-w-lg border-primary/20 shadow-2xl animate-in fade-in zoom-in duration-200"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="vault-upload-title"
+            tabIndex={-1}
+          >
             <div className="flex items-center justify-between border-b p-4">
               <div className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <Upload className="h-4 w-4" />
                 </div>
-                <h2 className="text-lg font-semibold">Încarcă document nou</h2>
+                <h2 id="vault-upload-title" className="text-lg font-semibold">Încarcă document nou</h2>
               </div>
-              <Button variant="ghost" size="icon" onClick={() => setShowUpload(false)}>
+              <Button ref={uploadCloseButtonRef} variant="ghost" size="icon" onClick={() => setShowUpload(false)} aria-label="Închide formularul de încărcare">
                 <X className="h-4 w-4" />
               </Button>
             </div>
@@ -555,7 +589,14 @@ export function VaultClient({ initialDocs }: VaultClientProps) {
             className="absolute inset-0 bg-background/90 backdrop-blur-md"
             onClick={() => setPreviewDoc(null)}
           />
-          <div className="relative flex h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border bg-background shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div
+            ref={previewDialogRef}
+            className="relative flex h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border bg-background shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-300"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="vault-preview-title"
+            tabIndex={-1}
+          >
             <div className="flex items-center justify-between border-b px-6 py-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -565,7 +606,7 @@ export function VaultClient({ initialDocs }: VaultClientProps) {
                   })()}
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold leading-none">{previewDoc.name}</h3>
+                  <h3 id="vault-preview-title" className="text-sm font-semibold leading-none">{previewDoc.name}</h3>
                   <p className="mt-1 text-[11px] text-muted-foreground uppercase">{categoryMeta[previewDoc.category]?.label}</p>
                 </div>
               </div>
@@ -575,7 +616,7 @@ export function VaultClient({ initialDocs }: VaultClientProps) {
                     Descarcă
                   </a>
                 </Button>
-                <Button variant="ghost" size="icon" onClick={() => setPreviewDoc(null)}>
+                <Button ref={previewCloseButtonRef} variant="ghost" size="icon" onClick={() => setPreviewDoc(null)} aria-label="Închide previzualizarea documentului">
                   <X className="h-5 w-5" />
                 </Button>
               </div>

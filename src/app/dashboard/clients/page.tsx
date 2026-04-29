@@ -1,5 +1,7 @@
-import { Users, UserCheck, UserX, TrendingUp } from "lucide-react";
+import type { SVGProps } from "react";
+import { Users, UserCheck, UserRoundPlus, TrendingUp } from "lucide-react";
 import { listClients } from "@/lib/clients/queries";
+import { deriveClientLifecycle } from "@/lib/clients/lifecycle";
 import { ClientsClient } from "@/components/clients/ClientsClient";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -10,9 +12,15 @@ export default async function ClientsPage() {
   const configured = isSupabaseConfigured();
   const clients = await listClients();
 
-  const activeCount = clients.filter((c) => !c.notes_anonymized_at).length;
-  const anonCount = clients.length - activeCount;
-  const onboardingPending = clients.filter(c => !c.notes_anonymized_at && !c.gdpr_consent_signed).length;
+  const lifecycleList = clients.map((client) =>
+    deriveClientLifecycle(client, client.appointments ?? []),
+  );
+  const activeCount = lifecycleList.filter((lifecycle) => lifecycle.status === "ACTIV").length;
+  const scheduledCount = lifecycleList.filter((lifecycle) => lifecycle.status === "PROGRAMAT").length;
+  const onboardingPending = lifecycleList.filter((lifecycle) =>
+    ["LEAD", "ONBOARDING"].includes(lifecycle.status),
+  ).length;
+  const anonymizedCount = lifecycleList.filter((lifecycle) => lifecycle.status === "ANONIMIZAT").length;
 
   const stats = [
     {
@@ -21,7 +29,23 @@ export default async function ClientsPage() {
       icon: Users,
       color: "text-blue-600",
       bg: "bg-blue-50",
-      trend: "+4 luna asta"
+      trend: `${anonymizedCount} anonimizat${anonymizedCount === 1 ? "" : "i"}`
+    },
+    {
+      label: "În Onboarding",
+      value: onboardingPending.toString(),
+      icon: UserRoundPlus,
+      color: "text-amber-600",
+      bg: "bg-amber-50",
+      trend: "Lead-uri și dosare incomplete"
+    },
+    {
+      label: "Prima Ședință",
+      value: scheduledCount.toString(),
+      icon: AlertCircle,
+      color: "text-sky-600",
+      bg: "bg-sky-50",
+      trend: "Au programare, dar nu istoric clinic"
     },
     {
       label: "Pacienți Activi",
@@ -29,23 +53,7 @@ export default async function ClientsPage() {
       icon: UserCheck,
       color: "text-emerald-600",
       bg: "bg-emerald-50",
-      trend: "85% rată retenție"
-    },
-    {
-      label: "Onboarding Incomplet",
-      value: onboardingPending.toString(),
-      icon: AlertCircle,
-      color: "text-amber-600",
-      bg: "bg-amber-50",
-      trend: "Necesită atenție"
-    },
-    {
-      label: "Anonimizați",
-      value: anonCount.toString(),
-      icon: UserX,
-      color: "text-slate-600",
-      bg: "bg-slate-100",
-      trend: "GDPR Compliant"
+      trend: "Au deja cel puțin o ședință finalizată"
     }
   ];
 
@@ -120,4 +128,3 @@ function AlertCircle(props: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
-import type { SVGProps } from "react";

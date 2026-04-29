@@ -10,6 +10,8 @@ export interface ClientProfile {
   address: string | null;
   created_at: string;
   gdpr_consent_signed: boolean | null;
+  onboarding_completed_at: string | null;
+  needs_legal_review: boolean | null;
   notes_anonymized_at: string | null;
   scheduled_anonymization_at: string | null;
   is_minor: boolean | null;
@@ -23,6 +25,7 @@ export interface ClientProfile {
   parent_1_email: string | null;
   parent_2_name: string | null;
   parent_2_phone: string | null;
+  parent_2_email: string | null;
   parent_address: string | null;
   parent_id_series: string | null;
   parent_id_number: string | null;

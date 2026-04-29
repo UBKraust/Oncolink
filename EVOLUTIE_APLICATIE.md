@@ -22,6 +22,22 @@ Aceasta regula ramane activa pe tot parcursul proiectului.
 
 ## Ce s-a facut
 
+### 8. Flow client si lifecycle operational
+
+- Am definit si implementat un prim model de lifecycle derivat pentru clienti, fara migrare de schema, folosind datele deja existente din onboarding, consimtamant, programari si anonimizare.
+- Am adaugat o utilitara comuna care traduce datele reale in stari vizibile precum `Lead nou`, `Onboarding`, `Programat`, `Activ` si `Anonimizat`.
+- Am actualizat registrul de clienti astfel incat fiecare rand si card mobil sa afiseze statusul curent si primul pas operational recomandat.
+- Am refacut KPI-urile din lista de clienti pentru a reflecta funnel-ul real: onboarding, prima sedinta si clienti activi.
+- Am extins fisa clientului cu un sumar de lifecycle, urmatorii pasi si semnale administrative, astfel incat terapeutul sa vada rapid ce lipseste si ce urmeaza.
+
+Fisiere principale:
+
+- [src/lib/clients/lifecycle.ts](/Users/sch_work/Documents/Oncolink/src/lib/clients/lifecycle.ts)
+- [src/lib/clients/queries.ts](/Users/sch_work/Documents/Oncolink/src/lib/clients/queries.ts)
+- [src/components/clients/ClientsClient.tsx](/Users/sch_work/Documents/Oncolink/src/components/clients/ClientsClient.tsx)
+- [src/components/clients/ClientDashboardUI.tsx](/Users/sch_work/Documents/Oncolink/src/components/clients/ClientDashboardUI.tsx)
+- [src/app/dashboard/clients/page.tsx](/Users/sch_work/Documents/Oncolink/src/app/dashboard/clients/page.tsx)
+
 ### 1. Navigatie si intrare in produs
 
 - Am adaugat navigatie mobila reala in dashboard.
@@ -150,7 +166,10 @@ Fisiere principale:
 
 ### Urmatorul task recomandat
 
-Verificare manuala finala si QA cap-coada pe fluxurile critice, in special:
+- Introducerea unui `status` persistent in baza de date pentru clienti, cu istoric separat de tranzitii si actiuni explicite de schimbare status.
+- Separarea modelului pentru `guardian` / reprezentanti legali fata de campurile plate din client.
+- Legarea lifecycle-ului nou de actiuni UI reale: `trimite onboarding`, `marcheaza activ`, `incheie caz`, `reactiveaza`.
+- Verificare manuala finala si QA cap-coada pe fluxurile critice, in special:
 
 - creare client
 - onboarding adult si minor
@@ -183,7 +202,7 @@ La fiecare actualizare noua adaugam:
 
 ### Task nou
 
-- Ce s-a facut: am extins micro-polish-ul pe tabele, formulare, onboarding, setari, analytics, note clinice, cheltuieli, activitate si documente, astfel incat dashboard-ul si paginile publice sa foloseasca aproape peste tot aceeasi familie de carduri, headere, empty states si densitate vizuala
+- Ce s-a facut: am implementat un prim lifecycle operational derivat pentru clienti si l-am facut vizibil in registru si in fisa individuala, impreuna cu urmatorii pasi recomandati
 - Ce s-a verificat: `npm run lint` si `npm run build`
-- Ce urmeaza imediat: QA manual cap-coada pe fluxurile critice si retusuri mici rezultate din folosire reala
+- Ce urmeaza imediat: verificare a statusurilor in date reale, apoi introducerea unui status persistent si a istoricului de tranzitii
 - Status lint/build: ambele verzi

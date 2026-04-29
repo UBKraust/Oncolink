@@ -1,10 +1,14 @@
 import type { Database } from "@/lib/supabase/types";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import type { AppointmentRow } from "@/lib/appointments/helpers";
 
 export type ClientRow = Database["public"]["Tables"]["clients"]["Row"];
+export type ClientWithLifecycleRow = ClientRow & {
+  appointments?: Pick<AppointmentRow, "appointment_date" | "status">[] | null;
+};
 
-export async function listClients(): Promise<ClientRow[]> {
+export async function listClients(): Promise<ClientWithLifecycleRow[]> {
   if (!isSupabaseConfigured()) {
     return [];
   }
@@ -12,11 +16,11 @@ export async function listClients(): Promise<ClientRow[]> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("clients")
-    .select("*")
+    .select("*, appointments(appointment_date, status)")
     .order("created_at", { ascending: false });
 
   if (error) throw new Error(error.message);
-  return data ?? [];
+  return (data ?? []) as ClientWithLifecycleRow[];
 }
 
 export async function getClient(id: string): Promise<ClientRow | null> {

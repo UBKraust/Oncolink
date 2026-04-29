@@ -19,6 +19,8 @@ import { ro } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { deriveClientLifecycle } from "@/lib/clients/lifecycle";
+import type { ClientWithLifecycleRow } from "@/lib/clients/queries";
 import { 
   Table, 
   TableBody, 
@@ -30,11 +32,10 @@ import {
 import { initialsFromName } from "@/lib/clients/validation";
 import { ClientDetailOverlay } from "./ClientDetailOverlay";
 import { ContractGeneratorModal } from "./ContractGeneratorModal";
-import type { ClientProfile } from "./types";
 import Link from "next/link";
 
 interface ClientsClientProps {
-  initialClients: ClientProfile[];
+  initialClients: ClientWithLifecycleRow[];
 }
 
 export function ClientsClient({ initialClients }: ClientsClientProps) {
@@ -48,7 +49,8 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
     return initialClients.filter(c => 
       c.full_name?.toLowerCase().includes(q) || 
       c.email?.toLowerCase().includes(q) || 
-      c.cnp_cif?.toLowerCase().includes(q)
+      c.cnp_cif?.toLowerCase().includes(q) ||
+      c.phone?.toLowerCase().includes(q)
     );
   }, [initialClients, searchQuery]);
 
@@ -114,6 +116,7 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
         ) : (
           filteredClients.map((client) => {
             const anonymized = !!client.notes_anonymized_at;
+            const lifecycle = deriveClientLifecycle(client, client.appointments ?? []);
             return (
               <article
                 key={client.id}
@@ -132,6 +135,9 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-2">
+                  <Badge variant={lifecycle.badgeVariant}>
+                    {lifecycle.label}
+                  </Badge>
                   {client.is_minor && (
                     <Badge variant="secondary" className="bg-amber-100/60 text-amber-700">
                       <Baby className="mr-1 h-3 w-3" /> Minor
@@ -151,6 +157,10 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
                     {client.gdpr_consent_signed ? "GDPR semnat" : "GDPR lipsă"}
                   </Badge>
                 </div>
+
+                <p className="mt-3 text-xs leading-relaxed text-slate-500">
+                  {lifecycle.nextActions[0] ?? lifecycle.summary}
+                </p>
 
                 <div className="mt-4 grid grid-cols-2 gap-3 rounded-2xl bg-slate-50 p-3 text-xs">
                   <div>
@@ -219,6 +229,7 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
             ) : (
               filteredClients.map((client) => {
                 const anonymized = !!client.notes_anonymized_at;
+                const lifecycle = deriveClientLifecycle(client, client.appointments ?? []);
                 return (
                   <TableRow 
                     key={client.id} 
@@ -245,17 +256,25 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex flex-wrap gap-2">
-                        {client.is_minor && (
-                          <Badge variant="secondary" className="bg-amber-100/50 text-amber-700 border-amber-100 hover:bg-amber-100 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-lg h-6">
-                            <Baby className="mr-1 h-3 w-3" /> Minor
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap gap-2">
+                          <Badge variant={lifecycle.badgeVariant}>
+                            {lifecycle.label}
                           </Badge>
-                        )}
-                        {client.billing_type === "B2B_COMPANY" && (
-                          <Badge variant="outline" className="bg-blue-50/50 text-blue-700 border-blue-100 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-lg h-6">
-                            <Building className="mr-1 h-3 w-3" /> B2B
-                          </Badge>
-                        )}
+                          {client.is_minor && (
+                            <Badge variant="secondary" className="bg-amber-100/50 text-amber-700 border-amber-100 hover:bg-amber-100 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-lg h-6">
+                              <Baby className="mr-1 h-3 w-3" /> Minor
+                            </Badge>
+                          )}
+                          {client.billing_type === "B2B_COMPANY" && (
+                            <Badge variant="outline" className="bg-blue-50/50 text-blue-700 border-blue-100 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-lg h-6">
+                              <Building className="mr-1 h-3 w-3" /> B2B
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="max-w-xs text-[11px] font-medium leading-relaxed text-slate-500">
+                          {lifecycle.nextActions[0] ?? lifecycle.summary}
+                        </p>
                         <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-400 px-1">
                           <MapPin className="h-3 w-3" /> 
                           {client.location === "CLINICA" ? "Clinică" : "Cabinet"}

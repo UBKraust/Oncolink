@@ -41,8 +41,9 @@ export function DashboardSidebar() {
                     key={href}
                     href={href}
                     className={cn(
-                      "ui-nav-item-base transition-all duration-200",
-                      active ? "ui-nav-item-active shadow-sm" : interactiveState.navItemIdle,
+                      interactiveState.navItemBase,
+                      "transition-all duration-200",
+                      active ? cn(interactiveState.navItemActive, "shadow-sm") : interactiveState.navItemIdle,
                     )}
                   >
                     <Icon className={cn("h-4 w-4", active ? "text-primary" : "text-muted-foreground/70")} />

@@ -5,13 +5,14 @@ import Link from "next/link";
 import { format, isPast, isFuture } from "date-fns";
 import { ro } from "date-fns/locale";
 import {
-  CalendarPlus, CheckCircle2, ChevronLeft, Mail, Pencil, Phone,
+  CalendarPlus, CheckCircle2, ChevronLeft, ClipboardList, Mail, Pencil, Phone,
   ShieldOff, Plus, Brain, Wallet, FileText, ArrowRight, Clock,
-  Calendar, MapPin, Video, RefreshCw, TrendingUp, FileCheck,
+  Calendar, MapPin, ShieldAlert, Video, RefreshCw, TrendingUp, FileCheck,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { deriveClientLifecycle } from "@/lib/clients/lifecycle";
 import { cn } from "@/lib/utils";
 import { EmptyState, PageHeader, SectionCard, SetupBanner } from "@/components/app/page-shell";
 
@@ -76,6 +77,7 @@ export function ClientDashboardUI({
   const id = client.id;
   const isMinor = client.is_minor ?? false;
   const baseUrl = `/dashboard/clients/${id}`;
+  const lifecycle = deriveClientLifecycle(client, appointments);
 
   const selectedAssessment = assessmentParam
     ? (assessments.find((a) => a.id === assessmentParam) ?? null)
@@ -104,13 +106,20 @@ export function ClientDashboardUI({
       </Link>
 
       <PageHeader
-        eyebrow={`Client activ din ${format(new Date(client.created_at), "MMM yyyy", { locale: ro })}`}
+        eyebrow={`${lifecycle.stageLabel} din ${format(new Date(client.created_at), "MMM yyyy", { locale: ro })}`}
         title={client.full_name ?? "—"}
         description="Dosarul clinic, financiar și administrativ al clientului într-o singură suprafață."
         action={
           <div className="flex items-center gap-2 shrink-0">
             {!anonymized && (
               <>
+                {!isMinor && !lifecycle.isOnboardingComplete && (
+                  <Button asChild variant="outline" size="lg" className="rounded-2xl font-bold gap-2">
+                    <Link href={`/dashboard/clients/${client.id}/onboarding`}>
+                      <ClipboardList className="h-4 w-4 text-primary" /> Onboarding
+                    </Link>
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   size="lg"
@@ -143,9 +152,17 @@ export function ClientDashboardUI({
             </div>
             <div className="space-y-3">
               <div className="flex flex-wrap items-center gap-2">
+                <Badge variant={lifecycle.badgeVariant}>
+                  {lifecycle.label}
+                </Badge>
                 {anonymized && (
                   <Badge variant="outline" className="uppercase text-[10px] h-5">
                     Anonim
+                  </Badge>
+                )}
+                {lifecycle.isAnonymizationScheduled && (
+                  <Badge variant="warning">
+                    Anonimizare programată
                   </Badge>
                 )}
                 {isMinor && (
@@ -188,13 +205,86 @@ export function ClientDashboardUI({
                 )}
                 <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
                   <CalendarPlus className="h-3.5 w-3.5" />
-                  Dosar activ
+                  {lifecycle.stageLabel}
                 </span>
               </div>
             </div>
           </div>
         </div>
       </section>
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <section className="rounded-[1.75rem] border border-border/60 bg-card p-5 shadow-sm">
+          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground">
+            Status Curent
+          </p>
+          <div className="mt-3 flex items-center gap-3">
+            <Badge variant={lifecycle.badgeVariant}>
+              {lifecycle.label}
+            </Badge>
+            <span className="text-xs font-bold text-muted-foreground">{lifecycle.stageLabel}</span>
+          </div>
+          <p className="mt-3 text-sm text-muted-foreground">
+            {lifecycle.description}
+          </p>
+        </section>
+
+        <section className="rounded-[1.75rem] border border-border/60 bg-card p-5 shadow-sm">
+          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground">
+            Următorii Pași
+          </p>
+          {lifecycle.nextActions.length > 0 ? (
+            <ul className="mt-3 space-y-2 text-sm text-foreground">
+              {lifecycle.nextActions.slice(0, 3).map((action) => (
+                <li key={action} className="flex gap-2">
+                  <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  <span>{action}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-3 text-sm text-muted-foreground">
+              Fluxul este într-o stare stabilă. Poți continua monitorizarea clinică și administrativă din secțiunile de mai jos.
+            </p>
+          )}
+        </section>
+
+        <section className="rounded-[1.75rem] border border-border/60 bg-card p-5 shadow-sm">
+          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground">
+            Semnale Administrative
+          </p>
+          <div className="mt-3 space-y-2 text-sm">
+            <div className="flex items-center justify-between rounded-2xl bg-muted/50 px-3 py-2">
+              <span className="text-muted-foreground">GDPR</span>
+              <Badge variant={lifecycle.needsGdprConsent ? "warning" : "success"}>
+                {lifecycle.needsGdprConsent ? "Lipsă" : "Confirmat"}
+              </Badge>
+            </div>
+            {isMinor ? (
+              <div className="flex items-center justify-between rounded-2xl bg-muted/50 px-3 py-2">
+                <span className="text-muted-foreground">Reprezentant legal</span>
+                <Badge variant={lifecycle.hasGuardianContact ? "success" : "warning"}>
+                  {lifecycle.hasGuardianContact ? "Complet" : "Lipsă"}
+                </Badge>
+              </div>
+            ) : null}
+            <div className="flex items-center justify-between rounded-2xl bg-muted/50 px-3 py-2">
+              <span className="text-muted-foreground">Programări viitoare</span>
+              <Badge variant={lifecycle.hasUpcomingSession ? "info" : "outline"}>
+                {lifecycle.hasUpcomingSession ? "Există" : "Niciuna"}
+              </Badge>
+            </div>
+            {client.needs_legal_review ? (
+              <div className="mt-3 flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-3 text-amber-900">
+                <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
+                <p className="text-xs font-medium">
+                  Dosarul are nevoie de verificare legală înainte de a fi considerat complet.
+                </p>
+              </div>
+            ) : null}
+          </div>
+        </section>
+      </div>
 
       {/* ── Success banner ────────────────────────────────────────────────── */}
       {justAnonymized && (

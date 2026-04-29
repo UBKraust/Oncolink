@@ -155,7 +155,7 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
                           href={href}
                           className={cn(
                             interactiveState.navItemBase,
-                            active ? interactiveState.navItemActive : "text-foreground hover:bg-accent",
+                            active ? interactiveState.navItemActive : interactiveState.navItemIdle,
                           )}
                           onClick={() => setMobileMenuOpen(false)}
                         >
@@ -216,7 +216,7 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
                       href={href}
                       className={cn(
                         interactiveState.navItemBase,
-                        active ? interactiveState.navItemActive : "text-foreground hover:bg-accent",
+                        active ? interactiveState.navItemActive : interactiveState.navItemIdle,
                       )}
                       onClick={() => {
                         setSearchOpen(false);

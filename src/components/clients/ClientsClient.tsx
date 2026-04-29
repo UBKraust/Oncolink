@@ -64,6 +64,20 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
     ? `Filtrare activă: ${filteredClients.length} rezultat${filteredClients.length === 1 ? "" : "e"}`
     : `${initialClients.length} pacienți în registru`;
 
+  function openClient(clientId: string) {
+    setSelectedClientId(clientId);
+  }
+
+  function handleRowKeyDown(
+    event: React.KeyboardEvent<HTMLTableRowElement>,
+    clientId: string,
+  ) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openClient(clientId);
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Search & Actions Bar */}
@@ -169,7 +183,7 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
                   <Button
                     type="button"
                     className="flex-1 rounded-2xl"
-                    onClick={() => setSelectedClientId(client.id)}
+                    onClick={() => openClient(client.id)}
                   >
                     Deschide fișa
                   </Button>
@@ -208,8 +222,12 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
                 return (
                   <TableRow 
                     key={client.id} 
-                    className="group cursor-pointer hover:bg-slate-50/80 transition-all border-b-slate-50"
-                    onClick={() => setSelectedClientId(client.id)}
+                    className="group cursor-pointer hover:bg-slate-50/80 transition-all border-b-slate-50 focus-visible:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                    onClick={() => openClient(client.id)}
+                    onKeyDown={(event) => handleRowKeyDown(event, client.id)}
+                    tabIndex={0}
+                    role="button"
+                    aria-label={`Deschide fișa pentru ${client.full_name ?? "client"}`}
                   >
                     <TableCell className="py-4 pl-8">
                       <div className="flex items-center gap-4">
@@ -289,7 +307,7 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
                            className="h-9 w-9 rounded-xl text-slate-400 group-hover:text-primary group-hover:bg-primary/5 transition-all"
                            onClick={(e) => {
                              e.stopPropagation();
-                             setSelectedClientId(client.id);
+                             openClient(client.id);
                            }}
                            aria-label={`Deschide fișa pentru ${client.full_name ?? "client"}`}
                          >

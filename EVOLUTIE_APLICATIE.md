@@ -29,14 +29,18 @@ Aceasta regula ramane activa pe tot parcursul proiectului.
 - Am actualizat registrul de clienti astfel incat fiecare rand si card mobil sa afiseze statusul curent si primul pas operational recomandat.
 - Am refacut KPI-urile din lista de clienti pentru a reflecta funnel-ul real: onboarding, prima sedinta si clienti activi.
 - Am extins fisa clientului cu un sumar de lifecycle, urmatorii pasi si semnale administrative, astfel incat terapeutul sa vada rapid ce lipseste si ce urmeaza.
+- Am introdus persistenta pentru lifecycle in schema Supabase printr-o migrare dedicata, plus tabel de istoric pentru tranzitii.
+- Am legat sincronizarea statusului persistent de fluxurile care schimba real relatia cu clientul: creare/editare client, onboarding adult si minor, booking public, programari si anonimizare.
 
 Fisiere principale:
 
 - [src/lib/clients/lifecycle.ts](/Users/sch_work/Documents/Oncolink/src/lib/clients/lifecycle.ts)
+- [src/lib/clients/lifecycle-sync.ts](/Users/sch_work/Documents/Oncolink/src/lib/clients/lifecycle-sync.ts)
 - [src/lib/clients/queries.ts](/Users/sch_work/Documents/Oncolink/src/lib/clients/queries.ts)
 - [src/components/clients/ClientsClient.tsx](/Users/sch_work/Documents/Oncolink/src/components/clients/ClientsClient.tsx)
 - [src/components/clients/ClientDashboardUI.tsx](/Users/sch_work/Documents/Oncolink/src/components/clients/ClientDashboardUI.tsx)
 - [src/app/dashboard/clients/page.tsx](/Users/sch_work/Documents/Oncolink/src/app/dashboard/clients/page.tsx)
+- [supabase/migrations/20260429223610_client_lifecycle_status.sql](/Users/sch_work/Documents/Oncolink/supabase/migrations/20260429223610_client_lifecycle_status.sql)
 
 ### 1. Navigatie si intrare in produs
 
@@ -166,9 +170,10 @@ Fisiere principale:
 
 ### Urmatorul task recomandat
 
-- Introducerea unui `status` persistent in baza de date pentru clienti, cu istoric separat de tranzitii si actiuni explicite de schimbare status.
+- Expunerea in UI a tranzitiilor manuale pentru `inactiv`, `incheiat`, `neconversie` si `reactiveaza`, peste statusul persistent deja introdus.
 - Separarea modelului pentru `guardian` / reprezentanti legali fata de campurile plate din client.
 - Legarea lifecycle-ului nou de actiuni UI reale: `trimite onboarding`, `marcheaza activ`, `incheie caz`, `reactiveaza`.
+- Aplicarea migrarii in baza locala / remote si validarea istoricului de status pe date reale.
 - Verificare manuala finala si QA cap-coada pe fluxurile critice, in special:
 
 - creare client
@@ -204,5 +209,5 @@ La fiecare actualizare noua adaugam:
 
 - Ce s-a facut: am implementat un prim lifecycle operational derivat pentru clienti si l-am facut vizibil in registru si in fisa individuala, impreuna cu urmatorii pasi recomandati
 - Ce s-a verificat: `npm run lint` si `npm run build`
-- Ce urmeaza imediat: verificare a statusurilor in date reale, apoi introducerea unui status persistent si a istoricului de tranzitii
+- Ce urmeaza imediat: aplicarea migrarii noi, plus legarea unor actiuni UI explicite pentru tranzitiile manuale (`inactiv`, `incheiat`, `reactiveaza`)
 - Status lint/build: ambele verzi

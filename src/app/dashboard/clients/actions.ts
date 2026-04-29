@@ -17,6 +17,11 @@ import { sendMessage, onboardingLinkMsg } from "@/lib/twilio/client";
 import { sendEmail, onboardingEmailTemplate } from "@/lib/mail/client";
 import type { ClientFormState } from "@/lib/clients/form-state";
 import { createOnboardingAccessToken } from "@/lib/security/public-links";
+import {
+  setClientLifecycleStatus,
+  syncClientLifecycleStatus,
+} from "@/lib/clients/lifecycle-sync";
+import type { ClientLifecycleStatus } from "@/lib/clients/lifecycle";
 import { upsertClientByIdentifiers } from "@/lib/clients/upsert";
 import { createSignedObjectUrl } from "@/lib/storage/private-urls";
 
@@ -175,6 +180,13 @@ export async function createClient(
     };
   }
 
+  await syncClientLifecycleStatus(supabase, clientResult.id, {
+    metadata: { source: "createClient", wasCreated: clientResult.created },
+    reason: clientResult.created
+      ? "Client creat"
+      : "Client actualizat prin deduplicare",
+  });
+
   // ── Provision Google Drive folder (fire-and-forget) ──────────────────────
   // Runs async — client creation never blocks on Drive availability.
   void (async () => {
@@ -258,9 +270,31 @@ export async function updateClient(
 
   if (error) return { error: error.message, fieldErrors: {} };
 
+  await syncClientLifecycleStatus(supabase, id, {
+    metadata: { source: "updateClient" },
+    reason: "Profil client actualizat",
+  });
+
   revalidatePath(`/dashboard/clients/${id}`);
   revalidatePath("/dashboard/clients");
   return { success: true, clientId: id, error: null, fieldErrors: {} };
+}
+
+export async function transitionClientLifecycle(
+  id: string,
+  status: ClientLifecycleStatus,
+  reason: string,
+) {
+  const supabase = await createSupabaseServerClient();
+  await setClientLifecycleStatus(supabase, {
+    clientId: id,
+    reason,
+    status,
+    metadata: { source: "manual-transition" },
+  });
+
+  revalidatePath("/dashboard/clients");
+  revalidatePath(`/dashboard/clients/${id}`);
 }
 
 export async function scheduleAnonymization(id: string) {
@@ -330,6 +364,12 @@ export async function anonymizeClient(id: string, formData: FormData) {
     .eq("id", id);
 
   if (error) redirect(`/dashboard/clients/${id}/anonymize?error=${encodeURIComponent(error.message)}`);
+
+  await syncClientLifecycleStatus(supabase, id, {
+    force: true,
+    metadata: { source: "anonymizeClient" },
+    reason: "Client anonimizat",
+  });
 
   revalidatePath("/dashboard/clients");
   revalidatePath(`/dashboard/clients/${id}`);

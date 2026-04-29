@@ -10,6 +10,8 @@ export interface ClientProfile {
   address: string | null;
   created_at: string;
   gdpr_consent_signed: boolean | null;
+  lifecycle_status: string | null;
+  lifecycle_status_updated_at: string | null;
   onboarding_completed_at: string | null;
   needs_legal_review: boolean | null;
   notes_anonymized_at: string | null;

@@ -1,6 +1,10 @@
 import { z } from "zod";
 
 import { checkOverlap, OverlapError } from "@/lib/availability/overlapCheck";
+import {
+  type SupabaseServerDb,
+  syncClientLifecycleStatus,
+} from "@/lib/clients/lifecycle-sync";
 import { pushAppointmentToGoogle } from "@/lib/google/sync";
 import { upsertClientByIdentifiers } from "@/lib/clients/upsert";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
@@ -178,6 +182,11 @@ export async function createPublicBooking(
 
   pushAppointmentToGoogle(appt.id).catch((err) => {
     console.error("[public-booking] Google Calendar sync failed:", err);
+  });
+
+  await syncClientLifecycleStatus(db as unknown as SupabaseServerDb, clientId, {
+    metadata: { source: "createPublicBooking" },
+    reason: "Programare publică creată",
   });
 
   return {

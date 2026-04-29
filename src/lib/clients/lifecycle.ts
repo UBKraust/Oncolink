@@ -16,6 +16,7 @@ type LifecycleClient = {
   gdpr_consent_signed: boolean | null;
   is_minor: boolean | null;
   legal_liability_consent_signed_at?: string | null;
+  lifecycle_status?: string | null;
   notes_anonymized_at: string | null;
   onboarding_completed_at?: string | null;
   parent_name: string | null;
@@ -32,7 +33,25 @@ export type ClientLifecycleStatus =
   | "ONBOARDING"
   | "PROGRAMAT"
   | "ACTIV"
+  | "INACTIV"
+  | "INCHEIAT"
+  | "NECONVERSIE"
   | "ANONIMIZAT";
+
+export function isClientLifecycleStatus(
+  value: string | null | undefined,
+): value is ClientLifecycleStatus {
+  return [
+    "LEAD",
+    "ONBOARDING",
+    "PROGRAMAT",
+    "ACTIV",
+    "INACTIV",
+    "INCHEIAT",
+    "NECONVERSIE",
+    "ANONIMIZAT",
+  ].includes(value ?? "");
+}
 
 export interface ClientLifecycle {
   status: ClientLifecycleStatus;
@@ -50,12 +69,13 @@ export interface ClientLifecycle {
   isAnonymizationScheduled: boolean;
   needsGdprConsent: boolean;
   needsMinorLegalConsent: boolean;
+  recommendedStatus: ClientLifecycleStatus;
 }
 
-export function deriveClientLifecycle(
+function getLifecycleFacts(
   client: LifecycleClient,
   appointments: LifecycleAppointment[] = [],
-): ClientLifecycle {
+) {
   const now = Date.now();
   const isMinor = Boolean(client.is_minor);
   const isAnonymized = Boolean(client.notes_anonymized_at);
@@ -79,6 +99,59 @@ export function deriveClientLifecycle(
   const hasCompletedSession = appointments.some(
     (appointment) => appointment.status === "FINALIZAT",
   );
+
+  return {
+    hasCompletedSession,
+    hasGuardianContact,
+    hasUpcomingSession,
+    isAnonymizationScheduled,
+    isAnonymized,
+    isMinor,
+    isOnboardingComplete,
+    needsGdprConsent,
+    needsMinorLegalConsent,
+  };
+}
+
+export function computeRecommendedClientLifecycleStatus(
+  client: LifecycleClient,
+  appointments: LifecycleAppointment[] = [],
+): ClientLifecycleStatus {
+  const facts = getLifecycleFacts(client, appointments);
+
+  if (facts.isAnonymized) return "ANONIMIZAT";
+  if (facts.hasCompletedSession) return "ACTIV";
+  if (facts.hasUpcomingSession) return "PROGRAMAT";
+  if (
+    facts.isOnboardingComplete ||
+    client.gdpr_consent_signed ||
+    client.terms_consent_signed_at
+  ) {
+    return "ONBOARDING";
+  }
+
+  return "LEAD";
+}
+
+export function deriveClientLifecycle(
+  client: LifecycleClient,
+  appointments: LifecycleAppointment[] = [],
+): ClientLifecycle {
+  const {
+    hasCompletedSession,
+    hasGuardianContact,
+    hasUpcomingSession,
+    isAnonymizationScheduled,
+    isAnonymized,
+    isMinor,
+    isOnboardingComplete,
+    needsGdprConsent,
+    needsMinorLegalConsent,
+  } = getLifecycleFacts(client, appointments);
+  const recommendedStatus = computeRecommendedClientLifecycleStatus(client, appointments);
+  const status = isClientLifecycleStatus(client.lifecycle_status)
+    ? client.lifecycle_status
+    : recommendedStatus;
 
   const nextActions: string[] = [];
 
@@ -111,9 +184,9 @@ export function deriveClientLifecycle(
     }
   }
 
-  if (isAnonymized) {
+  if (status === "ANONIMIZAT") {
     return {
-      status: "ANONIMIZAT",
+      status,
       label: "Anonimizat",
       description: "Datele personale au fost eliminate, iar dosarul rămâne doar pentru retenție legală.",
       badgeVariant: "outline",
@@ -128,12 +201,85 @@ export function deriveClientLifecycle(
       isAnonymizationScheduled,
       needsGdprConsent,
       needsMinorLegalConsent,
+      recommendedStatus,
     };
   }
 
-  if (hasCompletedSession) {
+  if (status === "INCHEIAT") {
     return {
-      status: "ACTIV",
+      status,
+      label: "Încheiat",
+      description: "Relația terapeutică a fost închisă explicit, iar dosarul rămâne accesibil doar pentru consult și retenție.",
+      badgeVariant: "destructive",
+      stageLabel: "Caz închis",
+      nextActions: [
+        "Reactivează clientul doar dacă relația terapeutică se reia explicit.",
+        "Verifică facturile restante și documentele administrative finale.",
+      ],
+      summary: "Status manual final pentru închiderea formală a cazului.",
+      hasCompletedSession,
+      hasUpcomingSession,
+      hasGuardianContact,
+      isMinor,
+      isOnboardingComplete,
+      isAnonymizationScheduled,
+      needsGdprConsent,
+      needsMinorLegalConsent,
+      recommendedStatus,
+    };
+  }
+
+  if (status === "INACTIV") {
+    return {
+      status,
+      label: "Inactiv",
+      description: "Clientul nu mai este în lucru activ, dar poate reveni fără a recrea fișa.",
+      badgeVariant: "secondary",
+      stageLabel: "Pauză terapeutică",
+      nextActions: [
+        "Reactivează clientul când reapare o nouă programare sau un nou episod de lucru.",
+        "Folosește acest status pentru pauze, nu pentru ștergere sau anonimizare.",
+      ],
+      summary: "Status manual de pauză, util pentru follow-up sau revenire ulterioară.",
+      hasCompletedSession,
+      hasUpcomingSession,
+      hasGuardianContact,
+      isMinor,
+      isOnboardingComplete,
+      isAnonymizationScheduled,
+      needsGdprConsent,
+      needsMinorLegalConsent,
+      recommendedStatus,
+    };
+  }
+
+  if (status === "NECONVERSIE") {
+    return {
+      status,
+      label: "Neconversie",
+      description: "Fișa a fost creată, dar nu a devenit pacient activ în cabinet.",
+      badgeVariant: "warning",
+      stageLabel: "Lead închis",
+      nextActions: [
+        "Reactivează doar dacă pacientul revine și acceptă continuarea fluxului.",
+        "Păstrează motivul neconversiei în istoric pentru raportare.",
+      ],
+      summary: "Status manual pentru lead-urile care nu s-au convertit în relații active.",
+      hasCompletedSession,
+      hasUpcomingSession,
+      hasGuardianContact,
+      isMinor,
+      isOnboardingComplete,
+      isAnonymizationScheduled,
+      needsGdprConsent,
+      needsMinorLegalConsent,
+      recommendedStatus,
+    };
+  }
+
+  if (status === "ACTIV") {
+    return {
+      status,
       label: "Activ",
       description: "Clientul are deja istoric clinic și poate continua în fluxul curent de follow-up.",
       badgeVariant: "success",
@@ -150,12 +296,13 @@ export function deriveClientLifecycle(
       isAnonymizationScheduled,
       needsGdprConsent,
       needsMinorLegalConsent,
+      recommendedStatus,
     };
   }
 
-  if (hasUpcomingSession) {
+  if (status === "PROGRAMAT") {
     return {
-      status: "PROGRAMAT",
+      status,
       label: "Programat",
       description: "Prima relație activă cu cabinetul este planificată, dar nu există încă o ședință finalizată.",
       badgeVariant: "info",
@@ -170,12 +317,13 @@ export function deriveClientLifecycle(
       isAnonymizationScheduled,
       needsGdprConsent,
       needsMinorLegalConsent,
+      recommendedStatus,
     };
   }
 
-  if (isOnboardingComplete || client.gdpr_consent_signed || client.terms_consent_signed_at) {
+  if (status === "ONBOARDING") {
     return {
-      status: "ONBOARDING",
+      status,
       label: "Onboarding",
       description: "Fișa are suficiente date administrative pentru a continua către prima programare.",
       badgeVariant: "warning",
@@ -190,6 +338,7 @@ export function deriveClientLifecycle(
       isAnonymizationScheduled,
       needsGdprConsent,
       needsMinorLegalConsent,
+      recommendedStatus,
     };
   }
 
@@ -209,5 +358,6 @@ export function deriveClientLifecycle(
     isAnonymizationScheduled,
     needsGdprConsent,
     needsMinorLegalConsent,
+    recommendedStatus,
   };
 }

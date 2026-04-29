@@ -11,6 +11,10 @@ import {
   createOnboardingAccessToken,
   getOnboardingTokenPayload,
 } from "@/lib/security/public-links";
+import {
+  type SupabaseServerDb,
+  syncClientLifecycleStatus,
+} from "@/lib/clients/lifecycle-sync";
 import { resolvePublicBookingTherapistId } from "@/lib/security/public-booking";
 import {
   enforceRateLimit,
@@ -162,6 +166,11 @@ export async function submitMinorOnboarding(data: OnboardingData, files?: { cust
     }
   }
 
+  await syncClientLifecycleStatus(db as unknown as SupabaseServerDb, clientId, {
+    metadata: { source: "submitMinorOnboarding" },
+    reason: "Onboarding minor finalizat",
+  });
+
   revalidatePath("/dashboard/clients");
   return { success: true, id: clientId };
 }
@@ -216,6 +225,10 @@ export async function submitClientOnboarding(data: OnboardingData) {
   }
 
   const supabase = await createSupabaseServerClient();
+  const clientId = data.id;
+  if (!clientId) {
+    return { success: false, error: "Client lipsă pentru onboarding." };
+  }
   const { error } = await supabase
     .from("clients")
     .update({
@@ -230,14 +243,19 @@ export async function submitClientOnboarding(data: OnboardingData) {
       terms_consent_signed_at: data.terms_consent_signed ? now : null,
       onboarding_completed_at: now,
     })
-    .eq("id", data.id);
+    .eq("id", clientId);
 
   if (error) {
     console.error("Error submitting onboarding:", error);
     return { success: false, error: error.message };
   }
 
-  revalidatePath(`/dashboard/clients/${data.id}`);
+  await syncClientLifecycleStatus(supabase, clientId, {
+    metadata: { source: "submitClientOnboarding" },
+    reason: "Onboarding client finalizat",
+  });
+
+  revalidatePath(`/dashboard/clients/${clientId}`);
   return { success: true };
 }
 

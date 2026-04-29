@@ -277,6 +277,8 @@ export type Database = {
           id: string;
           is_minor: boolean | null;
           legal_liability_consent_signed_at: string | null;
+          lifecycle_status: string;
+          lifecycle_status_updated_at: string;
           location: string | null;
           minor_cnp: string | null;
           needs_legal_review: boolean | null;
@@ -332,6 +334,8 @@ export type Database = {
           id?: string;
           is_minor?: boolean | null;
           legal_liability_consent_signed_at?: string | null;
+          lifecycle_status?: string;
+          lifecycle_status_updated_at?: string;
           location?: string | null;
           minor_cnp?: string | null;
           needs_legal_review?: boolean | null;
@@ -387,6 +391,8 @@ export type Database = {
           id?: string;
           is_minor?: boolean | null;
           legal_liability_consent_signed_at?: string | null;
+          lifecycle_status?: string;
+          lifecycle_status_updated_at?: string;
           location?: string | null;
           minor_cnp?: string | null;
           needs_legal_review?: boolean | null;
@@ -417,6 +423,46 @@ export type Database = {
           terms_consent_signed_at?: string | null;
         };
         Relationships: [];
+      };
+      client_status_history: {
+        Row: {
+          changed_at: string;
+          client_id: string;
+          from_status: string | null;
+          id: string;
+          metadata: Json;
+          reason: string | null;
+          therapist_id: string | null;
+          to_status: string;
+        };
+        Insert: {
+          changed_at?: string;
+          client_id: string;
+          from_status?: string | null;
+          id?: string;
+          metadata?: Json;
+          reason?: string | null;
+          therapist_id?: string | null;
+          to_status: string;
+        };
+        Update: {
+          changed_at?: string;
+          client_id?: string;
+          from_status?: string | null;
+          id?: string;
+          metadata?: Json;
+          reason?: string | null;
+          therapist_id?: string | null;
+          to_status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "client_status_history_client_id_fkey";
+            columns: ["client_id"];
+            referencedRelation: "clients";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       documents: {
         Row: {

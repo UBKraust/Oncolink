@@ -1,4 +1,8 @@
 import { isSupabaseServiceConfigured } from "@/lib/supabase/config";
+import {
+  type SupabaseServerDb,
+  syncClientLifecycleStatus,
+} from "@/lib/clients/lifecycle-sync";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
 
 function toBase64Url(bytes: Uint8Array): string {
@@ -144,6 +148,11 @@ export async function consumeOnboardingAccessToken(
   if (error) {
     return { success: false, error: error.message };
   }
+
+  await syncClientLifecycleStatus(admin as unknown as SupabaseServerDb, tokenData.client_id, {
+    metadata: { source: "consumeOnboardingAccessToken" },
+    reason: "Onboarding public completat",
+  });
 
   await admin
     .from("onboarding_tokens")

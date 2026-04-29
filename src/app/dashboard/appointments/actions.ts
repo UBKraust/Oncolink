@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { syncClientLifecycleStatus } from "@/lib/clients/lifecycle-sync";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { AppointmentFormState } from "@/lib/appointments/form-state";
 import type { AppointmentStatus } from "@/lib/appointments/helpers";
@@ -107,6 +108,14 @@ export async function createAppointment(
       );
     }
 
+    await syncClientLifecycleStatus(supabase, payload.client_id, {
+      metadata: {
+        count: payload.recurring_count,
+        source: "createAppointmentRecurring",
+      },
+      reason: "Lot de programări creat",
+    });
+
     revalidatePath("/dashboard/appointments");
     redirect(
       `/dashboard/appointments?recurring=${payload.recurring_count}`,
@@ -137,6 +146,11 @@ export async function createAppointment(
     console.warn("[GCal] sync skipped:", e),
   );
 
+  await syncClientLifecycleStatus(supabase, payload.client_id, {
+    metadata: { appointmentId: data.id, source: "createAppointment" },
+    reason: "Programare creată",
+  });
+
   revalidatePath("/dashboard/appointments");
   redirect(`/dashboard/appointments/${data.id}`);
 }
@@ -158,6 +172,11 @@ export async function updateAppointment(
   }
 
   const supabase = await createSupabaseServerClient();
+  const { data: existingAppointment } = await supabase
+    .from("appointments")
+    .select("client_id")
+    .eq("id", id)
+    .maybeSingle();
   const { error } = await supabase
     .from("appointments")
     .update({
@@ -175,6 +194,18 @@ export async function updateAppointment(
     .eq("id", id);
 
   if (error) return { error: error.message, fieldErrors: {} };
+
+  if (existingAppointment?.client_id && existingAppointment.client_id !== payload.client_id) {
+    await syncClientLifecycleStatus(supabase, existingAppointment.client_id, {
+      metadata: { appointmentId: id, source: "updateAppointmentPreviousClient" },
+      reason: "Programare mutată pe alt client",
+    });
+  }
+
+  await syncClientLifecycleStatus(supabase, payload.client_id, {
+    metadata: { appointmentId: id, source: "updateAppointment" },
+    reason: "Programare actualizată",
+  });
 
   // Fire-and-forget: sync any changes to Google Calendar
   pushAppointmentToGoogle(id).catch((e) =>
@@ -195,7 +226,20 @@ export async function updateAppointmentStatus(formData: FormData) {
   }
 
   const supabase = await createSupabaseServerClient();
+  const { data: appointment } = await supabase
+    .from("appointments")
+    .select("client_id")
+    .eq("id", id)
+    .maybeSingle();
+
   await supabase.from("appointments").update({ status }).eq("id", id);
+
+  if (appointment?.client_id) {
+    await syncClientLifecycleStatus(supabase, appointment.client_id, {
+      metadata: { appointmentId: id, source: "updateAppointmentStatus", status },
+      reason: `Status programare schimbat în ${status}`,
+    });
+  }
 
   revalidatePath("/dashboard/appointments");
   revalidatePath(`/dashboard/appointments/${id}`);

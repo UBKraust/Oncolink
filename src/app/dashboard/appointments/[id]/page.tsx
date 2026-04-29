@@ -5,7 +5,6 @@ import { ro } from "date-fns/locale";
 import {
   Building2,
   CalendarClock,
-  ChevronLeft,
   Clock,
   Home,
   NotebookPen,
@@ -33,6 +32,7 @@ import { updateAppointmentStatus } from "@/app/dashboard/appointments/actions";
 import { getInvoiceByAppointment } from "@/lib/invoices/queries";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { DashboardPage, PageHeader, SetupBanner } from "@/components/app/page-shell";
+import { Breadcrumbs } from "@/components/app/breadcrumbs";
 
 const locationIcon = {
   PRIVAT: Home,
@@ -72,13 +72,14 @@ export default async function AppointmentDetailPage({
 
   return (
     <DashboardPage className="max-w-5xl space-y-5">
-      <Link
-        href="/dashboard/appointments"
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ChevronLeft className="h-4 w-4" />
-        Înapoi la programări
-      </Link>
+      <Breadcrumbs
+        items={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: "Programări", href: "/dashboard/appointments" },
+          { label: appointment.client?.full_name ?? "Programare", href: `/dashboard/appointments/${id}` },
+          { label: "Detalii" },
+        ]}
+      />
 
       {demo && (
         <SetupBanner description="Modul demo pentru modificarea statusului nu mai persistă date. Activează Supabase pentru editări reale." />

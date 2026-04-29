@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
-import { ArrowLeft, CreditCard, ExternalLink, FileDown } from "lucide-react";
+import { CreditCard, ExternalLink, FileDown } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { getInvoice, invoiceStatusVariant } from "@/lib/invoices/queries";
 import { InvoiceActions } from "@/components/invoices/invoice-actions";
 import { DashboardPage, PageHeader, SectionCard } from "@/components/app/page-shell";
+import { Breadcrumbs } from "@/components/app/breadcrumbs";
 
 export default async function InvoiceDetailPage({
   params,
@@ -27,13 +28,14 @@ export default async function InvoiceDetailPage({
 
   return (
     <DashboardPage className="max-w-2xl">
-      <Link
-        href="/dashboard/invoices"
-        className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" />
-        Înapoi la facturi
-      </Link>
+      <Breadcrumbs
+        items={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: "Facturi", href: "/dashboard/invoices" },
+          { label: invoice.client_name ?? "Factură", href: `/dashboard/invoices/${id}` },
+          { label: "Detalii" },
+        ]}
+      />
 
       <PageHeader
         title={seriesNum}

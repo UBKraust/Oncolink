@@ -138,8 +138,8 @@ Fisiere principale:
 - formularele mari au legaturi mai bune intre campuri, hint-uri si erori
 - overlay-urile principale au acum comportament coerent la tastatura
 - paginile mari si modulele principale folosesc acum aceeasi familie vizuala la nivel de shell, sectiuni si empty states
+- micro-polish-ul pe densitate, spacing, tabele, badge-uri si formulare este deja aplicat pe majoritatea suprafetelor importante
 - mai exista loc de verificare manuala pe focus order si interactiuni reale cap-coada
-- urmatorul strat de lucru este micro-polish pe densitate, spacing si consistenta componentelor secundare
 
 ### Stabilitate
 
@@ -150,15 +150,7 @@ Fisiere principale:
 
 ### Urmatorul task recomandat
 
-Pass de micro-polish UI/UX pe componente secundare, in special:
-
-- tabele
-- badge-uri
-- formulare
-- spacing-uri secundare
-- densitate vizuala pe carduri si liste
-
-Dupa acest pass:
+Verificare manuala finala si QA cap-coada pe fluxurile critice, in special:
 
 - creare client
 - onboarding adult si minor
@@ -169,7 +161,6 @@ Dupa acest pass:
 
 ### Dupa acest task
 
-- verificare manuala cap-coada pe fluxurile critice dupa micro-polish
 - verificare focus order si keyboard-only navigation cap-coada
 - contrast si stari de eroare/succes coerente
 - pass final pe responsive pentru ecrane mici
@@ -192,7 +183,7 @@ La fiecare actualizare noua adaugam:
 
 ### Task nou
 
-- Ce s-a facut: am unificat shell-ul UI pe paginile ramase de dashboard si public, am curatat mock data din fluxurile reale de conformitate si export CAS si am aliniat componentele mari `ClientDashboardUI`, `CasModuleUI` si `VaultClient` la aceeasi familie vizuala
+- Ce s-a facut: am extins micro-polish-ul pe tabele, formulare, onboarding, setari, analytics, note clinice, cheltuieli, activitate si documente, astfel incat dashboard-ul si paginile publice sa foloseasca aproape peste tot aceeasi familie de carduri, headere, empty states si densitate vizuala
 - Ce s-a verificat: `npm run lint` si `npm run build`
-- Ce urmeaza imediat: pass de micro-polish pe tabele, badge-uri, formulare si spacing-uri secundare, urmat de verificare manuala cap-coada
+- Ce urmeaza imediat: QA manual cap-coada pe fluxurile critice si retusuri mici rezultate din folosire reala
 - Status lint/build: ambele verzi

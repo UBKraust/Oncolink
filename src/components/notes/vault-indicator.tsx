@@ -60,6 +60,7 @@ export function VaultIndicator({ demoMode }: { demoMode: boolean }) {
       <Button
         size="sm"
         variant="outline"
+        className="rounded-xl"
         disabled={demoMode || status === "loading"}
         onClick={() => {
           if (status === "unlocked") lock();

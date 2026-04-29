@@ -147,9 +147,9 @@ export function NoteEditor({
 
   if (status !== "unlocked" || !key) {
     return (
-      <Card>
+      <Card className="rounded-[1.75rem] border-border/60 shadow-sm">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
+          <CardTitle className="flex items-center gap-2 text-base font-black tracking-tight">
             <Lock className="h-4 w-4" />
             Vault blocat
           </CardTitle>
@@ -165,10 +165,10 @@ export function NoteEditor({
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="rounded-[1.75rem] border-border/60 shadow-sm">
         <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
           <div>
-            <CardTitle className="text-base">Editor criptat</CardTitle>
+            <CardTitle className="text-base font-black tracking-tight">Editor criptat</CardTitle>
             <CardDescription>
               {lastSavedAt
                 ? `Ultima salvare: ${format(new Date(lastSavedAt), "d MMM yyyy · HH:mm", { locale: ro })}`
@@ -179,7 +179,7 @@ export function NoteEditor({
         </CardHeader>
         <CardContent className="space-y-3">
           {decryptError ? (
-            <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+            <div className="flex items-start gap-2 rounded-2xl border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
               <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
               <span>{decryptError}</span>
             </div>
@@ -191,7 +191,7 @@ export function NoteEditor({
             placeholder="Poți nota aici — totul este criptat local înainte să ajungă la server."
             rows={14}
             disabled={!loaded}
-            className="font-mono text-sm"
+            className="min-h-[360px] font-mono text-sm"
           />
 
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -216,16 +216,16 @@ export function NoteEditor({
           </div>
 
           {saveError ? (
-            <p className="rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            <p className="rounded-2xl bg-destructive/10 px-3 py-2 text-xs text-destructive">
               {saveError}
             </p>
           ) : null}
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="rounded-[1.75rem] border-border/60 shadow-sm">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
+          <CardTitle className="flex items-center gap-2 text-base font-black tracking-tight">
             <Cpu className="h-4 w-4" />
             Asistent AI local
           </CardTitle>
@@ -289,14 +289,14 @@ export function NoteEditor({
           </div>
 
           {aiError ? (
-            <p className="rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            <p className="rounded-2xl bg-destructive/10 px-3 py-2 text-xs text-destructive">
               {aiError}
             </p>
           ) : null}
 
           {aiOutput ? (
             <div className="space-y-2">
-              <pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded-md border bg-muted/40 p-3 text-xs">
+              <pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded-2xl border border-border/60 bg-muted/30 p-4 text-xs">
                 {aiOutput}
               </pre>
               <div className="flex justify-end gap-2">
@@ -352,7 +352,7 @@ function SaveStatusBadge({ status }: { status: SaveStatus }) {
 
 function SkeletonCard() {
   return (
-    <Card>
+    <Card className="rounded-[1.75rem] border-border/60 shadow-sm">
       <CardContent className="p-6 text-sm text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin" />
       </CardContent>

@@ -231,7 +231,7 @@ export function WeekView({ appointments, initialDate }: WeekViewProps) {
       {selectedAppt && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-[1px] p-4" onClick={() => setSelectedAppt(null)}>
           <Card 
-            className="w-full max-w-sm shadow-2xl animate-in fade-in zoom-in duration-200"
+            className="w-full max-w-sm rounded-[1.75rem] border-border/60 shadow-2xl animate-in fade-in zoom-in duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -281,8 +281,8 @@ export function WeekView({ appointments, initialDate }: WeekViewProps) {
               </div>
 
               {selectedAppt.personal_notes && (
-                <div className="rounded-lg bg-amber-50/50 border border-amber-100 p-3 space-y-1.5">
-                  <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-amber-900/60">
+                <div className="space-y-1.5 rounded-2xl border border-amber-100 bg-amber-50/50 p-3">
+                  <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-amber-900/60">
                     <Notebook className="h-3 w-3" />
                     Note Personale (Private)
                   </div>
@@ -292,7 +292,7 @@ export function WeekView({ appointments, initialDate }: WeekViewProps) {
                 </div>
               )}
 
-              <div className="flex items-center gap-2 pt-2 border-t">
+              <div className="flex items-center gap-2 border-t border-border/60 pt-2">
                 <Button variant="outline" size="sm" className="flex-1 text-xs gap-1.5" asChild>
                   <Link href={`/dashboard/appointments/${selectedAppt.id}`}>
                     <Activity className="h-3.5 w-3.5" />

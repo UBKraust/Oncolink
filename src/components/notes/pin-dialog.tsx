@@ -80,10 +80,10 @@ export function PinDialog({ open, onClose }: PinDialogProps) {
       role="dialog"
       aria-modal="true"
     >
-      <div className="w-full max-w-md rounded-lg border bg-card shadow-lg">
-        <div className="flex items-start justify-between gap-2 border-b p-5">
+      <div className="w-full max-w-md rounded-[1.75rem] border border-border/60 bg-card shadow-2xl">
+        <div className="flex items-start justify-between gap-2 border-b border-border/60 p-5">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               {isSetup ? (
                 <ShieldCheck className="h-5 w-5" />
               ) : (
@@ -104,7 +104,7 @@ export function PinDialog({ open, onClose }: PinDialogProps) {
           <button
             type="button"
             onClick={handleClose}
-            className="rounded-md p-1 text-muted-foreground hover:bg-accent"
+            className="rounded-xl p-1 text-muted-foreground hover:bg-accent"
             aria-label="Închide"
           >
             <X className="h-4 w-4" />
@@ -144,19 +144,19 @@ export function PinDialog({ open, onClose }: PinDialogProps) {
           ) : null}
 
           {error ? (
-            <p className="rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            <p className="rounded-2xl bg-destructive/10 px-3 py-2 text-xs text-destructive">
               {error}
             </p>
           ) : null}
 
           {isSetup ? (
-            <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+            <p className="rounded-2xl bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
               Dacă pierzi PIN-ul, notele vechi rămân criptate permanent. Nu
               există recuperare prin server.
             </p>
           ) : null}
 
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-2 border-t border-border/60 pt-4">
             <Button
               type="button"
               variant="ghost"

@@ -5,8 +5,9 @@ import { Plus, Trash2, GripVertical, ChevronDown, ChevronUp } from "lucide-react
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import type { Question, ScoringLogic, ScoringSubscale, TestTemplate } from "@/lib/assessments/types";
+import { SectionCard } from "@/components/app/page-shell";
 
 function generateId() {
   return `q${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
@@ -139,11 +140,11 @@ export function TestBuilderForm({ onSave }: Props) {
   return (
     <div className="space-y-6">
       {/* Meta */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Informații Test</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <SectionCard
+        title="Informații test"
+        description="Definește identitatea clinică a testului înainte de a adăuga întrebările."
+      >
+        <CardContent className="space-y-4 p-6">
           <div className="space-y-2">
             <Label>Denumire Test</Label>
             <Input
@@ -161,28 +162,28 @@ export function TestBuilderForm({ onSave }: Props) {
             />
           </div>
         </CardContent>
-      </Card>
+      </SectionCard>
 
       {/* Questions */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-base">Întrebări ({questions.length})</h3>
+          <h3 className="text-base font-black tracking-tight">Întrebări ({questions.length})</h3>
           <Button variant="outline" size="sm" onClick={addQuestion}>
             <Plus className="h-4 w-4 mr-1" /> Adaugă Întrebare
           </Button>
         </div>
 
         {questions.map((q, idx) => (
-          <Card key={q.id} className="overflow-hidden">
+          <Card key={q.id} className="overflow-hidden rounded-[1.5rem] border-border/60 shadow-sm">
             <div
-              className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-muted/40 transition-colors"
+              className="flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/30"
               onClick={() => setExpandedQ(expandedQ === q.id ? null : q.id)}
             >
               <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
               <span className="text-xs font-mono text-muted-foreground w-6">{idx + 1}.</span>
               <span className="flex-1 text-sm truncate">{q.text || "Întrebare fără text..."}</span>
               {q.reverse_scoring && (
-                <span className="text-[10px] bg-amber-100 text-amber-700 rounded px-1.5 py-0.5 font-medium">
+                <span className="rounded-full bg-amber-100 px-2 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-amber-700">
                   INVERS
                 </span>
               )}
@@ -206,7 +207,7 @@ export function TestBuilderForm({ onSave }: Props) {
             </div>
 
             {expandedQ === q.id && (
-              <CardContent className="border-t pt-4 pb-4 space-y-4 bg-muted/20">
+              <CardContent className="space-y-4 border-t border-border/60 bg-muted/20 px-4 pb-4 pt-4">
                 <div className="space-y-2">
                   <Label>Text Întrebare</Label>
                   <Input
@@ -230,9 +231,9 @@ export function TestBuilderForm({ onSave }: Props) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-xs uppercase tracking-wide text-muted-foreground">Opțiuni de Răspuns</Label>
+                  <Label className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Opțiuni de răspuns</Label>
                   {q.options.map((opt, oIdx) => (
-                    <div key={oIdx} className="flex items-center gap-2">
+                    <div key={oIdx} className="flex items-center gap-2 rounded-2xl border border-border/60 bg-background p-2">
                       <Input
                         value={opt.label}
                         onChange={(e) => updateOption(q.id, oIdx, "label", e.target.value)}
@@ -269,12 +270,11 @@ export function TestBuilderForm({ onSave }: Props) {
       </div>
 
       {/* Subscales */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Sub-Scale Scoring</CardTitle>
-          <CardDescription>Grupează întrebările în dimensiuni clinice separate (opțional).</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <SectionCard
+        title="Sub-scale scoring"
+        description="Grupează întrebările în dimensiuni clinice separate, dacă vrei scoruri pe arii distincte."
+      >
+        <CardContent className="space-y-4 p-6">
           <div className="flex gap-2">
             <Input
               value={newSubscaleName}
@@ -286,7 +286,7 @@ export function TestBuilderForm({ onSave }: Props) {
           </div>
 
           {subscales.map((sub) => (
-            <div key={sub.name} className="rounded-md border p-3 space-y-2">
+            <div key={sub.name} className="space-y-2 rounded-2xl border border-border/60 bg-muted/20 p-4">
               <div className="flex justify-between items-center">
                 <span className="font-medium text-sm">{sub.name}</span>
                 <Button
@@ -305,10 +305,10 @@ export function TestBuilderForm({ onSave }: Props) {
                     <button
                       key={q.id}
                       onClick={() => toggleQuestionInSubscale(sub.name, q.id)}
-                      className={`text-xs px-2 py-1 rounded border transition-colors ${
+                      className={`rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] transition-colors ${
                         assigned
                           ? "bg-primary text-primary-foreground border-primary"
-                          : "bg-background text-muted-foreground border-muted hover:border-primary"
+                          : "bg-background text-muted-foreground border-border/60 hover:border-primary"
                       }`}
                     >
                       Q{idx + 1}
@@ -322,7 +322,7 @@ export function TestBuilderForm({ onSave }: Props) {
             </div>
           ))}
         </CardContent>
-      </Card>
+      </SectionCard>
 
       <div className="flex justify-end">
         <Button onClick={handleSave} disabled={!name.trim() || questions.length === 0}>

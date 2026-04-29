@@ -39,6 +39,8 @@ import {
 import type { Expense, ExpenseCategory } from "@/app/dashboard/expenses/actions";
 import { createExpense, deleteExpense } from "@/app/dashboard/expenses/actions";
 import { useOverlayA11y } from "@/components/ui/use-overlay-a11y";
+import { EmptyState, SectionCard } from "@/components/app/page-shell";
+import { StatCard as DashboardStatCard } from "@/components/dashboard/stat-card";
 
 const MONTHS_RO = [
   "Ianuarie",
@@ -159,23 +161,17 @@ export function ExpensesClient({
     <div className="space-y-6">
       {/* Filters & Stats */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card className="bg-primary/5 border-primary/20">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Total Cheltuieli {MONTHS_RO[month - 1]}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalAmount.toLocaleString("ro-RO")} RON</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Din {expenses.length} înregistrări
-            </p>
-          </CardContent>
-        </Card>
+        <DashboardStatCard
+          label={`Total cheltuieli ${MONTHS_RO[month - 1]}`}
+          value={`${totalAmount.toLocaleString("ro-RO")} RON`}
+          hint={`Din ${expenses.length} înregistrări`}
+          icon={Receipt}
+          tone="warning"
+        />
 
-        <Card className="md:col-span-2">
+        <Card className="md:col-span-2 rounded-[1.75rem] border-border/60 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            <CardTitle className="text-xs font-black uppercase tracking-[0.18em] text-muted-foreground">
               Filtrare Perioadă
             </CardTitle>
           </CardHeader>
@@ -220,75 +216,82 @@ export function ExpensesClient({
       </div>
 
       {/* Expenses List */}
-      <Card>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Dată</TableHead>
-              <TableHead>Categorie</TableHead>
-              <TableHead>Descriere</TableHead>
-              <TableHead className="text-right">Sumă</TableHead>
-              <TableHead className="text-center w-24">Bon/Factură</TableHead>
-              <TableHead className="w-12"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredExpenses.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
-                  Nicio cheltuială găsită pentru această perioadă.
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredExpenses.map((e) => {
-                const meta = categoryMeta[e.category];
-                const Icon = meta.icon;
-                return (
-                  <TableRow key={e.id}>
-                    <TableCell className="font-medium">
-                      {new Date(e.expense_date).toLocaleDateString("ro-RO")}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                          <Icon className="h-3.5 w-3.5" />
+      <SectionCard
+        title="Cheltuieli înregistrate"
+        description="Vizualizează, filtrează și gestionează costurile operaționale ale cabinetului."
+        icon={Receipt}
+      >
+        <CardContent className="p-0">
+          {filteredExpenses.length === 0 ? (
+            <EmptyState
+              title="Nicio cheltuială găsită"
+              description="Pentru perioada selectată nu există înregistrări sau filtrul de căutare nu găsește rezultate."
+              icon={Receipt}
+              action={{ label: "Adaugă cheltuială", onClick: () => setShowAdd(true) }}
+            />
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Dată</TableHead>
+                  <TableHead>Categorie</TableHead>
+                  <TableHead>Descriere</TableHead>
+                  <TableHead className="text-right">Sumă</TableHead>
+                  <TableHead className="text-center w-24">Bon/Factură</TableHead>
+                  <TableHead className="w-12"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredExpenses.map((e) => {
+                  const meta = categoryMeta[e.category];
+                  const Icon = meta.icon;
+                  return (
+                    <TableRow key={e.id}>
+                      <TableCell className="font-medium">
+                        {new Date(e.expense_date).toLocaleDateString("ro-RO")}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                            <Icon className="h-3.5 w-3.5" />
+                          </div>
+                          <span className="text-sm">{meta.label}</span>
                         </div>
-                        <span className="text-sm">{meta.label}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="max-w-xs truncate">{e.description}</TableCell>
-                    <TableCell className="text-right font-bold">
-                      {e.amount.toLocaleString("ro-RO")} RON
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {e.receipt_url ? (
-                        <Button variant="ghost" size="icon" asChild className="h-8 w-8">
-                          <a href={e.receipt_url} target="_blank" rel="noopener noreferrer">
-                            <FileText className="h-4 w-4 text-primary" />
-                          </a>
+                      </TableCell>
+                      <TableCell className="max-w-xs truncate">{e.description}</TableCell>
+                      <TableCell className="text-right font-bold">
+                        {e.amount.toLocaleString("ro-RO")} RON
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {e.receipt_url ? (
+                          <Button variant="ghost" size="icon" asChild className="h-8 w-8">
+                            <a href={e.receipt_url} target="_blank" rel="noopener noreferrer">
+                              <FileText className="h-4 w-4 text-primary" />
+                            </a>
+                          </Button>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                          onClick={() => handleDelete(e.id)}
+                          disabled={isPending}
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDelete(e.id)}
-                        disabled={isPending}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-        </Table>
-      </Card>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </SectionCard>
 
       {/* Add Expense Modal */}
       {showAdd && (
@@ -299,7 +302,7 @@ export function ExpensesClient({
           />
           <Card
             ref={addDialogRef}
-            className="relative w-full max-w-lg border-primary/20 shadow-2xl animate-in fade-in zoom-in duration-200"
+            className="relative w-full max-w-lg rounded-[1.75rem] border-primary/20 shadow-2xl animate-in fade-in zoom-in duration-200"
             role="dialog"
             aria-modal="true"
             aria-labelledby="expense-dialog-title"
@@ -308,7 +311,7 @@ export function ExpensesClient({
             <div className="flex items-center justify-between border-b p-4">
               <div className="flex items-center gap-2">
                 <Receipt className="h-5 w-5 text-primary" />
-                <h2 id="expense-dialog-title" className="text-lg font-semibold">Adaugă Cheltuială</h2>
+                <h2 id="expense-dialog-title" className="text-lg font-black tracking-tight">Adaugă cheltuială</h2>
               </div>
               <Button
                 ref={addCloseButtonRef}
@@ -332,7 +335,7 @@ export function ExpensesClient({
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-4">
                   {uploadError && (
-                    <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                    <div className="flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">
                       <AlertTriangle className="h-4 w-4 shrink-0" />
                       {uploadError}
                     </div>

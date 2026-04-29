@@ -14,6 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { MonthlyReview } from "@/app/api/analytics/monthly-review/route";
+import { DashboardPage, EmptyState, PageHeader, SetupBanner } from "@/components/app/page-shell";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -113,27 +114,17 @@ Scrie direct rezumatul, fără titlu.`;
   const collectionRate = data ? Math.round(data.collectedRevenue / (data.totalRevenue || 1) * 100) : 0;
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-6 pb-14">
-
-      {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
-            <CalendarRange className="h-6 w-6 text-primary" />
-            Sumar Lunar Cabinet
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Raport executiv — activitate clinică, financiară și conformitate juridică.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap gap-2 items-center">
+    <DashboardPage className="max-w-5xl pb-14">
+      <PageHeader
+        title="Sumar lunar cabinet"
+        description="Raport executiv pentru activitatea clinică, sănătatea financiară și conformitatea lunii selectate."
+        action={<div className="flex flex-wrap gap-2 items-center">
           <select value={month} onChange={e => setMonth(+e.target.value)}
-            className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm">
+            className="h-11 rounded-xl border border-input bg-background px-3.5 text-sm shadow-sm">
             {MONTHS_RO.map((l,i) => <option key={i+1} value={i+1}>{l}</option>)}
           </select>
           <select value={year} onChange={e => setYear(+e.target.value)}
-            className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm">
+            className="h-11 rounded-xl border border-input bg-background px-3.5 text-sm shadow-sm">
             {[2023,2024,2025,2026].map(y => <option key={y}>{y}</option>)}
           </select>
           <Button onClick={load} disabled={loading} variant="outline" className="gap-1.5">
@@ -144,17 +135,11 @@ Scrie direct rezumatul, fără titlu.`;
             {pdfLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
             Export PDF
           </Button>
-        </div>
-      </div>
-
-      {!data && !loading && (
-        <p className="text-center text-muted-foreground py-12">Apasă &quot;Calculează&quot; pentru a genera sumarul lunii.</p>
-      )}
+        </div>}
+      />
 
       {data?.setupRequired ? (
-        <div className="rounded-3xl border border-amber-200 bg-amber-50/80 px-5 py-4 text-sm text-amber-950 shadow-sm">
-          Sumarul lunar folosește acum doar date reale. Configurează Supabase pentru a calcula indicatorii clinicii.
-        </div>
+        <SetupBanner description="Sumarul lunar folosește acum doar date reale. Configurează Supabase pentru a calcula indicatorii clinicii." />
       ) : null}
 
       {/* Printable report body */}
@@ -335,7 +320,15 @@ Scrie direct rezumatul, fără titlu.`;
           </p>
         </div>
       )}
-    </div>
+
+      {!data && !loading ? (
+        <EmptyState
+          title="Sumarul lunii nu a fost generat"
+          description="Alege perioada dorită și apasă «Calculează» pentru a obține raportul executiv."
+          icon={CalendarRange}
+        />
+      ) : null}
+    </DashboardPage>
   );
 }
 
@@ -356,11 +349,11 @@ function KpiCard({ icon, label, value, sub, accent, hint }: {
   };
   const s = styles[accent];
   return (
-    <Card className={cn("border", s.wrap)}>
+    <Card className={cn("rounded-[1.5rem] border shadow-sm", s.wrap)}>
       <CardContent className="p-4">
-        <div className={cn("inline-flex items-center justify-center rounded-lg p-2 mb-3", s.icon)}>{icon}</div>
+        <div className={cn("mb-3 inline-flex items-center justify-center rounded-2xl p-2", s.icon)}>{icon}</div>
         <p className={cn("text-2xl font-bold tracking-tight", s.val)}>{value}</p>
-        <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
+        <p className="mt-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
         {sub && <p className="text-[11px] text-muted-foreground mt-0.5">{sub}</p>}
         {hint && <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1 font-medium">{hint}</p>}
       </CardContent>

@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { DashboardPage, EmptyState, PageHeader, SetupBanner } from "@/components/app/page-shell";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -186,28 +187,20 @@ export default function BillingPage() {
   const setupRequired = Boolean(data?.setupRequired || forecast?.setupRequired);
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-6 pb-10">
-      {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
-            <BarChart3 className="h-6 w-6 text-primary" />
-            Raportare Lunară & Facturare
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Sumar de activitate, venituri reale și previzionate.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2 items-center">
+    <DashboardPage className="max-w-5xl">
+      <PageHeader
+        title="Raportare lunară și facturare"
+        description="Sumar de activitate, venituri reale și prognoze pentru luna selectată."
+        action={<div className="flex flex-wrap gap-2 items-center">
           {/* Month picker */}
           <label htmlFor="billing-month" className="sr-only">Selectează luna raportului</label>
           <select id="billing-month" value={month} onChange={e => setMonth(+e.target.value)}
-            className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm">
+            className="h-11 rounded-xl border border-input bg-background px-3.5 text-sm shadow-sm">
             {MONTHS_RO.map((lbl, i) => <option key={i+1} value={i+1}>{lbl}</option>)}
           </select>
           <label htmlFor="billing-year" className="sr-only">Selectează anul raportului</label>
           <select id="billing-year" value={year} onChange={e => setYear(+e.target.value)}
-            className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm">
+            className="h-11 rounded-xl border border-input bg-background px-3.5 text-sm shadow-sm">
             {[2023,2024,2025,2026].map(y => <option key={y}>{y}</option>)}
           </select>
           <Button onClick={loadSummary} disabled={loading} className="gap-1.5">
@@ -219,13 +212,11 @@ export default function BillingPage() {
               <Download className="h-4 w-4" />
             </Button>
           )}
-        </div>
-      </div>
+        </div>}
+      />
 
       {setupRequired && (
-        <div className="rounded-3xl border border-amber-200 bg-amber-50/80 px-5 py-4 text-sm text-amber-950 shadow-sm">
-          Raportarea financiară folosește acum doar date reale. Configurează Supabase pentru a încărca încasările și prognoza.
-        </div>
+        <SetupBanner description="Raportarea financiară folosește acum doar date reale. Configurează Supabase pentru a încărca încasările și prognoza." />
       )}
 
       {/* Summary cards */}
@@ -241,7 +232,7 @@ export default function BillingPage() {
           </div>
 
           {/* Revenue progress */}
-          <Card>
+          <Card className="rounded-[1.75rem] border-border/60 shadow-sm">
             <CardContent className="p-4">
               <div className="flex items-center justify-between text-sm mb-2">
                 <span className="font-medium">Progres Încasare Lunară</span>
@@ -268,7 +259,7 @@ export default function BillingPage() {
 
           {/* Bulk actions */}
           {unpaidClients.length > 0 && (
-            <div className="flex flex-wrap items-center gap-3 rounded-lg border border-amber-200 bg-amber-50/50 dark:bg-amber-950/20 px-4 py-3">
+            <div className="flex flex-wrap items-center gap-3 rounded-[1.5rem] border border-amber-200 bg-amber-50/50 dark:bg-amber-950/20 px-4 py-3">
               <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
               <span className="text-sm text-amber-800 dark:text-amber-400 flex-1">
                 {unpaidClients.length} client{unpaidClients.length !== 1 ? "ți" : ""} cu sume nefacturate.
@@ -286,16 +277,18 @@ export default function BillingPage() {
           )}
 
           {/* Client table */}
-          <Card>
+          <Card className="rounded-[1.75rem] border-border/60 shadow-sm">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Detaliu pe Clienți — {MONTHS_RO[month-1]} {year}</CardTitle>
+              <CardTitle className="text-base font-black tracking-tight">Detaliu pe clienți — {MONTHS_RO[month-1]} {year}</CardTitle>
               <CardDescription>Bifați clienții pentru facturare în masă.</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               {clients.length === 0 ? (
-                <div className="p-8 text-center text-sm text-muted-foreground">
-                  Nu există date de facturare pentru perioada selectată.
-                </div>
+                <EmptyState
+                  title="Nu există date de facturare"
+                  description="Pentru perioada selectată nu au fost găsite ședințe sau sume de procesat."
+                  icon={Wallet}
+                />
               ) : (
               <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -338,7 +331,7 @@ export default function BillingPage() {
                           {fmt(c.collectedAmount)}
                         </td>
                         <td className="px-4 py-3 text-center">
-                          <Badge className={cn("text-xs font-medium", cfg.cls)}>{cfg.label}</Badge>
+                          <Badge className={cn(cfg.cls)}>{cfg.label}</Badge>
                         </td>
                       </tr>
                     );
@@ -366,7 +359,7 @@ export default function BillingPage() {
 
       {/* Revenue Forecast */}
       {forecast && (
-        <Card className="border-violet-200 dark:border-violet-900">
+          <Card className="rounded-[1.75rem] border-violet-200 shadow-sm dark:border-violet-900">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <BrainCircuit className="h-5 w-5 text-violet-500" />
@@ -400,7 +393,15 @@ export default function BillingPage() {
           </CardContent>
         </Card>
       )}
-    </div>
+
+      {!data && !loading ? (
+        <EmptyState
+          title="Raportul nu a fost generat"
+          description="Alege luna și anul, apoi apasă «Calculează» pentru a încărca situația financiară."
+          icon={BarChart3}
+        />
+      ) : null}
+    </DashboardPage>
   );
 }
 
@@ -418,13 +419,13 @@ function StatCard({ label, value, icon, accent }: {
     rose:    "text-rose-600 bg-rose-50 dark:text-rose-400 dark:bg-rose-950",
   };
   return (
-    <Card>
+    <Card className="rounded-[1.5rem] border-border/60 shadow-sm">
       <CardContent className="p-4">
-        <div className={cn("inline-flex items-center justify-center rounded-md p-1.5 mb-2", accents[accent])}>
+        <div className={cn("mb-3 inline-flex items-center justify-center rounded-2xl p-2", accents[accent])}>
           {icon}
         </div>
-        <p className="text-xl font-bold tracking-tight">{value}</p>
-        <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
+        <p className="text-xl font-black tracking-tight">{value}</p>
+        <p className="mt-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
       </CardContent>
     </Card>
   );

@@ -7,7 +7,7 @@ import {
 import { listClients } from "@/lib/clients/queries";
 import { DocumentList } from "@/components/documents/document-list";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { DashboardPage, PageHeader, SetupBanner } from "@/components/app/page-shell";
+import { DashboardPage, PageHeader, SectionCard, SetupBanner } from "@/components/app/page-shell";
 
 export default async function DocumentsPage() {
   const configured = isSupabaseConfigured();
@@ -26,9 +26,9 @@ export default async function DocumentsPage() {
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Card>
+        <Card className="rounded-[1.75rem] border-border/60 shadow-sm">
           <CardHeader className="gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 text-primary">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <FileText className="h-5 w-5" />
             </div>
             <h2 className="text-base font-black tracking-tight">Contract Prestări Servicii</h2>
@@ -37,9 +37,9 @@ export default async function DocumentsPage() {
             </p>
           </CardHeader>
         </Card>
-        <Card>
+        <Card className="rounded-[1.75rem] border-border/60 shadow-sm">
           <CardHeader className="gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 text-primary">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <ShieldCheck className="h-5 w-5" />
             </div>
             <h2 className="text-base font-black tracking-tight">Acord GDPR</h2>
@@ -50,7 +50,15 @@ export default async function DocumentsPage() {
         </Card>
       </div>
 
-      <DocumentList clients={activeClients} />
+      <SectionCard
+        title="Generare documente"
+        description="Selectează clientul și generează contractul sau acordul GDPR direct din datele reale ale cabinetului."
+        icon={FileText}
+      >
+        <div className="p-0">
+          <DocumentList clients={activeClients} />
+        </div>
+      </SectionCard>
     </DashboardPage>
   );
 }

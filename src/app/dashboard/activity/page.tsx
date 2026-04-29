@@ -18,6 +18,7 @@ import { initialsFromName } from "@/lib/clients/validation";
 import { ActivityExportButton } from "@/components/activity/export-button";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { DashboardPage, EmptyState, PageHeader, SectionCard, SetupBanner } from "@/components/app/page-shell";
+import { Button } from "@/components/ui/button";
 
 export default async function ActivityPage({
   searchParams,
@@ -42,14 +43,14 @@ export default async function ActivityPage({
       )}
 
       {/* Date range filter */}
-      <form className="flex flex-wrap items-end gap-3">
+      <form className="flex flex-wrap items-end gap-3 rounded-[1.5rem] border border-border/60 bg-card p-4 shadow-sm">
         <div className="space-y-1">
           <label className="text-xs font-medium text-muted-foreground">De la</label>
           <input
             type="date"
             name="from"
             defaultValue={from ?? ""}
-            className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            className="h-11 rounded-xl border border-input bg-background px-3.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring/30"
           />
         </div>
         <div className="space-y-1">
@@ -58,19 +59,14 @@ export default async function ActivityPage({
             type="date"
             name="to"
             defaultValue={to ?? ""}
-            className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            className="h-11 rounded-xl border border-input bg-background px-3.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring/30"
           />
         </div>
-        <button
-          type="submit"
-          className="h-9 rounded-md border border-input bg-background px-4 text-sm font-medium hover:bg-accent"
-        >
-          Aplică filtru
-        </button>
+        <Button type="submit" variant="outline">Aplică filtru</Button>
         {(from || to) && (
           <a
             href="/dashboard/activity"
-            className="h-9 rounded-md px-4 text-sm font-medium text-muted-foreground hover:text-foreground flex items-center"
+            className="flex h-11 items-center rounded-xl px-4 text-sm font-medium text-muted-foreground hover:text-foreground"
           >
             Resetează
           </a>

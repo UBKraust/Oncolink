@@ -128,3 +128,21 @@
     opacity: 0.9;
   }
 }
+
+
+:root {
+  --text-floor-caption: 0.69rem;
+  --text-floor-body: 0.875rem;
+  --text-floor-title: 1.125rem;
+}
+
+@layer base {
+  .text-caption { font-size: var(--text-floor-caption); line-height: 1.2; }
+  .text-body-sm { font-size: var(--text-floor-body); line-height: 1.4; }
+  .text-label { font-size: 0.78rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+  .interactive-base { transition: background-color .2s ease,color .2s ease,box-shadow .2s ease,transform .2s ease; }
+  .interactive-base:hover { transform: translateY(-1px); }
+  .interactive-base:active { transform: translateY(0); }
+  .interactive-base:focus-visible { outline: none; box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-primary) 55%, white); }
+  .input-compact { font-size: var(--text-floor-body); }
+}

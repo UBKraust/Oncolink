@@ -23,8 +23,15 @@ import { runServerComplianceCheck } from "@/lib/compliance/server-engine";
 
 const THERAPIST_NAME = "Psih. Ioana Cosmina Terente PFA";
 
+function getDayGreeting(hour: number) {
+  if (hour < 12) return "Bună dimineața";
+  if (hour < 18) return "Bună ziua";
+  return "Bună seara";
+}
+
 export default async function DashboardPage() {
   const today = new Date();
+  const greeting = getDayGreeting(today.getHours());
   const [stats, appointmentsToday, unpaidInvoices, upcomingAppointments, complianceData] = await Promise.all([
     getDashboardStats(),
     getAppointmentsToday(),
@@ -39,8 +46,8 @@ export default async function DashboardPage() {
 
       <PageHeader
         eyebrow={format(today, "EEEE, d MMMM yyyy", { locale: ro })}
-        title={`Bună ziua, ${THERAPIST_NAME}`}
-        description="Panoul tău operațional pentru activitatea clinică, administrativă și juridică."
+        title={`${greeting}, ${THERAPIST_NAME}`}
+        description="Panoul tău operațional compact pentru activitatea clinică, administrativă și juridică."
         action={
           <div className="hidden items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 sm:flex">
             <ShieldCheck className="h-3.5 w-3.5" />
@@ -72,8 +79,13 @@ export default async function DashboardPage() {
         </div>
       )}
 
+      <div className="rounded-2xl border border-border/70 bg-muted/20 px-4 py-3 text-body-sm">
+        <p className="font-semibold text-foreground">Personalizare azi</p>
+        <p className="mt-1 text-muted-foreground">Ai {stats.appointmentsToday} ședințe programate și {stats.pendingMinorReviews} dosare care au nevoie de atenție prioritară.</p>
+      </div>
+
       {/* ── KPI Cards ────────────────────────────────────────────────────── */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Profit Net (Lunar)"
           value={`${stats.netProfitMonth.toLocaleString("ro-RO")} RON`}
@@ -105,7 +117,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* ── Financial + Vault ────────────────────────────────────────────── */}
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-3 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <FinancialSummary
             gross={stats.totalRevenue}
@@ -120,7 +132,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* ── Patient Analytics ────────────────────────────────────────────── */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-3">
         <StatCard
           label="Mix Pacienți"
           value={`${stats.privatePatients} Cabinet / ${stats.clinicPatients} Clinică`}
@@ -145,7 +157,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* ── Appointments + Invoices ──────────────────────────────────────── */}
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-3 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <AppointmentsToday appointments={appointmentsToday} />
         </div>
@@ -153,7 +165,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* ── Upcoming + Compliance ────────────────────────────────────────── */}
-      <div className="grid gap-4 lg:grid-cols-5">
+      <div className="grid gap-3 lg:grid-cols-5">
         <div className="lg:col-span-3">
           <UpcomingAppointments appointments={upcomingAppointments} />
         </div>

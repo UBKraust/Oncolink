@@ -23,6 +23,7 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
 
   const navItems = useMemo(
     () =>
@@ -52,6 +53,7 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
     function handlePointerDown(event: MouseEvent) {
       if (!searchRef.current?.contains(event.target as Node)) {
         setSearchOpen(false);
+        setHighlightedIndex(-1);
       }
     }
 
@@ -82,12 +84,24 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
   function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const [firstMatch] = filteredNavItems;
-    if (firstMatch) {
-      router.push(firstMatch.href);
+    const targetItem =
+      highlightedIndex >= 0 && highlightedIndex < filteredNavItems.length
+        ? filteredNavItems[highlightedIndex]
+        : filteredNavItems[0];
+
+    if (targetItem) {
+      router.push(targetItem.href);
+      setSearchOpen(false);
       setSearchQuery("");
+      setHighlightedIndex(-1);
     }
   }
+
+  const listboxId = "dashboard-search-listbox";
+  const activeDescendantId =
+    searchOpen && highlightedIndex >= 0 && highlightedIndex < filteredNavItems.length
+      ? `dashboard-search-option-${highlightedIndex}`
+      : undefined;
 
   return (
     <header className="flex h-16 shrink-0 items-center gap-4 border-b bg-background px-4 md:px-6">
@@ -187,41 +201,79 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
           <input
             id="dashboard-search"
             type="search"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded={searchOpen}
+            aria-controls={listboxId}
+            aria-activedescendant={activeDescendantId}
             value={searchQuery}
             placeholder="Navighează către programări, clienți, facturi…"
             className="h-10 w-full rounded-md border border-input bg-background pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             onChange={(event) => {
               setSearchQuery(event.target.value);
               setSearchOpen(true);
+              setHighlightedIndex(-1);
             }}
             onFocus={() => setSearchOpen(true)}
+            onKeyDown={(event) => {
+              if (event.key === "ArrowDown") {
+                event.preventDefault();
+                if (!searchOpen) setSearchOpen(true);
+                setHighlightedIndex((index) => {
+                  if (filteredNavItems.length === 0) return -1;
+                  return index < 0 ? 0 : (index + 1) % filteredNavItems.length;
+                });
+              } else if (event.key === "ArrowUp") {
+                event.preventDefault();
+                if (!searchOpen) setSearchOpen(true);
+                setHighlightedIndex((index) => {
+                  if (filteredNavItems.length === 0) return -1;
+                  if (index < 0) return filteredNavItems.length - 1;
+                  return (index - 1 + filteredNavItems.length) % filteredNavItems.length;
+                });
+              } else if (event.key === "Escape") {
+                setSearchOpen(false);
+                setHighlightedIndex(-1);
+              }
+            }}
           />
         </form>
 
         {searchOpen ? (
-          <div className="absolute left-0 top-12 z-40 w-full max-w-md rounded-2xl border bg-popover p-2 shadow-2xl">
+          <div
+            id={listboxId}
+            role="listbox"
+            className="absolute left-0 top-12 z-40 w-full max-w-md rounded-2xl border bg-popover p-2 shadow-2xl"
+          >
             <p className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">
               Navigare rapidă
             </p>
             {filteredNavItems.length > 0 ? (
               <div className="grid gap-1">
-                {filteredNavItems.map(({ href, label, icon: Icon, groupTitle }) => {
+                {filteredNavItems.map(({ href, label, icon: Icon, groupTitle }, index) => {
                   const active =
                     href === "/dashboard"
                       ? pathname === href
                       : pathname?.startsWith(href);
+                  const highlighted = index === highlightedIndex;
 
                   return (
                     <Link
                       key={href}
                       href={href}
+                      id={`dashboard-search-option-${index}`}
+                      role="option"
+                      aria-selected={highlighted}
                       className={cn(
                         "flex items-center gap-3 rounded-xl px-3 py-2 transition-colors",
-                        active ? "bg-primary/10 text-primary" : "hover:bg-accent",
+                        active ? "bg-primary/10 text-primary" : "text-foreground",
+                        highlighted ? "bg-accent" : "hover:bg-accent",
                       )}
+                      onMouseEnter={() => setHighlightedIndex(index)}
                       onClick={() => {
                         setSearchOpen(false);
                         setSearchQuery("");
+                        setHighlightedIndex(-1);
                       }}
                     >
                       <Icon className={cn("h-4 w-4", active ? "text-primary" : "text-muted-foreground")} />

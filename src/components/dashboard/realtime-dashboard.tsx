@@ -1,49 +1,38 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-/**
- * This component enables real-time updates for the dashboard.
- * It listens for changes in key tables and refreshes the page data
- * using Next.js router.refresh() which re-runs server components.
- */
 export function RealtimeDashboard() {
   const router = useRouter();
   const supabase = createClient();
+  const refreshTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    // 1. Define the tables to watch
     const tables = ["appointments", "invoices", "clients", "cabinet_expenses", "patient_documents"];
 
-    // 2. Subscribe to each table
-    const channels = tables.map((table) => {
-      return supabase
-        .channel(`realtime:${table}`)
-        .on(
-          "postgres_changes",
-          {
-            event: "*", // Listen to INSERT, UPDATE, and DELETE
-            schema: "public",
-            table: table,
-          },
-          (payload) => {
-            console.log(`Realtime change detected in ${table}:`, payload);
-            // Refresh the server component data
-            router.refresh();
-          }
-        )
-        .subscribe();
-    });
+    const scheduleRefresh = () => {
+      if (refreshTimeout.current) clearTimeout(refreshTimeout.current);
+      refreshTimeout.current = setTimeout(() => {
+        router.refresh();
+      }, 250);
+    };
 
-    // 3. Cleanup on unmount
+    const channels = tables.map((table) =>
+      supabase
+        .channel(`realtime:${table}`)
+        .on("postgres_changes", { event: "*", schema: "public", table }, scheduleRefresh)
+        .subscribe(),
+    );
+
     return () => {
+      if (refreshTimeout.current) clearTimeout(refreshTimeout.current);
       channels.forEach((channel) => {
         supabase.removeChannel(channel);
       });
     };
   }, [supabase, router]);
 
-  return null; // This component doesn't render anything
+  return null;
 }

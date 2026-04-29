@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { CalendarPlus, LogOut, Menu, Search, X } from "lucide-react";
+import { CalendarPlus, ChevronRight, LogOut, Menu, Search, UserRound, X } from "lucide-react";
 
 import { signOut } from "@/app/login/actions";
 import { dashboardNavGroups } from "@/components/dashboard/nav-groups";
@@ -20,9 +20,11 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const searchRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
 
   const navItems = useMemo(
     () =>
@@ -35,9 +37,16 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
     [],
   );
 
+  const breadcrumbs = useMemo(() => {
+    const base = [{ label: "Dashboard", href: "/dashboard" }];
+    const current = navItems.find((item) => item.href !== "/dashboard" && pathname?.startsWith(item.href));
+    if (!current) return base;
+    return [...base, { label: current.label, href: current.href }];
+  }, [navItems, pathname]);
+
   const filteredNavItems = useMemo(() => {
     const normalized = searchQuery.trim().toLowerCase();
-    if (!normalized) return navItems.slice(0, 6);
+    if (!normalized) return navItems.slice(0, 8);
 
     return navItems
       .filter(
@@ -45,8 +54,9 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
           item.label.toLowerCase().includes(normalized) ||
           item.groupTitle.toLowerCase().includes(normalized),
       )
-      .slice(0, 6);
+      .slice(0, 8);
   }, [navItems, searchQuery]);
+
 
   useEffect(() => {
     function handlePointerDown(event: MouseEvent) {
@@ -55,8 +65,20 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
       }
     }
 
+    function handleQuickSearchShortcut(event: KeyboardEvent) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+        setSearchOpen(true);
+      }
+    }
+
     document.addEventListener("mousedown", handlePointerDown);
-    return () => document.removeEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleQuickSearchShortcut);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleQuickSearchShortcut);
+    };
   }, []);
 
   useEffect(() => {
@@ -82,18 +104,21 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
   function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const [firstMatch] = filteredNavItems;
-    if (firstMatch) {
-      router.push(firstMatch.href);
+    const target = filteredNavItems[activeIndex] ?? filteredNavItems[0];
+    if (target) {
+      router.push(target.href);
       setSearchQuery("");
+      setSearchOpen(false);
     }
   }
+
+  const displayName = userEmail?.split("@")[0]?.replace(/[._-]/g, " ") ?? "Terapeut";
 
   return (
     <header className="flex h-16 shrink-0 items-center gap-4 border-b bg-background px-4 md:px-6">
       <button
         type="button"
-        className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-border bg-background text-foreground md:hidden"
+        className="interactive-base flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-border bg-background text-foreground md:hidden"
         aria-expanded={mobileMenuOpen}
         aria-controls="mobile-dashboard-nav"
         aria-label={mobileMenuOpen ? "Închide meniul de navigare" : "Deschide meniul de navigare"}
@@ -102,169 +127,75 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
         {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
       </button>
 
-      {mobileMenuOpen ? (
-        <div className="fixed inset-0 z-50 md:hidden" aria-hidden={!mobileMenuOpen}>
-          <button
-            type="button"
-            className="absolute inset-0 bg-slate-950/30 backdrop-blur-sm"
-            onClick={() => setMobileMenuOpen(false)}
-            aria-label="Închide meniul"
-          />
-
-          <div
-            id="mobile-dashboard-nav"
-            className="absolute left-4 right-4 top-20 max-h-[calc(100svh-6rem)] overflow-y-auto rounded-3xl border bg-card p-4 shadow-2xl"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Navigație dashboard"
-          >
-            <div className="mb-4 flex items-start justify-between border-b border-border pb-3">
-              <div>
-                <p className="text-sm font-black text-primary">Ce`ai Pățit?</p>
-                <p className="text-xs text-muted-foreground">Navigație rapidă în dashboard</p>
-              </div>
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                className="h-9 w-9 rounded-xl"
-                onClick={() => setMobileMenuOpen(false)}
-                aria-label="Închide navigația"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-
-            <nav className="space-y-4">
-              {dashboardNavGroups.map((group) => (
-                <div key={group.title} className="space-y-2">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">
-                    {group.title}
-                  </p>
-                  <div className="grid gap-1.5">
-                    {group.items.map(({ href, label, icon: Icon }) => {
-                      const active =
-                        href === "/dashboard"
-                          ? pathname === href
-                          : pathname?.startsWith(href);
-
-                      return (
-                        <Link
-                          key={href}
-                          href={href}
-                          className={cn(
-                            "flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors",
-                            active
-                              ? "bg-primary/10 text-primary"
-                              : "text-foreground hover:bg-accent",
-                          )}
-                          onClick={() => setMobileMenuOpen(false)}
-                        >
-                          <Icon className={cn("h-4 w-4", active ? "text-primary" : "text-muted-foreground")} />
-                          {label}
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </nav>
-          </div>
-        </div>
-      ) : null}
-
       <div className="min-w-0 md:hidden">
-        <p className="truncate text-sm font-black text-primary">Ce`ai Pățit?</p>
-        <p className="truncate text-[11px] text-muted-foreground">ERP cabinet psihoterapie</p>
+        <p className="text-label">Ce`ai Pățit?</p>
+        <p className="text-caption">ERP cabinet psihoterapie</p>
+      </div>
+
+      <div className="hidden min-w-0 items-center gap-1 text-sm text-muted-foreground md:flex">
+        {breadcrumbs.map((crumb, index) => (
+          <div key={crumb.href} className="flex items-center gap-1">
+            {index > 0 ? <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60" /> : null}
+            <Link href={crumb.href} className={cn("interactive-base rounded-md px-1.5 py-1", index === breadcrumbs.length - 1 ? "text-foreground" : "hover:text-foreground")}>{crumb.label}</Link>
+          </div>
+        ))}
       </div>
 
       <div ref={searchRef} className="relative hidden flex-1 md:block">
         <form onSubmit={handleSearchSubmit} className="relative max-w-md">
-          <label htmlFor="dashboard-search" className="sr-only">
-            Navigare rapidă în dashboard
-          </label>
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
+            ref={searchInputRef}
             id="dashboard-search"
             type="search"
             value={searchQuery}
-            placeholder="Navighează către programări, clienți, facturi…"
-            className="h-10 w-full rounded-md border border-input bg-background pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            placeholder="Navighează rapid…"
+            className="input-compact h-10 w-full rounded-md border border-input bg-background pl-9 pr-16"
             onChange={(event) => {
               setSearchQuery(event.target.value);
+              setActiveIndex(0);
               setSearchOpen(true);
             }}
             onFocus={() => setSearchOpen(true)}
+            onKeyDown={(event) => {
+              if (event.key === "ArrowDown") {
+                event.preventDefault();
+                setActiveIndex((value) => Math.min(value + 1, filteredNavItems.length - 1));
+              }
+              if (event.key === "ArrowUp") {
+                event.preventDefault();
+                setActiveIndex((value) => Math.max(value - 1, 0));
+              }
+              if (event.key === "Escape") setSearchOpen(false);
+            }}
           />
+          <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded border bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">⌘K</kbd>
         </form>
 
         {searchOpen ? (
           <div className="absolute left-0 top-12 z-40 w-full max-w-md rounded-2xl border bg-popover p-2 shadow-2xl">
-            <p className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">
-              Navigare rapidă
-            </p>
-            {filteredNavItems.length > 0 ? (
-              <div className="grid gap-1">
-                {filteredNavItems.map(({ href, label, icon: Icon, groupTitle }) => {
-                  const active =
-                    href === "/dashboard"
-                      ? pathname === href
-                      : pathname?.startsWith(href);
-
-                  return (
-                    <Link
-                      key={href}
-                      href={href}
-                      className={cn(
-                        "flex items-center gap-3 rounded-xl px-3 py-2 transition-colors",
-                        active ? "bg-primary/10 text-primary" : "hover:bg-accent",
-                      )}
-                      onClick={() => {
-                        setSearchOpen(false);
-                        setSearchQuery("");
-                      }}
-                    >
-                      <Icon className={cn("h-4 w-4", active ? "text-primary" : "text-muted-foreground")} />
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium">{label}</p>
-                        <p className="truncate text-[11px] text-muted-foreground">{groupTitle}</p>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="px-3 py-2 text-sm text-muted-foreground">
-                Nu am găsit o destinație potrivită.
-              </p>
-            )}
+            {filteredNavItems.length > 0 ? filteredNavItems.map(({ href, label, icon: Icon, groupTitle }, index) => {
+              const active = index === activeIndex;
+              return (
+                <Link key={href} href={href} className={cn("flex items-center gap-3 rounded-xl px-3 py-2 transition-colors", active ? "bg-primary/10 text-primary" : "hover:bg-accent")} onMouseEnter={() => setActiveIndex(index)} onClick={() => { setSearchOpen(false); setSearchQuery(""); }}>
+                  <Icon className={cn("h-4 w-4", active ? "text-primary" : "text-muted-foreground")} />
+                  <div className="min-w-0">
+                    <p className="truncate text-body-sm font-medium">{label}</p>
+                    <p className="text-caption truncate">{groupTitle}</p>
+                  </div>
+                </Link>
+              );
+            }) : <p className="px-3 py-2 text-body-sm text-muted-foreground">Nu am găsit o destinație potrivită.</p>}
           </div>
         ) : null}
       </div>
 
       <div className="ml-auto flex items-center gap-3">
         <VaultIndicator demoMode={demoMode} />
-
         <Button asChild size="sm" className="shrink-0">
-          <Link href="/dashboard/appointments/new">
-            <CalendarPlus className="h-4 w-4" />
-            <span className="hidden sm:inline">Programare nouă</span>
-            <span className="sm:hidden">Nouă</span>
-          </Link>
+          <Link href="/dashboard/appointments/new"><CalendarPlus className="h-4 w-4" /><span className="hidden sm:inline">Programare nouă</span><span className="sm:hidden">Nouă</span></Link>
         </Button>
-
-        {userEmail ? (
-          <div className="flex items-center gap-2 border-l pl-3">
-            <span className="hidden text-xs text-muted-foreground lg:inline">
-              {userEmail}
-            </span>
-            <form action={signOut}>
-              <Button type="submit" size="icon" variant="ghost" aria-label="Delogare">
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </form>
-          </div>
-        ) : null}
+        {userEmail ? <div className="flex items-center gap-2 border-l pl-3"><span className="hidden items-center gap-1.5 text-caption lg:flex"><UserRound className="h-3.5 w-3.5" />{displayName}</span><form action={signOut}><Button type="submit" size="icon" variant="ghost" aria-label="Delogare"><LogOut className="h-4 w-4" /></Button></form></div> : null}
       </div>
     </header>
   );

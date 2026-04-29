@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 import type { AppointmentRow } from "@/lib/appointments/helpers";
 import type { ClientRow } from "@/lib/clients/queries";
 
@@ -22,6 +23,10 @@ export interface ListAppointmentsFilters {
 export async function listAppointments(
   filters: ListAppointmentsFilters = {},
 ): Promise<AppointmentWithClient[]> {
+  if (!isSupabaseConfigured()) {
+    return [];
+  }
+
   const supabase = await createSupabaseServerClient();
   let query = supabase
     .from("appointments")
@@ -42,6 +47,10 @@ export async function listAppointments(
 export async function getAppointment(
   id: string,
 ): Promise<AppointmentWithClient | null> {
+  if (!isSupabaseConfigured()) {
+    return null;
+  }
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("appointments")
@@ -54,6 +63,10 @@ export async function getAppointment(
 }
 
 export async function listCasAppointments() {
+  if (!isSupabaseConfigured()) {
+    return [];
+  }
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("appointments")

@@ -1,4 +1,5 @@
 import type { Database } from "@/lib/supabase/types";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type InvoiceRow = Database["public"]["Tables"]["invoices"]["Row"];
@@ -25,6 +26,10 @@ export const invoiceStatusVariant: Record<
 export async function listInvoices(filters: {
   status?: string;
 } = {}): Promise<InvoiceRow[]> {
+  if (!isSupabaseConfigured()) {
+    return [];
+  }
+
   const supabase = await createSupabaseServerClient();
   let query = supabase
     .from("invoices")
@@ -60,6 +65,10 @@ export async function listInvoices(filters: {
 }
 
 export async function getInvoice(id: string): Promise<InvoiceRow | null> {
+  if (!isSupabaseConfigured()) {
+    return null;
+  }
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("invoices")
@@ -74,6 +83,10 @@ export async function getInvoice(id: string): Promise<InvoiceRow | null> {
 export async function getInvoiceByAppointment(
   appointmentId: string,
 ): Promise<InvoiceRow | null> {
+  if (!isSupabaseConfigured()) {
+    return null;
+  }
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("invoices")

@@ -20,11 +20,13 @@ import {
   getUpcomingAppointments,
 } from "@/lib/dashboard/queries";
 import { runServerComplianceCheck } from "@/lib/compliance/server-engine";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 const THERAPIST_NAME = "Psih. Ioana Cosmina Terente PFA";
 
 export default async function DashboardPage() {
   const today = new Date();
+  const configured = isSupabaseConfigured();
   const [stats, appointmentsToday, unpaidInvoices, upcomingAppointments, complianceData] = await Promise.all([
     getDashboardStats(),
     getAppointmentsToday(),
@@ -35,7 +37,7 @@ export default async function DashboardPage() {
 
   return (
     <DashboardShell>
-      <RealtimeDashboard />
+      {configured ? <RealtimeDashboard /> : null}
 
       <PageHeader
         eyebrow={format(today, "EEEE, d MMMM yyyy", { locale: ro })}

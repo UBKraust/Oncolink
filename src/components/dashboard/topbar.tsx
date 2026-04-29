@@ -8,6 +8,7 @@ import { CalendarPlus, LogOut, Menu, Search, X } from "lucide-react";
 import { signOut } from "@/app/login/actions";
 import { dashboardNavGroups } from "@/components/dashboard/nav-groups";
 import { Button } from "@/components/ui/button";
+import { interactiveState } from "@/components/ui/interactive-state";
 import { cn } from "@/lib/utils";
 import { VaultIndicator } from "@/components/notes/vault-indicator";
 
@@ -153,10 +154,8 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
                           key={href}
                           href={href}
                           className={cn(
-                            "flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors",
-                            active
-                              ? "bg-primary/10 text-primary"
-                              : "text-foreground hover:bg-accent",
+                            interactiveState.navItemBase,
+                            active ? interactiveState.navItemActive : "text-foreground hover:bg-accent",
                           )}
                           onClick={() => setMobileMenuOpen(false)}
                         >
@@ -216,8 +215,8 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
                       key={href}
                       href={href}
                       className={cn(
-                        "flex items-center gap-3 rounded-xl px-3 py-2 transition-colors",
-                        active ? "bg-primary/10 text-primary" : "hover:bg-accent",
+                        interactiveState.navItemBase,
+                        active ? interactiveState.navItemActive : "text-foreground hover:bg-accent",
                       )}
                       onClick={() => {
                         setSearchOpen(false);

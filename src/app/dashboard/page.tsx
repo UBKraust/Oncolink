@@ -20,18 +20,25 @@ import {
   getUpcomingAppointments,
 } from "@/lib/dashboard/queries";
 import { runServerComplianceCheck } from "@/lib/compliance/server-engine";
+import { DashboardLayoutCustomizer } from "@/components/dashboard/dashboard-layout-customizer";
+import { getDashboardLayoutPreferences, type DashboardSectionId } from "@/lib/dashboard/layout-preferences";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 const THERAPIST_NAME = "Psih. Ioana Cosmina Terente PFA";
 
 export default async function DashboardPage() {
   const today = new Date();
-  const [stats, appointmentsToday, unpaidInvoices, upcomingAppointments, complianceData] = await Promise.all([
+  const [stats, appointmentsToday, unpaidInvoices, upcomingAppointments, complianceData, layoutPreferences] = await Promise.all([
     getDashboardStats(),
     getAppointmentsToday(),
     getUnpaidInvoices(),
     getUpcomingAppointments(),
     runServerComplianceCheck(),
+    getDashboardLayoutPreferences(),
   ]);
+
+  const visibleSectionIds = layoutPreferences.sectionOrder.filter((id) => !layoutPreferences.hiddenSectionIds.includes(id));
+  const showSection = (id: DashboardSectionId) => visibleSectionIds.includes(id);
 
   return (
     <DashboardShell>
@@ -49,8 +56,10 @@ export default async function DashboardPage() {
         }
       />
 
+      <DashboardLayoutCustomizer initialPreferences={layoutPreferences} demoMode={!isSupabaseConfigured()} />
+
       {/* ── Alert minori ─────────────────────────────────────────────────── */}
-      {stats.pendingMinorReviews > 0 && (
+      {showSection("minor-alert") && stats.pendingMinorReviews > 0 && (
         <div className="flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50/70 px-5 py-4 shadow-sm">
           <div className="flex items-center gap-4">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
@@ -69,11 +78,12 @@ export default async function DashboardPage() {
               <ChevronRight className="h-4 w-4" />
             </Link>
           </Button>
-        </div>
+          </div>
       )}
 
       {/* ── KPI Cards ────────────────────────────────────────────────────── */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {showSection("kpi-cards") && (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Profit Net (Lunar)"
           value={`${stats.netProfitMonth.toLocaleString("ro-RO")} RON`}
@@ -102,10 +112,12 @@ export default async function DashboardPage() {
           icon={Users}
           tone="default"
         />
-      </div>
+                </div>
+      )}
 
       {/* ── Financial + Vault ────────────────────────────────────────────── */}
-      <div className="grid gap-4 lg:grid-cols-3">
+      {showSection("financial-vault") && (
+        <div className="grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <FinancialSummary
             gross={stats.totalRevenue}
@@ -117,10 +129,12 @@ export default async function DashboardPage() {
           alerts={stats.vaultAlertsCount}
           totalDocs={stats.vaultTotalDocs}
         />
-      </div>
+                </div>
+      )}
 
       {/* ── Patient Analytics ────────────────────────────────────────────── */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      {showSection("patient-analytics") && (
+        <div className="grid gap-4 sm:grid-cols-3">
         <StatCard
           label="Mix Pacienți"
           value={`${stats.privatePatients} Cabinet / ${stats.clinicPatients} Clinică`}
@@ -142,25 +156,30 @@ export default async function DashboardPage() {
           icon={CreditCard}
           tone="default"
         />
-      </div>
+                </div>
+      )}
 
       {/* ── Appointments + Invoices ──────────────────────────────────────── */}
-      <div className="grid gap-4 lg:grid-cols-3">
+      {showSection("appointments-invoices") && (
+        <div className="grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <AppointmentsToday appointments={appointmentsToday} />
         </div>
         <UnpaidInvoices invoices={unpaidInvoices} />
-      </div>
+                </div>
+      )}
 
       {/* ── Upcoming + Compliance ────────────────────────────────────────── */}
-      <div className="grid gap-4 lg:grid-cols-5">
+      {showSection("upcoming-compliance") && (
+        <div className="grid gap-4 lg:grid-cols-5">
         <div className="lg:col-span-3">
           <UpcomingAppointments appointments={upcomingAppointments} />
         </div>
         <div className="lg:col-span-2">
           <CompliancePanel compact initialData={complianceData} />
         </div>
-      </div>
+        </div>
+      )}
 
     </DashboardShell>
   );

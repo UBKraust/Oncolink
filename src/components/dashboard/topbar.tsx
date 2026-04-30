@@ -139,7 +139,7 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
             <nav className="space-y-4">
               {dashboardNavGroups.map((group) => (
                 <div key={group.title} className="space-y-2">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">
+                  <p className="text-xs font-black uppercase tracking-widest text-muted-foreground/70">
                     {group.title}
                   </p>
                   <div className="grid gap-1.5">
@@ -174,7 +174,7 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
 
       <div className="min-w-0 md:hidden">
         <p className="truncate text-sm font-black text-primary">Ce`ai Pățit?</p>
-        <p className="truncate text-[11px] text-muted-foreground">ERP cabinet psihoterapie</p>
+        <p className="truncate text-xs text-muted-foreground">ERP cabinet psihoterapie</p>
       </div>
 
       <div ref={searchRef} className="relative hidden flex-1 md:block">
@@ -199,7 +199,7 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
 
         {searchOpen ? (
           <div className="absolute left-0 top-12 z-40 w-full max-w-md rounded-2xl border bg-popover p-2 shadow-2xl">
-            <p className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">
+            <p className="px-3 py-2 text-xs font-black uppercase tracking-widest text-muted-foreground/70">
               Navigare rapidă
             </p>
             {filteredNavItems.length > 0 ? (
@@ -226,7 +226,7 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
                       <Icon className={cn("h-4 w-4", active ? "text-primary" : "text-muted-foreground")} />
                       <div className="min-w-0">
                         <p className="truncate text-sm font-medium">{label}</p>
-                        <p className="truncate text-[11px] text-muted-foreground">{groupTitle}</p>
+                        <p className="truncate text-xs text-muted-foreground">{groupTitle}</p>
                       </div>
                     </Link>
                   );

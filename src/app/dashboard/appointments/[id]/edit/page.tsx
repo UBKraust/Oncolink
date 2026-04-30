@@ -1,6 +1,4 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
 
 import { AppointmentForm } from "@/components/appointments/appointment-form";
 import {
@@ -11,6 +9,7 @@ import { listClients } from "@/lib/clients/queries";
 import { deriveLocation } from "@/lib/appointments/helpers";
 import { updateAppointment } from "@/app/dashboard/appointments/actions";
 import { DashboardPage, PageHeader, SectionCard } from "@/components/app/page-shell";
+import { Breadcrumbs } from "@/components/app/breadcrumbs";
 
 export default async function EditAppointmentPage({
   params,
@@ -32,13 +31,14 @@ export default async function EditAppointmentPage({
 
   return (
     <DashboardPage className="max-w-3xl">
-      <Link
-        href={`/dashboard/appointments/${id}`}
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ChevronLeft className="h-4 w-4" />
-        Înapoi la programare
-      </Link>
+      <Breadcrumbs
+        items={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: "Programări", href: "/dashboard/appointments" },
+          { label: appointment.client?.full_name ?? "Programare", href: `/dashboard/appointments/${id}` },
+          { label: "Editare" },
+        ]}
+      />
 
       <PageHeader
         title="Editează programarea"

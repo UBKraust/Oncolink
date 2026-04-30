@@ -1,6 +1,4 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
 
 import { ClientForm } from "@/components/clients/client-form";
 import {
@@ -9,6 +7,7 @@ import {
 import { updateClient } from "@/app/dashboard/clients/actions";
 import { getClient } from "@/lib/clients/queries";
 import { DashboardPage, PageHeader, SectionCard } from "@/components/app/page-shell";
+import { Breadcrumbs } from "@/components/app/breadcrumbs";
 
 export default async function EditClientPage({
   params,
@@ -23,13 +22,14 @@ export default async function EditClientPage({
 
   return (
     <DashboardPage className="max-w-3xl">
-      <Link
-        href={`/dashboard/clients/${id}`}
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ChevronLeft className="h-4 w-4" />
-        Înapoi la fișă
-      </Link>
+      <Breadcrumbs
+        items={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: "Clienți", href: "/dashboard/clients" },
+          { label: client.full_name ?? "Client", href: `/dashboard/clients/${id}` },
+          { label: "Editare" },
+        ]}
+      />
 
       <PageHeader
         title={`Editează ${client.full_name ?? "client"}`}

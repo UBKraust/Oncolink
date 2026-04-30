@@ -21,9 +21,9 @@ const STATUS_ICON = {
 };
 
 const STATUS_BADGE = {
-  COMPLIANT: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400",
-  WARNING:   "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400",
-  CRITICAL:  "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-400",
+  COMPLIANT: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300",
+  WARNING:   "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
+  CRITICAL:  "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300",
 };
 
 const SEVERITY_ICON = {
@@ -80,10 +80,10 @@ function ClientRow({ result }: { result: ClientComplianceResult }) {
         <Badge className={cn("text-xs font-medium shrink-0", STATUS_BADGE[result.status])}>
           {result.status === "COMPLIANT" ? "Conform" : result.status === "WARNING" ? "Atenție" : "Critic"}
         </Badge>
-        <span className="text-xs text-muted-foreground w-8 text-right">{result.score}%</span>
+        <span className="w-8 text-right text-xs text-foreground/80">{result.score}%</span>
         {result.issues.length > 0 && (
-          expanded ? <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
-                   : <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+          expanded ? <ChevronUp className="h-4 w-4 text-foreground/70 shrink-0" />
+                   : <ChevronDown className="h-4 w-4 text-foreground/70 shrink-0" />
         )}
       </button>
 
@@ -161,16 +161,16 @@ export function CompliancePanel({ compact = false, initialData }: Props) {
                 GDPR · Legea 213/2004 · Legea 272/2004 · e-Factura · Legea 82/1991
               </CardDescription>
               <div className="flex flex-wrap gap-1.5 mt-2">
-                <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400 text-[10px]">
+                <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-[10px]">
                   ✓ {data.compliantCount} conformi
                 </Badge>
                 {data.warningCount > 0 && (
-                  <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400 text-[10px]">
+                  <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 text-[10px]">
                     ⚠ {data.warningCount} atenționări
                   </Badge>
                 )}
                 {data.criticalCount > 0 && (
-                  <Badge className="bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-400 text-[10px]">
+                  <Badge className="bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 text-[10px]">
                     ✗ {data.criticalCount} critice
                   </Badge>
                 )}

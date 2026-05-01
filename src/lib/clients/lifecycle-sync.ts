@@ -18,6 +18,14 @@ type SyncOptions = {
   reason?: string;
 };
 
+function isLifecycleSchemaMissing(message: string) {
+  return (
+    message.includes("clients.lifecycle_status") ||
+    message.includes("lifecycle_status_updated_at") ||
+    message.includes("client_status_history")
+  );
+}
+
 export async function syncClientLifecycleStatus(
   supabase: SupabaseServerDb,
   clientId: string,
@@ -31,7 +39,10 @@ export async function syncClientLifecycleStatus(
     .eq("id", clientId)
     .maybeSingle();
 
-  if (clientError) throw new Error(clientError.message);
+  if (clientError) {
+    if (isLifecycleSchemaMissing(clientError.message)) return null;
+    throw new Error(clientError.message);
+  }
   if (!client) return null;
 
   if (
@@ -68,7 +79,10 @@ export async function syncClientLifecycleStatus(
     })
     .eq("id", clientId);
 
-  if (updateError) throw new Error(updateError.message);
+  if (updateError) {
+    if (isLifecycleSchemaMissing(updateError.message)) return nextStatus;
+    throw new Error(updateError.message);
+  }
 
   const { error: historyError } = await supabase
     .from("client_status_history")
@@ -81,7 +95,10 @@ export async function syncClientLifecycleStatus(
       metadata: options.metadata ?? {},
     });
 
-  if (historyError) throw new Error(historyError.message);
+  if (historyError) {
+    if (isLifecycleSchemaMissing(historyError.message)) return nextStatus;
+    throw new Error(historyError.message);
+  }
 
   return nextStatus;
 }
@@ -101,7 +118,10 @@ export async function setClientLifecycleStatus(
     .eq("id", params.clientId)
     .maybeSingle();
 
-  if (clientError) throw new Error(clientError.message);
+  if (clientError) {
+    if (isLifecycleSchemaMissing(clientError.message)) return null;
+    throw new Error(clientError.message);
+  }
   if (!client) return null;
 
   const currentStatus =
@@ -119,7 +139,10 @@ export async function setClientLifecycleStatus(
     })
     .eq("id", params.clientId);
 
-  if (updateError) throw new Error(updateError.message);
+  if (updateError) {
+    if (isLifecycleSchemaMissing(updateError.message)) return params.status;
+    throw new Error(updateError.message);
+  }
 
   const { error: historyError } = await supabase
     .from("client_status_history")
@@ -132,7 +155,10 @@ export async function setClientLifecycleStatus(
       metadata: params.metadata ?? {},
     });
 
-  if (historyError) throw new Error(historyError.message);
+  if (historyError) {
+    if (isLifecycleSchemaMissing(historyError.message)) return params.status;
+    throw new Error(historyError.message);
+  }
 
   return params.status;
 }

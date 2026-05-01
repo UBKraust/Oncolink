@@ -49,10 +49,14 @@ export function QuickActionsWheel() {
     },
     {
       id: "adult",
-      label: "Onboarding Adult",
+      label: "Client Adult",
       icon: UserPlus,
       color: "bg-blue-500 shadow-blue-200",
-      action: () => copyLink("/onboarding", "Adult"),
+      action: () => {
+        router.push("/dashboard/clients/new");
+        showNotification("Creează clientul, apoi generează linkul de onboarding.");
+        setIsOpen(false);
+      },
     },
     {
       id: "app",

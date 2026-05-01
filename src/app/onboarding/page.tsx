@@ -17,6 +17,7 @@ export default async function OnboardingPage({
 }) {
   const { t } = await searchParams;
   const token = t?.trim() ?? "";
+  const missingToken = !token;
   const { data: client, error } = token
     ? await getClientForOnboardingToken(token)
     : { error: "Token lipsă." };
@@ -28,9 +29,13 @@ export default async function OnboardingPage({
           <div className="mx-auto w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center text-rose-500">
             <Activity className="h-8 w-8" />
           </div>
-          <h1 className="text-xl font-black">Link Nevalid</h1>
+          <h1 className="text-xl font-black">
+            {missingToken ? "Lipsește linkul personal" : "Link Nevalid"}
+          </h1>
           <p className="text-sm text-muted-foreground">
-            Acest link de înrolare nu mai este activ sau a expirat. Te rugăm să contactezi terapeutul tău pentru un link nou.
+            {missingToken
+              ? "Pagina de onboarding pentru adulți funcționează doar cu un link securizat primit de la terapeut. Creează mai întâi clientul în dashboard și generează linkul personalizat de onboarding."
+              : "Acest link de înrolare nu mai este activ sau a expirat. Te rugăm să contactezi terapeutul tău pentru un link nou."}
           </p>
         </div>
       </PublicPageShell>

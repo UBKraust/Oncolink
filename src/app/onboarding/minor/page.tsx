@@ -15,7 +15,7 @@ export default async function MinorOnboardingPage({
 }: {
   searchParams: Promise<{ therapist?: string; t?: string }>;
 }) {
-  const { therapist, t } = await searchParams;
+  const { t } = await searchParams;
   const token = t?.trim() ?? "";
   const missingToken = !token;
   const { data: client, error } = token
@@ -74,7 +74,6 @@ export default async function MinorOnboardingPage({
            
            <MinorOnboardingWizard
              clientName={client.full_name || "Minor"}
-             therapistSlug={therapist ?? process.env.NEXT_PUBLIC_PUBLIC_BOOKING_SLUG ?? null}
              token={token}
            />
         </div>

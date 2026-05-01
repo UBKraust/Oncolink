@@ -15,7 +15,6 @@ import {
   type SupabaseServerDb,
   syncClientLifecycleStatus,
 } from "@/lib/clients/lifecycle-sync";
-import { resolvePublicBookingTherapistId } from "@/lib/security/public-booking";
 import {
   enforceRateLimit,
   getClientIp,
@@ -82,14 +81,13 @@ export async function submitMinorOnboarding(data: OnboardingData, files?: { cust
   const admin = createSupabaseServiceClient();
   const tokenPayload = data.token ? await getOnboardingTokenPayload(data.token) : null;
 
-  let therapistId: string | null = tokenPayload?.therapist_id ?? user?.id ?? null;
+  const therapistId: string | null = tokenPayload?.therapist_id ?? user?.id ?? null;
 
   if (!therapistId) {
-    therapistId = await resolvePublicBookingTherapistId(data.therapist_slug);
-  }
-
-  if (!therapistId) {
-    return { success: false, error: "Nu am găsit niciun terapeut configurat." };
+    return {
+      success: false,
+      error: "Linkul securizat pentru onboarding minor lipsește sau nu mai este valid.",
+    };
   }
 
   const db = user ? supabase : admin;

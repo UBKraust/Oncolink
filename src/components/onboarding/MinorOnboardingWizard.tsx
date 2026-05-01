@@ -57,11 +57,9 @@ type MinorOnboardingValues = z.infer<typeof minorOnboardingSchema>;
 
 export function MinorOnboardingWizard({
   clientName,
-  therapistSlug,
   token,
 }: {
   clientName?: string;
-  therapistSlug?: string | null;
   token?: string;
 }) {
   const [step, setStep] = useState(1);
@@ -110,7 +108,6 @@ export function MinorOnboardingWizard({
         {
           ...values,
           token,
-          therapist_slug: therapistSlug ?? undefined,
           legal_liability_consent_signed: values.legal_liability_consent,
           gdpr_consent_signed: values.gdpr_consent,
         },

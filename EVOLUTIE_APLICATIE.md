@@ -35,6 +35,7 @@ Aceasta regula ramane activa pe tot parcursul proiectului.
 - Am curatat quick actions pentru dashboard astfel incat un terapeut sa porneasca din intrarile corecte de cabinet: `client nou` si `pacient minor nou`, nu linkuri publice generice care puteau crea confuzie.
 - Am inceput intarirea fluxului public pentru minori: linkurile generate pentru clienti minori folosesc acum ruta securizata `/onboarding/minor?t=...`, iar pagina publica pentru minori nu mai functioneaza ca formular generic fara token.
 - Am aliniat submit-ul public pentru minori la modelul per-client, astfel incat onboarding-ul minor cu token sa actualizeze fișa corecta si sa marcheze tokenul ca folosit.
+- Am eliminat fallback-ul public bazat pe `therapistSlug` din onboarding-ul minor, astfel incat ruta publica functioneaza acum doar cu token securizat, iar crearea interna de pacient minor ramane separata in dashboard.
 
 Fisiere principale:
 
@@ -184,7 +185,7 @@ Fisiere principale:
 - Legarea lifecycle-ului nou de actiuni UI reale: `trimite onboarding`, `marcheaza activ`, `incheie caz`, `reactiveaza`.
 - Aplicarea migrarii in baza locala / remote si validarea istoricului de status pe date reale.
 - Trecerea onboarding-ului minor de la ruta publica generica la un model mai strict, aliniat cu linkurile securizate sau cu o intrare controlata de terapeut.
-- Eliminarea fallback-ului bazat pe `therapistSlug` pentru onboarding-ul minor public, dupa ce validam cap-coada noul flux cu token.
+- Verificarea cap-coada a noului onboarding minor cu token, plus clarificarea in UI a pasului urmator pentru terapeut dupa generarea linkului.
 - Verificare manuala finala si QA cap-coada pe fluxurile critice, in special:
 
 - creare client
@@ -220,5 +221,5 @@ La fiecare actualizare noua adaugam:
 
 - Ce s-a facut: am implementat un prim lifecycle operational derivat pentru clienti si l-am facut vizibil in registru si in fisa individuala, impreuna cu urmatorii pasi recomandati
 - Ce s-a verificat: `npm run lint` si `npm run build`
-- Ce urmeaza imediat: aplicarea migrarii noi, plus legarea unor actiuni UI explicite pentru tranzitiile manuale (`inactiv`, `incheiat`, `reactiveaza`) si eliminarea definitiva a fallback-ului public generic pentru onboarding minor
+- Ce urmeaza imediat: aplicarea migrarii noi, plus legarea unor actiuni UI explicite pentru tranzitiile manuale (`inactiv`, `incheiat`, `reactiveaza`) si verificarea cap-coada a noului onboarding minor securizat
 - Status lint/build: ambele verzi

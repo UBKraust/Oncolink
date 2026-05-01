@@ -55,18 +55,29 @@ const minorOnboardingSchema = z.object({
 
 type MinorOnboardingValues = z.infer<typeof minorOnboardingSchema>;
 
-export function MinorOnboardingWizard({ therapistSlug }: { therapistSlug?: string | null }) {
+export function MinorOnboardingWizard({
+  clientName,
+  therapistSlug,
+  token,
+}: {
+  clientName?: string;
+  therapistSlug?: string | null;
+  token?: string;
+}) {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const [flowError, setFlowError] = useState<string | null>(null);
 
   const {
-    register,
-    handleSubmit,
-    setValue,
     control,
     formState: { errors },
+    getValues,
+    handleSubmit,
+    register,
+    setValue,
+    trigger,
   } = useForm<MinorOnboardingValues>({
     resolver: zodResolver(minorOnboardingSchema),
     defaultValues: {
@@ -89,7 +100,7 @@ export function MinorOnboardingWizard({ therapistSlug }: { therapistSlug?: strin
 
   const onSubmit = async (values: MinorOnboardingValues) => {
     if ((maritalStatus === "DIVORTATI_CUSTODIE_COMUNA" || maritalStatus === "DIVORTATI_CUSTODIE_EXCLUSIVA") && !file) {
-      alert("Vă rugăm să încărcați documentul doveditor solicitat!");
+      setFlowError("Încarcă documentul juridic obligatoriu înainte de trimitere.");
       return;
     }
 
@@ -98,6 +109,7 @@ export function MinorOnboardingWizard({ therapistSlug }: { therapistSlug?: strin
       const result = await submitMinorOnboarding(
         {
           ...values,
+          token,
           therapist_slug: therapistSlug ?? undefined,
           legal_liability_consent_signed: values.legal_liability_consent,
           gdpr_consent_signed: values.gdpr_consent,
@@ -105,16 +117,54 @@ export function MinorOnboardingWizard({ therapistSlug }: { therapistSlug?: strin
         file ? { custody: file } : undefined,
       );
       if (!result.success) {
-        alert("Eroare: " + result.error);
+        setFlowError(result.error ?? "Nu am putut salva onboardingul minorului.");
         return;
       }
+      setFlowError(null);
       setIsSuccess(true);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const nextStep = () => setStep((s) => Math.min(s + 1, 5));
+  async function nextStep() {
+    const stepFields: Record<number, Array<keyof MinorOnboardingValues>> = {
+      1: ["parent_1_name", "parent_1_phone", "parent_1_email", "cnp_cif", "address"],
+      2: ["full_name", "minor_cnp"],
+      3: ["parents_marital_status"],
+      4: ["referral_source"],
+      5: ["legal_liability_consent", "gdpr_consent"],
+    };
+
+    const valid = await trigger(stepFields[step] ?? []);
+    if (!valid) {
+      setFlowError("Completează corect câmpurile din acest pas înainte să continui.");
+      return;
+    }
+
+    if (
+      step === 3 &&
+      maritalStatus === "DIVORTATI_CUSTODIE_COMUNA" &&
+      (!getValues("parent_2_name") || !getValues("parent_2_phone"))
+    ) {
+      setFlowError("Pentru custodie comună avem nevoie și de datele celuilalt părinte.");
+      return;
+    }
+
+    if (
+      step === 3 &&
+      (maritalStatus === "DIVORTATI_CUSTODIE_COMUNA" ||
+        maritalStatus === "DIVORTATI_CUSTODIE_EXCLUSIVA") &&
+      !file
+    ) {
+      setFlowError("Încarcă documentul juridic cerut înainte să continui.");
+      return;
+    }
+
+    setFlowError(null);
+    setStep((s) => Math.min(s + 1, 5));
+  }
+
   const prevStep = () => setStep((s) => Math.max(s - 1, 1));
 
   if (isSuccess) {
@@ -144,7 +194,9 @@ export function MinorOnboardingWizard({ therapistSlug }: { therapistSlug?: strin
       {/* Header & Progress */}
       <div className="space-y-5 rounded-[2rem] border border-border/60 bg-card px-6 py-6 shadow-sm">
         <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-black tracking-tight text-slate-900">Înregistrare Minor</h1>
+          <h1 className="text-3xl font-black tracking-tight text-slate-900">
+            {clientName ? `Înregistrare minor — ${clientName}` : "Înregistrare Minor"}
+          </h1>
           <p className="text-sm text-slate-500 font-medium">Pasul {step} din 5: Acte legale și reprezentare</p>
         </div>
         <div className="space-y-3">
@@ -161,6 +213,11 @@ export function MinorOnboardingWizard({ therapistSlug }: { therapistSlug?: strin
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
         <input type="text" tabIndex={-1} autoComplete="off" className="hidden" {...register("website")} />
+        {flowError ? (
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-900">
+            {flowError}
+          </div>
+        ) : null}
         {/* Step 1: Parent Info */}
         {step === 1 && (
           <div className="space-y-6 rounded-[1.75rem] border border-border/60 bg-card p-6 shadow-sm animate-in slide-in-from-right-4 duration-300">

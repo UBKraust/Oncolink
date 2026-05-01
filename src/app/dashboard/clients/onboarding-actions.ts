@@ -80,7 +80,9 @@ export async function submitMinorOnboarding(data: OnboardingData, files?: { cust
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   const admin = createSupabaseServiceClient();
-  let therapistId: string | null = user?.id || null;
+  const tokenPayload = data.token ? await getOnboardingTokenPayload(data.token) : null;
+
+  let therapistId: string | null = tokenPayload?.therapist_id ?? user?.id ?? null;
 
   if (!therapistId) {
     therapistId = await resolvePublicBookingTherapistId(data.therapist_slug);
@@ -92,41 +94,53 @@ export async function submitMinorOnboarding(data: OnboardingData, files?: { cust
 
   const db = user ? supabase : admin;
   const storageClient = user ? supabase : admin;
+  const patch = {
+    therapist_id: therapistId,
+    is_minor: true,
+    full_name: data.full_name,
+    minor_cnp: data.minor_cnp,
+    parent_1_name: data.parent_1_name,
+    parent_1_phone: data.parent_1_phone,
+    parent_1_email: data.parent_1_email,
+    parent_2_name: data.parent_2_name,
+    parent_2_phone: data.parent_2_phone,
+    parent_2_email: data.parent_2_email,
+    parents_marital_status: data.parents_marital_status,
+    cnp_cif: data.cnp_cif,
+    address: data.address,
+    referral_source: data.referral_source,
+    referred_by_name: data.referred_by_name,
+    emergency_contact_name: data.parent_1_name,
+    emergency_contact_phone: data.parent_1_phone,
+    emergency_contact_relation: "Părinte",
+    gdpr_consent_signed: data.gdpr_consent_signed,
+    legal_liability_consent_signed_at: data.legal_liability_consent_signed ? now : null,
+    needs_legal_review: data.parents_marital_status !== "CASATORITI",
+    onboarding_completed_at: now,
+  };
 
   let clientId: string;
   try {
-    const result = await upsertClientByIdentifiers(db as unknown as ClientUpsertDb, therapistId, {
-      id: data.id,
-      minor_cnp: data.minor_cnp,
-      cnp_cif: data.cnp_cif,
-      full_name: data.full_name,
-      parent_1_email: data.parent_1_email,
-      parent_1_phone: data.parent_1_phone,
-    }, {
-      therapist_id: therapistId,
-      is_minor: true,
-      full_name: data.full_name,
-      minor_cnp: data.minor_cnp,
-      parent_1_name: data.parent_1_name,
-      parent_1_phone: data.parent_1_phone,
-      parent_1_email: data.parent_1_email,
-      parent_2_name: data.parent_2_name,
-      parent_2_phone: data.parent_2_phone,
-      parent_2_email: data.parent_2_email,
-      parents_marital_status: data.parents_marital_status,
-      cnp_cif: data.cnp_cif,
-      address: data.address,
-      referral_source: data.referral_source,
-      referred_by_name: data.referred_by_name,
-      emergency_contact_name: data.parent_1_name,
-      emergency_contact_phone: data.parent_1_phone,
-      emergency_contact_relation: "Părinte",
-      gdpr_consent_signed: data.gdpr_consent_signed,
-      legal_liability_consent_signed_at: data.legal_liability_consent_signed ? now : null,
-      needs_legal_review: data.parents_marital_status !== "CASATORITI",
-      onboarding_completed_at: now,
-    });
-    clientId = result.id;
+    if (tokenPayload) {
+      const { error: updateError } = await admin
+        .from("clients")
+        .update(patch)
+        .eq("id", tokenPayload.client_id)
+        .eq("therapist_id", tokenPayload.therapist_id);
+
+      if (updateError) throw updateError;
+      clientId = tokenPayload.client_id;
+    } else {
+      const result = await upsertClientByIdentifiers(db as unknown as ClientUpsertDb, therapistId, {
+        id: data.id,
+        minor_cnp: data.minor_cnp,
+        cnp_cif: data.cnp_cif,
+        full_name: data.full_name,
+        parent_1_email: data.parent_1_email,
+        parent_1_phone: data.parent_1_phone,
+      }, patch);
+      clientId = result.id;
+    }
   } catch (clientError) {
     console.error("Error upserting minor client:", clientError);
     return {
@@ -170,6 +184,15 @@ export async function submitMinorOnboarding(data: OnboardingData, files?: { cust
     metadata: { source: "submitMinorOnboarding" },
     reason: "Onboarding minor finalizat",
   });
+
+  if (tokenPayload) {
+    await admin
+      .from("onboarding_tokens")
+      .update({ used_at: now })
+      .eq("id", tokenPayload.id)
+      .is("used_at", null)
+      .is("revoked_at", null);
+  }
 
   revalidatePath("/dashboard/clients");
   return { success: true, id: clientId };

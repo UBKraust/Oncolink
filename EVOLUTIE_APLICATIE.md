@@ -31,6 +31,10 @@ Aceasta regula ramane activa pe tot parcursul proiectului.
 - Am extins fisa clientului cu un sumar de lifecycle, urmatorii pasi si semnale administrative, astfel incat terapeutul sa vada rapid ce lipseste si ce urmeaza.
 - Am introdus persistenta pentru lifecycle in schema Supabase printr-o migrare dedicata, plus tabel de istoric pentru tranzitii.
 - Am legat sincronizarea statusului persistent de fluxurile care schimba real relatia cu clientul: creare/editare client, onboarding adult si minor, booking public, programari si anonimizare.
+- Am facut onboarding-urile adult si minor mai coerente pentru utilizatorii reali: validare pe pasi, blocare inainte de progres cand lipsesc date importante si mesaje inline in loc de `alert()`.
+- Am curatat quick actions pentru dashboard astfel incat un terapeut sa porneasca din intrarile corecte de cabinet: `client nou` si `pacient minor nou`, nu linkuri publice generice care puteau crea confuzie.
+- Am inceput intarirea fluxului public pentru minori: linkurile generate pentru clienti minori folosesc acum ruta securizata `/onboarding/minor?t=...`, iar pagina publica pentru minori nu mai functioneaza ca formular generic fara token.
+- Am aliniat submit-ul public pentru minori la modelul per-client, astfel incat onboarding-ul minor cu token sa actualizeze fișa corecta si sa marcheze tokenul ca folosit.
 
 Fisiere principale:
 
@@ -41,6 +45,11 @@ Fisiere principale:
 - [src/components/clients/ClientDashboardUI.tsx](/Users/sch_work/Documents/Oncolink/src/components/clients/ClientDashboardUI.tsx)
 - [src/app/dashboard/clients/page.tsx](/Users/sch_work/Documents/Oncolink/src/app/dashboard/clients/page.tsx)
 - [supabase/migrations/20260429223610_client_lifecycle_status.sql](/Users/sch_work/Documents/Oncolink/supabase/migrations/20260429223610_client_lifecycle_status.sql)
+- [src/components/onboarding/ClientOnboardingWizard.tsx](/Users/sch_work/Documents/Oncolink/src/components/onboarding/ClientOnboardingWizard.tsx)
+- [src/components/onboarding/MinorOnboardingWizard.tsx](/Users/sch_work/Documents/Oncolink/src/components/onboarding/MinorOnboardingWizard.tsx)
+- [src/components/dashboard/QuickActionsWheel.tsx](/Users/sch_work/Documents/Oncolink/src/components/dashboard/QuickActionsWheel.tsx)
+- [src/app/onboarding/minor/page.tsx](/Users/sch_work/Documents/Oncolink/src/app/onboarding/minor/page.tsx)
+- [src/lib/security/public-links.ts](/Users/sch_work/Documents/Oncolink/src/lib/security/public-links.ts)
 
 ### 1. Navigatie si intrare in produs
 
@@ -174,6 +183,8 @@ Fisiere principale:
 - Separarea modelului pentru `guardian` / reprezentanti legali fata de campurile plate din client.
 - Legarea lifecycle-ului nou de actiuni UI reale: `trimite onboarding`, `marcheaza activ`, `incheie caz`, `reactiveaza`.
 - Aplicarea migrarii in baza locala / remote si validarea istoricului de status pe date reale.
+- Trecerea onboarding-ului minor de la ruta publica generica la un model mai strict, aliniat cu linkurile securizate sau cu o intrare controlata de terapeut.
+- Eliminarea fallback-ului bazat pe `therapistSlug` pentru onboarding-ul minor public, dupa ce validam cap-coada noul flux cu token.
 - Verificare manuala finala si QA cap-coada pe fluxurile critice, in special:
 
 - creare client
@@ -209,5 +220,5 @@ La fiecare actualizare noua adaugam:
 
 - Ce s-a facut: am implementat un prim lifecycle operational derivat pentru clienti si l-am facut vizibil in registru si in fisa individuala, impreuna cu urmatorii pasi recomandati
 - Ce s-a verificat: `npm run lint` si `npm run build`
-- Ce urmeaza imediat: aplicarea migrarii noi, plus legarea unor actiuni UI explicite pentru tranzitiile manuale (`inactiv`, `incheiat`, `reactiveaza`)
+- Ce urmeaza imediat: aplicarea migrarii noi, plus legarea unor actiuni UI explicite pentru tranzitiile manuale (`inactiv`, `incheiat`, `reactiveaza`) si eliminarea definitiva a fallback-ului public generic pentru onboarding minor
 - Status lint/build: ambele verzi

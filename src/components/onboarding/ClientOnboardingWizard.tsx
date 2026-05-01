@@ -39,13 +39,15 @@ export function ClientOnboardingWizard({ token, clientName }: ClientOnboardingWi
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [flowError, setFlowError] = useState<string | null>(null);
 
   const {
-    register,
-    handleSubmit,
-    setValue,
     control,
     formState: { errors },
+    handleSubmit,
+    register,
+    setValue,
+    trigger,
   } = useForm<OnboardingFormValues>({
     resolver: zodResolver(onboardingSchema),
     defaultValues: {
@@ -78,16 +80,38 @@ export function ClientOnboardingWizard({ token, clientName }: ClientOnboardingWi
       });
 
       if (result.success) {
+        setFlowError(null);
         setIsSuccess(true);
       } else {
-        alert("A apărut o eroare la trimitere. Vă rugăm să încercați din nou.");
+        setFlowError(result.error ?? "A apărut o eroare la trimitere. Vă rugăm să încercați din nou.");
       }
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const nextStep = () => setStep((s) => Math.min(s + 1, 4));
+  async function nextStep() {
+    const stepFields: Record<number, Array<keyof OnboardingFormValues>> = {
+      1: ["address"],
+      2: [
+        "emergency_contact_name",
+        "emergency_contact_phone",
+        "emergency_contact_relation",
+      ],
+      3: ["referral_source"],
+      4: ["gdpr_consent", "terms_consent"],
+    };
+
+    const valid = await trigger(stepFields[step] ?? []);
+    if (!valid) {
+      setFlowError("Completează corect câmpurile din acest pas înainte să continui.");
+      return;
+    }
+
+    setFlowError(null);
+    setStep((s) => Math.min(s + 1, 4));
+  }
+
   const prevStep = () => setStep((s) => Math.max(s - 1, 1));
 
   if (isSuccess) {
@@ -135,6 +159,11 @@ export function ClientOnboardingWizard({ token, clientName }: ClientOnboardingWi
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
         <input type="text" tabIndex={-1} autoComplete="off" className="hidden" {...register("website")} />
+        {flowError ? (
+          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-900">
+            {flowError}
+          </div>
+        ) : null}
         {/* Step 1: Billing */}
         {step === 1 && (
           <div className="space-y-6 rounded-[1.75rem] border border-border/60 bg-card p-6 shadow-sm animate-in slide-in-from-right-4 duration-300">

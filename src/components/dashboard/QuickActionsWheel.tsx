@@ -8,7 +8,6 @@ import {
   Baby, 
   Calendar, 
   Receipt, 
-  Check, 
   X,
   Zap
 } from "lucide-react";
@@ -24,28 +23,18 @@ interface QuickAction {
 
 export function QuickActionsWheel() {
   const [isOpen, setIsOpen] = useState(false);
-  const [notification, setNotification] = useState<string | null>(null);
   const router = useRouter();
-
-  const showNotification = (text: string) => {
-    setNotification(text);
-    setTimeout(() => setNotification(null), 3000);
-  };
-
-  const copyLink = (path: string, label: string) => {
-    const url = `${window.location.origin}${path}`;
-    navigator.clipboard.writeText(url);
-    showNotification(`Link ${label} copiat!`);
-    setIsOpen(false);
-  };
 
   const actions: QuickAction[] = [
     {
       id: "minor",
-      label: "Onboarding Minor",
+      label: "Pacient Minor",
       icon: Baby,
       color: "bg-amber-500 shadow-amber-200",
-      action: () => copyLink("/onboarding/minor", "Minor"),
+      action: () => {
+        router.push("/dashboard/clients/new-minor");
+        setIsOpen(false);
+      },
     },
     {
       id: "adult",
@@ -54,7 +43,6 @@ export function QuickActionsWheel() {
       color: "bg-blue-500 shadow-blue-200",
       action: () => {
         router.push("/dashboard/clients/new");
-        showNotification("Creează clientul, apoi generează linkul de onboarding.");
         setIsOpen(false);
       },
     },
@@ -82,16 +70,6 @@ export function QuickActionsWheel() {
 
   return (
     <div className="fixed bottom-8 right-8 z-[100] flex flex-col items-end gap-4 print:hidden">
-      {/* Toast Notification */}
-      {notification && (
-        <div className="animate-in slide-in-from-right-full fade-in duration-300 flex items-center gap-3 rounded-2xl bg-slate-900 px-6 py-4 text-sm font-bold text-white shadow-2xl">
-          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500">
-            <Check className="h-3 w-3" />
-          </div>
-          {notification}
-        </div>
-      )}
-
       {/* Actions */}
       <div className="relative">
         {/* The "Wheel" of buttons */}

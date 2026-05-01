@@ -49,6 +49,7 @@ type PublicOnboardingClient = {
   full_name: string | null;
   email: string | null;
   phone: string | null;
+  is_minor?: boolean | null;
 };
 
 type OnboardingTokenPayload = {
@@ -98,9 +99,17 @@ export async function createOnboardingAccessToken(params: {
     throw new Error(error.message);
   }
 
+  const { data: client } = await admin
+    .from("clients")
+    .select("is_minor")
+    .eq("id", params.clientId)
+    .maybeSingle();
+
+  const onboardingPath = client?.is_minor ? "/onboarding/minor" : "/onboarding";
+
   return {
     token: rawToken,
-    url: `${getPublicAppUrl()}/onboarding?t=${encodeURIComponent(rawToken)}`,
+    url: `${getPublicAppUrl()}${onboardingPath}?t=${encodeURIComponent(rawToken)}`,
   };
 }
 
@@ -113,7 +122,7 @@ export async function getOnboardingTokenPayload(rawToken: string) {
   const tokenHash = await sha256Hex(rawToken);
   const { data } = await admin
     .from("onboarding_tokens")
-    .select("id, therapist_id, client_id, expires_at, used_at, revoked_at, client:clients(id, full_name, email, phone)")
+    .select("id, therapist_id, client_id, expires_at, used_at, revoked_at, client:clients(id, full_name, email, phone, is_minor)")
     .eq("token_hash", tokenHash)
     .maybeSingle();
 

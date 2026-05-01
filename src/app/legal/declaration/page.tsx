@@ -10,7 +10,7 @@ export default function DeclarationPage() {
   return (
     <PublicDocumentShell
       backHref="/dashboard"
-      backLabel="Inapoi la dashboard"
+      backLabel="Înapoi la dashboard"
       icon={ShieldCheck}
       title="Declarație pe proprie răspundere"
       subtitle="Document legal · validare date minor"

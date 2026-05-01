@@ -5,7 +5,7 @@ export default function PrivacyPage() {
   return (
     <PublicDocumentShell
       backHref="/dashboard"
-      backLabel="Inapoi la dashboard"
+      backLabel="Înapoi la dashboard"
       icon={Shield}
       title="Anexă GDPR / Politica de Confidențialitate"
       subtitle="Ultima actualizare: 25 Aprilie 2026"

@@ -21,19 +21,20 @@ import {
 } from "@/lib/dashboard/queries";
 import { runServerComplianceCheck } from "@/lib/compliance/server-engine";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-
-const THERAPIST_NAME = "Psih. Ioana Cosmina Terente PFA";
+import { getTherapistSettings } from "@/app/dashboard/settings/settings-actions";
 
 export default async function DashboardPage() {
   const today = new Date();
   const configured = isSupabaseConfigured();
-  const [stats, appointmentsToday, unpaidInvoices, upcomingAppointments, complianceData] = await Promise.all([
+  const [stats, appointmentsToday, unpaidInvoices, upcomingAppointments, complianceData, settings] = await Promise.all([
     getDashboardStats(),
     getAppointmentsToday(),
     getUnpaidInvoices(),
     getUpcomingAppointments(),
     runServerComplianceCheck(),
+    getTherapistSettings().catch(() => null),
   ]);
+  const therapistName = settings?.full_name ?? settings?.practice_name ?? "Terapeut";
 
   return (
     <DashboardShell>
@@ -41,7 +42,7 @@ export default async function DashboardPage() {
 
       <PageHeader
         eyebrow={format(today, "EEEE, d MMMM yyyy", { locale: ro })}
-        title={`Bună ziua, ${THERAPIST_NAME}`}
+        title={`Bună ziua, ${therapistName}`}
         description="Panoul tău operațional pentru activitatea clinică, administrativă și juridică."
         action={
           <div className="hidden items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 sm:flex">

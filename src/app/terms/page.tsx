@@ -5,7 +5,7 @@ export default function TermsPage() {
   return (
     <PublicDocumentShell
       backHref="/dashboard"
-      backLabel="Inapoi la dashboard"
+      backLabel="Înapoi la dashboard"
       icon={Gavel}
       title="Termeni și condiții"
       subtitle="Pentru utilizarea generatorului de contracte și documente"

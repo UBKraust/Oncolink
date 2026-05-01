@@ -36,6 +36,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import type { Expense, ExpenseCategory } from "@/app/dashboard/expenses/actions";
 import { createExpense, deleteExpense } from "@/app/dashboard/expenses/actions";
 import { useOverlayA11y } from "@/components/ui/use-overlay-a11y";
@@ -92,6 +102,7 @@ export function ExpensesClient({
   const [year, setYear] = useState(initialYear);
   const [month, setMonth] = useState(initialMonth);
   const [showAdd, setShowAdd] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState(false);
@@ -127,8 +138,10 @@ export function ExpensesClient({
     router.push(`/dashboard/expenses?year=${newYear}&month=${newMonth}`);
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm("Ștergi această cheltuială?")) return;
+  function handleDeleteConfirm() {
+    if (!deleteTargetId) return;
+    const id = deleteTargetId;
+    setDeleteTargetId(null);
     startTransition(async () => {
       const result = await deleteExpense(id);
       if (result.ok) {
@@ -278,8 +291,9 @@ export function ExpensesClient({
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                          onClick={() => handleDelete(e.id)}
+                          onClick={() => setDeleteTargetId(e.id)}
                           disabled={isPending}
+                          aria-label="Șterge cheltuiala"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -419,6 +433,29 @@ export function ExpensesClient({
           </Card>
         </div>
       )}
+
+      <AlertDialog
+        open={deleteTargetId !== null}
+        onOpenChange={(open) => { if (!open) setDeleteTargetId(null); }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Ștergi această cheltuială?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Acțiunea este ireversibilă. Înregistrarea va fi eliminată definitiv.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90"
+              onClick={handleDeleteConfirm}
+            >
+              Șterge cheltuiala
+            </AlertDialogAction>
+            <AlertDialogCancel>Anulează</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -41,6 +41,27 @@ Aceasta regula ramane activa pe tot parcursul proiectului.
 - Am legat onboarding-ul minor securizat direct in fișa clientului, cu CTA de copiere a linkului si banner contextual cand onboarding-ul nu este finalizat.
 - Am adaugat in fișa clientului un istoric lifecycle cu ultimele tranzitii de status, astfel incat terapeutul sa vada rapid cum a evoluat relatia administrativ-clinica, chiar daca inca nu avem validarea finala pe baza reala.
 
+### 11. Polish UI și corectare inconsistențe
+
+- Am înlocuit numele hardcodat al terapeutului de pe pagina principală dashboard (`"Psih. Ioana Cosmina Terente PFA"`) cu un fetch dinamic din `getTherapistSettings()`. Acum salutarea afișează `full_name` sau `practice_name` din setări, cu fallback la `"Terapeut"`.
+- Am corectat diacritica `"Inapoi"` → `"Înapoi"` în trei pagini publice: `/privacy`, `/terms`, `/legal/declaration` (câmpul `backLabel` al componentei `PublicDocumentShell`).
+- Am înlocuit dialogul nativ `confirm()` din `ExpensesClient.tsx` și `VaultClient.tsx` cu `AlertDialog` custom — consistent cu restul aplicației, accesibil, cu focus trap și Esc-to-close.
+  - `ExpensesClient`: butonul de ștergere setează `deleteTargetId`, AlertDialog confirmă înainte de a apela `deleteExpense`.
+  - `VaultClient`: aceeași structură — `deleteTargetId` + `AlertDialogAction` → `handleDeleteConfirm`.
+
+`npm run lint` ✅ | `npm run build` ✅
+
+Fisiere principale:
+
+- [src/app/dashboard/page.tsx](/Users/sch_work/Documents/Oncolink/src/app/dashboard/page.tsx)
+- [src/app/privacy/page.tsx](/Users/sch_work/Documents/Oncolink/src/app/privacy/page.tsx)
+- [src/app/terms/page.tsx](/Users/sch_work/Documents/Oncolink/src/app/terms/page.tsx)
+- [src/app/legal/declaration/page.tsx](/Users/sch_work/Documents/Oncolink/src/app/legal/declaration/page.tsx)
+- [src/components/expenses/ExpensesClient.tsx](/Users/sch_work/Documents/Oncolink/src/components/expenses/ExpensesClient.tsx)
+- [src/components/vault/VaultClient.tsx](/Users/sch_work/Documents/Oncolink/src/components/vault/VaultClient.tsx)
+
+---
+
 ### 9. Istoric lifecycle transparent in fișa clientului
 
 - Am adaugat `getClientStatusHistory(clientId)` in `queries.ts` — interogheaza ultimele 8 tranzitii din `client_status_history` ordonate descrescator dupa `changed_at`.

@@ -30,6 +30,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import type { VaultCategory, VaultDoc } from "@/app/dashboard/vault/vault-actions";
 import {
   deleteVaultDocument,
@@ -148,6 +158,7 @@ export function VaultClient({ initialDocs }: VaultClientProps) {
   const [activeGroup, setActiveGroup] = useState<VaultGroup | "ALL">("ALL");
   const [showUpload, setShowUpload] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<VaultDoc | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState(false);
@@ -216,8 +227,10 @@ export function VaultClient({ initialDocs }: VaultClientProps) {
     });
   }
 
-  function handleDelete(id: string) {
-    if (!confirm("Ștergi definitiv acest document?")) return;
+  function handleDeleteConfirm() {
+    if (!deleteTargetId) return;
+    const id = deleteTargetId;
+    setDeleteTargetId(null);
     startTransition(async () => {
       const result = await deleteVaultDocument(id);
       if (result.ok) {
@@ -382,7 +395,7 @@ export function VaultClient({ initialDocs }: VaultClientProps) {
                                 size="icon"
                                 variant="ghost"
                                 className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                onClick={() => handleDelete(doc.id)}
+                                onClick={() => setDeleteTargetId(doc.id)}
                                 disabled={isPending}
                                 aria-label={`Șterge documentul ${doc.name}`}
                               >
@@ -605,6 +618,29 @@ export function VaultClient({ initialDocs }: VaultClientProps) {
           </div>
         </div>
       )}
+
+      <AlertDialog
+        open={deleteTargetId !== null}
+        onOpenChange={(open) => { if (!open) setDeleteTargetId(null); }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Ștergi acest document din seif?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Acțiunea este ireversibilă. Documentul va fi eliminat definitiv din seiful cabinetului.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90"
+              onClick={handleDeleteConfirm}
+            >
+              Șterge documentul
+            </AlertDialogAction>
+            <AlertDialogCancel>Anulează</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -74,6 +74,7 @@ export interface ClientStatusHistoryItem {
   to_status: string;
   reason: string | null;
   changed_at: string;
+  changed_by_name: string | null;
 }
 
 export interface ClientPayment {

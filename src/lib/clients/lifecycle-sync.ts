@@ -6,6 +6,18 @@ import {
 
 export type SupabaseServerDb = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
+async function fetchTherapistDisplayName(
+  supabase: SupabaseServerDb,
+  userId: string,
+): Promise<string | null> {
+  const { data } = await supabase
+    .from("therapist_settings")
+    .select("full_name")
+    .eq("therapist_id", userId)
+    .maybeSingle();
+  return data?.full_name ?? null;
+}
+
 const MANUAL_STATUSES = new Set<ClientLifecycleStatus>([
   "INACTIV",
   "INCHEIAT",
@@ -84,6 +96,11 @@ export async function syncClientLifecycleStatus(
     throw new Error(updateError.message);
   }
 
+  const { data: authData } = await supabase.auth.getUser();
+  const changedByName = authData.user
+    ? await fetchTherapistDisplayName(supabase, authData.user.id)
+    : null;
+
   const { error: historyError } = await supabase
     .from("client_status_history")
     .insert({
@@ -92,7 +109,10 @@ export async function syncClientLifecycleStatus(
       from_status: currentStatus,
       to_status: nextStatus,
       reason: options.reason ?? "Lifecycle sync",
-      metadata: options.metadata ?? {},
+      metadata: {
+        ...(options.metadata ?? {}),
+        ...(changedByName ? { changed_by_name: changedByName } : {}),
+      },
     });
 
   if (historyError) {
@@ -144,6 +164,11 @@ export async function setClientLifecycleStatus(
     throw new Error(updateError.message);
   }
 
+  const { data: authData } = await supabase.auth.getUser();
+  const changedByName = authData.user
+    ? await fetchTherapistDisplayName(supabase, authData.user.id)
+    : null;
+
   const { error: historyError } = await supabase
     .from("client_status_history")
     .insert({
@@ -152,7 +177,10 @@ export async function setClientLifecycleStatus(
       from_status: currentStatus,
       to_status: params.status,
       reason: params.reason,
-      metadata: params.metadata ?? {},
+      metadata: {
+        ...(params.metadata ?? {}),
+        ...(changedByName ? { changed_by_name: changedByName } : {}),
+      },
     });
 
   if (historyError) {

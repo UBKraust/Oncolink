@@ -87,13 +87,20 @@ export default async function ClientDetailPage({
   const clientMeds = (medsData || []) as ClientMedication[];
   const isMinor = client.is_minor ?? false;
   const appointments = await listAppointments({ clientId: id });
-  const lifecycleHistory = (statusHistory || []).map((item) => ({
-    id: item.id,
-    from_status: item.from_status,
-    to_status: item.to_status,
-    reason: item.reason,
-    changed_at: item.changed_at,
-  })) as ClientStatusHistoryItem[];
+  const lifecycleHistory = (statusHistory || []).map((item) => {
+    const meta =
+      item.metadata != null && typeof item.metadata === "object" && !Array.isArray(item.metadata)
+        ? (item.metadata as Record<string, unknown>)
+        : {};
+    return {
+      id: item.id,
+      from_status: item.from_status,
+      to_status: item.to_status,
+      reason: item.reason,
+      changed_at: item.changed_at,
+      changed_by_name: typeof meta.changed_by_name === "string" ? meta.changed_by_name : null,
+    };
+  }) as ClientStatusHistoryItem[];
 
   const aiClientContext: ClientAiContext = {
     name: anonymized ? null : client.full_name,

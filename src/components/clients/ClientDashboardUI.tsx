@@ -539,8 +539,15 @@ export function ClientDashboardUI({
                       {entry.reason ?? "Fără motiv explicit"}
                     </p>
                   </div>
-                  <div className="text-xs font-medium text-muted-foreground">
-                    {format(new Date(entry.changed_at), "d MMM yyyy, HH:mm", { locale: ro })}
+                  <div className="flex flex-col items-end gap-0.5 text-right">
+                    <span className="text-xs font-medium text-muted-foreground">
+                      {format(new Date(entry.changed_at), "d MMM yyyy, HH:mm", { locale: ro })}
+                    </span>
+                    {entry.changed_by_name && (
+                      <span className="text-xs text-muted-foreground/70">
+                        de {entry.changed_by_name}
+                      </span>
+                    )}
                   </div>
                 </div>
               ))}

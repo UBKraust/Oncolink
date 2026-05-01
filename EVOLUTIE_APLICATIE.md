@@ -15,10 +15,11 @@ Aceasta regula ramane activa pe tot parcursul proiectului.
 
 ## Status Curent
 
-- Auditul aplicatiei este in progres activ.
-- Baseline tehnic actual:
-  - `npm run lint`: verde
-  - `npm run build`: verde
+- `npm run lint`: ✅ verde
+- `npm run build`: ✅ verde
+- 10 taskuri finalizate (navigatie, mobil, stabilizare, accesibilitate, formuri, overlay-uri, lifecycle complet cu istoric si changed_by)
+- Migrarea lifecycle (`20260429223610_client_lifecycle_status.sql`) este scrisa dar **neaplicata inca in baza reala**
+- Urmeaza: aplicare migrare, QA cap-la-cap, polish final
 
 ## Ce s-a facut
 
@@ -40,14 +41,41 @@ Aceasta regula ramane activa pe tot parcursul proiectului.
 - Am legat onboarding-ul minor securizat direct in fișa clientului, cu CTA de copiere a linkului si banner contextual cand onboarding-ul nu este finalizat.
 - Am adaugat in fișa clientului un istoric lifecycle cu ultimele tranzitii de status, astfel incat terapeutul sa vada rapid cum a evoluat relatia administrativ-clinica, chiar daca inca nu avem validarea finala pe baza reala.
 
+### 9. Istoric lifecycle transparent in fișa clientului
+
+- Am adaugat `getClientStatusHistory(clientId)` in `queries.ts` — interogheaza ultimele 8 tranzitii din `client_status_history` ordonate descrescator dupa `changed_at`.
+- Am adaugat fallback sigur in query: daca tabela `client_status_history` nu exista inca in baza de date (migrare neaplicata), functia returneaza `[]` fara a arunca eroare, astfel incat UI-ul nu cade.
+- Am definit tipul `ClientStatusHistoryItem` in `src/components/clients/types.ts` cu campurile: `id`, `from_status` (nullable), `to_status`, `reason` (nullable), `changed_at`.
+- Am trecut datele prin `page.tsx` in paralel cu celelalte fetch-uri (Promise.all), mapate la `ClientStatusHistoryItem[]`.
+- Am extins props-ul lui `ClientDashboardUI` cu `lifecycleHistory: ClientStatusHistoryItem[]`.
+- Am adaugat sectiunea "Istoric lifecycle" in `ClientDashboardUI.tsx`: fiecare intrare afiseaza tranzitia `from_status → to_status`, motivul (sau "Fara motiv explicit" ca fallback), si timestamp-ul formatat.
+- Daca istoricul este gol (migrare neaplicata sau client nou), sectiunea afiseaza un empty state clar in loc sa dispara sau sa cada.
+- `changed_by` nu este inca tracked — cine a facut schimbarea va fi pasul urmator.
+
+`npm run lint` ✅ | `npm run build` ✅
+
+### 10. Tracking changed_by in istoricul lifecycle
+
+- Am adaugat helper-ul privat `fetchTherapistDisplayName(supabase, userId)` in `lifecycle-sync.ts`: face query la `therapist_settings.full_name` dupa `therapist_id = userId`.
+- In ambele functii `syncClientLifecycleStatus` si `setClientLifecycleStatus`, dupa fiecare tranzitie reusita, apelam `supabase.auth.getUser()` si stocam numele in `metadata.changed_by_name`. Daca utilizatorul nu este autentificat (apel din sistem/public), campul lipseste din metadata si UI-ul nu afiseaza nimic.
+- Am extins `ClientStatusHistoryItem` in `types.ts` cu `changed_by_name: string | null`.
+- Am actualizat mappingul din `page.tsx`: extrage `changed_by_name` din `metadata` (JSONB) cu validare de tip stricta.
+- Am actualizat sectiunea "Istoric lifecycle" din `ClientDashboardUI.tsx`: sub timestamp apare "de [Nume Terapeut]" cand campul este prezent.
+- Nu necesita migrare — `metadata` (JSONB) exista deja in `client_status_history`.
+
+`npm run lint` ✅ | `npm run build` ✅
+
+Pasul urmator: aplicare migrare in baza reala si validare cap-la-cap ca butoanele lifecycle scriu corect in `client_status_history` cu `changed_by_name` in metadata.
+
 Fisiere principale:
 
 - [src/lib/clients/lifecycle.ts](/Users/sch_work/Documents/Oncolink/src/lib/clients/lifecycle.ts)
 - [src/lib/clients/lifecycle-sync.ts](/Users/sch_work/Documents/Oncolink/src/lib/clients/lifecycle-sync.ts)
 - [src/lib/clients/queries.ts](/Users/sch_work/Documents/Oncolink/src/lib/clients/queries.ts)
+- [src/components/clients/types.ts](/Users/sch_work/Documents/Oncolink/src/components/clients/types.ts)
 - [src/components/clients/ClientsClient.tsx](/Users/sch_work/Documents/Oncolink/src/components/clients/ClientsClient.tsx)
 - [src/components/clients/ClientDashboardUI.tsx](/Users/sch_work/Documents/Oncolink/src/components/clients/ClientDashboardUI.tsx)
-- [src/app/dashboard/clients/page.tsx](/Users/sch_work/Documents/Oncolink/src/app/dashboard/clients/page.tsx)
+- [src/app/dashboard/clients/[id]/page.tsx](/Users/sch_work/Documents/Oncolink/src/app/dashboard/clients/[id]/page.tsx)
 - [supabase/migrations/20260429223610_client_lifecycle_status.sql](/Users/sch_work/Documents/Oncolink/supabase/migrations/20260429223610_client_lifecycle_status.sql)
 - [src/components/onboarding/ClientOnboardingWizard.tsx](/Users/sch_work/Documents/Oncolink/src/components/onboarding/ClientOnboardingWizard.tsx)
 - [src/components/onboarding/MinorOnboardingWizard.tsx](/Users/sch_work/Documents/Oncolink/src/components/onboarding/MinorOnboardingWizard.tsx)
@@ -179,53 +207,67 @@ Fisiere principale:
 - nu exista erori active in baseline-ul curent
 - repo-ul este intr-o stare buna pentru un pass final de testare manuala si polish
 
-## Ce urmeaza
+## Ce urmeaza — TODO
 
-### Urmatorul task recomandat
+### 🔴 Blocker: Aplicare migrare in baza reala
 
-- Expunerea in UI a tranzitiilor manuale pentru `inactiv`, `incheiat`, `neconversie` si `reactiveaza`, peste statusul persistent deja introdus.
-- Separarea modelului pentru `guardian` / reprezentanti legali fata de campurile plate din client.
-- Legarea lifecycle-ului nou de actiuni UI reale: `trimite onboarding`, `marcheaza activ`, `incheie caz`, `reactiveaza`.
-- Aplicarea migrarii in baza locala / remote si validarea istoricului de status pe date reale.
-- Trecerea onboarding-ului minor de la ruta publica generica la un model mai strict, aliniat cu linkurile securizate sau cu o intrare controlata de terapeut.
-- Verificarea cap-coada a noului onboarding minor cu token, plus clarificarea in UI a pasului urmator pentru terapeut dupa generarea linkului.
-- Aplicarea migrarii de lifecycle in baza si verificarea faptului ca istoricul `client_status_history` se scrie corect la tranzitiile noi din UI.
-- Separarea modelului pentru `guardian` / reprezentanti legali fata de campurile plate din client.
-- Ajustarea modelului de istoric pentru a afisa si actorul schimbarii, dupa ce validam datele reale din `client_status_history`.
-- Verificare manuala finala si QA cap-coada pe fluxurile critice, in special:
+- [ ] Ruleaza `supabase db push` sau aplica manual `20260429223610_client_lifecycle_status.sql` in baza remote
+- [ ] Verifica ca tabela `client_status_history` exista si RLS-ul este activ
+- [ ] Verifica backfill-ul initial: clientii existenti trebuie sa aiba cel putin o intrare in `client_status_history` (din migrare)
 
-- creare client
-- onboarding adult si minor
-- creare programare
-- emitere si vizualizare facturare
-- upload si preview documente
-- overlay-uri si dialoguri pe mobil si tastatura
+### 🟠 Validare cap-la-cap lifecycle (dupa migrare)
 
-### Dupa acest task
+- [ ] Testeaza fiecare buton din fisa clientului si confirma ca scrie in `client_status_history`:
+  - `Marchează activ` → tranzitie catre `ACTIV` cu `reason` si `changed_by_name`
+  - `Marchează inactiv` → tranzitie catre `INACTIV`
+  - `Încheie caz` → tranzitie catre `INCHEIAT`
+  - `Neconversie` → tranzitie catre `NECONVERSIE`
+  - `Reactivează` → tranzitie derivata (sync) catre `ACTIV`
+- [ ] Confirma ca sectiunea "Istoric lifecycle" din fisa afiseaza tranzitiile reale cu timestamp si `changed_by_name`
+- [ ] Verifica ca fluxurile automate (booking public, onboarding, anonimizare) scriu si ele in istoric (fara `changed_by_name`, ceea ce e corect)
 
-- verificare focus order si keyboard-only navigation cap-coada
-- contrast si stari de eroare/succes coerente
-- pass final pe responsive pentru ecrane mici
-- optional, o lista scurta de regresie pentru fiecare modul principal
+### 🟡 QA functional cap-la-cap
+
+- [ ] **Creare client** — formular complet adult si minor, validare inline, redirect catre fisa
+- [ ] **Onboarding adult** — generare link, completare din browser incognito, confirmare status in fisa
+- [ ] **Onboarding minor** — generare link minor, completare de catre tutore, confirmare date guardian in fisa
+- [ ] **Booking public** — `/book` fara autentificare, confirmare programare, aparitia clientului in registru
+- [ ] **Creare programare** — din fisa client si din `/appointments/new`, verificare Google Calendar sync daca e conectat
+- [ ] **Marcare sedinta completa** — din SessionDrawer, confirmare tranzitie lifecycle catre `ACTIV`
+- [ ] **Emitere factura** — creare + trimitere SmartBill, status `Emisa` vizibil in lista
+- [ ] **Upload document** — din fisa client, verificare vizibilitate si link functional
+- [ ] **Vault note clinice** — setup PIN, scriere nota, lock/unlock, decriptare corecta
+- [ ] **Anonimizare client** — flux complet, confirmare PII sters, status `Anonimizat`
+
+### 🟡 QA accesibilitate si keyboard
+
+- [ ] Verifica focus order pe formularele mari (client, programare)
+- [ ] Testeaza keyboard-only navigation in overlay-uri si drawer-uri (Esc, Tab, focus trap)
+- [ ] Verifica contrast pe badge-uri de status si mesaje de eroare
+- [ ] Testeaza pe mobil (iOS Safari + Android Chrome) fluxurile critice: registru clienti, fisa, programari
+
+### 🟢 Polish si finisare
+
+- [ ] Empty states coerente pe toate paginile care pot fi goale la start (facturi, cheltuieli, documente, teste)
+- [ ] Mesaje de confirmare (toast) verificate pe toate actiunile destructive si importante
+- [ ] Separare model `guardian` — campurile plate de pe `clients` (`parent_name`, `parent_phone`, etc.) ar putea fi mutate intr-un subtabel dedicat (task separat, nu blocker)
+- [ ] Revizie texte UI — romani diacritice consistente, mesaje de eroare clare, CTA-uri explicite
+
+### 🔵 Optional / Viitor
+
+- [ ] Notificari email automate la tranzitii lifecycle importante (ex: client trecut in `Inactiv`)
+- [ ] Export CSV din istoricul lifecycle pentru audit extern
+- [ ] Dashboard cu grafic funnel: Lead → Onboarding → Activ → Incheiat
+- [ ] Suport multi-terapeut (RLS deja pregatit, UI si logica de rutare lipsesc)
 
 ## Format de actualizare
 
-La fiecare actualizare noua adaugam:
+La fiecare task finalizat:
 
 ```md
-### Task nou
+### N. Titlu task
 
-- Ce s-a facut
-- Ce s-a verificat
-- Ce urmeaza imediat
-- Status lint/build
+- Ce s-a facut concret
+- Fisiere principale atinse
+- Status: `npm run lint` ✅ | `npm run build` ✅
 ```
-
-## Ultima actualizare
-
-### Task nou
-
-- Ce s-a facut: am implementat un prim lifecycle operational derivat pentru clienti si l-am facut vizibil in registru si in fisa individuala, impreuna cu urmatorii pasi recomandati
-- Ce s-a verificat: `npm run lint` si `npm run build`
-- Ce urmeaza imediat: aplicarea migrarii noi, validarea istoricului de lifecycle pe date reale si inceperea separarii modelului `guardian` fata de campurile plate de pe client
-- Status lint/build: ambele verzi

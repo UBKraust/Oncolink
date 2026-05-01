@@ -8,6 +8,7 @@ import {
   CalendarPlus, CheckCircle2, ChevronLeft, ClipboardList, Mail, Pencil, Phone,
   ShieldOff, Plus, Brain, Wallet, FileText, ArrowRight, Clock,
   Calendar, MapPin, ShieldAlert, Video, RefreshCw, TrendingUp, FileCheck,
+  Copy,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +16,8 @@ import { Button } from "@/components/ui/button";
 import { deriveClientLifecycle } from "@/lib/clients/lifecycle";
 import { cn } from "@/lib/utils";
 import { EmptyState, PageHeader, SectionCard, SetupBanner } from "@/components/app/page-shell";
+import { toast } from "@/components/ui/toast";
+import { createClientOnboardingLink } from "@/app/dashboard/clients/onboarding-actions";
 
 import { ClientEvolutionChart } from "@/components/clients/ClientEvolutionChart";
 import { ClientDriveDocuments } from "@/components/clients/ClientDriveDocuments";
@@ -74,6 +77,7 @@ export function ClientDashboardUI({
   aiClientContext,
 }: ClientDashboardUIProps) {
   const [isContractModalOpen, setIsContractModalOpen] = useState(false);
+  const [isCopyingOnboardingLink, setIsCopyingOnboardingLink] = useState(false);
   const id = client.id;
   const isMinor = client.is_minor ?? false;
   const baseUrl = `/dashboard/clients/${id}`;
@@ -95,6 +99,30 @@ export function ClientDashboardUI({
   const sessionFreqLabel = SESSION_FREQ_LABELS[client.session_frequency ?? ""] ?? null;
   const isB2B = client.billing_type === "B2B_COMPANY";
 
+  async function handleCopyOnboardingLink() {
+    if (typeof window === "undefined") return;
+
+    setIsCopyingOnboardingLink(true);
+    try {
+      const result = await createClientOnboardingLink(client.id);
+      if (result.error || !result.data?.url) {
+        toast.error(result.error ?? "Nu am putut genera linkul de onboarding.");
+        return;
+      }
+
+      await navigator.clipboard.writeText(result.data.url);
+      toast.success(
+        isMinor
+          ? "Linkul securizat pentru onboarding minor a fost copiat."
+          : "Linkul de onboarding a fost copiat.",
+      );
+    } catch {
+      toast.error("Nu am putut copia linkul de onboarding.");
+    } finally {
+      setIsCopyingOnboardingLink(false);
+    }
+  }
+
   return (
     <div className="mx-auto w-full max-w-6xl space-y-8 pb-20">
       <Link
@@ -113,11 +141,23 @@ export function ClientDashboardUI({
           <div className="flex items-center gap-2 shrink-0">
             {!anonymized && (
               <>
-                {!isMinor && !lifecycle.isOnboardingComplete && (
+                {!lifecycle.isOnboardingComplete && !isMinor && (
                   <Button asChild variant="outline" size="lg" className="rounded-2xl font-bold gap-2">
                     <Link href={`/dashboard/clients/${client.id}/onboarding`}>
                       <ClipboardList className="h-4 w-4 text-primary" /> Onboarding
                     </Link>
+                  </Button>
+                )}
+                {!lifecycle.isOnboardingComplete && isMinor && (
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={handleCopyOnboardingLink}
+                    disabled={isCopyingOnboardingLink}
+                    className="rounded-2xl font-bold gap-2"
+                  >
+                    <Copy className="h-4 w-4 text-primary" />
+                    {isCopyingOnboardingLink ? "Generez..." : "Copiază link onboarding"}
                   </Button>
                 )}
                 <Button
@@ -143,6 +183,26 @@ export function ClientDashboardUI({
           </div>
         }
       />
+
+      {!anonymized && isMinor && !lifecycle.isOnboardingComplete ? (
+        <div className="space-y-3">
+          <SetupBanner
+            title="Onboarding minor nefinalizat"
+            description="Pentru minori, fluxul public merge doar printr-un link securizat generat pentru această fișă. Copiază linkul și trimite-l părintelui sau reprezentantului legal."
+          />
+          <div className="flex justify-start">
+            <Button
+              type="button"
+              onClick={handleCopyOnboardingLink}
+              disabled={isCopyingOnboardingLink}
+              className="rounded-2xl font-bold gap-2"
+            >
+              <Copy className="h-4 w-4" />
+              {isCopyingOnboardingLink ? "Generez linkul..." : "Copiază linkul securizat"}
+            </Button>
+          </div>
+        </div>
+      ) : null}
 
       <section className="rounded-[2rem] border border-border/60 bg-card px-6 py-5 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">

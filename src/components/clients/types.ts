@@ -68,6 +68,14 @@ export interface ClientAssessment {
   sent_to_parent_at?: string | null;
 }
 
+export interface ClientStatusHistoryItem {
+  id: string;
+  from_status: string | null;
+  to_status: string;
+  reason: string | null;
+  changed_at: string;
+}
+
 export interface ClientPayment {
   id: string;
   amount: number;

@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { format, isPast, isFuture } from "date-fns";
 import { ro } from "date-fns/locale";
 import {
@@ -18,6 +19,10 @@ import { cn } from "@/lib/utils";
 import { EmptyState, PageHeader, SectionCard, SetupBanner } from "@/components/app/page-shell";
 import { toast } from "@/components/ui/toast";
 import { createClientOnboardingLink } from "@/app/dashboard/clients/onboarding-actions";
+import {
+  reactivateClientLifecycle,
+  transitionClientLifecycle,
+} from "@/app/dashboard/clients/actions";
 
 import { ClientEvolutionChart } from "@/components/clients/ClientEvolutionChart";
 import { ClientDriveDocuments } from "@/components/clients/ClientDriveDocuments";
@@ -36,6 +41,7 @@ import type {
   ClientMedication,
   ClientPayment,
   ClientProfile,
+  ClientStatusHistoryItem,
   CrisisNoteItem,
   WidgetCardProps,
 } from "@/components/clients/types";
@@ -48,6 +54,7 @@ interface ClientDashboardUIProps {
   clientMeds: ClientMedication[];
   crisisNotes: CrisisNoteItem[];
   appointments: ClientAppointment[];
+  lifecycleHistory: ClientStatusHistoryItem[];
   anonymized: boolean;
   justAnonymized: boolean;
   sectionParam: string | undefined;
@@ -62,6 +69,17 @@ const SESSION_FREQ_LABELS: Record<string, string> = {
   OCAZIONAL: "Ocazional",
 };
 
+const STATUS_LABELS: Record<string, string> = {
+  LEAD: "Lead",
+  ONBOARDING: "Onboarding",
+  PROGRAMAT: "Programat",
+  ACTIV: "Activ",
+  INACTIV: "Inactiv",
+  INCHEIAT: "Încheiat",
+  NECONVERSIE: "Neconversie",
+  ANONIMIZAT: "Anonimizat",
+};
+
 export function ClientDashboardUI({
   client,
   assessments,
@@ -70,12 +88,15 @@ export function ClientDashboardUI({
   clientMeds,
   crisisNotes,
   appointments,
+  lifecycleHistory,
   anonymized,
   justAnonymized,
   sectionParam,
   assessmentParam,
   aiClientContext,
 }: ClientDashboardUIProps) {
+  const router = useRouter();
+  const [isLifecyclePending, startLifecycleTransition] = useTransition();
   const [isContractModalOpen, setIsContractModalOpen] = useState(false);
   const [isCopyingOnboardingLink, setIsCopyingOnboardingLink] = useState(false);
   const id = client.id;
@@ -98,6 +119,11 @@ export function ClientDashboardUI({
 
   const sessionFreqLabel = SESSION_FREQ_LABELS[client.session_frequency ?? ""] ?? null;
   const isB2B = client.billing_type === "B2B_COMPANY";
+  const canReactivate = ["INACTIV", "INCHEIAT", "NECONVERSIE"].includes(lifecycle.status);
+  const canMarkActive = !anonymized && lifecycle.status !== "ACTIV" && !canReactivate;
+  const canMarkInactive = !anonymized && lifecycle.status === "ACTIV";
+  const canCloseCase = !anonymized && lifecycle.status !== "INCHEIAT";
+  const canMarkNonConversion = !anonymized && ["LEAD", "ONBOARDING", "PROGRAMAT"].includes(lifecycle.status);
 
   async function handleCopyOnboardingLink() {
     if (typeof window === "undefined") return;
@@ -121,6 +147,45 @@ export function ClientDashboardUI({
     } finally {
       setIsCopyingOnboardingLink(false);
     }
+  }
+
+  function handleLifecycleTransition(
+    nextStatus: "ACTIV" | "INACTIV" | "INCHEIAT" | "NECONVERSIE",
+    successMessage: string,
+  ) {
+    startLifecycleTransition(async () => {
+      try {
+        await transitionClientLifecycle(client.id, nextStatus);
+        toast.success(successMessage);
+        router.refresh();
+      } catch (error) {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Nu am putut actualiza statusul clientului.",
+        );
+      }
+    });
+  }
+
+  function handleReactivate() {
+    startLifecycleTransition(async () => {
+      try {
+        const result = await reactivateClientLifecycle(client.id);
+        if (!result.success) {
+          toast.error(result.error ?? "Nu am putut reactiva clientul.");
+          return;
+        }
+        toast.success("Clientul a fost reactivat pe baza datelor existente.");
+        router.refresh();
+      } catch (error) {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Nu am putut reactiva clientul.",
+        );
+      }
+    });
   }
 
   return (
@@ -287,6 +352,69 @@ export function ClientDashboardUI({
           <p className="mt-3 text-sm text-muted-foreground">
             {lifecycle.description}
           </p>
+          {!anonymized ? (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {canMarkActive ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => handleLifecycleTransition("ACTIV", "Clientul a fost marcat activ.")}
+                  disabled={isLifecyclePending}
+                  className="rounded-xl"
+                >
+                  Marchează activ
+                </Button>
+              ) : null}
+              {canMarkInactive ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleLifecycleTransition("INACTIV", "Clientul a fost marcat inactiv.")}
+                  disabled={isLifecyclePending}
+                  className="rounded-xl"
+                >
+                  Marchează inactiv
+                </Button>
+              ) : null}
+              {canCloseCase ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleLifecycleTransition("INCHEIAT", "Cazul a fost încheiat.")}
+                  disabled={isLifecyclePending}
+                  className="rounded-xl"
+                >
+                  Încheie caz
+                </Button>
+              ) : null}
+              {canMarkNonConversion ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleLifecycleTransition("NECONVERSIE", "Lead-ul a fost marcat ca neconversie.")}
+                  disabled={isLifecyclePending}
+                  className="rounded-xl"
+                >
+                  Neconversie
+                </Button>
+              ) : null}
+              {canReactivate ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={handleReactivate}
+                  disabled={isLifecyclePending}
+                  className="rounded-xl"
+                >
+                  Reactivează
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
         </section>
 
         <section className="rounded-[1.75rem] border border-border/60 bg-card p-5 shadow-sm">
@@ -387,6 +515,45 @@ export function ClientDashboardUI({
           badgeVariant={crisisNotes.length > 0 ? "destructive" : "outline"}
         />
       </div>
+
+      <SectionCard
+        title="Istoric lifecycle"
+        description="Ultimele schimbări de status pentru această fișă, utile pentru context administrativ și continuitate."
+        icon={Clock}
+      >
+        <div className="p-6">
+          {lifecycleHistory.length > 0 ? (
+            <div className="space-y-3">
+              {lifecycleHistory.map((entry) => (
+                <div
+                  key={entry.id}
+                  className="flex flex-col gap-2 rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 md:flex-row md:items-center md:justify-between"
+                >
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-foreground">
+                      <span>{STATUS_LABELS[entry.from_status ?? ""] ?? "Inițial"}</span>
+                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                      <span>{STATUS_LABELS[entry.to_status] ?? entry.to_status}</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {entry.reason ?? "Fără motiv explicit"}
+                    </p>
+                  </div>
+                  <div className="text-xs font-medium text-muted-foreground">
+                    {format(new Date(entry.changed_at), "d MMM yyyy, HH:mm", { locale: ro })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              title="Istoricul nu este disponibil încă"
+              description="După aplicarea migrării și primele tranziții reale, aici vor apărea schimbările de status ale clientului."
+              icon={Clock}
+            />
+          )}
+        </div>
+      </SectionCard>
 
       {/* ── Programări ────────────────────────────────────────────────────── */}
       <div className="grid gap-6 lg:grid-cols-2">

@@ -27,6 +27,21 @@ import { createSignedObjectUrl } from "@/lib/storage/private-urls";
 
 type ClientUpsertDb = Parameters<typeof upsertClientByIdentifiers>[0];
 
+function getManualLifecycleReason(status: ClientLifecycleStatus) {
+  switch (status) {
+    case "ACTIV":
+      return "Marcat activ din fișa clientului";
+    case "INACTIV":
+      return "Marcat inactiv din fișa clientului";
+    case "INCHEIAT":
+      return "Caz încheiat din fișa clientului";
+    case "NECONVERSIE":
+      return "Lead marcat ca neconversie din fișa clientului";
+    default:
+      return "Status actualizat manual";
+  }
+}
+
 function parseForm(formData: FormData) {
   const is_minor = formData.get("is_minor") === "on";
   const billing_type = formData.get("billing_type") as "INDIVIDUAL" | "B2B_COMPANY" | null;
@@ -283,7 +298,7 @@ export async function updateClient(
 export async function transitionClientLifecycle(
   id: string,
   status: ClientLifecycleStatus,
-  reason: string,
+  reason = getManualLifecycleReason(status),
 ) {
   const supabase = await createSupabaseServerClient();
   await setClientLifecycleStatus(supabase, {
@@ -295,6 +310,26 @@ export async function transitionClientLifecycle(
 
   revalidatePath("/dashboard/clients");
   revalidatePath(`/dashboard/clients/${id}`);
+}
+
+export async function reactivateClientLifecycle(id: string) {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const status = await syncClientLifecycleStatus(supabase, id, {
+      force: true,
+      metadata: { source: "reactivate-client" },
+      reason: "Client reactivat din fișa clientului",
+    });
+
+    revalidatePath("/dashboard/clients");
+    revalidatePath(`/dashboard/clients/${id}`);
+    return { success: true, status };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Nu am putut reactiva clientul.",
+    };
+  }
 }
 
 export async function scheduleAnonymization(id: string) {

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { listCrisisNotes } from "@/app/dashboard/clients/crisis-notes-actions";
-import { getClient } from "@/lib/clients/queries";
+import { getClient, getClientStatusHistory } from "@/lib/clients/queries";
 import { listAppointments } from "@/lib/appointments/queries";
 import { ClientDashboardUI } from "@/components/clients/ClientDashboardUI";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -11,6 +11,7 @@ import type {
   ClientDocument,
   ClientMedication,
   ClientPayment,
+  ClientStatusHistoryItem,
 } from "@/components/clients/types";
 
 export default async function ClientDetailPage({
@@ -43,13 +44,15 @@ export default async function ClientDetailPage({
     { data: paymentsData },
     { data: docsData },
     { data: medsData },
-    crisisNotes
+    crisisNotes,
+    statusHistory,
   ] = await Promise.all([
     supabase.from("client_assessments").select("*").eq("client_id", id),
     supabase.from("invoices").select("*").eq("client_id", id),
     supabase.from("patient_documents").select("*").eq("client_id", id),
     supabase.from("patient_medication").select("*").eq("client_id", id),
-    anonymized ? Promise.resolve([]) : listCrisisNotes(id)
+    anonymized ? Promise.resolve([]) : listCrisisNotes(id),
+    getClientStatusHistory(id),
   ]);
 
   const assessments = (assessmentsData || []) as ClientAssessment[];
@@ -84,6 +87,13 @@ export default async function ClientDetailPage({
   const clientMeds = (medsData || []) as ClientMedication[];
   const isMinor = client.is_minor ?? false;
   const appointments = await listAppointments({ clientId: id });
+  const lifecycleHistory = (statusHistory || []).map((item) => ({
+    id: item.id,
+    from_status: item.from_status,
+    to_status: item.to_status,
+    reason: item.reason,
+    changed_at: item.changed_at,
+  })) as ClientStatusHistoryItem[];
 
   const aiClientContext: ClientAiContext = {
     name: anonymized ? null : client.full_name,
@@ -112,6 +122,7 @@ export default async function ClientDetailPage({
       clientMeds={clientMeds}
       crisisNotes={crisisNotes}
       appointments={appointments}
+      lifecycleHistory={lifecycleHistory}
       anonymized={anonymized}
       justAnonymized={justAnonymized === "true"}
       sectionParam={sectionParam}

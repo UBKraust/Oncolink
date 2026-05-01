@@ -36,6 +36,9 @@ Aceasta regula ramane activa pe tot parcursul proiectului.
 - Am inceput intarirea fluxului public pentru minori: linkurile generate pentru clienti minori folosesc acum ruta securizata `/onboarding/minor?t=...`, iar pagina publica pentru minori nu mai functioneaza ca formular generic fara token.
 - Am aliniat submit-ul public pentru minori la modelul per-client, astfel incat onboarding-ul minor cu token sa actualizeze fișa corecta si sa marcheze tokenul ca folosit.
 - Am eliminat fallback-ul public bazat pe `therapistSlug` din onboarding-ul minor, astfel incat ruta publica functioneaza acum doar cu token securizat, iar crearea interna de pacient minor ramane separata in dashboard.
+- Am expus in fișa clientului actiuni lifecycle reale pentru terapeut: `marcheaza activ`, `marcheaza inactiv`, `incheie caz`, `neconversie` si `reactiveaza`, toate legate de statusul persistent si refresh-ul imediat al UI-ului.
+- Am legat onboarding-ul minor securizat direct in fișa clientului, cu CTA de copiere a linkului si banner contextual cand onboarding-ul nu este finalizat.
+- Am adaugat in fișa clientului un istoric lifecycle cu ultimele tranzitii de status, astfel incat terapeutul sa vada rapid cum a evoluat relatia administrativ-clinica, chiar daca inca nu avem validarea finala pe baza reala.
 
 Fisiere principale:
 
@@ -186,6 +189,9 @@ Fisiere principale:
 - Aplicarea migrarii in baza locala / remote si validarea istoricului de status pe date reale.
 - Trecerea onboarding-ului minor de la ruta publica generica la un model mai strict, aliniat cu linkurile securizate sau cu o intrare controlata de terapeut.
 - Verificarea cap-coada a noului onboarding minor cu token, plus clarificarea in UI a pasului urmator pentru terapeut dupa generarea linkului.
+- Aplicarea migrarii de lifecycle in baza si verificarea faptului ca istoricul `client_status_history` se scrie corect la tranzitiile noi din UI.
+- Separarea modelului pentru `guardian` / reprezentanti legali fata de campurile plate din client.
+- Ajustarea modelului de istoric pentru a afisa si actorul schimbarii, dupa ce validam datele reale din `client_status_history`.
 - Verificare manuala finala si QA cap-coada pe fluxurile critice, in special:
 
 - creare client
@@ -221,5 +227,5 @@ La fiecare actualizare noua adaugam:
 
 - Ce s-a facut: am implementat un prim lifecycle operational derivat pentru clienti si l-am facut vizibil in registru si in fisa individuala, impreuna cu urmatorii pasi recomandati
 - Ce s-a verificat: `npm run lint` si `npm run build`
-- Ce urmeaza imediat: aplicarea migrarii noi, plus legarea unor actiuni UI explicite pentru tranzitiile manuale (`inactiv`, `incheiat`, `reactiveaza`) si verificarea cap-coada a noului onboarding minor securizat
+- Ce urmeaza imediat: aplicarea migrarii noi, validarea istoricului de lifecycle pe date reale si inceperea separarii modelului `guardian` fata de campurile plate de pe client
 - Status lint/build: ambele verzi

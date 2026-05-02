@@ -30,15 +30,30 @@ type InvoiceWithAppointmentClient = {
 
 type AppointmentWithClient = {
   id: string;
+  client_id: string;
   appointment_date: string;
   duration_minutes: number | null;
   status: string | null;
   is_external_duty: boolean | null;
   location_tag: string | null;
   meet_link: string | null;
+  notes?: { id: string }[] | { id: string } | null;
+  invoices?: { id: string }[] | { id: string } | null;
   clients:
-    | { full_name: string | null }
-    | { full_name: string | null }[]
+    | {
+        full_name: string | null;
+        service_type?: string | null;
+        risk_level?: string | null;
+        contract_url?: string | null;
+        terms_consent_signed_at?: string | null;
+      }
+    | {
+        full_name: string | null;
+        service_type?: string | null;
+        risk_level?: string | null;
+        contract_url?: string | null;
+        terms_consent_signed_at?: string | null;
+      }[]
     | null;
 };
 
@@ -538,22 +553,62 @@ export async function getAppointmentsToday() {
   try {
     const supabase = await createSupabaseServerClient();
     const now = new Date();
+    const weekStartDate = startOfDay(
+      subDays(now, now.getDay() === 0 ? 6 : now.getDay() - 1),
+    );
     const { data } = await supabase
       .from("appointments")
-      .select("*, clients(full_name)")
+      .select(
+        "id, client_id, appointment_date, duration_minutes, status, is_external_duty, location_tag, meet_link, notes(id), invoices(id), clients(full_name, service_type, risk_level, contract_url, terms_consent_signed_at)",
+      )
       .gte("appointment_date", startOfDay(now).toISOString())
       .lte("appointment_date", endOfDay(now).toISOString())
       .order("appointment_date", { ascending: true });
 
+    const appointments = (data as AppointmentWithClient[] | null) ?? [];
+    const dbtClientIds = appointments
+      .map((appointment) => {
+        const clientRelation = Array.isArray(appointment.clients)
+          ? appointment.clients[0]
+          : appointment.clients;
+        return clientRelation?.service_type === "DBT" ? appointment.client_id : null;
+      })
+      .filter((id): id is string => Boolean(id));
+
+    const diaryCardsRes = dbtClientIds.length
+      ? await supabase
+          .from("dbt_diary_cards")
+          .select("client_id, week_start")
+          .in("client_id", dbtClientIds)
+          .gte("week_start", weekStartDate.toISOString().slice(0, 10))
+          .then((r) =>
+            r.error
+              ? { data: [] as Array<{ client_id: string; week_start: string }> }
+              : r,
+          )
+      : { data: [] as Array<{ client_id: string; week_start: string }> };
+
+    const diaryClientIds = new Set(
+      (diaryCardsRes.data ?? []).map((card) => card.client_id),
+    );
+
     return (
-      (data as AppointmentWithClient[] | null)?.map((appointment) => {
+      appointments.map((appointment) => {
         const clientRelation = Array.isArray(appointment.clients)
           ? appointment.clients[0]
           : appointment.clients;
         const clientName = uniqueClientName(clientRelation?.full_name);
+        const notesRelation = Array.isArray(appointment.notes)
+          ? appointment.notes[0]
+          : appointment.notes;
+        const invoiceRelation = Array.isArray(appointment.invoices)
+          ? appointment.invoices[0]
+          : appointment.invoices;
+        const serviceType = clientRelation?.service_type ?? null;
 
         return {
           id: appointment.id,
+          clientId: appointment.client_id,
           clientName,
           clientInitials: initialsFromName(clientName),
           startsAt: new Date(appointment.appointment_date),
@@ -566,8 +621,19 @@ export async function getAppointmentsToday() {
           }) as LocationKind,
           isExternalDuty: appointment.is_external_duty || false,
           meetLink: appointment.meet_link || undefined,
+          serviceType,
+          riskLevel: clientRelation?.risk_level ?? null,
+          hasContract: Boolean(
+            clientRelation?.contract_url || clientRelation?.terms_consent_signed_at,
+          ),
+          hasSessionNote: Boolean(notesRelation?.id),
+          hasInvoice: Boolean(invoiceRelation?.id),
+          hasDiaryCardThisWeek:
+            serviceType === "DBT"
+              ? diaryClientIds.has(appointment.client_id)
+              : undefined,
         };
-      }) || []
+      })
     );
   } catch {
     return [];

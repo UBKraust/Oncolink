@@ -17,6 +17,7 @@ export type LocationKind = "PRIVAT" | "POLICLINIC" | "ONLINE" | "CABINET" | "CLI
 
 export interface DashboardAppointment {
   id: string;
+  clientId?: string;
   clientName: string;
   clientInitials: string;
   startsAt: Date;
@@ -26,6 +27,12 @@ export interface DashboardAppointment {
   meetLink?: string;
   isExternalDuty?: boolean;
   price?: number;
+  serviceType?: string | null;
+  riskLevel?: string | null;
+  hasContract?: boolean;
+  hasSessionNote?: boolean;
+  hasInvoice?: boolean;
+  hasDiaryCardThisWeek?: boolean;
 }
 
 export interface UnpaidInvoice {

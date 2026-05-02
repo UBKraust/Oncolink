@@ -18,7 +18,7 @@ export function UpcomingAppointments({ appointments }: { appointments: Dashboard
             icon={CalendarRange}
           />
         ) : (
-          appointments.map((a) => <AppointmentRow key={a.id} appointment={a} showDate />)
+          appointments.map((a) => <AppointmentRow key={a.id} appointment={a} showDate showClinicalContext={false} />)
         )}
       </div>
     </SectionCard>

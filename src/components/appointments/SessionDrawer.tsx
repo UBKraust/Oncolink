@@ -39,6 +39,13 @@ import { updateStatusInline, updateAppointmentFields } from "@/app/dashboard/app
 import type { AppointmentStatus } from "@/lib/appointments/helpers";
 import { useOverlayA11y } from "@/components/ui/use-overlay-a11y";
 import { toast } from "@/components/ui/toast";
+import {
+  RISK_LEVEL_BADGE_VARIANTS,
+  RISK_LEVEL_LABELS,
+  SERVICE_TYPE_LABELS,
+  isRiskLevel,
+  isServiceType,
+} from "@/lib/clients/service-track";
 
 const STATUS_TRANSITIONS: Record<string, AppointmentStatus[]> = {
   PROGRAMAT: ["CONFIRMAT", "ANULAT"],
@@ -84,6 +91,16 @@ export function SessionDrawer({
   const location = deriveLocation(appointment);
   const LocIcon = locationIcon[location];
   const transitions = STATUS_TRANSITIONS[appointment.status] ?? [];
+  const serviceType = appointment.client?.service_type;
+  const serviceTypeLabel =
+    serviceType && isServiceType(serviceType) ? SERVICE_TYPE_LABELS[serviceType] : null;
+  const riskLevel = appointment.client?.risk_level;
+  const riskLabel = riskLevel && isRiskLevel(riskLevel) ? RISK_LEVEL_LABELS[riskLevel] : null;
+  const riskVariant = riskLevel && isRiskLevel(riskLevel) ? RISK_LEVEL_BADGE_VARIANTS[riskLevel] : null;
+  const hasContract = Boolean(
+    appointment.client?.contract_url || appointment.client?.terms_consent_signed_at,
+  );
+  const hasDiaryCardThisWeek = appointment.hasDiaryCardThisWeek ?? null;
 
   function handleClose() {
     router.push(closeUrl);
@@ -254,6 +271,78 @@ export function SessionDrawer({
                   </a>
                 )}
               </div>
+
+              {!appointment.is_external_duty && appointment.client && (
+                <div className="space-y-3 rounded-lg border border-border/70 bg-muted/20 p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Context clinic
+                      </p>
+                      <p className="mt-1 text-sm text-foreground">
+                        {serviceTypeLabel ?? "Tip de serviciu neconfigurat"}
+                      </p>
+                    </div>
+                    {riskLabel && riskVariant ? (
+                      <Badge variant={riskVariant}>
+                        <AlertTriangle className="mr-1 h-3 w-3" />
+                        {riskLabel}
+                      </Badge>
+                    ) : null}
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant={hasContract ? "success" : "warning"}>
+                      {hasContract ? "Contract disponibil" : "Contract lipsă"}
+                    </Badge>
+                    <Badge variant={hasNote ? "success" : "warning"}>
+                      {hasNote ? "Notă existentă" : "Notă lipsă"}
+                    </Badge>
+                    <Badge variant={invoice ? "info" : "outline"}>
+                      {invoice ? "Factură emisă" : "Fără factură"}
+                    </Badge>
+                    {serviceType === "DBT" ? (
+                      <Badge variant={hasDiaryCardThisWeek ? "success" : "warning"}>
+                        {hasDiaryCardThisWeek ? "Diary card prezent" : "Diary card lipsă"}
+                      </Badge>
+                    ) : null}
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 text-xs font-semibold">
+                    {appointment.client.contract_url ? (
+                      <a
+                        href={appointment.client.contract_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline"
+                      >
+                        Deschide contract
+                      </a>
+                    ) : (
+                      <Link
+                        href={`/dashboard/clients/${appointment.client.id}`}
+                        className="text-primary hover:underline"
+                      >
+                        Completează contract
+                      </Link>
+                    )}
+                    {serviceType === "DBT" ? (
+                      <Link
+                        href={`/dashboard/clients/${appointment.client.id}`}
+                        className="text-primary hover:underline"
+                      >
+                        {hasDiaryCardThisWeek ? "Vezi diary cards" : "Adaugă diary card"}
+                      </Link>
+                    ) : null}
+                    <Link
+                      href={`/dashboard/clients/${appointment.client.id}`}
+                      className="text-primary hover:underline"
+                    >
+                      Context client
+                    </Link>
+                  </div>
+                </div>
+              )}
 
               {/* Status transitions */}
               {transitions.length > 0 && (

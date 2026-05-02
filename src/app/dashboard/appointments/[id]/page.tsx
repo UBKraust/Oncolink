@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   Clock,
   Home,
+  ShieldAlert,
   NotebookPen,
   Pencil,
   Receipt,
@@ -33,6 +34,13 @@ import { updateAppointmentStatus } from "@/app/dashboard/appointments/actions";
 import { getInvoiceByAppointment } from "@/lib/invoices/queries";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { DashboardPage, PageHeader, SetupBanner } from "@/components/app/page-shell";
+import {
+  RISK_LEVEL_BADGE_VARIANTS,
+  RISK_LEVEL_LABELS,
+  SERVICE_TYPE_LABELS,
+  isRiskLevel,
+  isServiceType,
+} from "@/lib/clients/service-track";
 
 const locationIcon = {
   PRIVAT: Home,
@@ -69,6 +77,15 @@ export default async function AppointmentDetailPage({
   const LocIcon = locationIcon[location];
   const transitions = STATUS_TRANSITIONS[appointment.status] ?? [];
   const configured = isSupabaseConfigured();
+  const serviceType = appointment.client?.service_type;
+  const serviceTypeLabel =
+    serviceType && isServiceType(serviceType) ? SERVICE_TYPE_LABELS[serviceType] : null;
+  const riskLevel = appointment.client?.risk_level;
+  const riskLabel = riskLevel && isRiskLevel(riskLevel) ? RISK_LEVEL_LABELS[riskLevel] : null;
+  const riskVariant = riskLevel && isRiskLevel(riskLevel) ? RISK_LEVEL_BADGE_VARIANTS[riskLevel] : null;
+  const hasContract = Boolean(
+    appointment.client?.contract_url || appointment.client?.terms_consent_signed_at,
+  );
 
   return (
     <DashboardPage className="max-w-5xl space-y-5">
@@ -162,6 +179,66 @@ export default async function AppointmentDetailPage({
 
         {/* Actions card */}
         <div className="space-y-4">
+          {!appointment.is_external_duty && appointment.client && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Context clinic</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="outline">
+                    {serviceTypeLabel ?? "Serviciu nedefinit"}
+                  </Badge>
+                  {riskLabel && riskVariant ? (
+                    <Badge variant={riskVariant}>
+                      <ShieldAlert className="mr-1 h-3 w-3" />
+                      {riskLabel}
+                    </Badge>
+                  ) : null}
+                  <Badge variant={hasContract ? "success" : "warning"}>
+                    {hasContract ? "Contract disponibil" : "Contract lipsă"}
+                  </Badge>
+                  {serviceType === "DBT" ? (
+                    <Badge variant={appointment.hasDiaryCardThisWeek ? "success" : "warning"}>
+                      {appointment.hasDiaryCardThisWeek ? "Diary card prezent" : "Diary card lipsă"}
+                    </Badge>
+                  ) : null}
+                </div>
+                <div className="space-y-2 text-xs text-muted-foreground">
+                  <p>
+                    {serviceType === "DBT"
+                      ? "Pentru cazurile DBT, verifică diary card-ul și nivelul de risc înainte de ședință."
+                      : "Folosește această zonă pentru a verifica rapid documentele și contextul clinic al clientului."}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {appointment.client.contract_url ? (
+                    <Button asChild variant="outline" size="sm">
+                      <a
+                        href={appointment.client.contract_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Deschide contract
+                      </a>
+                    </Button>
+                  ) : (
+                    <Button asChild variant="outline" size="sm">
+                      <Link href={`/dashboard/clients/${appointment.client.id}`}>
+                        Completează contract
+                      </Link>
+                    </Button>
+                  )}
+                  <Button asChild variant="outline" size="sm">
+                    <Link href={`/dashboard/clients/${appointment.client.id}`}>
+                      {serviceType === "DBT" ? "Vezi client și diary card" : "Vezi fișa clientului"}
+                    </Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Status transitions */}
           {transitions.length > 0 && (
             <Card>

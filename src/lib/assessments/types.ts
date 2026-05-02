@@ -1,3 +1,47 @@
+// ─── Catalog Metadata ─────────────────────────────────────────────────────────
+
+export type ServiceTrack =
+  | "CLINICAL_PSYCHOLOGY"
+  | "CBT"
+  | "DBT"
+  | "COUNSELING"
+  | "MINOR"
+  | "RESEARCH";
+
+export type TestCategory =
+  | "SCREENING_RAPID"
+  | "DEPRESIE"
+  | "ANXIETATE"
+  | "STRES_WELLBEING"
+  | "CBT"
+  | "DBT"
+  | "RISC_CRIZA"
+  | "COPII_ADOLESCENTI"
+  | "PERSONALITATE_CLINIC_AVANSAT"
+  | "FORMULARE_INTERNE";
+
+export type LicenseStatus =
+  | "OPEN_VERIFY"    // posibil liber, verificat înainte de producție
+  | "LICENSED"       // licențiat — nu se adaugă itemi fără drept
+  | "INTERNAL_FORM"  // formular intern, fără risc de licență
+  | "RESEARCH_ONLY"; // util pentru export anonim / doctorat
+
+export type RecommendedFrequency = "T0" | "T1" | "T2" | "SESSION" | "AS_NEEDED";
+
+export interface TestMeta {
+  code: string;
+  category: TestCategory;
+  serviceTracks: ServiceTrack[];
+  ageGroup: "adult" | "adolescent" | "child" | "all";
+  estimatedDurationMinutes: number;
+  licenseStatus: LicenseStatus;
+  recommendedFrequency: RecommendedFrequency[];
+  researchUse: boolean;
+  /** Blochează butonul AI și afișează header special de risc */
+  isSafetyPlan?: boolean;
+  isInternalForm?: boolean;
+}
+
 // ─── Question & Test Definition ───────────────────────────────────────────────
 
 export interface QuestionOption {
@@ -6,10 +50,16 @@ export interface QuestionOption {
 }
 
 export interface Question {
-  id: string;             // e.g. "q1", "q2"
+  id: string;
   text: string;
+  /** Defaults to "radio" when omitted */
+  type?: "radio" | "textarea" | "scale" | "info";
   options: QuestionOption[];
   reverse_scoring?: boolean; // if true, score = max_value - chosen_value
+  /** Placeholder text for textarea questions */
+  placeholder?: string;
+  /** Labels for scale endpoints */
+  scaleLabel?: { min: string; max: string };
 }
 
 // ─── Scoring Logic ────────────────────────────────────────────────────────────
@@ -40,11 +90,13 @@ export interface TestTemplate {
   questions: Question[];
   scoring_logic: ScoringLogic;
   created_at?: string;
+  meta?: TestMeta;
 }
 
 // ─── Assessment Results ────────────────────────────────────────────────────────
 
-export type RawAnswers = Record<string, number>; // { "q1": 2, "q2": 0, ... }
+/** number for radio/scale answers, string for textarea answers */
+export type RawAnswers = Record<string, number | string>;
 
 export interface CalculatedScore {
   total: number;

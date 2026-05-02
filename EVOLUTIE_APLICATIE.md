@@ -21,9 +21,55 @@ Aceasta regula ramane activa pe tot parcursul proiectului.
 - Migrarea P0 service_type (`20260502_service_type_and_clinical_fields.sql`) — **neaplicată în baza reală**
 - Migrarea P2 (`20260502_p2_clinical_tools.sql`) — **neaplicată în baza reală** — aplică toate 3 împreună
 - **P1 complet** (task-uri #17–21) · **P2 complet** (task-uri #22–25) — UI implementat, necesită migrări aplicate
+- **Catalog teste complet** (task #26) — 9 instrumente + 2 formulare interne, metadata completă, pagină cu filtre
 - Urmează: P3 — AI prompts contextuale, generare rapoarte per track
 
 ## Ce s-a facut
+
+### 26. Catalog teste psihologice — metadata, instrumente noi, formulare interne, pagină redesenată
+
+**`src/lib/assessments/types.ts`**:
+- Tipuri noi: `ServiceTrack`, `TestCategory`, `LicenseStatus`, `RecommendedFrequency`, `TestMeta`
+- `Question` extins cu `type?: "radio" | "textarea" | "scale" | "info"`, `placeholder`, `scaleLabel`
+- `RawAnswers` extins la `Record<string, number | string>` (backward compatible în JSONB)
+- `TestTemplate` extins cu câmpul opțional `meta?: TestMeta`
+
+**`src/lib/assessments/scoringEngine.ts`**:
+- `getAnswerScore` returnează 0 pentru întrebările `textarea` și `info`
+- Guard pentru `typeof raw !== "number"` — previne erori pe răspunsuri text
+
+**`src/lib/assessments/seededTests.ts`**:
+- Adăugat `meta` (categoria, tracks, vârstă, durată, licență, frecvență) la PHQ-9, GAD-7, DASS-21
+- Instrumente noi: **PSS-10** (stres perceput, itemi completi în română), **WHO-5** (wellbeing, itemi completi în română), **DERS-16** (reglare emoțională DBT, structură cu subscale, itemi placeholder), **SDQ** (screening minori 11–17 ani, itemi placeholder), **RCADS** (anxietate/depresie minori, 47 itemi, 6 subscale, placeholder)
+
+**`src/lib/assessments/internalForms.ts`** (fișier nou):
+- **Jurnal gânduri automate CBT** — formular cu întrebări textarea + scale 0–10, scoring urmărește delta intensitate emoțională
+- **Fișă prevenție recădere** — 6 câmpuri textarea, pentru finalul terapiei
+
+**`src/components/assessments/TestExecutionForm.tsx`**:
+- Redare diferențiată per tip întrebare: `info` (bloc muted), `textarea` (Textarea component), `scale` (butoane numerice orizontale 0–10), `radio` (comportament existent)
+- Textele din câmpurile textarea sunt incluse în `contentSummary` la salvare
+- Butonul AI este ascuns pentru formulare cu `isSafetyPlan: true`
+
+**`src/app/dashboard/tests/page.tsx`** rescris ca client component:
+- Combină `seededTests` + `internalForms` într-un catalog unic (9 + 2 = 11 intrări)
+- Filter pills per categorie cu numărătoare
+- Card test cu: badge licență (success/warning/secondary/outline), chips durată/vârstă/frecvență, badge-uri tracks, badge-uri subscale, avertisment vizibil pentru itemi placeholder
+- Legendă licență în header pagină
+
+`npm run lint` ✅ | `npm run build` ✅
+
+Fișiere principale:
+- [src/lib/assessments/types.ts](src/lib/assessments/types.ts)
+- [src/lib/assessments/scoringEngine.ts](src/lib/assessments/scoringEngine.ts)
+- [src/lib/assessments/seededTests.ts](src/lib/assessments/seededTests.ts)
+- [src/lib/assessments/internalForms.ts](src/lib/assessments/internalForms.ts)
+- [src/components/assessments/TestExecutionForm.tsx](src/components/assessments/TestExecutionForm.tsx)
+- [src/app/dashboard/tests/page.tsx](src/app/dashboard/tests/page.tsx)
+
+---
+
+
 
 ### 22–25. P2 — Teme CBT, Formulare caz CBT, Diary cards DBT, Plan de siguranță DBT
 

@@ -24,7 +24,11 @@ function getAnswerScore(
   const q = questions.find((q) => q.id === questionId);
   if (!q) return 0;
 
-  const raw = rawAnswers[questionId] ?? 0;
+  // textarea and info questions are unscored — they contribute 0
+  if (q.type === "textarea" || q.type === "info") return 0;
+
+  const raw = rawAnswers[questionId];
+  if (typeof raw !== "number") return 0;
 
   if (q.reverse_scoring) {
     const max = getMaxOptionValue(q);

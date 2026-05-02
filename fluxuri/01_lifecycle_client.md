@@ -23,7 +23,7 @@ Lifecycle-ul nu mai este relevant doar în registrul de clienți și în fișa c
 - [src/components/clients/ClientDashboardUI.tsx](../src/components/clients/ClientDashboardUI.tsx) — fișa client cu acțiuni lifecycle + ServiceTrackCard + "Istoric lifecycle"
 - [src/app/dashboard/clients/[id]/page.tsx](../src/app/dashboard/clients/[id]/page.tsx) — fetch paralel `getClientStatusHistory`
 - [supabase/migrations/20260429223610_client_lifecycle_status.sql](../supabase/migrations/20260429223610_client_lifecycle_status.sql) — schema `client_status_history` (✅ aplicată)
-- [supabase/migrations/20260502_service_type_and_clinical_fields.sql](../supabase/migrations/20260502_service_type_and_clinical_fields.sql) — câmpuri service_type + clinice pe `clients` (🟠 pendingă)
+- [supabase/migrations/20260502110000_service_type_and_clinical_fields.sql](../supabase/migrations/20260502110000_service_type_and_clinical_fields.sql) — câmpuri service_type + clinice pe `clients` (🟠 pendingă)
 
 ## Diagrama Stărilor
 
@@ -141,7 +141,7 @@ Componentă `src/components/clients/ServiceTrackCard.tsx` afișată deasupra gri
 
 ### Câmpuri clinice asociate (schema DB — migrare pendingă)
 
-Adăugate pe tabela `clients` prin migrarea `20260502_service_type_and_clinical_fields.sql`:
+Adăugate pe tabela `clients` prin migrarea `20260502110000_service_type_and_clinical_fields.sql`:
 - `service_type` (text, default `UNDECIDED`)
 - `service_track_status` (text, nullable)
 - `main_complaint` (text, nullable)

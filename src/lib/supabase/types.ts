@@ -132,22 +132,37 @@ export type Database = {
       };
       assessments: {
         Row: {
+          assessment_type: string;
+          client_id: string | null;
+          content_summary: string | null;
           created_at: string | null;
+          encrypted_content: string | null;
           id: string;
+          scoring_data: Json | null;
+          sent_to_parent_at: string | null;
           therapist_id: string | null;
-          title: string | null;
         };
         Insert: {
+          assessment_type: string;
+          client_id?: string | null;
+          content_summary?: string | null;
           created_at?: string | null;
+          encrypted_content?: string | null;
           id?: string;
+          scoring_data?: Json | null;
+          sent_to_parent_at?: string | null;
           therapist_id?: string | null;
-          title?: string | null;
         };
         Update: {
+          assessment_type?: string;
+          client_id?: string | null;
+          content_summary?: string | null;
           created_at?: string | null;
+          encrypted_content?: string | null;
           id?: string;
+          scoring_data?: Json | null;
+          sent_to_parent_at?: string | null;
           therapist_id?: string | null;
-          title?: string | null;
         };
         Relationships: [];
       };
@@ -187,6 +202,54 @@ export type Database = {
         };
         Relationships: [];
       };
+      cbt_case_formulations: {
+        Row: {
+          automatic_thoughts: string | null;
+          behavioral_patterns: string | null;
+          client_id: string;
+          cognitive_distortions: string[] | null;
+          core_beliefs: string | null;
+          created_at: string;
+          id: string;
+          maintenance_factors: string | null;
+          presenting_problem: string | null;
+          strengths: string | null;
+          therapist_id: string;
+          triggering_situations: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          automatic_thoughts?: string | null;
+          behavioral_patterns?: string | null;
+          client_id: string;
+          cognitive_distortions?: string[] | null;
+          core_beliefs?: string | null;
+          created_at?: string;
+          id?: string;
+          maintenance_factors?: string | null;
+          presenting_problem?: string | null;
+          strengths?: string | null;
+          therapist_id: string;
+          triggering_situations?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          automatic_thoughts?: string | null;
+          behavioral_patterns?: string | null;
+          client_id?: string;
+          cognitive_distortions?: string[] | null;
+          core_beliefs?: string | null;
+          created_at?: string;
+          id?: string;
+          maintenance_factors?: string | null;
+          presenting_problem?: string | null;
+          strengths?: string | null;
+          therapist_id?: string;
+          triggering_situations?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       client_assessments: {
         Row: {
           ai_interpretation: string | null;
@@ -220,6 +283,42 @@ export type Database = {
           raw_answers?: Json | null;
           test_id?: string | null;
           therapist_id?: string | null;
+        };
+        Relationships: [];
+      };
+      dbt_diary_cards: {
+        Row: {
+          client_id: string;
+          created_at: string;
+          emotion_scores: Json | null;
+          id: string;
+          skills_used: string[] | null;
+          target_behaviors: Json | null;
+          therapist_id: string;
+          therapist_notes: string | null;
+          week_start: string;
+        };
+        Insert: {
+          client_id: string;
+          created_at?: string;
+          emotion_scores?: Json | null;
+          id?: string;
+          skills_used?: string[] | null;
+          target_behaviors?: Json | null;
+          therapist_id: string;
+          therapist_notes?: string | null;
+          week_start: string;
+        };
+        Update: {
+          client_id?: string;
+          created_at?: string;
+          emotion_scores?: Json | null;
+          id?: string;
+          skills_used?: string[] | null;
+          target_behaviors?: Json | null;
+          therapist_id?: string;
+          therapist_notes?: string | null;
+          week_start?: string;
         };
         Relationships: [];
       };
@@ -566,6 +665,39 @@ export type Database = {
         };
         Relationships: [];
       };
+      homework_items: {
+        Row: {
+          client_id: string;
+          completed_at: string | null;
+          created_at: string;
+          description: string;
+          due_date: string | null;
+          id: string;
+          therapist_id: string;
+          therapist_notes: string | null;
+        };
+        Insert: {
+          client_id: string;
+          completed_at?: string | null;
+          created_at?: string;
+          description: string;
+          due_date?: string | null;
+          id?: string;
+          therapist_id: string;
+          therapist_notes?: string | null;
+        };
+        Update: {
+          client_id?: string;
+          completed_at?: string | null;
+          created_at?: string;
+          description?: string;
+          due_date?: string | null;
+          id?: string;
+          therapist_id?: string;
+          therapist_notes?: string | null;
+        };
+        Relationships: [];
+      };
       notes: {
         Row: {
           appointment_id: string;
@@ -633,6 +765,51 @@ export type Database = {
           therapist_id?: string;
           token_hash?: string;
           used_at?: string | null;
+        };
+        Relationships: [];
+      };
+      safety_plans: {
+        Row: {
+          client_id: string;
+          created_at: string;
+          id: string;
+          internal_coping: string | null;
+          professional_contacts: Json | null;
+          reasons_for_living: string | null;
+          safe_environment: string | null;
+          social_distractions: string | null;
+          support_contacts: Json | null;
+          therapist_id: string;
+          updated_at: string;
+          warning_signs: string | null;
+        };
+        Insert: {
+          client_id: string;
+          created_at?: string;
+          id?: string;
+          internal_coping?: string | null;
+          professional_contacts?: Json | null;
+          reasons_for_living?: string | null;
+          safe_environment?: string | null;
+          social_distractions?: string | null;
+          support_contacts?: Json | null;
+          therapist_id: string;
+          updated_at?: string;
+          warning_signs?: string | null;
+        };
+        Update: {
+          client_id?: string;
+          created_at?: string;
+          id?: string;
+          internal_coping?: string | null;
+          professional_contacts?: Json | null;
+          reasons_for_living?: string | null;
+          safe_environment?: string | null;
+          social_distractions?: string | null;
+          support_contacts?: Json | null;
+          therapist_id?: string;
+          updated_at?: string;
+          warning_signs?: string | null;
         };
         Relationships: [];
       };

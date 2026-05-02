@@ -386,7 +386,7 @@ WHERE lifecycle_status NOT IN ('INACTIV', 'ARHIVAT', 'ANONIM')
 GROUP BY service_type
 ```
 
-**Blocaje:** necesită `service_type` pe `clients` — coloana există prin migrarea P0 (`20260502_service_type_and_clinical_fields.sql`), dar migrarea nu e aplicată în baza reală.
+**Blocaje:** necesită `service_type` pe `clients` — coloana există prin migrarea P0 (`20260502110000_service_type_and_clinical_fields.sql`), dar migrarea nu e aplicată în baza reală.
 
 **Prioritate:** P1 (după aplicarea migrărilor P0)
 
@@ -886,7 +886,7 @@ Compact, subtil — nu dominant
 3. `AppointmentsToday` extins cu `service_type`, `risk_level` din clients
 4. Next best action per service track în fișa clientului
 
-**Dependințe rămase:** date P2 și, unde e cazul, migrarea `20260502_service_type_and_clinical_fields.sql` aplicată în toate mediile
+**Dependințe rămase:** date P2 și, unde e cazul, migrarea `20260502110000_service_type_and_clinical_fields.sql` aplicată în toate mediile
 
 **Componente noi:** `ServiceTracksOverview`  
 **Queries noi:** `getDashboardServiceTrackStats()`

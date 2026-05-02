@@ -86,6 +86,39 @@ type DashboardAssessmentRow = {
   clients?: { full_name: string | null } | { full_name: string | null }[] | null;
 };
 
+type DashboardStructuredAssessmentRow = {
+  id: string;
+  client_id: string | null;
+  created_at: string | null;
+  calculated_score: Record<string, unknown> | null;
+  test?: { name: string | null } | { name: string | null }[] | null;
+};
+
+type DashboardHomeworkRow = {
+  id: string;
+  client_id: string;
+  description: string;
+  due_date: string | null;
+  completed_at: string | null;
+};
+
+type DashboardDiaryCardRow = {
+  id: string;
+  client_id: string;
+  week_start: string;
+};
+
+type DashboardSafetyPlanRow = {
+  id: string;
+  client_id: string;
+};
+
+type DashboardCompletedAppointmentRow = {
+  id: string;
+  client_id: string;
+  appointment_date: string;
+};
+
 export interface DashboardStats {
   totalRevenue: number;
   expensesMonth: number;
@@ -130,6 +163,7 @@ export type DashboardServiceTrackStat = {
   activeClients: number;
   nextActionCount: number;
   nextActionLabel: string;
+  secondaryLabel?: string;
   href: string;
 };
 
@@ -233,6 +267,14 @@ function getAssessmentClientName(
   return uniqueClientName(clientRelation?.full_name ?? fallback);
 }
 
+function getTestName(
+  relation: DashboardStructuredAssessmentRow["test"],
+  fallback = "Evaluare",
+) {
+  const testRelation = Array.isArray(relation) ? relation[0] : relation;
+  return testRelation?.name?.trim() || fallback;
+}
+
 async function getDashboardCollections() {
   if (!isSupabaseConfigured()) {
     return {
@@ -240,6 +282,11 @@ async function getDashboardCollections() {
       documents: [] as DashboardDocumentRow[],
       generatedContracts: [] as DashboardGeneratedContractRow[],
       assessments: [] as DashboardAssessmentRow[],
+      structuredAssessments: [] as DashboardStructuredAssessmentRow[],
+      homeworkItems: [] as DashboardHomeworkRow[],
+      diaryCards: [] as DashboardDiaryCardRow[],
+      safetyPlans: [] as DashboardSafetyPlanRow[],
+      completedAppointments: [] as DashboardCompletedAppointmentRow[],
       unpaidInvoices: [] as Awaited<ReturnType<typeof getUnpaidInvoices>>,
       vaultAlertsCount: 0,
     };
@@ -247,7 +294,19 @@ async function getDashboardCollections() {
 
   const supabase = await createSupabaseServerClient();
 
-  const [clientsRes, documentsRes, contractsRes, assessmentsRes, unpaidInvoices, vaultAlertsRes] =
+  const [
+    clientsRes,
+    documentsRes,
+    contractsRes,
+    assessmentsRes,
+    structuredAssessmentsRes,
+    homeworkItemsRes,
+    diaryCardsRes,
+    safetyPlansRes,
+    completedAppointmentsRes,
+    unpaidInvoices,
+    vaultAlertsRes,
+  ] =
     await Promise.all([
       supabase
         .from("clients")
@@ -269,6 +328,35 @@ async function getDashboardCollections() {
         .order("created_at", { ascending: false })
         .limit(20)
         .then((r) => (r.error ? { data: [] as DashboardAssessmentRow[] } : r)),
+      supabase
+        .from("client_assessments")
+        .select("id, client_id, created_at, calculated_score, test:psychological_tests(name)")
+        .order("created_at", { ascending: false })
+        .limit(40)
+        .then((r) => (r.error ? { data: [] as DashboardStructuredAssessmentRow[] } : r)),
+      supabase
+        .from("homework_items")
+        .select("id, client_id, description, due_date, completed_at")
+        .order("created_at", { ascending: false })
+        .limit(40)
+        .then((r) => (r.error ? { data: [] as DashboardHomeworkRow[] } : r)),
+      supabase
+        .from("dbt_diary_cards")
+        .select("id, client_id, week_start")
+        .order("week_start", { ascending: false })
+        .limit(40)
+        .then((r) => (r.error ? { data: [] as DashboardDiaryCardRow[] } : r)),
+      supabase
+        .from("safety_plans")
+        .select("id, client_id")
+        .then((r) => (r.error ? { data: [] as DashboardSafetyPlanRow[] } : r)),
+      supabase
+        .from("appointments")
+        .select("id, client_id, appointment_date")
+        .eq("status", "FINALIZAT")
+        .order("appointment_date", { ascending: false })
+        .limit(200)
+        .then((r) => (r.error ? { data: [] as DashboardCompletedAppointmentRow[] } : r)),
       getUnpaidInvoices(),
       supabase
         .from("therapist_documents")
@@ -283,6 +371,11 @@ async function getDashboardCollections() {
     documents: (documentsRes.data ?? []) as DashboardDocumentRow[],
     generatedContracts: (contractsRes.data ?? []) as DashboardGeneratedContractRow[],
     assessments: (assessmentsRes.data ?? []) as DashboardAssessmentRow[],
+    structuredAssessments: (structuredAssessmentsRes.data ?? []) as DashboardStructuredAssessmentRow[],
+    homeworkItems: (homeworkItemsRes.data ?? []) as DashboardHomeworkRow[],
+    diaryCards: (diaryCardsRes.data ?? []) as DashboardDiaryCardRow[],
+    safetyPlans: (safetyPlansRes.data ?? []) as DashboardSafetyPlanRow[],
+    completedAppointments: (completedAppointmentsRes.data ?? []) as DashboardCompletedAppointmentRow[],
     unpaidInvoices,
     vaultAlertsCount: vaultAlertsRes.count ?? 0,
   };
@@ -531,8 +624,19 @@ export async function getDashboardClinicalAlerts(): Promise<DashboardAlert[]> {
   }
 
   try {
-    const { clients, assessments, unpaidInvoices, vaultAlertsCount } = await getDashboardCollections();
+    const {
+      clients,
+      assessments,
+      unpaidInvoices,
+      vaultAlertsCount,
+      homeworkItems,
+      diaryCards,
+      safetyPlans,
+    } = await getDashboardCollections();
     const alerts: DashboardAlert[] = [];
+    const currentWeekStart = startOfDay(subDays(new Date(), new Date().getDay() === 0 ? 6 : new Date().getDay() - 1))
+      .toISOString()
+      .slice(0, 10);
 
     const pendingMinorReviews = clients.filter(
       (client) => client.is_minor && client.needs_legal_review,
@@ -591,6 +695,61 @@ export async function getDashboardClinicalAlerts(): Promise<DashboardAlert[]> {
         description: `${missingServiceType} fișe nu au încă tipul principal de serviciu setat.`,
         href: "/dashboard/clients",
         ctaLabel: "Vezi fișe",
+      });
+    }
+
+    const dbtHighRiskWithoutPlan = clients.filter((client) => {
+      if (normalizeServiceType(client.service_type) !== "DBT") return false;
+      if (!["HIGH", "CRISIS"].includes(client.risk_level ?? "")) return false;
+      return !safetyPlans.some((plan) => plan.client_id === client.id);
+    }).length;
+    if (dbtHighRiskWithoutPlan > 0) {
+      alerts.push({
+        id: "dbt-risk-without-safety-plan",
+        type: "CLINICAL",
+        severity: "critical",
+        title: "Cazuri DBT fără plan de siguranță",
+        description: `${dbtHighRiskWithoutPlan} clienți DBT cu risc ridicat nu au încă plan de siguranță salvat.`,
+        href: "/dashboard/clients",
+        ctaLabel: "Verifică DBT",
+      });
+    }
+
+    const dbtDiaryMissing = clients.filter((client) => {
+      if (normalizeServiceType(client.service_type) !== "DBT") return false;
+      if (CLOSED_LIFECYCLE_STATUSES.has(client.lifecycle_status ?? "")) return false;
+      return !diaryCards.some(
+        (card) =>
+          card.client_id === client.id &&
+          card.week_start >= currentWeekStart,
+      );
+    }).length;
+    if (dbtDiaryMissing > 0) {
+      alerts.push({
+        id: "dbt-diary-missing",
+        type: "CLINICAL",
+        severity: "warning",
+        title: "Diary card DBT lipsă săptămâna aceasta",
+        description: `${dbtDiaryMissing} clienți DBT activi nu au încă diary card în săptămâna curentă.`,
+        href: "/dashboard/clients",
+        ctaLabel: "Vezi cazuri DBT",
+      });
+    }
+
+    const overdueHomework = homeworkItems.filter((item) => {
+      if (item.completed_at) return false;
+      if (!item.due_date) return false;
+      return new Date(item.due_date) < startOfDay(new Date());
+    }).length;
+    if (overdueHomework > 0) {
+      alerts.push({
+        id: "cbt-homework-overdue",
+        type: "CLINICAL",
+        severity: "info",
+        title: "Teme CBT restante",
+        description: `${overdueHomework} teme pentru acasă au depășit termenul și merită follow-up.`,
+        href: "/dashboard/clients",
+        ctaLabel: "Vezi teme",
       });
     }
 
@@ -762,8 +921,18 @@ export async function getDashboardServiceTrackStats(): Promise<DashboardServiceT
   }
 
   try {
-    const { clients } = await getDashboardCollections();
+    const {
+      clients,
+      homeworkItems,
+      diaryCards,
+      safetyPlans,
+      assessments,
+      completedAppointments,
+    } = await getDashboardCollections();
     const trackMap = new Map<ServiceType, DashboardServiceTrackStat>();
+    const currentWeekStart = startOfDay(subDays(new Date(), new Date().getDay() === 0 ? 6 : new Date().getDay() - 1))
+      .toISOString()
+      .slice(0, 10);
 
     for (const serviceType of SERVICE_TRACK_ORDER) {
       trackMap.set(serviceType, {
@@ -772,6 +941,7 @@ export async function getDashboardServiceTrackStats(): Promise<DashboardServiceT
         activeClients: 0,
         nextActionCount: 0,
         nextActionLabel: serviceType === "DBT" ? "cazuri sensibile" : "acțiuni următoare",
+        secondaryLabel: undefined,
         href:
           serviceType === "UNDECIDED"
             ? "/dashboard/clients?service=UNDECIDED"
@@ -799,6 +969,90 @@ export async function getDashboardServiceTrackStats(): Promise<DashboardServiceT
       }
     }
 
+    const clinicalTrack = trackMap.get("CLINICAL_PSYCHOLOGY");
+    if (clinicalTrack) {
+      const pendingReports = assessments.filter(
+        (assessment) =>
+          assessment.assessment_type === "RAPORT_LUNAR" &&
+          !assessment.sent_to_parent_at,
+      ).length;
+      clinicalTrack.secondaryLabel =
+        pendingReports > 0 ? `${pendingReports} rapoarte în lucru` : "fără blocaje majore";
+    }
+
+    const cbtTrack = trackMap.get("CBT");
+    if (cbtTrack) {
+      const overdueHomework = homeworkItems.filter((item) => {
+        if (item.completed_at || !item.due_date) return false;
+        const client = clients.find((entry) => entry.id === item.client_id);
+        return normalizeServiceType(client?.service_type) === "CBT" && new Date(item.due_date) < startOfDay(new Date());
+      }).length;
+      const reevaluationsDue = clients.filter((client) => {
+        if (normalizeServiceType(client.service_type) !== "CBT") return false;
+        const sessionsCount = completedAppointments.filter((appointment) => appointment.client_id === client.id).length;
+        return sessionsCount >= 4;
+      }).length;
+      cbtTrack.nextActionCount = Math.max(cbtTrack.nextActionCount, overdueHomework);
+      cbtTrack.secondaryLabel =
+        overdueHomework > 0
+          ? `${overdueHomework} teme restante`
+          : reevaluationsDue > 0
+            ? `${reevaluationsDue} reevaluări de pregătit`
+            : "ritm stabil";
+      cbtTrack.nextActionLabel = overdueHomework > 0 ? "teme active" : "următorul pas";
+    }
+
+    const dbtTrack = trackMap.get("DBT");
+    if (dbtTrack) {
+      const highRisk = clients.filter(
+        (client) =>
+          normalizeServiceType(client.service_type) === "DBT" &&
+          ["HIGH", "CRISIS"].includes(client.risk_level ?? ""),
+      ).length;
+      const diaryMissing = clients.filter((client) => {
+        if (normalizeServiceType(client.service_type) !== "DBT") return false;
+        if (CLOSED_LIFECYCLE_STATUSES.has(client.lifecycle_status ?? "")) return false;
+        return !diaryCards.some(
+          (card) =>
+            card.client_id === client.id &&
+            card.week_start >= currentWeekStart,
+        );
+      }).length;
+      const safetyPlanMissing = clients.filter((client) => {
+        if (normalizeServiceType(client.service_type) !== "DBT") return false;
+        return ["HIGH", "CRISIS"].includes(client.risk_level ?? "") &&
+          !safetyPlans.some((plan) => plan.client_id === client.id);
+      }).length;
+      dbtTrack.nextActionCount = Math.max(dbtTrack.nextActionCount, highRisk, diaryMissing, safetyPlanMissing);
+      dbtTrack.secondaryLabel =
+        highRisk > 0
+          ? `${highRisk} risc ridicat`
+          : diaryMissing > 0
+            ? `${diaryMissing} diary lipsă`
+            : "monitorizare stabilă";
+    }
+
+    const counselingTrack = trackMap.get("COUNSELING");
+    if (counselingTrack) {
+      const reevaluationCandidates = clients.filter((client) => {
+        if (normalizeServiceType(client.service_type) !== "COUNSELING") return false;
+        const sessionsCount = completedAppointments.filter((appointment) => appointment.client_id === client.id).length;
+        return sessionsCount >= 3;
+      }).length;
+      counselingTrack.secondaryLabel =
+        reevaluationCandidates > 0
+          ? `${reevaluationCandidates} reevaluări necesare`
+          : "urmărire ușoară";
+    }
+
+    const undecidedTrack = trackMap.get("UNDECIDED");
+    if (undecidedTrack) {
+      undecidedTrack.secondaryLabel =
+        undecidedTrack.activeClients > 0
+          ? "clasificare necesară"
+          : "toate cazurile sunt clasificate";
+    }
+
     const stats = SERVICE_TRACK_ORDER.map((serviceType) => trackMap.get(serviceType) as DashboardServiceTrackStat);
     const hasConfiguredTrack = stats.some(
       (track) => track.serviceType !== "UNDECIDED" && track.activeClients > 0,
@@ -816,7 +1070,13 @@ export async function getDashboardAssessmentTasks(): Promise<DashboardAssessment
   }
 
   try {
-    const { clients, assessments } = await getDashboardCollections();
+    const {
+      clients,
+      assessments,
+      structuredAssessments,
+      diaryCards,
+      completedAppointments,
+    } = await getDashboardCollections();
     const tasks: DashboardAssessmentTask[] = [];
     const thirtyDaysAgo = subDays(new Date(), 30);
     const clientsWithAssessments = new Set(
@@ -824,6 +1084,14 @@ export async function getDashboardAssessmentTasks(): Promise<DashboardAssessment
         .filter((assessment) => assessment.client_id)
         .map((assessment) => assessment.client_id as string),
     );
+    const clientsWithStructuredAssessments = new Set(
+      structuredAssessments
+        .filter((assessment) => assessment.client_id)
+        .map((assessment) => assessment.client_id as string),
+    );
+    const currentWeekStart = startOfDay(subDays(new Date(), new Date().getDay() === 0 ? 6 : new Date().getDay() - 1))
+      .toISOString()
+      .slice(0, 10);
 
     for (const assessment of assessments) {
       const clientName = getAssessmentClientName(assessment.clients);
@@ -860,21 +1128,81 @@ export async function getDashboardAssessmentTasks(): Promise<DashboardAssessment
       }
     }
 
+    for (const assessment of structuredAssessments) {
+      if (!assessment.client_id) continue;
+      const client = clients.find((entry) => entry.id === assessment.client_id);
+      const clientName = uniqueClientName(client?.full_name);
+      const score = assessment.calculated_score;
+
+      if (!score || Object.keys(score).length === 0) {
+        tasks.push({
+          id: `${assessment.id}-structured-score`,
+          clientId: assessment.client_id,
+          clientName,
+          title: `${clientName} — evaluare fără scor calculat`,
+          description: `${getTestName(assessment.test)} a fost salvată, dar nu are încă rezultat calculat util în dashboard.`,
+          href: `/dashboard/clients/${assessment.client_id}`,
+          ctaLabel: "Vezi fișa",
+          priority: "medium",
+        });
+      }
+    }
+
+    for (const client of clients) {
+      if (normalizeServiceType(client.service_type) !== "DBT") continue;
+      if (CLOSED_LIFECYCLE_STATUSES.has(client.lifecycle_status ?? "")) continue;
+      const hasDiaryThisWeek = diaryCards.some(
+        (card) =>
+          card.client_id === client.id &&
+          card.week_start >= currentWeekStart,
+      );
+      if (!hasDiaryThisWeek) {
+        tasks.push({
+          id: `${client.id}-dbt-diary`,
+          clientId: client.id,
+          clientName: uniqueClientName(client.full_name),
+          title: `${uniqueClientName(client.full_name)} — diary card lipsă`,
+          description: "Săptămâna curentă nu are încă diary card înregistrat pentru cazul DBT.",
+          href: `/dashboard/clients/${client.id}`,
+          ctaLabel: "Completează",
+          priority: "high",
+        });
+      }
+    }
+
     for (const client of clients) {
       if (CLOSED_LIFECYCLE_STATUSES.has(client.lifecycle_status ?? "")) continue;
-      if (clientsWithAssessments.has(client.id)) continue;
       if (!client.onboarding_completed_at) continue;
 
-      tasks.push({
-        id: `${client.id}-initial-assessment`,
-        clientId: client.id,
-        clientName: uniqueClientName(client.full_name),
-        title: `${uniqueClientName(client.full_name)} — fără evaluare inițială`,
-        description: "Adaugă prima evaluare pentru a ancora traseul clinic și raportarea ulterioară.",
-        href: `/dashboard/assessments/new?clientId=${client.id}`,
-        ctaLabel: "Evaluare nouă",
-        priority: "medium",
-      });
+      if (!clientsWithAssessments.has(client.id) && !clientsWithStructuredAssessments.has(client.id)) {
+        tasks.push({
+          id: `${client.id}-initial-assessment`,
+          clientId: client.id,
+          clientName: uniqueClientName(client.full_name),
+          title: `${uniqueClientName(client.full_name)} — fără evaluare inițială`,
+          description: "Adaugă prima evaluare pentru a ancora traseul clinic și raportarea ulterioară.",
+          href: `/dashboard/assessments/new?clientId=${client.id}`,
+          ctaLabel: "Evaluare nouă",
+          priority: "medium",
+        });
+      }
+
+      const serviceType = normalizeServiceType(client.service_type);
+      if (serviceType === "CBT" || serviceType === "CLINICAL_PSYCHOLOGY") {
+        const sessionsCount = completedAppointments.filter((appointment) => appointment.client_id === client.id).length;
+        if (sessionsCount >= 4) {
+          tasks.push({
+            id: `${client.id}-t1-due`,
+            clientId: client.id,
+            clientName: uniqueClientName(client.full_name),
+            title: `${uniqueClientName(client.full_name)} — reevaluare utilă după ${sessionsCount} ședințe`,
+            description: "Cazul a depășit pragul minim pentru o nouă evaluare de progres.",
+            href: `/dashboard/assessments/new?clientId=${client.id}`,
+            ctaLabel: "Evaluează",
+            priority: "medium",
+          });
+        }
+      }
     }
 
     const priorityScore = { high: 0, medium: 1, low: 2 };

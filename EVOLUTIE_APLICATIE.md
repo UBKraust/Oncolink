@@ -19,7 +19,7 @@ Aceasta regula ramane activa pe tot parcursul proiectului.
 - `npm run build`: ✅ verde
 - Migrarea lifecycle (`20260429223610_client_lifecycle_status.sql`) — **neaplicată în baza reală**
 - Migrarea P0 service_type (`20260502_service_type_and_clinical_fields.sql`) — **neaplicată în baza reală**
-- Migrarea P2 (`20260502_p2_clinical_tools.sql`) — **neaplicată în baza reală** — aplică toate 3 împreună
+- Migrarea P2 (`20260502120000_p2_clinical_tools.sql`) — **neaplicată în baza reală** — aplică toate 3 împreună
 - **P1 complet** (task-uri #17–21) · **P2 complet** (task-uri #22–25) — UI implementat, necesită migrări aplicate
 - **Catalog teste complet** (task #26) — 9 instrumente + 2 formulare interne, metadata completă, pagină cu filtre
 - Urmează: P3 — AI prompts contextuale, generare rapoarte per track
@@ -73,7 +73,7 @@ Fișiere principale:
 
 ### 22–25. P2 — Teme CBT, Formulare caz CBT, Diary cards DBT, Plan de siguranță DBT
 
-**Migrare nouă**: `supabase/migrations/20260502_p2_clinical_tools.sql`
+**Migrare nouă**: `supabase/migrations/20260502120000_p2_clinical_tools.sql`
 - `homework_items` — teme CBT cu `description`, `due_date`, `completed_at`, `therapist_notes`; RLS per `therapist_id`
 - `cbt_case_formulations` — formulare de caz CBT (unic per client); 8 câmpuri text + `cognitive_distortions text[]`
 - `dbt_diary_cards` — diary card săptămânal DBT; `unique(client_id, week_start)`; `target_behaviors jsonb`, `skills_used text[]`
@@ -104,7 +104,7 @@ Fișiere principale:
 `npm run lint` ✅ | `npm run build` ✅
 
 Fișiere principale:
-- [supabase/migrations/20260502_p2_clinical_tools.sql](supabase/migrations/20260502_p2_clinical_tools.sql)
+- [supabase/migrations/20260502120000_p2_clinical_tools.sql](supabase/migrations/20260502120000_p2_clinical_tools.sql)
 - [src/components/clients/HomeworkCard.tsx](src/components/clients/HomeworkCard.tsx)
 - [src/components/clients/CbtCaseFormulationCard.tsx](src/components/clients/CbtCaseFormulationCard.tsx)
 - [src/components/clients/DbtDiaryCardsPanel.tsx](src/components/clients/DbtDiaryCardsPanel.tsx)
@@ -202,7 +202,7 @@ Fișiere principale:
 
 ### 16. P0 — Service Type & Service Track Card (Client Service Flows)
 
-- **Migrare DB** (`20260502_service_type_and_clinical_fields.sql`): adăugat pe `clients` — `service_type` (default `UNDECIDED`), `service_track_status`, `main_complaint`, `clinical_focus`, `treatment_goals`, `treatment_plan`, `risk_level`, `research_consent`. Index pe `(therapist_id, service_type)`.
+- **Migrare DB** (`20260502110000_service_type_and_clinical_fields.sql`): adăugat pe `clients` — `service_type` (default `UNDECIDED`), `service_track_status`, `main_complaint`, `clinical_focus`, `treatment_goals`, `treatment_plan`, `risk_level`, `research_consent`. Index pe `(therapist_id, service_type)`.
 - **`src/lib/clients/service-track.ts`** (fișier nou): tip `ServiceType`, labels, badge variants, `isServiceType()`, `computeServiceTrackNextAction()` — logică next action contextuală per tip de serviciu + status lifecycle.
 - **`src/lib/supabase/types.ts`**: actualizat Row/Insert/Update pentru `clients` cu câmpurile noi.
 - **`src/components/clients/types.ts`**: adăugat `service_type`, `service_track_status`, `main_complaint`, `risk_level`, `research_consent` pe `ClientProfile`.

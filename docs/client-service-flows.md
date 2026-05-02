@@ -398,7 +398,7 @@ Plan de resurse
 ### Câmpuri deja existente pe `clients` (sau în migrare pendingă)
 
 ```sql
--- Deja în migrarea 20260502_service_type_and_clinical_fields.sql
+-- Deja în migrarea 20260502110000_service_type_and_clinical_fields.sql
 service_type           text DEFAULT 'UNDECIDED'   -- selectat din UI
 service_track_status   text                        -- status curent în track
 main_complaint         text                        -- prezentarea inițială

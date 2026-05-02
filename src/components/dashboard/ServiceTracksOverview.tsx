@@ -41,6 +41,9 @@ export function ServiceTracksOverview({
                 {track.activeClients}
               </p>
               <p className="mt-1 text-sm text-muted-foreground">cazuri active</p>
+              <p className="mt-2 min-h-10 text-sm text-muted-foreground">
+                {track.secondaryLabel ?? "fără blocaje majore"}
+              </p>
               <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-muted/30 px-3 py-2">
                 <span className="text-xs font-medium text-muted-foreground">
                   {track.nextActionLabel}

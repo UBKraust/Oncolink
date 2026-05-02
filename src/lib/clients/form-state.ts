@@ -30,7 +30,8 @@ export interface ClientFormState {
       | "company_representative_name"
       | "company_representative_email"
       | "company_representative_role"
-      | "company_reg_com",
+      | "company_reg_com"
+      | "service_type",
       string
     >
   >;

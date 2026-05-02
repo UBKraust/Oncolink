@@ -52,6 +52,7 @@ type Defaults = Partial<{
   session_frequency: string;
   report_frequency: string;
   send_report_to_parent: boolean;
+  service_type: string;
 }>;
 
 interface ClientFormProps {
@@ -189,6 +190,26 @@ export function ClientForm({ action, defaults = {}, submitLabel, cancelHref }: C
             error={state.fieldErrors.session_price}
             hint="Opțional. Poate fi definit și la programare."
           />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="service_type">Tip serviciu principal</Label>
+          <select
+            id="service_type"
+            name="service_type"
+            defaultValue={defaults.service_type ?? "UNDECIDED"}
+            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <option value="UNDECIDED">Nedefinit (de stabilit)</option>
+            <option value="CLINICAL_PSYCHOLOGY">Psihologie clinică</option>
+            <option value="CBT">Psihoterapie CBT</option>
+            <option value="DBT">Psihoterapie DBT</option>
+            <option value="COUNSELING">Consiliere psihologică</option>
+            <option value="MIXED">Mixt / de stabilit</option>
+          </select>
+          {state.fieldErrors.service_type ? (
+            <p className="text-xs text-rose-600">{state.fieldErrors.service_type}</p>
+          ) : null}
         </div>
 
         <div className="space-y-4 rounded-md border p-4 bg-muted/20">

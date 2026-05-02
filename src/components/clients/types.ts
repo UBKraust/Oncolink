@@ -57,6 +57,11 @@ export interface ClientProfile {
   send_report_to_parent: boolean | null;
   referral_source: string | null;
   referred_by_name: string | null;
+  service_type: string | null;
+  service_track_status: string | null;
+  main_complaint: string | null;
+  risk_level: string | null;
+  research_consent: boolean | null;
 }
 
 export interface ClientAssessment {

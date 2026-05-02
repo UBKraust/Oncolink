@@ -307,6 +307,14 @@ export type Database = {
           session_price: number | null;
           therapist_id: string | null;
           terms_consent_signed_at: string | null;
+          service_type: string;
+          service_track_status: string | null;
+          main_complaint: string | null;
+          clinical_focus: unknown[];
+          treatment_goals: unknown[];
+          treatment_plan: string | null;
+          risk_level: string | null;
+          research_consent: boolean;
         };
         Insert: {
           address?: string | null;
@@ -364,6 +372,14 @@ export type Database = {
           session_price?: number | null;
           therapist_id?: string | null;
           terms_consent_signed_at?: string | null;
+          service_type?: string;
+          service_track_status?: string | null;
+          main_complaint?: string | null;
+          clinical_focus?: unknown[];
+          treatment_goals?: unknown[];
+          treatment_plan?: string | null;
+          risk_level?: string | null;
+          research_consent?: boolean;
         };
         Update: {
           address?: string | null;
@@ -421,6 +437,14 @@ export type Database = {
           session_price?: number | null;
           therapist_id?: string | null;
           terms_consent_signed_at?: string | null;
+          service_type?: string;
+          service_track_status?: string | null;
+          main_complaint?: string | null;
+          clinical_focus?: unknown[];
+          treatment_goals?: unknown[];
+          treatment_plan?: string | null;
+          risk_level?: string | null;
+          research_consent?: boolean;
         };
         Relationships: [];
       };

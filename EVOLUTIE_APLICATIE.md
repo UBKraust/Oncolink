@@ -16,12 +16,26 @@ Aceasta regula ramane activa pe tot parcursul proiectului.
 ## Status Curent
 
 - `npm run lint`: ✅ verde
-- `npm run build`: ✅ verde
-- 10 taskuri finalizate (navigatie, mobil, stabilizare, accesibilitate, formuri, overlay-uri, lifecycle complet cu istoric si changed_by)
+- `npm run build`: ✅ verde (2 erori TS pre-existente IconComponent vs LucideIcon, noi în P0)
 - Migrarea lifecycle (`20260429223610_client_lifecycle_status.sql`) este scrisa dar **neaplicata inca in baza reala**
-- Urmeaza: aplicare migrare, QA cap-la-cap, polish final
+- Migrarea P0 service_type (`20260502_service_type_and_clinical_fields.sql`) este scrisa dar **neaplicata inca in baza reala** — aplică ambele migrări împreună
+- Urmeaza: P1 — mapare documente recomandate per service_type, checklist documente lipsă
 
 ## Ce s-a facut
+
+### 16. P0 — Service Type & Service Track Card (Client Service Flows)
+
+- **Migrare DB** (`20260502_service_type_and_clinical_fields.sql`): adăugat pe `clients` — `service_type` (default `UNDECIDED`), `service_track_status`, `main_complaint`, `clinical_focus`, `treatment_goals`, `treatment_plan`, `risk_level`, `research_consent`. Index pe `(therapist_id, service_type)`.
+- **`src/lib/clients/service-track.ts`** (fișier nou): tip `ServiceType`, labels, badge variants, `isServiceType()`, `computeServiceTrackNextAction()` — logică next action contextuală per tip de serviciu + status lifecycle.
+- **`src/lib/supabase/types.ts`**: actualizat Row/Insert/Update pentru `clients` cu câmpurile noi.
+- **`src/components/clients/types.ts`**: adăugat `service_type`, `service_track_status`, `main_complaint`, `risk_level`, `research_consent` pe `ClientProfile`.
+- **`src/lib/clients/form-state.ts`**: adăugat `service_type` la `fieldErrors`.
+- **`src/components/clients/client-form.tsx`**: selector nativ "Tip serviciu principal" (6 opțiuni). Poziționat înainte de secțiunea Demografice & Facturare.
+- **`src/app/dashboard/clients/actions.ts`**: `parseForm` + `createClient` (upsert payload) + `updateClient` includ acum `service_type`.
+- **`src/components/clients/ServiceTrackCard.tsx`** (componentă nouă): afișează tip serviciu (badge colorat), `service_track_status` opțional, next best action calculat din `computeServiceTrackNextAction`. Reutilizabilă.
+- **`src/components/clients/ClientDashboardUI.tsx`**: badge service type în header (vizibil doar dacă nu e UNDECIDED), `ServiceTrackCard` randată deasupra gridului Status/Pași/Semnale.
+
+**Urmează P1**: mapare documente recomandate per `service_type`, checklist documente lipsă în fișa clientului.
 
 ### 15. Fix query vault în dashboard + audit baza de date
 

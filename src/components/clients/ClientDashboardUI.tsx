@@ -33,6 +33,12 @@ import { MedicalDetailOverlay } from "@/components/clients/MedicalDetailOverlay"
 import { CrisisNotesDetailOverlay } from "@/components/clients/CrisisNotesDetailOverlay";
 import { AssessmentDetailOverlay } from "@/components/clients/AssessmentDetailOverlay";
 import { ContractGeneratorModal } from "@/components/clients/ContractGeneratorModal";
+import { ServiceTrackCard } from "@/components/clients/ServiceTrackCard";
+import {
+  SERVICE_TYPE_LABELS,
+  SERVICE_TYPE_BADGE_VARIANTS,
+  isServiceType,
+} from "@/lib/clients/service-track";
 import type {
   ClientAiContext,
   ClientAppointment,
@@ -307,6 +313,18 @@ export function ClientDashboardUI({
                     B2B
                   </Badge>
                 )}
+                {(() => {
+                  const st = isServiceType(client.service_type) ? client.service_type : null;
+                  if (!st || st === "UNDECIDED") return null;
+                  return (
+                    <Badge
+                      variant={SERVICE_TYPE_BADGE_VARIANTS[st]}
+                      className="h-5 text-[10px]"
+                    >
+                      {SERVICE_TYPE_LABELS[st]}
+                    </Badge>
+                  );
+                })()}
                 {sessionFreqLabel && (
                   <Badge variant="success" className="gap-1.5 border-transparent px-3 py-1 text-xs normal-case tracking-normal">
                     <RefreshCw className="h-3 w-3" /> {sessionFreqLabel}
@@ -344,6 +362,16 @@ export function ClientDashboardUI({
           </div>
         </div>
       </section>
+
+      <ServiceTrackCard
+        serviceType={client.service_type ?? null}
+        serviceTrackStatus={client.service_track_status ?? null}
+        lifecycleStatus={lifecycle.status}
+        gdprSigned={client.gdpr_consent_signed}
+        onboardingComplete={lifecycle.isOnboardingComplete}
+        hasAppointments={lifecycle.hasCompletedSession || lifecycle.hasUpcomingSession}
+        riskLevel={client.risk_level ?? null}
+      />
 
       <div className="grid gap-4 lg:grid-cols-3">
         <section className="rounded-[1.75rem] border border-border/60 bg-card p-5 shadow-sm">

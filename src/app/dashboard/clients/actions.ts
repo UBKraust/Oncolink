@@ -81,6 +81,7 @@ function parseForm(formData: FormData) {
     company_representative_email: billing_type === "B2B_COMPANY" ? String(formData.get("company_representative_email") ?? "").trim() || null : null,
     company_representative_role: billing_type === "B2B_COMPANY" ? String(formData.get("company_representative_role") ?? "").trim() : null,
     company_reg_com: billing_type === "B2B_COMPANY" ? String(formData.get("company_reg_com") ?? "").trim() : null,
+    service_type: String(formData.get("service_type") ?? "UNDECIDED") as string,
   };
 }
 
@@ -189,6 +190,7 @@ export async function createClient(
       company_representative_email: payload.company_representative_email,
       company_representative_role: payload.company_representative_role,
       company_reg_com: payload.company_reg_com,
+      service_type: payload.service_type,
     });
   } catch (error) {
     return {
@@ -287,6 +289,7 @@ export async function updateClient(
       company_representative_email: payload.company_representative_email,
       company_representative_role: payload.company_representative_role,
       company_reg_com: payload.company_reg_com,
+      service_type: payload.service_type,
     })
     .eq("id", id);
 

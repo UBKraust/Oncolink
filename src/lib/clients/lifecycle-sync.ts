@@ -12,10 +12,10 @@ async function fetchTherapistDisplayName(
 ): Promise<string | null> {
   const { data } = await supabase
     .from("therapist_settings")
-    .select("full_name")
+    .select("full_name, practice_name")
     .eq("therapist_id", userId)
     .maybeSingle();
-  return data?.full_name ?? null;
+  return data?.full_name ?? data?.practice_name ?? null;
 }
 
 const MANUAL_STATUSES = new Set<ClientLifecycleStatus>([

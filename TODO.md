@@ -1,17 +1,14 @@
 # TODO — Pași următori de implementat
 
-Generat: 2026-05-02 · Stare baseline: lint ✅ · build ✅ · 11 taskuri finalizate
+Generat: 2026-05-02 · Actualizat: 2026-05-02 · Stare baseline: lint ✅ · build ✅ · `npx supabase db push` ✅
 
 ---
 
-## 🔴 BLOCKER — Aplică migrarea în baza reală
+## ✅ Migrare aplicată în baza reală
 
-Fără acest pas, butoanele lifecycle nu persistă nimic și secțiunea "Istoric lifecycle" din fișa clientului rămâne goală.
+Status: rulat pe `2026-05-02` cu `npx supabase db push` → `Remote database is up to date`.
 
-```bash
-# Din directorul proiectului, cu Supabase CLI configurat:
-supabase db push
-```
+Nu mai este blocker activ. Următorul pas este validarea lifecycle pe date reale.
 
 ### Verificare după aplicare
 
@@ -33,7 +30,7 @@ LIMIT 20;
 
 ---
 
-## 🟠 Validare lifecycle (imediat după migrare)
+## 🟠 Validare lifecycle (următorul pas)
 
 Testează fiecare buton din fișa unui client real și confirmă că scrie în `client_status_history`:
 
@@ -51,68 +48,28 @@ Verifică că fluxurile automate (booking public `/book`, onboarding, anonimizar
 
 ---
 
-## 🟡 Implementare: Date dinamice rămase hardcodate
+## ✅ Implementare: Date dinamice hardcodate eliminate
 
-### A. Raportul lunar — footer PDF hardcodat
+- [x] Raportul lunar — footer PDF citește acum `practice_name` / `full_name` din settings
+- [x] Google Drive — template-urile folosesc acum `full_name` / `practice_name` din settings
+- [x] Lista documente — `therapistName` vine acum din settings server-side
+- [x] Lifecycle history — `changed_by_name` are fallback și pe `practice_name` dacă `full_name` lipsește
 
-**Fișier:** [src/app/dashboard/review/page.tsx](src/app/dashboard/review/page.tsx) — linia 318
-
-```tsx
-// Actual (hardcodat):
-Generat de Ce`ai Pățit? ERP · Cabinet Psihoterapie Ioana Cosmina Terente PFA ·
-
-// De înlocuit cu:
-const settings = await getTherapistSettings().catch(() => null);
-// și în JSX:
-{settings?.practice_name ?? settings?.full_name ?? "Cabinet"}
-```
-
-Pagina este `"use client"` — trebuie fie refactorată la Server Component pentru header, fie expusă `practice_name` printr-un API call sau prop din server.
-
-### B. Google Drive — templates hardcodate
-
-**Fișier:** [src/lib/google/drive.ts](src/lib/google/drive.ts) — liniile 198, 229
-
-```ts
-// Actual:
-TERAPEUT: Ioana Cosmina Terente
-Operator: Cabinet Psihoterapie Ioana Cosmina Terente
-
-// De înlocuit cu:
-// Fetch therapist settings înainte de a genera template-ul
-// și injectează full_name / practice_name
-```
-
-### C. Lista documente — fallback hardcodat
-
-**Fișier:** [src/components/documents/document-list.tsx](src/components/documents/document-list.tsx) — liniile 58, 75
-
-```ts
-// Actual:
-therapistName: "Dr. Psiholog",
-
-// De înlocuit cu:
-// Fetch getTherapistSettings() în page.tsx (server) și pasează ca prop
-```
+Fișiere atinse:
+- [src/app/dashboard/review/page.tsx](/Users/sch_work/Documents/Oncolink/src/app/dashboard/review/page.tsx)
+- [src/app/dashboard/review/review-client.tsx](/Users/sch_work/Documents/Oncolink/src/app/dashboard/review/review-client.tsx)
+- [src/app/dashboard/documents/page.tsx](/Users/sch_work/Documents/Oncolink/src/app/dashboard/documents/page.tsx)
+- [src/components/documents/document-list.tsx](/Users/sch_work/Documents/Oncolink/src/components/documents/document-list.tsx)
+- [src/lib/google/drive.ts](/Users/sch_work/Documents/Oncolink/src/lib/google/drive.ts)
+- [src/lib/clients/lifecycle-sync.ts](/Users/sch_work/Documents/Oncolink/src/lib/clients/lifecycle-sync.ts)
 
 ---
 
-## 🟡 Implementare: `vaultAlertsCount` mereu 0
+## ✅ Implementare: `vaultAlertsCount`
 
 **Fișier:** [src/lib/dashboard/queries.ts](src/lib/dashboard/queries.ts) — linia 151
 
-`vaultAlertsCount: 0` este hardcodat. Valoarea ar trebui să reflecte numărul de documente din vault cu `expiry_date` în mai puțin de 30 de zile sau expirate deja.
-
-```ts
-// De adăugat în getDashboardStats():
-const { count: vaultAlertsCount } = await supabase
-  .from("patient_documents") // sau tabela corectă de vault
-  .select("*", { count: "exact", head: true })
-  .not("expiry_date", "is", null)
-  .lte("expiry_date", new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString());
-```
-
-Verifică mai întâi care tabelă stochează documentele din seif și dacă are câmpul `expiry_date`.
+Status: implementat pe `patient_documents`, cu prag `<= 30 zile` și includere documente deja expirate.
 
 ---
 
@@ -191,10 +148,10 @@ Testare manuală, în ordine de prioritate:
 
 ## 🟢 Polish opțional
 
-- [ ] Pagina `/dashboard/review` — înlocuiește textul hardcodat din footer-ul PDF cu date reale din settings
-- [ ] `vaultAlertsCount` — implementează query-ul real (vezi secțiunea de mai sus)
-- [ ] `document-list.tsx` — preia `therapistName` din settings, nu fallback static
-- [ ] `google/drive.ts` — înlocuiește numele hardcodat din template-urile Google Drive
+- [x] Pagina `/dashboard/review` — înlocuiește textul hardcodat din footer-ul PDF cu date reale din settings
+- [x] `vaultAlertsCount` — implementează query-ul real (vezi secțiunea de mai sus)
+- [x] `document-list.tsx` — preia `therapistName` din settings, nu fallback static
+- [x] `google/drive.ts` — înlocuiește numele hardcodat din template-urile Google Drive
 - [ ] Separare model `guardian` — câmpurile plate `parent_name`, `parent_phone`, `parent_email` de pe `clients` pot fi mutate într-un subtabel `client_guardians` (task separat, necesită migrare nouă)
 
 ---
@@ -211,10 +168,9 @@ Testare manuală, în ordine de prioritate:
 ## Ordine recomandată de lucru
 
 ```
-1. supabase db push                    ← BLOCKER, faci tu manual
-2. Validare lifecycle (butoane + istoric)
-3. Implementare date dinamice (A, B, C + vault alerts)
-4. QA funcțional (flux 1→9)
-5. QA accesibilitate
-6. Polish opțional
+1. Validare lifecycle (butoane + istoric)
+2. QA funcțional (flux 1→9)
+3. QA accesibilitate
+4. Separare model `guardian` (opțional, cu migrare nouă)
+5. Viitor / opțional
 ```

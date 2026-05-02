@@ -48,6 +48,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { Expense, ExpenseCategory } from "@/app/dashboard/expenses/actions";
 import { createExpense, deleteExpense } from "@/app/dashboard/expenses/actions";
+import { toast } from "@/components/ui/toast";
 import { useOverlayA11y } from "@/components/ui/use-overlay-a11y";
 import { EmptyState, SectionCard } from "@/components/app/page-shell";
 import { StatCard as DashboardStatCard } from "@/components/dashboard/stat-card";
@@ -146,6 +147,9 @@ export function ExpensesClient({
       const result = await deleteExpense(id);
       if (result.ok) {
         setExpenses((prev) => prev.filter((e) => e.id !== id));
+        toast.success("Cheltuiala a fost ștearsă.");
+      } else {
+        toast.error(result.error ?? "Nu am putut șterge cheltuiala.");
       }
     });
   }

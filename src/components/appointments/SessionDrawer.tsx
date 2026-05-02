@@ -38,6 +38,7 @@ import type { InvoiceRow } from "@/lib/invoices/queries";
 import { updateStatusInline, updateAppointmentFields } from "@/app/dashboard/appointments/session-actions";
 import type { AppointmentStatus } from "@/lib/appointments/helpers";
 import { useOverlayA11y } from "@/components/ui/use-overlay-a11y";
+import { toast } from "@/components/ui/toast";
 
 const STATUS_TRANSITIONS: Record<string, AppointmentStatus[]> = {
   PROGRAMAT: ["CONFIRMAT", "ANULAT"],
@@ -103,10 +104,20 @@ export function SessionDrawer({
           invoiceId: result.autoInvoiceId,
           error: result.autoInvoiceError,
         });
+        const labels: Record<AppointmentStatus, string> = {
+          PROGRAMAT: "Programare reactivată.",
+          CONFIRMAT: "Programare confirmată.",
+          FINALIZAT: "Ședință marcată finalizată.",
+          ANULAT: "Programare anulată.",
+          LIPSA: "Absență înregistrată.",
+        };
+        toast.success(labels[newStatus] ?? "Status actualizat.");
         router.refresh();
         if (newStatus === "FINALIZAT" && result.autoInvoiceId) {
           setActiveTab("invoice");
         }
+      } else {
+        toast.error(result.error ?? "Nu am putut actualiza statusul programării.");
       }
     });
   }

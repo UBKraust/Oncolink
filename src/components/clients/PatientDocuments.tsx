@@ -8,6 +8,7 @@ import {
   FileImage, FileScan, Plus, ShieldAlert, X,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { EmptyState } from "@/components/app/page-shell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -285,7 +286,11 @@ export function PatientDocuments({ clientId, isMinor, documents }: Props) {
       )}
 
       {Object.keys(byType).length === 0 ? (
-        <p className="text-sm text-muted-foreground text-center py-4">Niciun document încărcat.</p>
+        <EmptyState
+          icon={FileScan}
+          title="Niciun document încărcat"
+          description="Adaugă documente medicale, scrisori sau acorduri relevante pentru această fișă."
+        />
       ) : (
         Object.entries(byType).map(([type, typeDocs]) => {
           const cfg = DOCUMENT_TYPE_CONFIG[type as DocumentType];

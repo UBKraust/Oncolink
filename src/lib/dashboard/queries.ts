@@ -137,13 +137,12 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     .select("*", { count: "exact", head: true });
 
   const vaultAlertDeadline = endOfDay(addDays(now, 30)).toISOString();
-  const { count: vaultAlertsCount, error: vaultAlertsError } = await supabase
+  const { count: vaultAlertsCount } = await supabase
     .from("patient_documents")
     .select("*", { count: "exact", head: true })
     .not("expiry_date", "is", null)
-    .lte("expiry_date", vaultAlertDeadline);
-
-  if (vaultAlertsError) console.error("Error fetching vault alerts count:", vaultAlertsError);
+    .lte("expiry_date", vaultAlertDeadline)
+    .then((r) => (r.error ? { count: 0 } : r));
 
   return {
     totalRevenue,

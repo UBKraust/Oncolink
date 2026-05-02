@@ -151,7 +151,7 @@ export function ClientAiAssistant({ clientContext }: Props) {
         }
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Eroare";
+      const msg = err instanceof Error ? err.message : "Nu am putut procesa răspunsul AI.";
       setError(
         msg.includes("fetch") || msg.includes("Failed")
           ? "Ollama nu este pornit. Rulează `ollama serve` în terminal."

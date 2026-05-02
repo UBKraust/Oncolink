@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FileText, Loader2, ShieldCheck } from "lucide-react";
+import { FileText, Loader2, ShieldCheck, Users } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { EmptyState } from "@/components/app/page-shell";
 import {
   Table,
   TableBody,
@@ -96,11 +97,12 @@ export function DocumentList({
 
   if (clients.length === 0) {
     return (
-      <Card className="rounded-[1.75rem] border-border/60 shadow-sm">
-        <CardContent className="p-8 text-center text-sm text-muted-foreground">
-          Niciun client activ găsit pentru generarea documentelor.
-        </CardContent>
-      </Card>
+      <EmptyState
+        icon={Users}
+        title="Niciun client activ"
+        description="Documentele pot fi generate doar pentru clienți activi. Adaugă un client pentru a începe."
+        action={{ label: "Client nou", href: "/dashboard/clients/new" }}
+      />
     );
   }
 

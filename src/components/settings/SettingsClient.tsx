@@ -78,7 +78,7 @@ function ProfileTab({ s }: { s: TherapistSettings }) {
     start(async () => {
       const res = await updateProfileSettings(form);
       if (res.success) setSaved(true);
-      else setError(res.error ?? "Eroare");
+      else setError(res.error ?? "Nu am putut salva setările profilului.");
     });
   }
 
@@ -178,7 +178,7 @@ function PricingTab({ s }: { s: TherapistSettings }) {
         default_session_duration_minutes: defaultDuration,
       });
       if (res.success) setSaved(true);
-      else setError(res.error ?? "Eroare");
+      else setError(res.error ?? "Nu am putut salva tarifele.");
     });
   }
 
@@ -283,7 +283,7 @@ function ScheduleTab({ s }: { s: TherapistSettings }) {
     start(async () => {
       const res = await updateScheduleSettings(schedule);
       if (res.success) setSaved(true);
-      else setError(res.error ?? "Eroare");
+      else setError(res.error ?? "Nu am putut salva programul de lucru.");
     });
   }
 
@@ -408,7 +408,7 @@ function IntegrationsTab({ s }: { s: TherapistSettings }) {
     start(async () => {
       const res = await updateIntegrationsSettings(payload);
       if (res.success) setSaved(true);
-      else setError(res.error ?? "Eroare");
+      else setError(res.error ?? "Nu am putut salva integrările.");
     });
   }
 
@@ -550,7 +550,7 @@ function SecurityTab({ s }: { s: TherapistSettings }) {
     start(async () => {
       const res = await updatePinSettings(pin.current, pin.next);
       if (res.success) { setSaved(true); setPin({ current: "", next: "", confirm: "" }); }
-      else setError(res.error ?? "Eroare");
+      else setError(res.error ?? "Nu am putut actualiza PIN-ul.");
     });
   }
 
@@ -651,7 +651,7 @@ function CasTab({ s }: { s: TherapistSettings }) {
     start(async () => {
       const res = await updateCasSettings(form);
       if (res.success) setSaved(true);
-      else setError(res.error ?? "Eroare");
+      else setError(res.error ?? "Nu am putut salva setările CAS.");
     });
   }
 

@@ -23,6 +23,57 @@ Aceasta regula ramane activa pe tot parcursul proiectului.
 
 ## Ce s-a facut
 
+### 14. Revizie texte UI — mesaje de eroare contextuale
+
+- Audit complet diacritice: **PASS** — toate formele greșite (`Inapoi`, `Sterge`, `Adauga`, etc.) fie nu există, fie sunt corect scrise cu diacritice.
+- Audit CTA-uri vagi: **PASS** — niciun "Click here", "OK" izolat sau altă formulare neclară găsită.
+- Fixate 6 mesaje fallback `"Eroare"` generic în `SettingsClient.tsx` cu mesaje contextuale per secțiune:
+  - Profil → "Nu am putut salva setările profilului."
+  - Tarife → "Nu am putut salva tarifele."
+  - Program → "Nu am putut salva programul de lucru."
+  - Integrări → "Nu am putut salva integrările."
+  - PIN → "Nu am putut actualiza PIN-ul."
+  - CAS → "Nu am putut salva setările CAS."
+- Fixat fallback generic `"Eroare"` în `ClientAiAssistant.tsx` → "Nu am putut procesa răspunsul AI."
+
+`npm run lint` ✅ | `npm run build` ✅
+
+Fișiere principale:
+
+- [src/components/settings/SettingsClient.tsx](src/components/settings/SettingsClient.tsx)
+- [src/components/clients/ClientAiAssistant.tsx](src/components/clients/ClientAiAssistant.tsx)
+
+---
+
+### 13. Empty states coerente pe paginile rămase
+
+- Am înlocuit mesajul text plat din `DocumentList` (pagina `/documents`) cu `EmptyState` — icon `Users`, titlu "Niciun client activ", descriere și CTA către `/dashboard/clients/new`.
+- Am înlocuit paragraful text din `PatientDocuments` (secțiunea Medical din fișa clientului) cu `EmptyState` — icon `FileScan`, titlu "Niciun document încărcat", descriere orientativă.
+- Toate celelalte pagini dashboard (facturi, cheltuieli, programări, calendar, note, evaluări) aveau deja empty states coerente — confirmat prin survey complet.
+
+`npm run lint` ✅ | `npm run build` ✅
+
+Fișiere principale:
+
+- [src/components/documents/document-list.tsx](src/components/documents/document-list.tsx)
+- [src/components/clients/PatientDocuments.tsx](src/components/clients/PatientDocuments.tsx)
+
+---
+
+### 12. Toast feedback pe acțiuni distructive și de status
+
+- Am adăugat toast de confirmare și eroare la ștergerea cheltuielilor în `ExpensesClient.tsx`: după `deleteExpense`, afișăm `toast.success("Cheltuiala a fost ștearsă.")` sau `toast.error(...)` dacă acțiunea eșuează.
+- Am adăugat toast la schimbarea statusului programării în `SessionDrawer.tsx` (`handleStatusChange`): fiecare status nou afișează un mesaj specific (confirmat, finalizat, anulat, absent, reactivat), plus `toast.error(...)` dacă acțiunea eșuează.
+
+`npm run lint` ✅ | `npm run build` ✅
+
+Fișiere principale:
+
+- [src/components/expenses/ExpensesClient.tsx](src/components/expenses/ExpensesClient.tsx)
+- [src/components/appointments/SessionDrawer.tsx](src/components/appointments/SessionDrawer.tsx)
+
+---
+
 ### 8. Flow client si lifecycle operational
 
 - Am definit si implementat un prim model de lifecycle derivat pentru clienti, fara migrare de schema, folosind datele deja existente din onboarding, consimtamant, programari si anonimizare.
@@ -269,10 +320,10 @@ Fisiere principale:
 
 ### 🟢 Polish si finisare
 
-- [ ] Empty states coerente pe toate paginile care pot fi goale la start (facturi, cheltuieli, documente, teste)
-- [ ] Mesaje de confirmare (toast) verificate pe toate actiunile destructive si importante
+- [x] Empty states coerente pe toate paginile care pot fi goale la start ✅ (DocumentList + PatientDocuments fixate; restul confirmate complete)
+- [x] Mesaje de confirmare (toast) verificate pe toate actiunile destructive si importante (ștergere cheltuieli ✅, schimbare status programare ✅)
 - [ ] Separare model `guardian` — campurile plate de pe `clients` (`parent_name`, `parent_phone`, etc.) ar putea fi mutate intr-un subtabel dedicat (task separat, nu blocker)
-- [ ] Revizie texte UI — romani diacritice consistente, mesaje de eroare clare, CTA-uri explicite
+- [x] Revizie texte UI ✅ — diacritice PASS, CTA-uri PASS, 7 mesaje de eroare generice fixate cu text contextual
 
 ### 🔵 Optional / Viitor
 

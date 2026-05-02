@@ -30,6 +30,7 @@ Status legend:
 | 12. Standardize monthly review surfaces | `done` | KPI summaries, financial health, chart area, compliance alerts, and AI recap now align with shared card primitives and calmer semantics |
 | 13. Align assessments, AI, and settings entry surfaces | `done` | Secondary dashboard pages now use calmer status, chip, and error surfaces closer to the shared system |
 | 14. Align visible vault surfaces | `done` | Expiry badges, archive cards, and upload modal states now match the calmer semantic/dashboard language |
+| 15. Clean deeper settings and import support surfaces | `done` | Settings tabs, legacy accent cards, and import feedback states now use calmer shared shells and semantic treatment closer to the rest of the dashboard |
 
 ### Progress Log
 
@@ -106,7 +107,12 @@ Status legend:
 - Document cards and upload modal surfaces were toned down toward the same border/background language as the rest of the dashboard.
 - Upload success and error states now read more consistently with the shared semantic system.
 - Validation: targeted ESLint run passed for `VaultClient.tsx`.
-- Current focus: continue through the heaviest remaining secondary surfaces, especially the deeper `SettingsClient` internals and any remaining older dashboard modules.
+- Completed task 15 with a deeper settings/import support pass:
+- `SettingsClient` now relies more consistently on shared card shells, calmer semantic badges, and standard footer/action treatment across tabs.
+- Legacy accent-heavy panels in `Security`, `CAS`, and the SmartBill import entry were toned down toward the shared dashboard language.
+- `ImportDashboard` upload, success, and error states now sit on calmer token-driven surfaces instead of older utility styling.
+- Validation: targeted ESLint run passed for `SettingsClient.tsx` and `ImportDashboard.tsx`.
+- Current focus: continue through any remaining older dashboard modules outside the main settings/import path.
 
 ## 1. Executive Summary
 

@@ -15,7 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import type { ImportedExpense, ImportedInvoice } from "@/lib/imports/smartbill";
-import { SetupBanner } from "@/components/app/page-shell";
+import { SectionCard, SetupBanner } from "@/components/app/page-shell";
 
 type ImportType = "invoices" | "expenses";
 type CsvRow = Record<string, string | undefined>;
@@ -136,19 +136,19 @@ export function ImportDashboard() {
         />
       </div>
 
-      <Card className="md:col-span-2 rounded-[1.75rem] border-border/60 bg-card shadow-sm">
-        <CardContent className="flex items-start gap-3 pt-6">
-          <Info className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-          <div className="space-y-1 text-sm text-muted-foreground">
-            <p className="font-semibold text-foreground">Checklist înainte de upload:</p>
-            <ul className="list-disc list-inside space-y-0.5">
-              <li>Exportă fișierele din SmartBill folosind formatul <strong>CSV</strong>.</li>
-              <li>Aplicația va încerca să identifice automat clienții existenți după nume.</li>
-              <li>Sumele importate vor apărea instant în dashboard-ul de <strong>Monthly Review</strong>.</li>
-            </ul>
-          </div>
-        </CardContent>
-      </Card>
+      <SectionCard
+        title="Checklist înainte de upload"
+        description="Revizuiește formatul exportului și felul în care datele vor fi împăcate cu istoricul existent."
+        icon={Info}
+      >
+        <div className="px-6 py-5 text-sm text-muted-foreground">
+          <ul className="list-disc space-y-1 pl-5">
+            <li>Exportă fișierele din SmartBill folosind formatul <strong>CSV</strong>.</li>
+            <li>Aplicația va încerca să identifice automat clienții existenți după nume.</li>
+            <li>Sumele importate vor apărea instant în dashboard-ul de <strong>Monthly Review</strong>.</li>
+          </ul>
+        </div>
+      </SectionCard>
     </div>
   );
 }
@@ -182,17 +182,17 @@ function ImportCard({
 
   return (
     <Card className={cn(
-      "rounded-[1.75rem] border-2 shadow-sm transition-all",
-      stats.status === "success" ? "border-emerald-500 bg-emerald-50/10" : "border-border/60"
+      "rounded-[2rem] border border-border/60 bg-card shadow-sm transition-all",
+      stats.status === "success" ? "border-emerald-200 bg-emerald-50/30 dark:border-emerald-900 dark:bg-emerald-950/20" : ""
     )}>
-      <CardHeader>
+      <CardHeader className="border-b border-border/60 bg-muted/20">
         <CardTitle className="flex items-center gap-2 text-lg">
-          {stats.status === "success" ? <CheckCircle2 className="h-5 w-5 text-emerald-500" /> : <History className="h-5 w-5 text-primary" />}
+          {stats.status === "success" ? <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-300" /> : <History className="h-5 w-5 text-primary" />}
           {title}
         </CardTitle>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 pt-6">
         {stats.status === "idle" || stats.status === "error" ? (
           <>
             <div 
@@ -201,11 +201,11 @@ function ImportCard({
               onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
               onDragLeave={() => setDragOver(false)}
               className={cn(
-                "flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-8 cursor-pointer transition-all gap-3",
+                "flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border border-dashed p-8 transition-all",
                 dragOver ? "border-primary bg-primary/5 ring-4 ring-primary/10" : "border-border/60 hover:border-primary/50 hover:bg-muted/20"
               )}
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted">
                 <Upload className="h-6 w-6 text-muted-foreground" />
               </div>
               <div className="text-center">
@@ -236,7 +236,7 @@ function ImportCard({
             </div>
 
             {stats.status === "error" && (
-              <div className="flex items-center gap-2 rounded-xl border border-rose-100 bg-rose-50 p-3 text-xs text-rose-600">
+              <div className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50/80 p-3 text-xs text-rose-700 dark:border-rose-900 dark:bg-rose-950/20 dark:text-rose-200">
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 {stats.errorMsg}
               </div>
@@ -244,11 +244,11 @@ function ImportCard({
           </>
         ) : stats.status === "success" ? (
           <div className="space-y-3 py-8 text-center">
-             <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+             <div className="inline-flex h-16 w-16 items-center justify-center rounded-[1.25rem] bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-200">
                 <CheckCircle2 className="h-8 w-8" />
              </div>
              <div>
-                <p className="text-sm font-bold italic text-foreground">Import reușit!</p>
+                <p className="text-sm font-bold text-foreground">Import reușit</p>
                 <p className="mt-1 text-xs text-muted-foreground">Au fost procesate cu succes {stats.total} înregistrări.</p>
              </div>
              <Button variant="outline" size="sm" onClick={onReset}>
@@ -261,7 +261,7 @@ function ImportCard({
               <span className="text-muted-foreground">
                 {stats.status === "parsing" ? "Se analizează fișierul..." : "Se încarcă datele..."}
               </span>
-              <span className="animate-pulse text-primary">{stats.total} rânduri identificate</span>
+              <span className="text-primary">{stats.total} rânduri identificate</span>
             </div>
             <Progress value={stats.status === "uploading" ? 100 : 50} className="h-2" />
             <div className="flex justify-center">

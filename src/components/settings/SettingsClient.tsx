@@ -50,9 +50,9 @@ function SaveFeedback({ saved, error }: { saved: boolean; error: string | null }
   return null;
 }
 
-const settingsCardClassName = "rounded-[1.75rem] border-border/60 shadow-sm";
+const settingsCardClassName = "rounded-[2rem] border-border/60 bg-card shadow-sm";
 const settingsCardHeaderClassName = "border-b border-border/60 bg-muted/20 pb-4";
-const settingsFooterClassName = "border-t border-border/60 pt-4 flex items-center gap-4 flex-wrap";
+const settingsFooterClassName = "flex flex-wrap items-center gap-4 border-t border-border/60 pt-4";
 
 // ─── Tab: Profil ─────────────────────────────────────────────────────────────
 
@@ -195,7 +195,7 @@ function PricingTab({ s }: { s: TherapistSettings }) {
         <CardContent className="space-y-5 pt-6">
           <div className="space-y-2">
             {sessionTypes.map((row, i) => (
-              <div key={i} className="flex items-center gap-2 rounded-2xl border border-border/60 bg-muted/20 p-2">
+              <div key={i} className="flex items-center gap-2 rounded-xl border border-border/60 bg-muted/20 p-2.5">
                 <Input
                   value={row.name}
                   onChange={e => updateRow(i, "name", e.target.value)}
@@ -310,7 +310,7 @@ function ScheduleTab({ s }: { s: TherapistSettings }) {
             {DAYS.map(({ key, label }) => {
               const day = schedule[key];
               return (
-                <div key={key} className={`grid grid-cols-[100px_1fr] gap-3 rounded-2xl border px-3 py-3 ${day.enabled ? "border-border/60 bg-muted/20" : "border-border/40 opacity-50"}`}>
+                <div key={key} className={`grid grid-cols-[100px_1fr] gap-3 rounded-xl border px-3 py-3 ${day.enabled ? "border-border/60 bg-muted/20" : "border-border/40 bg-background/70 opacity-60"}`}>
                   {/* Toggle + label */}
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -472,17 +472,24 @@ function IntegrationsTab({ s }: { s: TherapistSettings }) {
       </Card>
 
       {/* Historical Import Entry */}
-      <Card className="rounded-[1.75rem] border-primary/20 bg-primary/5 shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-bold flex items-center gap-2">
+      <Card className={settingsCardClassName}>
+        <CardHeader className={settingsCardHeaderClassName}>
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-1">
+              <CardTitle className="flex items-center gap-2 text-base">
             <History className="h-4 w-4 text-primary" />
             Migrare Date Istorice
-          </CardTitle>
-          <CardDescription className="text-xs">
-            Ai lucrat deja în SmartBill? Importă facturile și cheltuielile din lunile trecute pentru a avea rapoarte financiare complete.
-          </CardDescription>
+              </CardTitle>
+              <CardDescription>
+                Ai lucrat deja în SmartBill? Importă facturile și cheltuielile din lunile trecute pentru a avea rapoarte financiare complete.
+              </CardDescription>
+            </div>
+            <Badge variant="info" className="shrink-0">
+              Migrare
+            </Badge>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <Button asChild size="sm" variant="outline" className="w-full sm:w-auto gap-2">
             <Link href="/dashboard/settings/import">
               Deschide Importator CSV <ArrowRight className="h-3 w-3" />
@@ -526,7 +533,7 @@ function IntegrationsTab({ s }: { s: TherapistSettings }) {
         </CardContent>
       </Card>
 
-      <div className="flex items-center gap-4">
+      <div className={settingsFooterClassName}>
         <Button disabled={isPending}>{isPending ? "Se salvează…" : "Salvează Integrările"}</Button>
         <SaveFeedback saved={saved} error={error} />
       </div>
@@ -555,20 +562,27 @@ function SecurityTab({ s }: { s: TherapistSettings }) {
   }
 
   return (
-    <Card className="rounded-[1.75rem] border-amber-200 bg-amber-50/30 shadow-sm">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-amber-800">
-          <Shield className="h-5 w-5" />
-          PIN Dosar Clinic
-        </CardTitle>
-        <CardDescription className="text-amber-700/80">
-          Notițele clinice sunt protejate cu un PIN. Acesta este cerut la fiecare accesare.
-        </CardDescription>
+    <Card className={settingsCardClassName}>
+      <CardHeader className={settingsCardHeaderClassName}>
+        <div className="flex items-start justify-between gap-3">
+          <div className="space-y-1">
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-primary" />
+              PIN Dosar Clinic
+            </CardTitle>
+            <CardDescription>
+              Notițele clinice sunt protejate cu un PIN. Acesta este cerut la fiecare accesare.
+            </CardDescription>
+          </div>
+          <Badge variant={s.has_pin ? "success" : "warning"} className="shrink-0">
+            {s.has_pin ? "Activ" : "Necesită setare"}
+          </Badge>
+        </div>
       </CardHeader>
-      <CardContent>
-        <div className="mb-6 flex items-start gap-4 rounded-2xl border border-border/60 bg-background p-4">
-          <div className="p-2 bg-emerald-100 rounded-full shrink-0">
-            <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+      <CardContent className="space-y-6 pt-6">
+        <div className="flex items-start gap-4 rounded-xl border border-border/60 bg-muted/20 p-4">
+          <div className="rounded-2xl bg-emerald-100 p-2 shrink-0 dark:bg-emerald-950">
+            <CheckCircle2 className="h-5 w-5 text-emerald-700 dark:text-emerald-200" />
           </div>
           <div>
             <p className="font-medium text-sm">{s.has_pin ? "PIN configurat" : "PIN neconfigurat"}</p>
@@ -580,7 +594,7 @@ function SecurityTab({ s }: { s: TherapistSettings }) {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 max-w-sm">
+        <form onSubmit={handleSubmit} className="max-w-sm space-y-4">
           <h4 className="text-sm font-semibold flex gap-2 items-center">
             <KeyRound className="w-4 h-4" />
             {s.has_pin ? "Schimbă PIN-ul" : "Setează PIN"}
@@ -620,7 +634,7 @@ function SecurityTab({ s }: { s: TherapistSettings }) {
               className="font-mono text-center tracking-[0.5em]"
             />
           </div>
-          <div className="flex items-center gap-4 pt-2">
+          <div className="flex flex-wrap items-center gap-4 pt-2">
             <Button disabled={isPending} className="gap-2">
               <Lock className="w-4 h-4" />
               {isPending ? "Se actualizează…" : "Actualizează PIN"}
@@ -657,19 +671,25 @@ function CasTab({ s }: { s: TherapistSettings }) {
 
   return (
     <form onSubmit={handleSubmit}>
-      <Card className="rounded-[1.75rem] border-blue-200 bg-blue-50/30 shadow-sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-blue-800">
-            <Hospital className="h-5 w-5" />
-            Contract CAS — Servicii Conexe Psihologie
-          </CardTitle>
-          <CardDescription className="text-blue-700/80">
-            Activează dacă ai contract activ cu Casa de Asigurări de Sănătate.
-            Modulul afișează evidența ședințelor decontate și permite exportul CSV lunar pentru SIUI.
-          </CardDescription>
+      <Card className={settingsCardClassName}>
+        <CardHeader className={settingsCardHeaderClassName}>
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-1">
+              <CardTitle className="flex items-center gap-2">
+                <Hospital className="h-5 w-5 text-primary" />
+                Contract CAS — Servicii Conexe Psihologie
+              </CardTitle>
+              <CardDescription>
+                Activează dacă ai contract activ cu Casa de Asigurări de Sănătate. Modulul afișează evidența ședințelor decontate și permite exportul CSV lunar pentru SIUI.
+              </CardDescription>
+            </div>
+            <Badge variant={form.cas_active ? "info" : "secondary"} className="shrink-0">
+              {form.cas_active ? "Activ" : "Inactiv"}
+            </Badge>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-border/60 bg-background p-4 transition-colors hover:bg-muted/20">
+        <CardContent className="space-y-4 pt-6">
+          <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-border/60 bg-muted/20 p-4 transition-colors hover:bg-muted/30">
             <input
               type="checkbox"
               checked={form.cas_active}
@@ -702,7 +722,7 @@ function CasTab({ s }: { s: TherapistSettings }) {
             </div>
           </div>
         </CardContent>
-        <CardFooter className="border-t pt-4 flex items-center gap-4 flex-wrap">
+        <CardFooter className={settingsFooterClassName}>
           <Button disabled={isPending}>{isPending ? "Se salvează…" : "Salvează Configurație CAS"}</Button>
           <Button variant="outline" asChild>
             <Link href="/dashboard/cas">Deschide Modul CAS</Link>
@@ -724,14 +744,14 @@ export function SettingsClient({ settings }: { settings: TherapistSettings }) {
         description="Configurează identitatea profesională, tarifele, orarul și integrările într-un singur loc. Modificările se aplică fluxurilor de programare, facturare și documente."
       />
       <div className="mb-4 overflow-x-auto pb-2">
-      <TabsList className="flex min-w-max gap-2 rounded-2xl border border-border/60 bg-card p-1 shadow-sm">
-        <TabsTrigger value="profile">Profil</TabsTrigger>
-        <TabsTrigger value="pricing">Tarife</TabsTrigger>
-        <TabsTrigger value="schedule">Orar</TabsTrigger>
-        <TabsTrigger value="integrations">Integrări</TabsTrigger>
-        <TabsTrigger value="security">Securitate</TabsTrigger>
-        <TabsTrigger value="cas">CAS</TabsTrigger>
-      </TabsList>
+        <TabsList className="flex min-w-max gap-2 rounded-2xl border border-border/60 bg-card p-1 shadow-sm">
+          <TabsTrigger value="profile">Profil</TabsTrigger>
+          <TabsTrigger value="pricing">Tarife</TabsTrigger>
+          <TabsTrigger value="schedule">Orar</TabsTrigger>
+          <TabsTrigger value="integrations">Integrări</TabsTrigger>
+          <TabsTrigger value="security">Securitate</TabsTrigger>
+          <TabsTrigger value="cas">CAS</TabsTrigger>
+        </TabsList>
       </div>
 
       <TabsContent value="profile"      className="animate-in fade-in duration-300"><ProfileTab      s={settings} /></TabsContent>

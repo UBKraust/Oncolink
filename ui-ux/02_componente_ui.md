@@ -358,6 +358,52 @@ toast.error("Eroare la salvare.")           // 5000ms
 
 ---
 
+## ServiceTrackCard
+
+**Fișier:** [src/components/clients/ServiceTrackCard.tsx](../src/components/clients/ServiceTrackCard.tsx)
+
+Componentă reutilizabilă care afișează tipul de serviciu al unui client (badge colorat), statusul track-ului opțional, și next best action calculat contextual din combinația `service_type` + `lifecycle_status`.
+
+### Props
+
+| Prop | Tip | Descriere |
+|------|-----|-----------|
+| `serviceType` | `ServiceType` | Tipul de serviciu (INDIVIDUAL, MINOR_CLIENT, B2B_COMPANY, etc.) |
+| `lifecycleStatus` | `string` | Statusul lifecycle curent al clientului |
+| `serviceTrackStatus` | `string?` | Status track serviciu (opțional) |
+
+### Service Types
+
+| Valoare | Label | Badge Variant |
+|---------|-------|---------------|
+| `UNDECIDED` | Nedecis | `secondary` |
+| `INDIVIDUAL` | Individual | `default` |
+| `MINOR_CLIENT` | Pacient minor | `info` |
+| `B2B_COMPANY` | Companie B2B | `warning` |
+| `TRAINING_GROUP` | Grup de formare | `success` |
+| `SUPERVISION` | Supervizare | `outline` |
+
+### Logica next action
+
+Calculată în `src/lib/clients/service-track.ts` prin `computeServiceTrackNextAction(serviceType, lifecycleStatus)`. Returnează un mesaj contextual diferit per combinație tip serviciu + lifecycle (ex: pentru MINOR_CLIENT în ONBOARDING → "Confirmă datele tutorelui și programează prima ședință").
+
+### Utilizare în ClientDashboardUI
+
+- Badge service type afișat în header (ascuns dacă `UNDECIDED`)
+- `ServiceTrackCard` randată deasupra gridului Status/Pași/Semnale
+
+### Exemplu
+
+```tsx
+<ServiceTrackCard
+  serviceType={client.service_type}
+  lifecycleStatus={client.lifecycle_status}
+  serviceTrackStatus={client.service_track_status ?? undefined}
+/>
+```
+
+---
+
 ## Iconografie
 
 **Librărie:** `lucide-react`

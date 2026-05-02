@@ -6,14 +6,17 @@ Fiecare client trece printr-un ciclu de viață explicit, urmărit persistent î
 
 ## Fișiere Cheie
 
-- [src/lib/clients/lifecycle.ts](../src/lib/clients/lifecycle.ts) — logica stărilor
-- [src/lib/clients/lifecycle-sync.ts](../src/lib/clients/lifecycle-sync.ts) — sincronizare pe acțiuni UI
+- [src/lib/clients/lifecycle.ts](../src/lib/clients/lifecycle.ts) — logica stărilor lifecycle
+- [src/lib/clients/lifecycle-sync.ts](../src/lib/clients/lifecycle-sync.ts) — sincronizare pe acțiuni UI + `changed_by_name`
+- [src/lib/clients/service-track.ts](../src/lib/clients/service-track.ts) — `ServiceType`, labels, badge variants, `computeServiceTrackNextAction()`
 - [src/lib/clients/queries.ts](../src/lib/clients/queries.ts) — `getClientStatusHistory()` cu fallback sigur
-- [src/components/clients/types.ts](../src/components/clients/types.ts) — `ClientStatusHistoryItem`
+- [src/components/clients/types.ts](../src/components/clients/types.ts) — `ClientStatusHistoryItem`, `ClientProfile` cu câmpuri service
+- [src/components/clients/ServiceTrackCard.tsx](../src/components/clients/ServiceTrackCard.tsx) — card tip serviciu + next action (reutilizabil)
 - [src/components/clients/ClientsClient.tsx](../src/components/clients/ClientsClient.tsx) — registru cu filtrare
-- [src/components/clients/ClientDashboardUI.tsx](../src/components/clients/ClientDashboardUI.tsx) — fișa client cu acțiuni lifecycle + secțiune "Istoric lifecycle"
+- [src/components/clients/ClientDashboardUI.tsx](../src/components/clients/ClientDashboardUI.tsx) — fișa client cu acțiuni lifecycle + ServiceTrackCard + "Istoric lifecycle"
 - [src/app/dashboard/clients/[id]/page.tsx](../src/app/dashboard/clients/[id]/page.tsx) — fetch paralel `getClientStatusHistory`
-- [supabase/migrations/20260429223610_client_lifecycle_status.sql](../supabase/migrations/20260429223610_client_lifecycle_status.sql) — schema `client_status_history`
+- [supabase/migrations/20260429223610_client_lifecycle_status.sql](../supabase/migrations/20260429223610_client_lifecycle_status.sql) — schema `client_status_history` (✅ aplicată)
+- [supabase/migrations/20260502_service_type_and_clinical_fields.sql](../supabase/migrations/20260502_service_type_and_clinical_fields.sql) — câmpuri service_type + clinice pe `clients` (🟠 pendingă)
 
 ## Diagrama Stărilor
 
@@ -69,7 +72,7 @@ flowchart TD
     STATUS --> BADGE["Badge colorat:\n🔵 Lead nou\n🟡 Onboarding\n🟢 Activ\n🔴 Inactiv\n⚫ Incheiat"]
 
     HISTORY --> ENTRY["Fiecare intrare afișează:\nfrom_status → to_status\nMotiv (sau Fără motiv explicit)\nTimestamp formatat (d MMM yyyy, HH:mm)"]
-    HISTORY --> EMPTY["Empty state dacă:\n- migrare neaplicată\n- client nou fără tranziții"]
+    HISTORY --> EMPTY["Empty state dacă:\n- client nou fără tranziții\n(migrare aplicată 2026-05-02)"]
 ```
 
 ## Date Istorice — Schema și Query
@@ -108,6 +111,42 @@ lifecycle-sync.ts
 
 - Acțiuni din dashboard (terapeut autentificat) → înregistrează numele terapeutului
 - Acțiuni de sistem/public (service role, fără sesiune) → `changed_by_name` absent → UI nu afișează nimic
+
+## Service Type — Tip Serviciu Principal (P0)
+
+Pe lângă lifecycle, fiecare client are un **tip de serviciu** (`service_type`) care descrie natura relației terapeutice:
+
+| Valoare | Descriere |
+|---------|-----------|
+| `UNDECIDED` | Nedecis (default la creare) |
+| `INDIVIDUAL` | Terapie individuală adult |
+| `MINOR_CLIENT` | Client minor (cu tutore) |
+| `B2B_COMPANY` | Contract cu companie |
+| `TRAINING_GROUP` | Grup de formare / training |
+| `SUPERVISION` | Supervizare profesională |
+
+### ServiceTrackCard
+
+Componentă `src/components/clients/ServiceTrackCard.tsx` afișată deasupra gridului lifecycle în fișa clientului:
+- Badge colorat cu tipul de serviciu (ascuns dacă `UNDECIDED`)
+- Status track opțional (`service_track_status`)
+- **Next best action** calculat din `computeServiceTrackNextAction(serviceType, lifecycleStatus)` — mesaj contextual diferit per combinație
+
+### Câmpuri clinice asociate (schema DB — migrare pendingă)
+
+Adăugate pe tabela `clients` prin migrarea `20260502_service_type_and_clinical_fields.sql`:
+- `service_type` (text, default `UNDECIDED`)
+- `service_track_status` (text, nullable)
+- `main_complaint` (text, nullable)
+- `clinical_focus` (text, nullable)
+- `treatment_goals` (text, nullable)
+- `treatment_plan` (text, nullable)
+- `risk_level` (text, nullable)
+- `research_consent` (boolean, default false)
+
+Index creat: `(therapist_id, service_type)` pentru filtrare eficientă per tip.
+
+---
 
 ## KPI-uri în Registrul de Clienți
 

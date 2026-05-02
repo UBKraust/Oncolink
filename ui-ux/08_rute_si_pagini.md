@@ -439,6 +439,11 @@ PageHeader "Client nou"
 
 SectionCard "Date inițiale client"
   ClientForm (adult):
+  ── Tip serviciu (poziționat înainte de Demografice) ──
+  │ Select "Tip serviciu principal"      │
+  │ (UNDECIDED/INDIVIDUAL/MINOR_CLIENT/  │
+  │  B2B_COMPANY/TRAINING_GROUP/         │
+  │  SUPERVISION)                        │
   ┌─────────────────┐  ┌─────────────────┐
   │ Nume complet *  │  │ Email *         │
   ├─────────────────┤  ├─────────────────┤
@@ -496,6 +501,14 @@ PageHeader
 Banner amber:
   "Onboarding necompletat"
   [📋 Copiază link onboarding minor]
+
+── Service Track (deasupra gridului) ──
+┌──────────────────────────────────────────────────┐
+│ ServiceTrackCard                                 │
+│ • Badge tip serviciu (ascuns dacă UNDECIDED)     │
+│ • service_track_status (opțional)                │
+│ • Next best action contextual per tip + lifecycle│
+└──────────────────────────────────────────────────┘
 
 ── Sumar Lifecycle ──
 ┌──────────────────────────────────────────────────┐

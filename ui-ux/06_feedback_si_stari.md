@@ -110,8 +110,9 @@ interface EmptyStateProps {
 | Programări | "Nicio programare" | Calendar fără events |
 | Facturi | "Nicio factură emisă" | Modul financiar gol |
 | Vault | "Nicio notă în seif" | Vault deblocat dar gol |
-| Istoric lifecycle | "Istoricul nu este disponibil încă" | Migrare neaplicată |
-| Documente | "Niciun document adăugat" | Fișa client fără documente |
+| Istoric lifecycle | "Istoricul nu este disponibil încă" | Migrare neaplicată sau client nou |
+| Documente legale | "Niciun client activ" | `DocumentList` — lista goală, CTA `/dashboard/clients/new` |
+| Documente clinice | "Niciun document încărcat" | `PatientDocuments` în fișa client — secțiunea medicală goală |
 
 ---
 
@@ -320,8 +321,11 @@ Cea mai frecventă metodă — `toast.success()` imediat după acțiune fără r
 |---------|---------|
 | Salvare formular | `toast.success()` + `router.refresh()` |
 | Eroare validare | Erori inline per câmp + eroare globală top |
-| Eroare server | `toast.error(message)` |
+| Eroare server | `toast.error(message)` — mesaj contextual per secțiune (nu generic "Eroare") |
 | Acțiune lifecycle (status) | `toast.success()` + `router.refresh()` |
+| Ștergere cheltuială | `AlertDialog` confirmare → `toast.success("Cheltuiala a fost ștearsă.")` sau `toast.error(...)` |
+| Ștergere document vault | `AlertDialog` confirmare → `toast.success/error()` |
+| Schimbare status programare | `toast.success()` cu mesaj specific per status (confirmat / finalizat / anulat / absent / reactivat) |
 | Anonimizare (distructivă) | `AlertDialog` → redirect cu `?anonymized=1` |
 | Upload fișier | `toast.success/error()` |
 | Copiere link (clipboard) | `toast.success("Link copiat!")` |

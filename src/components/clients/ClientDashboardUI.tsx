@@ -36,6 +36,10 @@ import { ContractGeneratorModal } from "@/components/clients/ContractGeneratorMo
 import { ServiceTrackCard } from "@/components/clients/ServiceTrackCard";
 import { DocumentRequirementsCard } from "@/components/clients/DocumentRequirementsCard";
 import { ClinicalContextCard } from "@/components/clients/ClinicalContextCard";
+import { HomeworkCard } from "@/components/clients/HomeworkCard";
+import { SafetyPlanCard } from "@/components/clients/SafetyPlanCard";
+import { CbtCaseFormulationCard } from "@/components/clients/CbtCaseFormulationCard";
+import { DbtDiaryCardsPanel } from "@/components/clients/DbtDiaryCardsPanel";
 import {
   SERVICE_TYPE_LABELS,
   SERVICE_TYPE_BADGE_VARIANTS,
@@ -52,6 +56,10 @@ import type {
   ClientStatusHistoryItem,
   CrisisNoteItem,
   WidgetCardProps,
+  HomeworkItem,
+  CbtCaseFormulation,
+  DbtDiaryCard,
+  SafetyPlan,
 } from "@/components/clients/types";
 
 interface ClientDashboardUIProps {
@@ -68,6 +76,11 @@ interface ClientDashboardUIProps {
   sectionParam: string | undefined;
   assessmentParam: string | undefined;
   aiClientContext: ClientAiContext;
+  // P2 clinical tools
+  homeworkItems: HomeworkItem[];
+  cbtFormulation: CbtCaseFormulation | null;
+  dbtDiaryCards: DbtDiaryCard[];
+  safetyPlan: SafetyPlan | null;
 }
 
 const SESSION_FREQ_LABELS: Record<string, string> = {
@@ -102,6 +115,10 @@ export function ClientDashboardUI({
   sectionParam,
   assessmentParam,
   aiClientContext,
+  homeworkItems,
+  cbtFormulation,
+  dbtDiaryCards,
+  safetyPlan,
 }: ClientDashboardUIProps) {
   type ClientWorkspaceView = "overview" | "clinic" | "appointments" | "lifecycle";
   const router = useRouter();
@@ -386,6 +403,27 @@ export function ClientDashboardUI({
 
       {!anonymized && (
         <ClinicalContextCard client={client} />
+      )}
+
+      {/* P2: CBT tools */}
+      {!anonymized && client.service_type === "CBT" && (
+        <>
+          <HomeworkCard clientId={client.id} items={homeworkItems} />
+          <CbtCaseFormulationCard clientId={client.id} formulation={cbtFormulation} />
+        </>
+      )}
+
+      {/* P2: DBT tools */}
+      {!anonymized && client.service_type === "DBT" && (
+        <>
+          <SafetyPlanCard clientId={client.id} plan={safetyPlan} />
+          <DbtDiaryCardsPanel clientId={client.id} cards={dbtDiaryCards} />
+        </>
+      )}
+
+      {/* P2: plan de siguranță pentru Psihologie clinică (risc) */}
+      {!anonymized && client.service_type === "CLINICAL_PSYCHOLOGY" && (
+        <SafetyPlanCard clientId={client.id} plan={safetyPlan} />
       )}
 
       <div className="grid gap-4 lg:grid-cols-3">

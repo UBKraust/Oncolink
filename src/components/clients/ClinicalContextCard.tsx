@@ -2,11 +2,12 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Brain, Pencil, X, Check, ShieldAlert } from "lucide-react";
+import { Brain, Pencil, X, Check, ShieldAlert, Plus, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
@@ -48,6 +49,9 @@ export function ClinicalContextCard({ client }: ClinicalContextCardProps) {
   const [mainComplaint, setMainComplaint] = useState(client.main_complaint ?? "");
   const [riskLevel, setRiskLevel] = useState(client.risk_level ?? "");
   const [treatmentPlan, setTreatmentPlan] = useState(client.treatment_plan ?? "");
+  const [goals, setGoals] = useState<string[]>(
+    Array.isArray(client.treatment_goals) ? (client.treatment_goals as string[]) : []
+  );
 
   const serviceType: ServiceType = isServiceType(client.service_type) ? client.service_type : "UNDECIDED";
 
@@ -61,12 +65,13 @@ export function ClinicalContextCard({ client }: ClinicalContextCardProps) {
     client.main_complaint ||
     (showRisk && client.risk_level) ||
     (showPlan && client.treatment_plan) ||
-    (showGoals && Array.isArray(client.treatment_goals) && client.treatment_goals.length > 0);
+    (showGoals && goals.length > 0);
 
   function handleCancel() {
     setMainComplaint(client.main_complaint ?? "");
     setRiskLevel(client.risk_level ?? "");
     setTreatmentPlan(client.treatment_plan ?? "");
+    setGoals(Array.isArray(client.treatment_goals) ? (client.treatment_goals as string[]) : []);
     setEditing(false);
   }
 
@@ -79,6 +84,14 @@ export function ClinicalContextCard({ client }: ClinicalContextCardProps) {
       }
       if (showPlan && treatmentPlan !== (client.treatment_plan ?? "")) {
         payload.treatment_plan = treatmentPlan;
+      }
+      if (showGoals) {
+        const currentGoals = Array.isArray(client.treatment_goals) ? (client.treatment_goals as string[]) : [];
+        const filteredGoals = goals.map((g) => g.trim()).filter(Boolean);
+        const changed =
+          filteredGoals.length !== currentGoals.length ||
+          filteredGoals.some((g, i) => g !== currentGoals[i]);
+        if (changed) payload.treatment_goals = filteredGoals;
       }
 
       if (!Object.keys(payload).length) {
@@ -244,28 +257,60 @@ export function ClinicalContextCard({ client }: ClinicalContextCardProps) {
         )}
 
         {/* Obiective terapeutice — CBT, DBT, Consiliere, Clinică */}
-        {showGoals && Array.isArray(client.treatment_goals) && client.treatment_goals.length > 0 && (
+        {showGoals && (
           <div className="py-4 space-y-1.5">
             <Label className="text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground">
               Obiective terapeutice
             </Label>
-            <ul className="space-y-1">
-              {(client.treatment_goals as string[]).map((goal, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm">
-                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                  <span>{goal}</span>
-                </li>
-              ))}
-            </ul>
-            <p className="text-[10px] text-muted-foreground mt-1">
-              Editează obiectivele din fișa completă →{" "}
-              <a
-                href={`/dashboard/clients/${client.id}/edit`}
-                className="text-primary hover:underline"
-              >
-                Editează client
-              </a>
-            </p>
+            {editing ? (
+              <div className="space-y-2">
+                {goals.map((goal, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Input
+                      value={goal}
+                      onChange={(e) => {
+                        const next = [...goals];
+                        next[i] = e.target.value;
+                        setGoals(next);
+                      }}
+                      placeholder={`Obiectiv ${i + 1}...`}
+                      className="text-sm h-9"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setGoals(goals.filter((_, j) => j !== i))}
+                      className="h-9 w-9 p-0 rounded-xl text-muted-foreground hover:text-destructive shrink-0"
+                      aria-label="Șterge obiectiv"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setGoals([...goals, ""])}
+                  className="h-8 gap-1.5 text-xs text-primary hover:text-primary px-2"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Adaugă obiectiv
+                </Button>
+              </div>
+            ) : goals.length > 0 ? (
+              <ul className="space-y-1">
+                {goals.map((goal, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm">
+                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                    <span>{goal}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-muted-foreground italic">Necompletat</p>
+            )}
           </div>
         )}
 

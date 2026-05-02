@@ -392,6 +392,7 @@ export async function updateServiceTrack(
     main_complaint?: string;
     risk_level?: string | null;
     treatment_plan?: string;
+    treatment_goals?: string[];
   },
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = await createSupabaseServerClient();
@@ -401,6 +402,7 @@ export async function updateServiceTrack(
   if ("main_complaint" in data) updatePayload.main_complaint = data.main_complaint;
   if ("risk_level" in data) updatePayload.risk_level = data.risk_level;
   if ("treatment_plan" in data) updatePayload.treatment_plan = data.treatment_plan;
+  if ("treatment_goals" in data) updatePayload.treatment_goals = data.treatment_goals;
 
   if (!Object.keys(updatePayload).length) return { success: true };
 
@@ -412,6 +414,139 @@ export async function updateServiceTrack(
   if (error) return { success: false, error: "Nu am putut actualiza contextul clinic." };
 
   revalidatePath(`/dashboard/clients/${id}`);
+  return { success: true };
+}
+
+// ─── P2: homework_items ───────────────────────────────────────────────────────
+
+export async function createHomeworkItem(
+  clientId: string,
+  description: string,
+  dueDate?: string,
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Neautentificat." };
+
+  const { error } = await supabase.from("homework_items").insert({
+    client_id: clientId,
+    therapist_id: user.id,
+    description: description.trim(),
+    due_date: dueDate ?? null,
+  });
+
+  if (error) return { success: false, error: "Nu am putut adăuga tema." };
+  revalidatePath(`/dashboard/clients/${clientId}`);
+  return { success: true };
+}
+
+export async function toggleHomeworkItem(
+  itemId: string,
+  clientId: string,
+  completed: boolean,
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from("homework_items")
+    .update({ completed_at: completed ? new Date().toISOString() : null })
+    .eq("id", itemId);
+
+  if (error) return { success: false, error: "Nu am putut actualiza tema." };
+  revalidatePath(`/dashboard/clients/${clientId}`);
+  return { success: true };
+}
+
+export async function deleteHomeworkItem(
+  itemId: string,
+  clientId: string,
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.from("homework_items").delete().eq("id", itemId);
+  if (error) return { success: false, error: "Nu am putut șterge tema." };
+  revalidatePath(`/dashboard/clients/${clientId}`);
+  return { success: true };
+}
+
+// ─── P2: cbt_case_formulations ────────────────────────────────────────────────
+
+export async function upsertCbtCaseFormulation(
+  clientId: string,
+  data: {
+    presenting_problem?: string;
+    automatic_thoughts?: string;
+    cognitive_distortions?: string[];
+    core_beliefs?: string;
+    behavioral_patterns?: string;
+    triggering_situations?: string;
+    maintenance_factors?: string;
+    strengths?: string;
+  },
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Neautentificat." };
+
+  const { error } = await supabase.from("cbt_case_formulations").upsert(
+    { client_id: clientId, therapist_id: user.id, ...data, updated_at: new Date().toISOString() },
+    { onConflict: "client_id" },
+  );
+
+  if (error) return { success: false, error: "Nu am putut salva formularul de caz." };
+  revalidatePath(`/dashboard/clients/${clientId}`);
+  return { success: true };
+}
+
+// ─── P2: dbt_diary_cards ──────────────────────────────────────────────────────
+
+export async function upsertDbtDiaryCard(
+  clientId: string,
+  weekStart: string,
+  data: {
+    emotion_scores?: Record<string, unknown>;
+    skills_used?: string[];
+    target_behaviors?: Array<{ name: string; count: number }>;
+    therapist_notes?: string;
+  },
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Neautentificat." };
+
+  const { error } = await supabase.from("dbt_diary_cards").upsert(
+    { client_id: clientId, therapist_id: user.id, week_start: weekStart, ...data },
+    { onConflict: "client_id,week_start" },
+  );
+
+  if (error) return { success: false, error: "Nu am putut salva diary card-ul." };
+  revalidatePath(`/dashboard/clients/${clientId}`);
+  return { success: true };
+}
+
+// ─── P2: safety_plans ─────────────────────────────────────────────────────────
+
+export async function upsertSafetyPlan(
+  clientId: string,
+  data: {
+    warning_signs?: string;
+    internal_coping?: string;
+    social_distractions?: string;
+    reasons_for_living?: string;
+    support_contacts?: Array<{ name: string; phone: string; relation?: string }>;
+    professional_contacts?: Array<{ name: string; phone: string }>;
+    safe_environment?: string;
+  },
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Neautentificat." };
+
+  const { error } = await supabase.from("safety_plans").upsert(
+    { client_id: clientId, therapist_id: user.id, ...data, updated_at: new Date().toISOString() },
+    { onConflict: "client_id" },
+  );
+
+  if (error) return { success: false, error: "Nu am putut salva planul de siguranță." };
+  revalidatePath(`/dashboard/clients/${clientId}`);
   return { success: true };
 }
 

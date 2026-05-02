@@ -17,11 +17,89 @@ Aceasta regula ramane activa pe tot parcursul proiectului.
 
 - `npm run lint`: ✅ verde
 - `npm run build`: ✅ verde
-- Migrarea lifecycle (`20260429223610_client_lifecycle_status.sql`) este scrisa dar **neaplicata inca in baza reala**
-- Migrarea P0 service_type (`20260502_service_type_and_clinical_fields.sql`) este scrisa dar **neaplicata inca in baza reala** — aplică ambele migrări împreună
-- Urmeaza: P1 — mapare documente recomandate per service_type, checklist documente lipsă
+- Migrarea lifecycle (`20260429223610_client_lifecycle_status.sql`) — **neaplicată în baza reală**
+- Migrarea P0 service_type (`20260502_service_type_and_clinical_fields.sql`) — **neaplicată în baza reală**
+- Migrarea P2 (`20260502_p2_clinical_tools.sql`) — **neaplicată în baza reală** — aplică toate 3 împreună
+- **P1 complet** (task-uri #17–21) · **P2 complet** (task-uri #22–25) — UI implementat, necesită migrări aplicate
+- Urmează: P3 — AI prompts contextuale, generare rapoarte per track
 
 ## Ce s-a facut
+
+### 22–25. P2 — Teme CBT, Formulare caz CBT, Diary cards DBT, Plan de siguranță DBT
+
+**Migrare nouă**: `supabase/migrations/20260502_p2_clinical_tools.sql`
+- `homework_items` — teme CBT cu `description`, `due_date`, `completed_at`, `therapist_notes`; RLS per `therapist_id`
+- `cbt_case_formulations` — formulare de caz CBT (unic per client); 8 câmpuri text + `cognitive_distortions text[]`
+- `dbt_diary_cards` — diary card săptămânal DBT; `unique(client_id, week_start)`; `target_behaviors jsonb`, `skills_used text[]`
+- `safety_plans` — plan de siguranță (unic per client); 5 câmpuri text + `support_contacts jsonb`, `professional_contacts jsonb`
+
+**Tipuri noi în `types.ts`**: `HomeworkItem`, `CbtCaseFormulation`, `DbtDiaryCard`, `SafetyPlan`
+
+**Queries noi în `queries.ts`**: `getHomeworkItems`, `getCbtCaseFormulation`, `getDbtDiaryCards`, `getSafetyPlan`
+- Toate au graceful fallback `isP2TableMissing()` → returnează [] / null dacă migrarea nu e aplicată
+
+**Server Actions noi în `actions.ts`**:
+- `createHomeworkItem`, `toggleHomeworkItem`, `deleteHomeworkItem`
+- `upsertCbtCaseFormulation`, `upsertDbtDiaryCard`, `upsertSafetyPlan`
+
+**4 componente noi**:
+- `HomeworkCard.tsx` — CBT: listă teme + adaugă + toggle completat + șterge; secțiune "Finalizate" colapsabilă
+- `CbtCaseFormulationCard.tsx` — CBT: formulare structurate cu 7 câmpuri text + distorsiuni cognitive ca tag-uri
+- `DbtDiaryCardsPanel.tsx` — DBT: accordion săptămâni + editare comportamente țintă (frecvență), abilități DBT, note terapeut
+- `SafetyPlanCard.tsx` — DBT + Clinică: plan de siguranță cu 5 secțiuni text + contacte suport + contacte profesionale; bordură roșie distinctivă
+
+**`page.tsx` actualizat** — fetch P2 data condiționat per `service_type` (CBT, DBT, CLINICAL_PSYCHOLOGY); nicio interogare inutilă
+
+**`ClientDashboardUI.tsx` actualizat** — 4 props noi + randare condiționată:
+- CBT: `HomeworkCard` + `CbtCaseFormulationCard`
+- DBT: `SafetyPlanCard` + `DbtDiaryCardsPanel`
+- CLINICAL_PSYCHOLOGY: `SafetyPlanCard`
+
+`npm run lint` ✅ | `npm run build` ✅
+
+Fișiere principale:
+- [supabase/migrations/20260502_p2_clinical_tools.sql](supabase/migrations/20260502_p2_clinical_tools.sql)
+- [src/components/clients/HomeworkCard.tsx](src/components/clients/HomeworkCard.tsx)
+- [src/components/clients/CbtCaseFormulationCard.tsx](src/components/clients/CbtCaseFormulationCard.tsx)
+- [src/components/clients/DbtDiaryCardsPanel.tsx](src/components/clients/DbtDiaryCardsPanel.tsx)
+- [src/components/clients/SafetyPlanCard.tsx](src/components/clients/SafetyPlanCard.tsx)
+- [src/lib/clients/queries.ts](src/lib/clients/queries.ts)
+- [src/app/dashboard/clients/actions.ts](src/app/dashboard/clients/actions.ts)
+- [src/app/dashboard/clients/[id]/page.tsx](src/app/dashboard/clients/[id]/page.tsx)
+- [src/components/clients/ClientDashboardUI.tsx](src/components/clients/ClientDashboardUI.tsx)
+
+---
+
+### 21. P1 — Filtru service type în lista clienți + obiective terapeutice inline + salt etapă
+
+- **`src/components/clients/ClientsClient.tsx`**:
+  - Importat `SERVICE_TYPE_LABELS`, `SERVICE_TYPE_BADGE_VARIANTS`, `isServiceType` din `service-track.ts`
+  - Adăugat stare `serviceFilter` (ALL / CLINICAL_PSYCHOLOGY / CBT / DBT / COUNSELING / UNDECIDED)
+  - Filtru chips cu numărătoare per tip, afișate între search bar și tabel
+  - Badge service type afișat în rândul tabelului (desktop) și în cardul mobil (ascuns dacă UNDECIDED)
+- **`src/components/clients/ClinicalContextCard.tsx`**:
+  - `treatment_goals` a trecut din read-only cu link extern → editor inline complet
+  - Stare locală `goals: string[]`, sincronizată cu `client.treatment_goals` la mount și cancel
+  - Editor: lista de `<Input>` individuale cu buton ștergere + buton "Adaugă obiectiv"
+  - Salvare: goals filtrate (trim + non-empty), comparate cu valorile actuale, trimise în `treatment_goals` dacă modificate
+  - `hasAnyData` folosește `goals.length` (starea locală) în loc de `client.treatment_goals`
+- **`src/app/dashboard/clients/actions.ts`**: `updateServiceTrack` extins cu `treatment_goals?: string[]`
+- **`src/components/clients/ServiceTrackCard.tsx`**:
+  - Adăugat stare `showJump` (toggle)
+  - Buton `ListTree` în header card — toggle afișare selector etapă
+  - Select cu toate etapele trackului curent; la selecție: `handleJumpToStage()` → `updateServiceTrack` + toast + refresh
+  - Funcționează independent de butonul "Avansează" (care rămâne pentru flux secvențial)
+
+`npm run lint` ✅ | `npm run build` ✅
+
+Fișiere principale:
+
+- [src/components/clients/ClientsClient.tsx](src/components/clients/ClientsClient.tsx)
+- [src/components/clients/ClinicalContextCard.tsx](src/components/clients/ClinicalContextCard.tsx)
+- [src/components/clients/ServiceTrackCard.tsx](src/components/clients/ServiceTrackCard.tsx)
+- [src/app/dashboard/clients/actions.ts](src/app/dashboard/clients/actions.ts)
+
+---
 
 ### 18. P1 — Service Track Progression + Clinical Context Card
 

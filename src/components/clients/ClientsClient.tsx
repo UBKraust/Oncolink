@@ -1,18 +1,19 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { 
-  Search, 
-  Plus, 
-  Baby, 
-  Building, 
-  MapPin, 
-  ShieldCheck, 
-  ShieldOff, 
+import {
+  Search,
+  Plus,
+  Baby,
+  Building,
+  MapPin,
+  ShieldCheck,
+  ShieldOff,
   ChevronRight,
   Filter,
   Users,
-  FileCheck
+  FileCheck,
+  Stethoscope,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
@@ -21,39 +22,62 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { deriveClientLifecycle } from "@/lib/clients/lifecycle";
 import type { ClientWithLifecycleRow } from "@/lib/clients/queries";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from "@/components/ui/table";
 import { initialsFromName } from "@/lib/clients/validation";
 import { cn } from "@/lib/utils";
 import { ClientDetailOverlay } from "./ClientDetailOverlay";
 import { ContractGeneratorModal } from "./ContractGeneratorModal";
 import Link from "next/link";
+import {
+  SERVICE_TYPE_LABELS,
+  SERVICE_TYPE_BADGE_VARIANTS,
+  isServiceType,
+  type ServiceType,
+} from "@/lib/clients/service-track";
 
 interface ClientsClientProps {
   initialClients: ClientWithLifecycleRow[];
 }
 
+const SERVICE_TYPE_FILTERS: { value: ServiceType | "ALL"; label: string }[] = [
+  { value: "ALL", label: "Toți" },
+  { value: "CLINICAL_PSYCHOLOGY", label: "Psihologie clinică" },
+  { value: "CBT", label: "CBT" },
+  { value: "DBT", label: "DBT" },
+  { value: "COUNSELING", label: "Consiliere" },
+  { value: "UNDECIDED", label: "Nedefinit" },
+];
+
 export function ClientsClient({ initialClients }: ClientsClientProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [serviceFilter, setServiceFilter] = useState<ServiceType | "ALL">("ALL");
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [contractClientId, setContractClientId] = useState<string | null>(null);
 
   const filteredClients = useMemo(() => {
-    if (!searchQuery) return initialClients;
+    let clients = initialClients;
+    if (serviceFilter !== "ALL") {
+      clients = clients.filter((c) => {
+        const st = c.service_type ?? "UNDECIDED";
+        return st === serviceFilter;
+      });
+    }
+    if (!searchQuery) return clients;
     const q = searchQuery.toLowerCase();
-    return initialClients.filter(c => 
-      c.full_name?.toLowerCase().includes(q) || 
-      c.email?.toLowerCase().includes(q) || 
+    return clients.filter(c =>
+      c.full_name?.toLowerCase().includes(q) ||
+      c.email?.toLowerCase().includes(q) ||
       c.cnp_cif?.toLowerCase().includes(q) ||
       c.phone?.toLowerCase().includes(q)
     );
-  }, [initialClients, searchQuery]);
+  }, [initialClients, searchQuery, serviceFilter]);
 
   const selectedClient = useMemo(() => 
     initialClients.find(c => c.id === selectedClientId) || null
@@ -63,8 +87,9 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
     initialClients.find(c => c.id === contractClientId) || null
   , [initialClients, contractClientId]);
 
-  const activeFiltersLabel = searchQuery
-    ? `Filtrare activă: ${filteredClients.length} rezultat${filteredClients.length === 1 ? "" : "e"}`
+  const isFiltered = searchQuery || serviceFilter !== "ALL";
+  const activeFiltersLabel = isFiltered
+    ? `${filteredClients.length} rezultat${filteredClients.length === 1 ? "" : "e"}`
     : `${initialClients.length} pacienți în registru`;
 
   function openClient(clientId: string) {
@@ -87,8 +112,8 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
       <div className="flex flex-col gap-4 rounded-[1.75rem] border border-border/60 bg-card p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
         <div className="relative flex-1 max-w-md group">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-          <Input 
-            placeholder="Caută în baza de date pacienți..." 
+          <Input
+            placeholder="Caută în baza de date pacienți..."
             className="h-11 rounded-2xl border-border/60 bg-muted/40 pl-10 font-medium transition-all focus-visible:ring-2 focus-visible:ring-primary/20"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -104,6 +129,31 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
              </Link>
            </Button>
         </div>
+      </div>
+
+      {/* Service type filter chips */}
+      <div className="flex flex-wrap gap-2">
+        <Stethoscope className="h-4 w-4 self-center text-muted-foreground shrink-0" />
+        {SERVICE_TYPE_FILTERS.map((f) => (
+          <button
+            key={f.value}
+            type="button"
+            onClick={() => setServiceFilter(f.value)}
+            className={cn(
+              "h-8 rounded-2xl px-3 text-xs font-bold transition-all border",
+              serviceFilter === f.value
+                ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                : "bg-card text-muted-foreground border-border/60 hover:border-primary/40 hover:text-foreground",
+            )}
+          >
+            {f.label}
+            {f.value !== "ALL" && (
+              <span className="ml-1.5 opacity-60">
+                {initialClients.filter((c) => (c.service_type ?? "UNDECIDED") === f.value).length}
+              </span>
+            )}
+          </button>
+        ))}
       </div>
 
       <div className="grid gap-4 md:hidden">
@@ -139,6 +189,12 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
                   <Badge variant={lifecycle.badgeVariant}>
                     {lifecycle.label}
                   </Badge>
+                  {(() => {
+                    const st = isServiceType(client.service_type) ? client.service_type : "UNDECIDED";
+                    if (st !== "UNDECIDED") {
+                      return <Badge variant={SERVICE_TYPE_BADGE_VARIANTS[st]}>{SERVICE_TYPE_LABELS[st]}</Badge>;
+                    }
+                  })()}
                   {client.is_minor && (
                     <Badge variant="warning">
                       <Baby className="mr-1 h-3 w-3" /> Minor
@@ -262,6 +318,16 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
                           <Badge variant={lifecycle.badgeVariant}>
                             {lifecycle.label}
                           </Badge>
+                          {(() => {
+                            const st = isServiceType(client.service_type) ? client.service_type : "UNDECIDED";
+                            if (st !== "UNDECIDED") {
+                              return (
+                                <Badge variant={SERVICE_TYPE_BADGE_VARIANTS[st]} className="h-6 rounded-lg px-2 py-0.5 text-[9px] tracking-wider">
+                                  {SERVICE_TYPE_LABELS[st]}
+                                </Badge>
+                              );
+                            }
+                          })()}
                           {client.is_minor && (
                             <Badge variant="warning" className="h-6 rounded-lg px-2 py-0.5 text-[9px] tracking-wider">
                               <Baby className="mr-1 h-3 w-3" /> Minor
@@ -277,7 +343,7 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
                           {lifecycle.nextActions[0] ?? lifecycle.summary}
                         </p>
                         <span className="inline-flex items-center gap-1 px-1 text-[10px] font-bold text-muted-foreground">
-                          <MapPin className="h-3 w-3" /> 
+                          <MapPin className="h-3 w-3" />
                           {client.location === "CLINICA" ? "Clinică" : "Cabinet"}
                         </span>
                       </div>

@@ -117,6 +117,58 @@ export interface ClientMedication {
   start_date?: string | null;
 }
 
+// P2 — Clinical tools
+
+export interface HomeworkItem {
+  id: string;
+  client_id: string;
+  description: string;
+  due_date: string | null;
+  completed_at: string | null;
+  therapist_notes: string | null;
+  created_at: string;
+}
+
+export interface CbtCaseFormulation {
+  id: string;
+  client_id: string;
+  presenting_problem: string | null;
+  automatic_thoughts: string | null;
+  cognitive_distortions: string[] | null;
+  core_beliefs: string | null;
+  behavioral_patterns: string | null;
+  triggering_situations: string | null;
+  maintenance_factors: string | null;
+  strengths: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbtDiaryCard {
+  id: string;
+  client_id: string;
+  week_start: string;
+  emotion_scores: Record<string, unknown> | null;
+  skills_used: string[] | null;
+  target_behaviors: Array<{ name: string; count: number }> | null;
+  therapist_notes: string | null;
+  created_at: string;
+}
+
+export interface SafetyPlan {
+  id: string;
+  client_id: string;
+  warning_signs: string | null;
+  internal_coping: string | null;
+  social_distractions: string | null;
+  reasons_for_living: string | null;
+  support_contacts: Array<{ name: string; phone: string; relation?: string }> | null;
+  professional_contacts: Array<{ name: string; phone: string }> | null;
+  safe_environment: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface CrisisNoteItem {
   id: string;
   created_at: string;

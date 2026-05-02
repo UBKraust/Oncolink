@@ -1,6 +1,13 @@
 import { notFound } from "next/navigation";
 import { listCrisisNotes } from "@/app/dashboard/clients/crisis-notes-actions";
-import { getClient, getClientStatusHistory } from "@/lib/clients/queries";
+import {
+  getClient,
+  getClientStatusHistory,
+  getHomeworkItems,
+  getCbtCaseFormulation,
+  getDbtDiaryCards,
+  getSafetyPlan,
+} from "@/lib/clients/queries";
 import { listAppointments } from "@/lib/appointments/queries";
 import { ClientDashboardUI } from "@/components/clients/ClientDashboardUI";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -12,6 +19,10 @@ import type {
   ClientMedication,
   ClientPayment,
   ClientStatusHistoryItem,
+  HomeworkItem,
+  CbtCaseFormulation,
+  DbtDiaryCard,
+  SafetyPlan,
 } from "@/components/clients/types";
 
 export default async function ClientDetailPage({
@@ -37,8 +48,9 @@ export default async function ClientDetailPage({
 
   const supabase = await createSupabaseServerClient();
   const anonymized = Boolean(client.notes_anonymized_at);
+  const serviceType = (client as Record<string, unknown>).service_type as string | null;
 
-  // Fetch real data from Supabase
+  // Fetch core data in parallel
   const [
     { data: assessmentsData },
     { data: paymentsData },
@@ -53,6 +65,18 @@ export default async function ClientDetailPage({
     supabase.from("patient_medication").select("*").eq("client_id", id),
     anonymized ? Promise.resolve([]) : listCrisisNotes(id),
     getClientStatusHistory(id),
+  ]);
+
+  // Fetch P2 clinical tools conditionally per service_type
+  const isCbt = serviceType === "CBT";
+  const isDbt = serviceType === "DBT";
+  const needsSafetyPlan = isDbt || serviceType === "CLINICAL_PSYCHOLOGY";
+
+  const [homeworkItems, cbtFormulation, dbtDiaryCards, safetyPlan] = await Promise.all([
+    isCbt && !anonymized ? getHomeworkItems(id) : Promise.resolve([] as HomeworkItem[]),
+    isCbt && !anonymized ? getCbtCaseFormulation(id) : Promise.resolve(null as CbtCaseFormulation | null),
+    isDbt && !anonymized ? getDbtDiaryCards(id) : Promise.resolve([] as DbtDiaryCard[]),
+    needsSafetyPlan && !anonymized ? getSafetyPlan(id) : Promise.resolve(null as SafetyPlan | null),
   ]);
 
   const assessments = (assessmentsData || []) as ClientAssessment[];
@@ -135,6 +159,10 @@ export default async function ClientDetailPage({
       sectionParam={sectionParam}
       assessmentParam={assessmentParam}
       aiClientContext={aiClientContext}
+      homeworkItems={homeworkItems}
+      cbtFormulation={cbtFormulation}
+      dbtDiaryCards={dbtDiaryCards}
+      safetyPlan={safetyPlan}
     />
   );
 }

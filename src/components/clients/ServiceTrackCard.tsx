@@ -1,10 +1,11 @@
 "use client";
 
-import { ArrowRight, ChevronRight, Stethoscope } from "lucide-react";
-import { useTransition } from "react";
+import { ArrowRight, ChevronRight, Stethoscope, ListTree } from "lucide-react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 import {
@@ -41,6 +42,7 @@ export function ServiceTrackCard({
 }: ServiceTrackCardProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [showJump, setShowJump] = useState(false);
 
   const resolved: ServiceType = isServiceType(serviceType) ? serviceType : "UNDECIDED";
   const label = SERVICE_TYPE_LABELS[resolved];
@@ -73,6 +75,23 @@ export function ServiceTrackCard({
     });
   }
 
+  function handleJumpToStage(stage: string) {
+    if (!stage || stage === serviceTrackStatus) {
+      setShowJump(false);
+      return;
+    }
+    startTransition(async () => {
+      const result = await updateServiceTrack(clientId, { service_track_status: stage });
+      if (result.success) {
+        toast.success(`Etapă setată: ${stage}`);
+        setShowJump(false);
+        router.refresh();
+      } else {
+        toast.error(result.error ?? "Nu am putut actualiza etapa.");
+      }
+    });
+  }
+
   return (
     <section className="rounded-[1.75rem] border border-border/60 bg-card shadow-sm overflow-hidden">
       <div className="flex items-center justify-between px-5 pt-5 pb-4">
@@ -82,11 +101,46 @@ export function ServiceTrackCard({
             Service Track
           </p>
         </div>
-        <Badge variant={badgeVariant}>{label}</Badge>
+        <div className="flex items-center gap-2">
+          {statuses.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowJump((v) => !v)}
+              disabled={isPending}
+              className={cn(
+                "h-7 w-7 p-0 rounded-xl",
+                showJump ? "text-primary bg-primary/10" : "text-muted-foreground",
+              )}
+              aria-label="Sari la etapă"
+              title="Sari direct la orice etapă"
+            >
+              <ListTree className="h-3.5 w-3.5" />
+            </Button>
+          )}
+          <Badge variant={badgeVariant}>{label}</Badge>
+        </div>
       </div>
 
       {statuses.length > 0 ? (
         <div className="px-5 pb-4">
+          {/* Stage jump select */}
+          {showJump && (
+            <div className="mb-3">
+              <Select
+                value={serviceTrackStatus ?? ""}
+                onChange={(e) => handleJumpToStage(e.target.value)}
+                disabled={isPending}
+                aria-label="Sari direct la etapă"
+              >
+                <option value="">— Selectează etapă —</option>
+                {statuses.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </Select>
+            </div>
+          )}
+
           {/* Progress bar */}
           <div className="flex gap-1 mb-3">
             {statuses.map((s, i) => (

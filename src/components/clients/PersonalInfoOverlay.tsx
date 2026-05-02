@@ -304,7 +304,7 @@ function formatMaritalStatus(v: string) {
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 pb-1 border-b border-slate-100">
+    <h3 className="border-b border-border/60 pb-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
       {children}
     </h3>
   );

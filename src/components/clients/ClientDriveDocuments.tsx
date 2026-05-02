@@ -44,12 +44,12 @@ export function ClientDriveDocuments({
   };
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
+    <Card className="rounded-[2rem] border-border/60 bg-card shadow-sm">
+      <CardHeader className="border-b border-border/60 bg-muted/20 pb-4">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-base font-medium flex items-center gap-2">
-              <UploadCloud className="h-4 w-4 text-blue-500" />
+            <CardTitle className="flex items-center gap-2 text-base font-medium">
+              <UploadCloud className="h-4 w-4 text-primary" />
               Documente (Google Drive)
             </CardTitle>
             <CardDescription>Fișiere atașate & analize medicale</CardDescription>
@@ -77,10 +77,10 @@ export function ClientDriveDocuments({
           </div>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-6">
         {documents.length === 0 ? (
-          <div className="mt-2 flex flex-col items-center justify-center rounded-md border border-dashed p-6 text-center">
-            <div className="rounded-full bg-primary/10 p-3">
+          <div className="mt-2 flex flex-col items-center justify-center rounded-[1.75rem] border border-dashed border-border/60 p-6 text-center">
+            <div className="rounded-2xl bg-primary/10 p-3">
               <FileText className="h-6 w-6 text-primary" />
             </div>
             <h3 className="mt-4 text-sm font-semibold">Niciun document</h3>
@@ -103,11 +103,11 @@ export function ClientDriveDocuments({
             {documents.map((doc) => (
               <div
                 key={doc.id}
-                className="flex items-center justify-between rounded-md border p-3 hover:bg-muted/50 transition-colors"
+                className="flex items-center justify-between rounded-xl border border-border/60 bg-card p-3 transition-colors hover:bg-muted/30"
               >
                 <div className="flex items-center gap-3 overflow-hidden">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-blue-100 dark:bg-blue-900/40">
-                    <File className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-muted/20">
+                    <File className="h-4 w-4 text-primary" />
                   </div>
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium leading-none">{doc.file_name}</p>

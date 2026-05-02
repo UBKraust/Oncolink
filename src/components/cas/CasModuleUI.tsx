@@ -133,7 +133,7 @@ export function CasModuleUI({ sessions }: { sessions: CasSession[] }) {
                     </Button>
                   </div>
 
-                  <Card className="overflow-hidden border-border/60 shadow-sm">
+                  <Card className="overflow-hidden rounded-[2rem] border-border/60 bg-card shadow-sm">
                     <CardContent className="p-0">
                       <table className="w-full text-sm">
                         <thead>
@@ -167,7 +167,7 @@ export function CasModuleUI({ sessions }: { sessions: CasSession[] }) {
                                 <p className="text-xs text-muted-foreground">em. {s.referral_date}</p>
                               </td>
                               <td className="px-4 py-3">
-                                <code className="text-xs bg-muted px-1.5 py-0.5 rounded">{s.referring_doctor_code}</code>
+                                <code className="rounded-md bg-muted px-1.5 py-0.5 text-xs">{s.referring_doctor_code}</code>
                               </td>
                               <td className="px-4 py-3">
                                 <Button

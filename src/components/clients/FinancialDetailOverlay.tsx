@@ -36,17 +36,17 @@ export function FinancialDetailOverlay({ isOpen, onClose, payments, clientName }
       <div className="space-y-8">
         {/* Summary Stats */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="p-5 rounded-[2rem] bg-emerald-50 border border-emerald-100 space-y-1 shadow-sm">
-            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Încasat Total</span>
-            <div className="text-2xl font-black text-emerald-900 leading-none">{totalPaid} RON</div>
-            <div className="flex items-center gap-1 text-[10px] text-emerald-600 font-bold italic">
+          <div className="space-y-1 rounded-[1.75rem] border border-emerald-200 bg-emerald-50/70 p-5 shadow-sm dark:border-emerald-900 dark:bg-emerald-950/20">
+            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-300">Încasat Total</span>
+            <div className="text-2xl font-black leading-none text-emerald-900 dark:text-emerald-100">{totalPaid} RON</div>
+            <div className="flex items-center gap-1 text-[10px] font-bold italic text-emerald-700 dark:text-emerald-300">
               <TrendingUp className="h-3 w-3" /> Eficiență 100%
             </div>
           </div>
-          <div className="p-5 rounded-[2rem] bg-amber-50 border border-amber-100 space-y-1 shadow-sm">
-            <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest">De Încasat</span>
-            <div className="text-2xl font-black text-amber-900 leading-none">{totalPending} RON</div>
-            <div className="flex items-center gap-1 text-[10px] text-amber-600 font-bold italic">
+          <div className="space-y-1 rounded-[1.75rem] border border-amber-200 bg-amber-50/70 p-5 shadow-sm dark:border-amber-900 dark:bg-amber-950/20">
+            <span className="text-[10px] font-black uppercase tracking-widest text-amber-700 dark:text-amber-300">De Încasat</span>
+            <div className="text-2xl font-black leading-none text-amber-900 dark:text-amber-100">{totalPending} RON</div>
+            <div className="flex items-center gap-1 text-[10px] font-bold italic text-amber-700 dark:text-amber-300">
               <CalendarClock className="h-3 w-3" /> Sesiuni nefacturate
             </div>
           </div>
@@ -55,34 +55,34 @@ export function FinancialDetailOverlay({ isOpen, onClose, payments, clientName }
         {/* Transaction Table */}
         <section className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Listă Tranzacții</h3>
-            <Badge variant="outline" className="text-[10px] font-bold border-slate-200">{payments.length} înregistrări</Badge>
+            <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Listă Tranzacții</h3>
+            <Badge variant="outline" className="text-[10px] font-bold">{payments.length} înregistrări</Badge>
           </div>
           
           <div className="space-y-3 pb-8">
             {payments.length === 0 ? (
-              <div className="p-10 text-center rounded-3xl border-2 border-dashed border-slate-100 text-slate-400 font-bold italic text-sm">
+              <div className="rounded-[1.75rem] border-2 border-dashed border-border/60 p-10 text-center text-sm font-bold italic text-muted-foreground">
                 Nicio tranzacție înregistrată încă.
               </div>
             ) : (
               payments.map((payment) => (
-                <div key={payment.id} className="group flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-primary/20 transition-all">
+                <div key={payment.id} className="group flex items-center justify-between rounded-[1.25rem] border border-border/60 bg-card p-4 transition-all hover:border-primary/20 hover:bg-muted/20">
                   <div className="flex items-center gap-4">
                     <div className={cn(
-                      "h-10 w-10 flex items-center justify-center rounded-xl font-black text-xs shadow-sm ring-1 ring-inset",
+                      "flex h-10 w-10 items-center justify-center rounded-xl text-xs font-black shadow-sm ring-1 ring-inset",
                       isPaidInvoiceStatus(payment.status)
-                        ? "bg-emerald-50 text-emerald-600 ring-emerald-200" 
-                        : "bg-amber-50 text-amber-600 ring-amber-200"
+                        ? "bg-emerald-50 text-emerald-600 ring-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-300 dark:ring-emerald-900" 
+                        : "bg-amber-50 text-amber-600 ring-amber-200 dark:bg-amber-950/20 dark:text-amber-300 dark:ring-amber-900"
                     )}>
                       {payment.amount}
                     </div>
                     <div>
-                      <p className="text-sm font-black text-slate-800 leading-tight">
+                      <p className="text-sm font-black leading-tight text-foreground">
                         {payment.smartbill_series && payment.smartbill_number
                           ? `Factura ${payment.smartbill_series}-${payment.smartbill_number}`
                           : "Ședință Terapie"}
                       </p>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                         {payment.issued_at
                           ? format(new Date(payment.issued_at), "d MMM yyyy", { locale: ro })
                           : "Dată indisponibilă"}
@@ -96,7 +96,7 @@ export function FinancialDetailOverlay({ isOpen, onClose, payments, clientName }
                     >
                       {payment.status ?? "NECUNOSCUT"}
                     </Badge>
-                    <button className="p-2 rounded-xl bg-white border border-slate-100 text-slate-400 hover:text-primary transition-all opacity-0 group-hover:opacity-100 shadow-sm shadow-slate-200/50">
+                    <button className="rounded-xl border border-border/60 bg-background p-2 text-muted-foreground opacity-0 transition-all hover:text-primary group-hover:opacity-100">
                       <Receipt className="h-4 w-4" />
                     </button>
                   </div>

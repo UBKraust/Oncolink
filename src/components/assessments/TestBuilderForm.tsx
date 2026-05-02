@@ -174,7 +174,7 @@ export function TestBuilderForm({ onSave }: Props) {
         </div>
 
         {questions.map((q, idx) => (
-          <Card key={q.id} className="overflow-hidden rounded-[1.5rem] border-border/60 shadow-sm">
+          <Card key={q.id} className="overflow-hidden rounded-[1.75rem] border-border/60 bg-card shadow-sm">
             <div
               className="flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/30"
               onClick={() => setExpandedQ(expandedQ === q.id ? null : q.id)}
@@ -183,7 +183,7 @@ export function TestBuilderForm({ onSave }: Props) {
               <span className="text-xs font-mono text-muted-foreground w-6">{idx + 1}.</span>
               <span className="flex-1 text-sm truncate">{q.text || "Întrebare fără text..."}</span>
               {q.reverse_scoring && (
-                <span className="rounded-full bg-amber-100 px-2 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-amber-700">
+                <span className="rounded-full bg-amber-100 px-2 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-amber-700 dark:bg-amber-950 dark:text-amber-200">
                   INVERS
                 </span>
               )}
@@ -233,7 +233,7 @@ export function TestBuilderForm({ onSave }: Props) {
                 <div className="space-y-2">
                   <Label className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Opțiuni de răspuns</Label>
                   {q.options.map((opt, oIdx) => (
-                    <div key={oIdx} className="flex items-center gap-2 rounded-2xl border border-border/60 bg-background p-2">
+                    <div key={oIdx} className="flex items-center gap-2 rounded-xl border border-border/60 bg-background p-2">
                       <Input
                         value={opt.label}
                         onChange={(e) => updateOption(q.id, oIdx, "label", e.target.value)}
@@ -286,7 +286,7 @@ export function TestBuilderForm({ onSave }: Props) {
           </div>
 
           {subscales.map((sub) => (
-            <div key={sub.name} className="space-y-2 rounded-2xl border border-border/60 bg-muted/20 p-4">
+            <div key={sub.name} className="space-y-2 rounded-[1.25rem] border border-border/60 bg-muted/20 p-4">
               <div className="flex justify-between items-center">
                 <span className="font-medium text-sm">{sub.name}</span>
                 <Button

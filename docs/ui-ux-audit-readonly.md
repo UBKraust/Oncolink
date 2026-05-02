@@ -35,6 +35,8 @@ Status legend:
 | 17. Align onboarding and patient document support flows | `done` | Minor onboarding, patient document upload, and assessment support states now use calmer alert/success shells and less bespoke emphasis |
 | 18. Align contextual AI assistant surface | `done` | The client-side AI drawer now matches the calmer dashboard language instead of keeping a separate consumer-style visual tone |
 | 19. Align remaining assessment and crisis support surfaces | `done` | Test execution, client financial drilldown, and crisis note surfaces now use calmer shells and semantic feedback closer to the shared system |
+| 20. Align CAS registry and remaining client detail overlays | `done` | CAS registry tables and the remaining medical/financial client overlays now use calmer card, empty-state, and semantic surface treatment |
+| 21. Final support-surface polish sweep | `done` | The last small Drive, assessment-builder, and crisis-detail utility surfaces now sit on the same calmer shell language as the rest of the dashboard |
 
 ### Progress Log
 
@@ -135,7 +137,16 @@ Status legend:
 - `ClientFinancialHistory` transaction drilldown and summary cards now sit closer to the shared card/header language.
 - `CrisisNotesList` now uses the same calmer header and note-surface treatment as the rest of the dashboard support modules.
 - Validation: targeted ESLint run passed for `TestExecutionForm.tsx`, `ClientFinancialHistory.tsx`, and `CrisisNotesList.tsx`.
-- Current focus: continue through any remaining older dashboard modules that still carry one-off utility styling.
+- Completed task 20 across CAS and the remaining client detail overlays:
+- `CasModuleUI` registry tables now use the same calmer table-card treatment as the rest of the dashboard support pages.
+- `FinancialDetailOverlay` and `MedicalDetailOverlay` no longer use separate dramatic accent blocks and now sit closer to the shared overlay/card language.
+- Validation: targeted ESLint run passed for `CasModuleUI.tsx`, `FinancialDetailOverlay.tsx`, and `MedicalDetailOverlay.tsx`.
+- Completed task 21 in a final support-surface polish sweep:
+- `ClientDriveDocuments` now uses the same calmer card, empty-state, and file-row treatment as the other document surfaces.
+- `TestBuilderForm` question and subscale shells were tightened slightly toward the shared card language.
+- `CrisisNotesDetailOverlay` no longer relies on bespoke dramatic accent blocks and now sits closer to the standard overlay/support treatment.
+- Validation: targeted ESLint run passed for `ClientDriveDocuments.tsx`, `TestBuilderForm.tsx`, and `CrisisNotesDetailOverlay.tsx`.
+- Current focus: the visible cleanup wave is effectively complete; only isolated micro-tweaks remain if another pass is wanted.
 
 ## 1. Executive Summary
 

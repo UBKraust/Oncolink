@@ -4,8 +4,7 @@ import { listClients } from "@/lib/clients/queries";
 import { deriveClientLifecycle } from "@/lib/clients/lifecycle";
 import { ClientsClient } from "@/components/clients/ClientsClient";
 import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
-import { DashboardPage, EmptyState, PageHeader, SetupBanner } from "@/components/app/page-shell";
+import { DashboardPage, EmptyState, MetricCard, PageHeader, SetupBanner } from "@/components/app/page-shell";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 export default async function ClientsPage() {
@@ -27,32 +26,28 @@ export default async function ClientsPage() {
       label: "Total Pacienți",
       value: clients.length.toString(),
       icon: Users,
-      color: "text-blue-600",
-      bg: "bg-blue-50",
+      iconClassName: "bg-primary/10 text-primary",
       trend: `${anonymizedCount} anonimizat${anonymizedCount === 1 ? "" : "i"}`
     },
     {
       label: "În Onboarding",
       value: onboardingPending.toString(),
       icon: UserRoundPlus,
-      color: "text-amber-600",
-      bg: "bg-amber-50",
+      iconClassName: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-100",
       trend: "Lead-uri și dosare incomplete"
     },
     {
       label: "Prima Ședință",
       value: scheduledCount.toString(),
       icon: AlertCircle,
-      color: "text-sky-600",
-      bg: "bg-sky-50",
+      iconClassName: "bg-sky-100 text-sky-900 dark:bg-sky-950 dark:text-sky-100",
       trend: "Au programare, dar nu istoric clinic"
     },
     {
       label: "Pacienți Activi",
       value: activeCount.toString(),
       icon: UserCheck,
-      color: "text-emerald-600",
-      bg: "bg-emerald-50",
+      iconClassName: "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100",
       trend: "Au deja cel puțin o ședință finalizată"
     }
   ];
@@ -71,23 +66,19 @@ export default async function ClientsPage() {
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
-          <Card key={stat.label} className="border-none shadow-sm bg-white rounded-3xl overflow-hidden hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className={cn("p-3 rounded-2xl", stat.bg)}>
-                  <stat.icon className={cn("h-6 w-6", stat.color)} />
-                </div>
-                <div className="text-right">
-                   <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{stat.label}</p>
-                   <p className="text-2xl font-black text-slate-900">{stat.value}</p>
-                </div>
-              </div>
-              <div className="mt-4 flex items-center gap-1.5">
-                 <TrendingUp className="h-3 w-3 text-emerald-500" />
-                 <span className="text-[10px] font-bold text-slate-500">{stat.trend}</span>
-              </div>
-            </CardContent>
-          </Card>
+          <MetricCard
+            key={stat.label}
+            icon={stat.icon}
+            label={stat.label}
+            value={stat.value}
+            iconClassName={stat.iconClassName}
+            trend={
+              <span className="inline-flex items-center gap-1.5">
+                <TrendingUp className="h-3 w-3 text-primary" />
+                <span>{stat.trend}</span>
+              </span>
+            }
+          />
         ))}
       </div>
 
@@ -95,7 +86,7 @@ export default async function ClientsPage() {
       {configured ? (
         <ClientsClient initialClients={clients} />
       ) : (
-        <Card className="rounded-[2rem] border-border/60 shadow-sm">
+        <Card className="rounded-[1.75rem] border-border/60 shadow-sm">
           <CardContent className="p-0">
             <EmptyState
               title="Registrul de pacienți este gol momentan"

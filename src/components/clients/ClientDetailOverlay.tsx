@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { 
   X, 
@@ -207,7 +208,7 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
 
   return (
     <div className={cn(
-      "fixed inset-0 z-[110] flex justify-end transition-opacity duration-300",
+      "fixed inset-0 z-60 flex justify-end transition-opacity duration-300",
       "opacity-100"
     )} role="dialog" aria-modal="true" aria-labelledby="client-overlay-title">
       {/* Backdrop */}
@@ -220,49 +221,44 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
       <div
         ref={panelRef}
         className={cn(
-        "relative h-full w-full max-w-xl bg-white shadow-2xl transition-transform duration-500 ease-out flex flex-col",
+        "relative flex h-full w-full max-w-xl flex-col bg-card shadow-2xl transition-transform duration-500 ease-out",
         "translate-x-0"
         )}
         tabIndex={-1}
       >
         {/* Header */}
-        <div className="relative h-48 shrink-0 overflow-hidden bg-slate-900">
-           <div className="absolute inset-0 bg-gradient-to-br from-primary/40 to-slate-900 opacity-80" />
-           {/* Abstract pattern */}
-           <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-3xl -mr-20 -mt-20" />
-           <div className="absolute bottom-0 left-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl -ml-10 -mb-10" />
-           
-           <div className="relative h-full p-8 flex flex-col justify-end gap-4">
+        <div className="shrink-0 border-b border-border/70 bg-muted/30">
+           <div className="flex min-h-40 flex-col justify-end gap-4 p-8">
               <button
                 ref={closeButtonRef}
                 type="button"
                 onClick={onClose}
-                className="absolute top-6 right-6 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+                className="absolute right-6 top-6 rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 aria-label="Închide fișa clientului"
               >
                 <X className="h-5 w-5" />
               </button>
 
               <div className="flex items-center gap-6">
-                 <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 text-2xl font-black text-white shadow-2xl ring-4 ring-white/10">
+                 <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-primary/10 text-2xl font-black text-primary shadow-sm">
                     {initialsFromName(client.full_name)}
                  </div>
                  <div className="space-y-1">
-                    <h2 id="client-overlay-title" className="text-2xl font-black text-white tracking-tight leading-none">
+                    <h2 id="client-overlay-title" className="text-2xl font-black tracking-tight leading-none text-foreground">
                       {client.full_name ?? "Client"}
                     </h2>
                     <div className="flex items-center gap-2">
                        {client.is_minor ? (
-                         <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 font-bold uppercase text-[9px] tracking-widest gap-1">
+                         <Badge variant="warning" className="gap-1 text-[9px] tracking-widest">
                            <Baby className="h-3 w-3" /> Minor
                          </Badge>
                        ) : (
-                         <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 font-bold uppercase text-[9px] tracking-widest">
+                         <Badge variant="success" className="text-[9px] tracking-widest">
                            Adult
                          </Badge>
                        )}
                        {client.billing_type === "B2B_COMPANY" && (
-                         <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 font-bold uppercase text-[9px] tracking-widest gap-1">
+                         <Badge variant="info" className="gap-1 text-[9px] tracking-widest">
                            <Building className="h-3 w-3" /> B2B
                          </Badge>
                        )}
@@ -273,7 +269,7 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
         </div>
 
         {/* Action Bar */}
-         <div className="flex items-center gap-2 p-4 border-b bg-slate-50/50 shrink-0">
+         <div className="flex shrink-0 items-center gap-2 border-b border-border/70 bg-muted/30 p-4">
             <Button variant="outline" size="sm" className="gap-2 rounded-xl flex-1 border-slate-200" disabled={anonymized || !client.phone} asChild={!anonymized && !!client.phone}>
                {anonymized || !client.phone ? (
                  <>
@@ -285,7 +281,7 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
                  </a>
                )}
             </Button>
-            <Button variant="outline" size="sm" className="gap-2 rounded-xl flex-1 border-slate-200" disabled={anonymized || !client.email} asChild={!anonymized && !!client.email}>
+           <Button variant="outline" size="sm" className="gap-2 rounded-xl flex-1 border-slate-200" disabled={anonymized || !client.email} asChild={!anonymized && !!client.email}>
                {anonymized || !client.email ? (
                  <>
                    <Mail className="h-4 w-4" /> Email
@@ -296,10 +292,10 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
                  </a>
                )}
             </Button>
-            <Button className="gap-2 rounded-xl flex-1 shadow-md" asChild>
-               <a href={`/dashboard/clients/${client.id}`}>
+            <Button className="gap-2 rounded-xl flex-1 shadow-sm" asChild>
+               <Link href={`/dashboard/clients/${client.id}`}>
                   <ExternalLink className="h-4 w-4" /> Detalii Fișă
-               </a>
+               </Link>
             </Button>
          </div>
 
@@ -307,22 +303,23 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
         <div className="flex-1 overflow-auto p-8 space-y-8 custom-scrollbar">
            {/* Section: Anonymization Grace Period Alert */}
            {showScheduledAlert && !anonymized && (
-             <div className="p-5 rounded-[2rem] bg-rose-50 border-2 border-rose-100 shadow-lg shadow-rose-200/20 space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
+             <div className="animate-in fade-in slide-in-from-top-4 space-y-4 rounded-[1.75rem] border border-destructive/20 bg-destructive/5 p-5 duration-500">
                 <div className="flex items-start gap-4">
-                   <div className="h-12 w-12 rounded-2xl bg-rose-500 flex items-center justify-center text-white shadow-xl shadow-rose-500/20 shrink-0">
-                      <Clock className="h-6 w-6 animate-pulse" />
+                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-destructive text-destructive-foreground shadow-sm">
+                      <Clock className="h-6 w-6" />
                    </div>
                    <div className="space-y-1">
-                      <p className="text-sm font-black text-rose-900 uppercase tracking-tight">Ciclul de Anonimizare Activat</p>
-                      <p className="text-xs font-bold text-rose-700 leading-relaxed">
-                        Toate datele personale (PII) vor fi șterse definitiv peste <span className="bg-rose-500 text-white px-2 py-0.5 rounded-md mx-1">{daysLeft} zile</span> conform cererii de anonimizare.
+                      <p className="text-sm font-black uppercase tracking-tight text-destructive">Ciclul de Anonimizare Activat</p>
+                      <p className="text-xs font-bold leading-relaxed text-destructive/85">
+                        Toate datele personale (PII) vor fi șterse definitiv peste <span className="mx-1 rounded-md bg-destructive px-2 py-0.5 text-destructive-foreground">{daysLeft} zile</span> conform cererii de anonimizare.
                       </p>
                    </div>
                 </div>
                 <Button 
                   onClick={handleCancel}
                   disabled={isPending}
-                  className="w-full bg-white hover:bg-slate-50 text-rose-600 border-2 border-rose-100 rounded-2xl font-black shadow-md transition-all active:scale-95"
+                  variant="outline"
+                  className="w-full rounded-2xl border-destructive/20 font-black text-destructive transition-all hover:bg-destructive/5 hover:text-destructive active:scale-95"
                 >
                    <History className="h-4 w-4 mr-2" /> RESTABILEȘTE DATELE ACUM
                 </Button>
@@ -331,22 +328,22 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
 
            {/* Section: Stats Grid */}
             <div className="grid grid-cols-2 gap-4">
-               <Card className="rounded-2xl border-none bg-slate-100/50 shadow-none">
+               <Card className="rounded-2xl border-border/60 bg-muted/40 shadow-none">
                   <CardContent className="p-4 flex flex-col gap-1">
-                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Sesiuni</span>
-                     <span className="text-xl font-black text-slate-800">{loadingOverview ? "..." : overview?.totalSessions ?? 0}</span>
-                     <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-600">
+                     <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Total Sesiuni</span>
+                     <span className="text-xl font-black text-foreground">{loadingOverview ? "..." : overview?.totalSessions ?? 0}</span>
+                     <div className="flex items-center gap-1 text-[10px] font-bold text-primary">
                         <TrendingUp className="h-3 w-3" /> activitate curentă
                      </div>
                   </CardContent>
                </Card>
-               <Card className="rounded-2xl border-none bg-slate-100/50 shadow-none">
+               <Card className="rounded-2xl border-border/60 bg-muted/40 shadow-none">
                   <CardContent className="p-4 flex flex-col gap-1">
-                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Ultima Ședință</span>
-                     <span className="text-sm font-black text-slate-800">
+                     <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Ultima Ședință</span>
+                     <span className="text-sm font-black text-foreground">
                        {loadingOverview ? "..." : overview?.lastAppointmentDate ? format(new Date(overview.lastAppointmentDate), "dd MMM yyyy", { locale: ro }) : "—"}
                      </span>
-                     <span className="text-[10px] text-slate-500 font-medium">istoric clinic</span>
+                     <span className="text-[10px] font-medium text-muted-foreground">istoric clinic</span>
                   </CardContent>
                </Card>
             </div>
@@ -357,15 +354,15 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
                  <User className="h-3 w-3" /> Informații de Contact
               </h3>
               <div className="space-y-3">
-                 <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
+                 <div className="flex items-center justify-between rounded-xl border border-border/60 bg-muted/40 p-3">
                     <div className="flex items-center gap-3">
-                       <Mail className="h-4 w-4 text-slate-400" />
-                       <span className="text-sm font-medium text-slate-600">{anonymized ? "REDACTED" : client.email || "nespecificat"}</span>
+                       <Mail className="h-4 w-4 text-muted-foreground" />
+                       <span className="text-sm font-medium text-foreground/80">{anonymized ? "REDACTED" : client.email || "nespecificat"}</span>
                     </div>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-slate-400 hover:text-primary"
+                      className="h-8 w-8 text-muted-foreground hover:text-primary"
                       disabled={anonymized || !client.email}
                       aria-label="Trimite email clientului"
                       asChild={!anonymized && !!client.email}
@@ -379,10 +376,10 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
                       )}
                     </Button>
                  </div>
-                 <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
+                 <div className="flex items-center justify-between rounded-xl border border-border/60 bg-muted/40 p-3">
                     <div className="flex items-center gap-3">
-                       <Phone className="h-4 w-4 text-slate-400" />
-                       <span className="text-sm font-medium text-slate-600">{anonymized ? "REDACTED" : client.phone || "nespecificat"}</span>
+                       <Phone className="h-4 w-4 text-muted-foreground" />
+                       <span className="text-sm font-medium text-foreground/80">{anonymized ? "REDACTED" : client.phone || "nespecificat"}</span>
                     </div>
                     <Button
                       variant="ghost"
@@ -401,13 +398,13 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
                       )}
                     </Button>
                  </div>
-                 <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
-                    <MapPin className="h-4 w-4 text-slate-400 mt-0.5" />
+                 <div className="flex items-start gap-3 rounded-xl border border-border/60 bg-muted/40 p-3">
+                    <MapPin className="mt-0.5 h-4 w-4 text-muted-foreground" />
                     <div className="space-y-1">
-                       <span className="text-sm font-medium text-slate-600 block leading-tight">
+                       <span className="block text-sm font-medium leading-tight text-foreground/80">
                          {client.address || "Adresă nespecificată"}
                        </span>
-                       <span className="text-[10px] text-slate-400 uppercase font-black tracking-wider">
+                       <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">
                          Locație: {client.location === "CLINICA" ? "Clinică" : "Cabinet"}
                        </span>
                     </div>
@@ -422,18 +419,18 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
               </h3>
               <div className="grid gap-3">
                  <div className={cn(
-                   "flex items-center justify-between p-4 rounded-2xl border transition-all shadow-sm",
-                   client.gdpr_consent_signed 
-                    ? "bg-emerald-50/50 border-emerald-100 text-emerald-900" 
-                    : "bg-rose-50/50 border-rose-100 text-rose-900 animate-pulse-subtle"
+                   "flex items-center justify-between rounded-2xl border p-4 transition-all shadow-sm",
+                   client.gdpr_consent_signed
+                    ? "border-emerald-200 bg-emerald-50/50 text-emerald-950 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100"
+                    : "animate-pulse-subtle border-amber-200 bg-amber-50/80 text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100"
                  )}>
                     <div className="flex items-center gap-3">
                        {client.gdpr_consent_signed ? (
-                         <div className="h-8 w-8 rounded-full bg-emerald-500 flex items-center justify-center text-white shadow-lg shadow-emerald-200">
+                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 text-white shadow-sm">
                             <ShieldCheck className="h-5 w-5" />
                          </div>
                        ) : (
-                         <div className="h-8 w-8 rounded-full bg-rose-500 flex items-center justify-center text-white shadow-lg shadow-rose-200">
+                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-600 text-white shadow-sm">
                             <ShieldAlert className="h-5 w-5" />
                          </div>
                        )}
@@ -446,11 +443,11 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
                     </div>
                     {!client.gdpr_consent_signed && (
                       <div className="flex gap-2">
-                        <Button 
+                       <Button 
                           size="sm" 
                           onClick={handleSendOnboarding}
                           disabled={isNotifying || !client.phone}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-[10px] h-8 rounded-full font-black uppercase px-3 shadow-lg shadow-emerald-100 flex items-center gap-1.5"
+                          className="flex h-8 items-center gap-1.5 rounded-full bg-emerald-600 px-3 text-[10px] font-black uppercase text-white shadow-sm hover:bg-emerald-700"
                           title="Trimite pe WhatsApp"
                         >
                           <svg className="h-3 w-3 fill-current" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
@@ -460,7 +457,8 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
                           size="sm" 
                           onClick={handleSendEmailOnboarding}
                           disabled={isNotifying || !client.email}
-                          className="bg-rose-600 hover:bg-rose-700 text-[10px] h-8 rounded-full font-black uppercase px-3 shadow-lg shadow-rose-100 flex items-center gap-1.5"
+                          variant="outline"
+                          className="flex h-8 items-center gap-1.5 rounded-full border-amber-300 px-3 text-[10px] font-black uppercase text-amber-950 hover:bg-amber-100 dark:border-amber-800 dark:text-amber-100 dark:hover:bg-amber-900/40"
                           title="Trimite pe Email"
                         >
                           <Mail className="h-3 w-3" />
@@ -471,16 +469,16 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
                  </div>
 
                  {client.is_minor && (
-                    <div className="flex items-center justify-between p-4 rounded-2xl border border-blue-100 bg-blue-50/50">
+                    <div className="flex items-center justify-between rounded-2xl border border-sky-200 bg-sky-50/60 p-4 dark:border-sky-900 dark:bg-sky-950/30">
                        <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sky-600 text-white shadow-sm">
                              <FileText className="h-5 w-5" />
                           </div>
                           <div>
-                             <p className="text-sm font-black text-blue-900">Documente Custodie</p>
-                             <p className="text-[10px] text-blue-700 font-medium">Situație: {client.parents_marital_status || "Nesalvat"}</p>
+                             <p className="text-sm font-black text-sky-950 dark:text-sky-100">Documente Custodie</p>
+                             <p className="text-[10px] font-medium text-sky-800 dark:text-sky-200">Situație: {client.parents_marital_status || "Nesalvat"}</p>
                           </div>
-                        <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 hover:bg-blue-100/50" asChild>
+                        <Button variant="ghost" size="sm" className="text-sky-700 hover:bg-sky-100/50 hover:text-sky-800 dark:text-sky-200 dark:hover:bg-sky-900/40" asChild>
                            <a href={`/dashboard/clients/${client.id}?section=documents`}>
                               Vezi Doc
                            </a>
@@ -501,32 +499,32 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
                <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2">
                   <History className="h-3 w-3" /> Ultimele Interacțiuni
                </h3>
-               <div className="relative space-y-6 before:absolute before:left-3 before:top-2 before:bottom-2 before:w-px before:bg-slate-100">
+               <div className="relative space-y-6 before:absolute before:bottom-2 before:left-3 before:top-2 before:w-px before:bg-border">
                   {loadingOverview ? (
-                    <div className="pl-8 text-xs text-slate-400 animate-pulse">Se încarcă istoricul...</div>
+                    <div className="animate-pulse pl-8 text-xs text-muted-foreground">Se încarcă istoricul...</div>
                   ) : overview?.recentInteractions && overview.recentInteractions.length > 0 ? (
                     overview.recentInteractions.map((interaction) => (
                       <div key={interaction.id} className="relative pl-8">
-                        <div className="absolute left-1.5 top-1.5 h-3 w-3 rounded-full bg-emerald-500 ring-4 ring-emerald-50 pointer-events-none" />
+                        <div className="pointer-events-none absolute left-1.5 top-1.5 h-3 w-3 rounded-full bg-emerald-600 ring-4 ring-emerald-100 dark:ring-emerald-950" />
                         <div className="space-y-1">
-                           <p className="text-xs font-black text-slate-700">{interaction.status === "COMPLETED" ? "Ședință Încheiată" : "Programare Istorică"}</p>
-                           <p className="text-[11px] text-slate-500">{format(new Date(interaction.date), "dd MMM yyyy • HH:mm", { locale: ro })}</p>
-                           <div className="mt-2 p-2 rounded-lg bg-slate-50 border border-slate-100 text-[10px] text-slate-600 italic">
+                           <p className="text-xs font-black text-foreground">{interaction.status === "COMPLETED" ? "Ședință Încheiată" : "Programare Istorică"}</p>
+                           <p className="text-[11px] text-muted-foreground">{format(new Date(interaction.date), "dd MMM yyyy • HH:mm", { locale: ro })}</p>
+                           <div className="mt-2 rounded-lg border border-border/60 bg-muted/40 p-2 text-[10px] italic text-foreground/70">
                               &quot;{interaction.summary}&quot;
                            </div>
                         </div>
                       </div>
                     ))
                   ) : (
-                    <div className="pl-8 text-xs text-slate-400 italic">Nicio interacțiune înregistrată încă.</div>
+                    <div className="pl-8 text-xs italic text-muted-foreground">Nicio interacțiune înregistrată încă.</div>
                   )}
 
                   {overview?.nextAppointment && (
                     <div className="relative pl-8">
-                       <div className="absolute left-1.5 top-1.5 h-3 w-3 rounded-full bg-blue-400 ring-4 ring-blue-50 pointer-events-none" />
+                       <div className="pointer-events-none absolute left-1.5 top-1.5 h-3 w-3 rounded-full bg-sky-500 ring-4 ring-sky-100 dark:ring-sky-950" />
                        <div className="space-y-1">
-                          <p className="text-xs font-black text-blue-600">Următoarea Programare</p>
-                          <p className="text-[11px] text-slate-500">{format(new Date(overview.nextAppointment.date), "dd MMM yyyy • HH:mm", { locale: ro })}</p>
+                          <p className="text-xs font-black text-sky-700 dark:text-sky-200">Următoarea Programare</p>
+                          <p className="text-[11px] text-muted-foreground">{format(new Date(overview.nextAppointment.date), "dd MMM yyyy • HH:mm", { locale: ro })}</p>
                        </div>
                     </div>
                   )}
@@ -535,36 +533,36 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
         </div>
 
         {/* Sticky Footer Actions */}
-        <div className="p-6 bg-slate-50/80 backdrop-blur-sm border-t shrink-0 flex items-center justify-between gap-4 rounded-t-3xl shadow-lg border-slate-100">
+        <div className="flex shrink-0 items-center justify-between gap-4 border-t border-border/70 bg-muted/30 p-6">
            {!anonymized && !showScheduledAlert ? (
              <AlertDialog>
                <AlertDialogTrigger>
-                 <Button variant="outline" className="flex-1 rounded-2xl border-slate-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 font-bold">
+                 <Button variant="outline" className="flex-1 rounded-2xl border-destructive/20 font-bold text-destructive hover:bg-destructive/5 hover:text-destructive">
                     <ShieldAlert className="h-4 w-4 mr-2" /> Anonimizare
                  </Button>
                </AlertDialogTrigger>
                <AlertDialogContent className="rounded-[2.5rem] border-none shadow-2xl p-8 max-w-md">
                  <AlertDialogHeader className="space-y-4">
-                   <div className="h-16 w-16 rounded-3xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto mb-2">
+                   <div className="mx-auto mb-2 flex h-16 w-16 items-center justify-center rounded-3xl bg-destructive/10 text-destructive">
                       <ShieldAlert className="h-10 w-10" />
                    </div>
-                   <AlertDialogTitle className="text-2xl font-black text-center text-slate-900 leading-tight">
+                   <AlertDialogTitle className="text-center text-2xl font-black leading-tight text-foreground">
                      Siguranța Datelor:<br/>Ești sigur?
                    </AlertDialogTitle>
-                   <AlertDialogDescription className="text-slate-500 font-medium text-center leading-relaxed">
+                   <AlertDialogDescription className="text-center font-medium leading-relaxed text-muted-foreground">
                      Prin anonimizare, vom șterge definitiv Numele, Email-ul, Telefonul și Adresa pacientului. 
                      <br/><br/>
-                     <span className="font-black text-slate-800">Vei avea 15 zile la dispoziție pentru a anula procesul dacă te răzgândești.</span>
+                     <span className="font-black text-foreground">Vei avea 15 zile la dispoziție pentru a anula procesul dacă te răzgândești.</span>
                    </AlertDialogDescription>
                  </AlertDialogHeader>
                  <AlertDialogFooter className="flex-col sm:flex-col gap-3 mt-8">
                    <AlertDialogAction 
                      onClick={handleSchedule}
-                     className="bg-rose-600 hover:bg-rose-700 text-white font-black h-12 rounded-2xl w-full shadow-xl shadow-rose-200"
+                     className="h-12 w-full rounded-2xl bg-destructive font-black text-destructive-foreground shadow-sm hover:bg-destructive/90"
                    >
                      DA, PROGRAMEAZĂ ANONIMIZAREA
                    </AlertDialogAction>
-                   <AlertDialogCancel className="border-none hover:bg-slate-100 font-bold h-12 rounded-2xl w-full">
+                   <AlertDialogCancel className="h-12 w-full rounded-2xl border-none font-bold hover:bg-muted">
                      RENUNȚĂ
                    </AlertDialogCancel>
                  </AlertDialogFooter>
@@ -575,10 +573,10 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
                 {anonymized ? "Pacient Anonimizat" : "Anonimizare în curs..."}
              </Button>
            )}
-           <Button className="flex-1 rounded-2xl font-black shadow-xl shadow-primary/20" disabled={showScheduledAlert || anonymized} asChild>
-              <a href={`/dashboard/appointments/new?clientId=${client.id}`}>
+           <Button className="flex-1 rounded-2xl font-black shadow-sm" disabled={showScheduledAlert || anonymized} asChild>
+              <Link href={`/dashboard/appointments/new?clientId=${client.id}`}>
                  <Calendar className="h-4 w-4 mr-2" /> Programare
-              </a>
+              </Link>
            </Button>
         </div>
       </div>

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Bot, Send, User, Loader2, AlertCircle, Trash2, Sparkles, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { DashboardPage, PageHeader, SectionCard, SetupBanner } from "@/components/app/page-shell";
 
@@ -159,152 +160,159 @@ export default function AiChatPage() {
         description="Folosește întrebări rapide sau scrie direct în compozitor pentru a porni conversația."
         icon={Sparkles}
       >
-      <div className="flex h-[calc(100vh-16rem)] flex-col">
-      <div className="flex items-center justify-between border-b px-4 py-3 shrink-0">
-        <div className={cn(
-          "flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium",
-          ollamaOnline === true  && "border-emerald-300 bg-emerald-50 text-emerald-700",
-          ollamaOnline === false && "border-rose-300 bg-rose-50 text-rose-700",
-          ollamaOnline === null  && "border-muted text-muted-foreground"
-        )}>
-          <span className={cn(
-            "h-1.5 w-1.5 rounded-full",
-            ollamaOnline === true  && "bg-emerald-500",
-            ollamaOnline === false && "bg-rose-500",
-            ollamaOnline === null  && "bg-muted-foreground/50"
-          )} />
-          {ollamaOnline === true ? "Ollama online" : ollamaOnline === false ? "Ollama offline" : "Verificare..."}
-        </div>
-        {messages.length > 0 && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => { setMessages([]); setError(null); }}
-            title="Șterge conversația"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        )}
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full gap-6 text-center pb-10">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
-              <Bot className="h-7 w-7 text-primary" />
-            </div>
-            <div>
-              <h2 className="font-semibold text-lg">Cum te pot ajuta?</h2>
-              <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-                Sunt antrenat să te sprijin cu redactare clinică, interpretare scoruri și documentație psihologică.
-              </p>
-            </div>
-            <div className="grid gap-2 sm:grid-cols-2 max-w-xl w-full">
-              {QUICK_PROMPTS.map((p) => (
-                <button
-                  key={p}
-                  onClick={() => handleSend(p)}
-                  className="text-left text-xs border rounded-lg px-3 py-2.5 hover:bg-accent hover:border-primary/30 transition-colors leading-snug"
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {messages.map((m) => (
-          <div
-            key={m.id}
-            className={cn("flex gap-3", m.role === "user" ? "justify-end" : "justify-start")}
-          >
-            {m.role === "assistant" && (
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 mt-0.5">
-                <Bot className="h-4 w-4 text-primary" />
-              </div>
-            )}
-
-            <div
-              className={cn(
-                "max-w-[80%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap leading-relaxed",
-                m.role === "user"
-                  ? "bg-primary text-primary-foreground rounded-tr-sm"
-                  : "bg-muted rounded-tl-sm"
-              )}
+        <div className="flex h-[calc(100vh-16rem)] flex-col">
+          <div className="flex shrink-0 items-center justify-between border-b border-border/60 px-6 py-4">
+            <Badge
+              variant={
+                ollamaOnline === true
+                  ? "success"
+                  : ollamaOnline === false
+                    ? "destructive"
+                    : "outline"
+              }
+              className="gap-2"
             >
-              {m.content}
-              {m.isStreaming && (
-                <span className="inline-block w-1.5 h-4 ml-0.5 bg-current animate-pulse rounded-sm align-middle" />
-              )}
-            </div>
+              <span
+                className={cn(
+                  "h-1.5 w-1.5 rounded-full",
+                  ollamaOnline === true && "bg-emerald-500",
+                  ollamaOnline === false && "bg-rose-500",
+                  ollamaOnline === null && "bg-muted-foreground/50",
+                )}
+              />
+              {ollamaOnline === true ? "Ollama online" : ollamaOnline === false ? "Ollama offline" : "Verificare..."}
+            </Badge>
+            {messages.length > 0 && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => { setMessages([]); setError(null); }}
+                title="Șterge conversația"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
 
-            {m.role === "user" && (
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary mt-0.5">
-                <User className="h-4 w-4 text-primary-foreground" />
+          <div className="flex-1 space-y-4 overflow-y-auto p-6">
+            {messages.length === 0 && (
+              <div className="flex h-full flex-col items-center justify-center gap-6 pb-10 text-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
+                  <Bot className="h-7 w-7 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold">Cum te pot ajuta?</h2>
+                  <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+                    Sunt antrenat să te sprijin cu redactare clinică, interpretare scoruri și documentație psihologică.
+                  </p>
+                </div>
+                <div className="grid w-full max-w-xl gap-2 sm:grid-cols-2">
+                  {QUICK_PROMPTS.map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => handleSend(p)}
+                      className="rounded-2xl border border-border/60 bg-card px-3 py-3 text-left text-xs leading-snug transition-colors hover:border-primary/20 hover:bg-muted/40"
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
-          </div>
-        ))}
 
-        {error && (
-          <div className="flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50/80 px-4 py-3 text-sm text-rose-700 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900">
-            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-            <div>
-              <p className="font-medium">{error}</p>
-              {error.includes("Ollama") && (
-                <button
-                  className="text-xs underline mt-1 opacity-70 hover:opacity-100"
-                  onClick={() => {
-                    setOllamaOnline(null);
-                    const ollamaUrl = process.env.NEXT_PUBLIC_OLLAMA_URL || "http://localhost:11434";
-                    fetch(`${ollamaUrl}/api/tags`, { signal: AbortSignal.timeout(2000) })
-                      .then((r) => setOllamaOnline(r.ok))
-                      .catch(() => setOllamaOnline(false));
-                  }}
+            {messages.map((m) => (
+              <div
+                key={m.id}
+                className={cn("flex gap-3", m.role === "user" ? "justify-end" : "justify-start")}
+              >
+                {m.role === "assistant" && (
+                  <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                    <Bot className="h-4 w-4 text-primary" />
+                  </div>
+                )}
+
+                <div
+                  className={cn(
+                    "max-w-[80%] whitespace-pre-wrap rounded-3xl px-4 py-3 text-sm leading-relaxed",
+                    m.role === "user"
+                      ? "rounded-tr-sm bg-primary text-primary-foreground"
+                      : "rounded-tl-sm border border-border/60 bg-muted/40 text-foreground",
+                  )}
                 >
-                  <RefreshCw className="h-3 w-3 inline mr-1" />
-                  Verifică din nou
-                </button>
-              )}
-            </div>
-          </div>
-        )}
+                  {m.content}
+                  {m.isStreaming && (
+                    <span className="ml-0.5 inline-block h-4 w-1.5 animate-pulse rounded-sm bg-current align-middle" />
+                  )}
+                </div>
 
-        <div ref={bottomRef} />
-      </div>
+                {m.role === "user" && (
+                  <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary">
+                    <User className="h-4 w-4 text-primary-foreground" />
+                  </div>
+                )}
+              </div>
+            ))}
 
-      {/* Input area */}
-      <div className="border-t p-4 shrink-0">
-        <div className="flex items-end gap-2 rounded-xl border bg-background px-3 py-2 focus-within:ring-1 focus-within:ring-primary/50 transition-shadow">
-          <textarea
-            ref={textareaRef}
-            rows={1}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Scrie un mesaj... (Enter pentru trimite, Shift+Enter pentru linie nouă)"
-            className="flex-1 resize-none bg-transparent text-sm outline-none placeholder:text-muted-foreground min-h-[24px] max-h-[160px] py-1"
-            disabled={isLoading}
-          />
-          <Button
-            size="icon"
-            className="h-8 w-8 shrink-0 rounded-lg"
-            onClick={() => handleSend()}
-            disabled={!input.trim() || isLoading}
-          >
-            {isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
+            {error && (
+              <div className="rounded-3xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-foreground">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                  <div>
+                    <p className="font-medium">{error}</p>
+                    {error.includes("Ollama") && (
+                      <button
+                        className="mt-1 text-xs text-muted-foreground underline hover:text-foreground"
+                        onClick={() => {
+                          setOllamaOnline(null);
+                          const ollamaUrl = process.env.NEXT_PUBLIC_OLLAMA_URL || "http://localhost:11434";
+                          fetch(`${ollamaUrl}/api/tags`, { signal: AbortSignal.timeout(2000) })
+                            .then((r) => setOllamaOnline(r.ok))
+                            .catch(() => setOllamaOnline(false));
+                        }}
+                      >
+                        <RefreshCw className="mr-1 inline h-3 w-3" />
+                        Verifică din nou
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
             )}
-          </Button>
+
+            <div ref={bottomRef} />
+          </div>
+
+          <div className="shrink-0 border-t border-border/60 p-4">
+            <div className="flex items-end gap-2 rounded-2xl border border-border/60 bg-background px-3 py-2 transition-shadow focus-within:ring-1 focus-within:ring-primary/50">
+              <textarea
+                ref={textareaRef}
+                rows={1}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Scrie un mesaj... (Enter pentru trimite, Shift+Enter pentru linie nouă)"
+                className="min-h-[24px] max-h-[160px] flex-1 resize-none bg-transparent py-1 text-sm outline-none placeholder:text-muted-foreground"
+                disabled={isLoading}
+              />
+              <Button
+                size="icon"
+                className="h-8 w-8 shrink-0 rounded-xl"
+                onClick={() => handleSend()}
+                disabled={!input.trim() || isLoading}
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+            <p className="mt-2 text-center text-[11px] text-muted-foreground">
+              AI-ul rulează local pe calculatorul tău. Niciun mesaj nu este trimis pe internet.
+            </p>
+          </div>
         </div>
-        <p className="text-[11px] text-muted-foreground mt-2 text-center">
-          AI-ul rulează local pe calculatorul tău. Niciun mesaj nu este trimis pe internet.
-        </p>
-      </div>
-      </div>
       </SectionCard>
     </DashboardPage>
   );

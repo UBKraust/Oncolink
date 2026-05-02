@@ -128,7 +128,7 @@ function ExpiryBadge({ date }: { date: string }) {
   }
   if (days <= 30) {
     return (
-      <Badge variant="destructive" className="bg-orange-600 hover:bg-orange-700 gap-1 px-2 py-0">
+      <Badge variant="warning" className="gap-1 px-2 py-0">
         <AlertTriangle className="h-3 w-3" />
         Expiră în {days} zile
       </Badge>
@@ -136,14 +136,14 @@ function ExpiryBadge({ date }: { date: string }) {
   }
   if (days <= 90) {
     return (
-      <Badge variant="outline" className="border-orange-500 text-orange-600 bg-orange-50 gap-1 px-2 py-0">
+      <Badge variant="outline" className="gap-1 px-2 py-0">
         <AlertTriangle className="h-3 w-3" />
         Expiră {formatted}
       </Badge>
     );
   }
   return (
-    <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-100 gap-1 px-2 py-0">
+    <Badge variant="success" className="gap-1 px-2 py-0">
       Valabil până {formatted}
     </Badge>
   );
@@ -343,7 +343,7 @@ export function VaultClient({ initialDocs }: VaultClientProps) {
                   return (
                     <Card
                       key={doc.id}
-                      className="group overflow-hidden rounded-[1.75rem] border-border/60 transition-all hover:shadow-md hover:border-primary/30"
+                      className="group overflow-hidden rounded-[1.75rem] border-border/60 bg-card transition-all hover:border-primary/20 hover:shadow-md"
                     >
                       <CardContent className="p-0">
                         <div className="flex h-full flex-col">
@@ -364,7 +364,7 @@ export function VaultClient({ initialDocs }: VaultClientProps) {
                             </div>
                           </div>
 
-                          <div className="flex items-center justify-between border-t bg-muted/10 px-4 py-3">
+                          <div className="flex items-center justify-between border-t border-border/60 bg-muted/20 px-4 py-3">
                             <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
                               <History className="h-3 w-3" />
                               {new Date(doc.uploaded_at).toLocaleDateString("ro-RO")}
@@ -423,13 +423,13 @@ export function VaultClient({ initialDocs }: VaultClientProps) {
           />
           <Card
             ref={uploadDialogRef}
-            className="relative w-full max-w-lg border-primary/20 shadow-2xl animate-in fade-in zoom-in duration-200"
+            className="relative w-full max-w-lg rounded-[2rem] border-border/60 bg-card shadow-2xl animate-in fade-in zoom-in duration-200"
             role="dialog"
             aria-modal="true"
             aria-labelledby="vault-upload-title"
             tabIndex={-1}
           >
-            <div className="flex items-center justify-between border-b p-4">
+            <div className="flex items-center justify-between border-b border-border/60 p-4">
               <div className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <Upload className="h-4 w-4" />
@@ -443,8 +443,8 @@ export function VaultClient({ initialDocs }: VaultClientProps) {
 
             <CardContent className="p-6">
               {uploadSuccess ? (
-                <div className="flex flex-col items-center gap-3 py-8 text-center text-emerald-600">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
+                <div className="flex flex-col items-center gap-3 py-8 text-center text-emerald-700 dark:text-emerald-300">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950">
                     <CheckCircle2 className="h-10 w-10" />
                   </div>
                   <p className="text-lg font-semibold">Document salvat!</p>
@@ -453,8 +453,8 @@ export function VaultClient({ initialDocs }: VaultClientProps) {
               ) : (
                 <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
                   {uploadError && (
-                    <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-                      <AlertTriangle className="h-4 w-4 shrink-0" />
+                    <div className="flex items-center gap-2 rounded-2xl border border-destructive/20 bg-destructive/5 p-3 text-sm text-foreground">
+                      <AlertTriangle className="h-4 w-4 shrink-0 text-destructive" />
                       {uploadError}
                     </div>
                   )}
@@ -465,7 +465,7 @@ export function VaultClient({ initialDocs }: VaultClientProps) {
                     onDrop={handleDrop}
                     onClick={() => fileInputRef.current?.click()}
                     className={cn(
-                      "group cursor-pointer rounded-xl border-2 border-dashed p-8 text-center transition-all",
+                      "group cursor-pointer rounded-3xl border-2 border-dashed p-8 text-center transition-all",
                       dragOver
                         ? "border-primary bg-primary/5"
                         : "border-muted-foreground/20 hover:border-primary/50 hover:bg-muted/50"

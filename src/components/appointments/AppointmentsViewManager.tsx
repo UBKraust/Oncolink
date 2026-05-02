@@ -31,7 +31,7 @@ export function AppointmentsViewManager({ appointments, children }: Appointments
     <div className="space-y-6">
       {/* View Toggle */}
       <div className="flex items-center justify-end">
-        <div className="inline-flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200 shadow-inner">
+        <div className="inline-flex items-center rounded-2xl border border-border/60 bg-muted/40 p-1 shadow-inner">
           <button
             type="button"
             onClick={() => setView("calendar")}
@@ -39,8 +39,8 @@ export function AppointmentsViewManager({ appointments, children }: Appointments
             className={cn(
               "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-tight transition-all",
               view === "calendar" 
-                ? "bg-white text-primary shadow-sm" 
-                : "text-slate-500 hover:text-slate-700"
+                ? "bg-card text-primary shadow-sm" 
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             <CalendarIcon className="h-3.5 w-3.5" /> Calendar
@@ -52,8 +52,8 @@ export function AppointmentsViewManager({ appointments, children }: Appointments
             className={cn(
               "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-tight transition-all",
               view === "list" 
-                ? "bg-white text-primary shadow-sm" 
-                : "text-slate-500 hover:text-slate-700"
+                ? "bg-card text-primary shadow-sm" 
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             <LayoutList className="h-3.5 w-3.5" /> Listă

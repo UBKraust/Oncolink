@@ -6,11 +6,18 @@ import {
   CheckCircle2, FileCheck2, RotateCcw, Loader2,
   Download, BrainCircuit, BarChart3
 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { DashboardPage, EmptyState, PageHeader, SetupBanner } from "@/components/app/page-shell";
+import {
+  DashboardPage,
+  EmptyState,
+  MetricCard,
+  PageHeader,
+  SectionCard,
+  SetupBanner,
+} from "@/components/app/page-shell";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -46,9 +53,9 @@ const MONTHS_RO = [
 ];
 
 const STATUS_CONFIG = {
-  ACHITAT: { label: "Achitat",     cls: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400" },
-  PARTIAL: { label: "Parțial",     cls: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400" },
-  NEEMIS:  { label: "De facturat", cls: "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-400" },
+  ACHITAT: { label: "Achitat", variant: "success" as const },
+  PARTIAL: { label: "Parțial", variant: "warning" as const },
+  NEEMIS:  { label: "De facturat", variant: "info" as const },
 };
 
 const EMPTY_SUMMARY: MonthlySummary = {
@@ -223,19 +230,26 @@ export default function BillingPage() {
       {data && (
         <>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <StatCard label="Ședințe" value={String(data.totalSessions)} icon={<Users className="h-4 w-4" />} accent="blue" />
-            <StatCard label="Ore lucrate" value={`${data.totalHours}h`} icon={<Clock className="h-4 w-4" />} accent="violet" />
-            <StatCard label="Total de încasat" value={fmt(data.totalAmount)} icon={<Wallet className="h-4 w-4" />} accent="emerald" />
-            <StatCard label="Rata încasare" value={`${collectionRate}%`}
-              icon={<TrendingUp className="h-4 w-4" />}
-              accent={collectionRate >= 75 ? "emerald" : collectionRate >= 40 ? "amber" : "rose"} />
+            <StatCard label="Ședințe" value={String(data.totalSessions)} icon={Users} accent="info" />
+            <StatCard label="Ore lucrate" value={`${data.totalHours}h`} icon={Clock} accent="neutral" />
+            <StatCard label="Total de încasat" value={fmt(data.totalAmount)} icon={Wallet} accent="success" />
+            <StatCard
+              label="Rata încasare"
+              value={`${collectionRate}%`}
+              icon={TrendingUp}
+              accent={collectionRate >= 75 ? "success" : collectionRate >= 40 ? "warning" : "danger"}
+            />
           </div>
 
           {/* Revenue progress */}
-          <Card className="rounded-[1.75rem] border-border/60 shadow-sm">
-            <CardContent className="p-4">
+          <SectionCard
+            title="Progres încasare lunară"
+            description="Comparație între sumele deja încasate și totalul procesat pentru luna selectată."
+            icon={TrendingUp}
+          >
+            <CardContent className="p-6 pt-4">
               <div className="flex items-center justify-between text-sm mb-2">
-                <span className="font-medium">Progres Încasare Lunară</span>
+                <span className="font-medium">Stare încasare</span>
                 <span className="text-muted-foreground">
                   {fmt(data.collectedAmount)} / {fmt(data.totalAmount)} RON
                 </span>
@@ -247,41 +261,47 @@ export default function BillingPage() {
                 />
               </div>
               <div className="flex justify-between text-xs text-muted-foreground mt-1.5">
-                <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                <span className="font-medium text-foreground">
                   {fmt(data.collectedAmount)} încasat
                 </span>
-                <span className="text-rose-600 dark:text-rose-400 font-medium">
+                <span className="font-medium text-muted-foreground">
                   {fmt(data.uncollectedAmount)} restant
                 </span>
               </div>
             </CardContent>
-          </Card>
+          </SectionCard>
 
           {/* Bulk actions */}
           {unpaidClients.length > 0 && (
-            <div className="flex flex-wrap items-center gap-3 rounded-[1.5rem] border border-amber-200 bg-amber-50/50 dark:bg-amber-950/20 px-4 py-3">
-              <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
-              <span className="text-sm text-amber-800 dark:text-amber-400 flex-1">
-                {unpaidClients.length} client{unpaidClients.length !== 1 ? "ți" : ""} cu sume nefacturate.
-              </span>
-              <Button variant="outline" size="sm" onClick={selectAllUnpaid} className="border-amber-300 text-amber-700 hover:bg-amber-100">
-                Selectează toți
-              </Button>
-              {selected.size > 0 && (
-                <Button size="sm" onClick={handleBulkInvoice} className="gap-1.5">
-                  <FileCheck2 className="h-3.5 w-3.5" />
-                  Emite {selected.size} Factur{selected.size === 1 ? "ă" : "i"} SmartBill
+            <SectionCard
+              title="Facturare în masă"
+              description="Lucrează pe clienții cu sold deschis fără să concurezi cu tabelul principal."
+              icon={AlertCircle}
+            >
+              <div className="flex flex-wrap items-center gap-3 px-6 py-5">
+                <Badge variant="warning">{unpaidClients.length} solduri deschise</Badge>
+                <span className="flex-1 text-sm text-muted-foreground">
+                  {unpaidClients.length} client{unpaidClients.length !== 1 ? "ți" : ""} cu sume nefacturate sau parțial încasate.
+                </span>
+                <Button variant="outline" size="sm" onClick={selectAllUnpaid}>
+                  Selectează toți
                 </Button>
-              )}
-            </div>
+                {selected.size > 0 && (
+                  <Button size="sm" onClick={handleBulkInvoice} className="gap-1.5">
+                    <FileCheck2 className="h-3.5 w-3.5" />
+                    Emite {selected.size} Factur{selected.size === 1 ? "ă" : "i"} SmartBill
+                  </Button>
+                )}
+              </div>
+            </SectionCard>
           )}
 
           {/* Client table */}
-          <Card className="rounded-[1.75rem] border-border/60 shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base font-black tracking-tight">Detaliu pe clienți — {MONTHS_RO[month-1]} {year}</CardTitle>
-              <CardDescription>Bifați clienții pentru facturare în masă.</CardDescription>
-            </CardHeader>
+          <SectionCard
+            title={`Detaliu pe clienți — ${MONTHS_RO[month-1]} ${year}`}
+            description="Bifați clienții pentru facturare în masă și urmăriți starea sumelor procesate."
+            icon={Wallet}
+          >
             <CardContent className="p-0">
               {clients.length === 0 ? (
                 <EmptyState
@@ -327,11 +347,11 @@ export default function BillingPage() {
                           {(c.totalMinutes / 60).toFixed(1)}h
                         </td>
                         <td className="px-4 py-3 text-right font-semibold">{fmt(c.totalAmount)}</td>
-                        <td className="px-4 py-3 text-right text-emerald-600 dark:text-emerald-400">
+                        <td className="px-4 py-3 text-right font-medium text-foreground">
                           {fmt(c.collectedAmount)}
                         </td>
                         <td className="px-4 py-3 text-center">
-                          <Badge className={cn(cfg.cls)}>{cfg.label}</Badge>
+                          <Badge variant={cfg.variant}>{cfg.label}</Badge>
                         </td>
                       </tr>
                     );
@@ -343,7 +363,7 @@ export default function BillingPage() {
                     <td className="px-3 py-3 text-center">{data.totalSessions}</td>
                     <td className="px-3 py-3 text-center">{data.totalHours}h</td>
                     <td className="px-4 py-3 text-right">{fmt(data.totalAmount)}</td>
-                    <td className="px-4 py-3 text-right text-emerald-600 dark:text-emerald-400">
+                    <td className="px-4 py-3 text-right text-foreground">
                       {fmt(data.collectedAmount)}
                     </td>
                     <td />
@@ -353,23 +373,21 @@ export default function BillingPage() {
               </div>
               )}
             </CardContent>
-          </Card>
+          </SectionCard>
         </>
       )}
 
       {/* Revenue Forecast */}
       {forecast && (
-          <Card className="rounded-[1.75rem] border-violet-200 shadow-sm dark:border-violet-900">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <BrainCircuit className="h-5 w-5 text-violet-500" />
-              Predicție Venituri — Lunile Următoare
-            </CardTitle>
+        <SectionCard
+          title="Predicție venituri — lunile următoare"
+          description="Calculată pe baza frecvenței actuale a fiecărui client. Condiție: toate ședințele se confirmă."
+          icon={BrainCircuit}
+        >
+          <CardContent className="pt-0">
             <CardDescription>
               Calculat pe baza frecvenței actuale a fiecărui client. Condiție: toate ședințele se confirmă.
             </CardDescription>
-          </CardHeader>
-          <CardContent>
             <div className="space-y-2">
               {/* History */}
               {forecast.history.map((h, i) => (
@@ -391,7 +409,7 @@ export default function BillingPage() {
               * Predicția nu include clienți noi sau ședințe anulate. Actualizată la fiecare load.
             </p>
           </CardContent>
-        </Card>
+        </SectionCard>
       )}
 
       {!data && !loading ? (
@@ -408,26 +426,23 @@ export default function BillingPage() {
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function StatCard({ label, value, icon, accent }: {
-  label: string; value: string; icon: React.ReactNode;
-  accent: "blue" | "violet" | "emerald" | "amber" | "rose";
+  label: string; value: string; icon: typeof Users;
+  accent: "neutral" | "info" | "success" | "warning" | "danger";
 }) {
   const accents = {
-    blue:    "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-950",
-    violet:  "text-violet-600 bg-violet-50 dark:text-violet-400 dark:bg-violet-950",
-    emerald: "text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950",
-    amber:   "text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-950",
-    rose:    "text-rose-600 bg-rose-50 dark:text-rose-400 dark:bg-rose-950",
+    neutral: "bg-muted text-foreground",
+    info: "bg-sky-100 text-sky-900 dark:bg-sky-950 dark:text-sky-100",
+    success: "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100",
+    warning: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-100",
+    danger: "bg-destructive/15 text-destructive",
   };
   return (
-    <Card className="rounded-[1.5rem] border-border/60 shadow-sm">
-      <CardContent className="p-4">
-        <div className={cn("mb-3 inline-flex items-center justify-center rounded-2xl p-2", accents[accent])}>
-          {icon}
-        </div>
-        <p className="text-xl font-black tracking-tight">{value}</p>
-        <p className="mt-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
-      </CardContent>
-    </Card>
+    <MetricCard
+      icon={icon}
+      label={label}
+      value={value}
+      iconClassName={accents[accent]}
+    />
   );
 }
 

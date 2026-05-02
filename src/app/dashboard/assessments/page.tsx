@@ -119,7 +119,7 @@ export default async function AssessmentsRegistryPage() {
                     </TableCell>
                     <TableCell className="text-sm">
                       <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-[10px] uppercase font-bold text-slate-500">
+                        <Badge variant="outline" className="text-[10px] uppercase font-bold">
                           {testRelation?.name ?? "Evaluare"}
                         </Badge>
                       </div>
@@ -127,8 +127,8 @@ export default async function AssessmentsRegistryPage() {
                     <TableCell>
                       {assessment.calculated_score ? (
                         <div className="flex items-center gap-2">
-                          <ClipboardCheck className="h-4 w-4 text-emerald-500" />
-                          <span className="text-xs font-semibold text-slate-700">
+                          <ClipboardCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                          <span className="text-xs font-semibold text-foreground">
                             {JSON.stringify(assessment.calculated_score).slice(0, 30)}...
                           </span>
                         </div>

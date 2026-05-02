@@ -45,7 +45,7 @@ export default async function DashboardPage() {
         title={`Bună ziua, ${therapistName}`}
         description="Panoul tău operațional pentru activitatea clinică, administrativă și juridică."
         action={
-          <div className="hidden items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 sm:flex">
+          <div className="hidden items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100 sm:flex">
             <ShieldCheck className="h-3.5 w-3.5" />
             Sistem online și securizat
           </div>
@@ -54,19 +54,19 @@ export default async function DashboardPage() {
 
       {/* ── Alert minori ─────────────────────────────────────────────────── */}
       {stats.pendingMinorReviews > 0 && (
-        <div className="flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50/70 px-5 py-4 shadow-sm">
+        <div className="flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50/70 px-5 py-4 shadow-sm dark:border-amber-900 dark:bg-amber-950/25">
           <div className="flex items-center gap-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-100">
               <AlertTriangle className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-sm font-black text-amber-900">Validare juridică necesară</p>
-              <p className="mt-0.5 text-xs text-amber-700">
+              <p className="text-sm font-black text-amber-950 dark:text-amber-100">Validare juridică necesară</p>
+              <p className="mt-0.5 text-xs text-amber-800 dark:text-amber-200">
                 Există {stats.pendingMinorReviews} dosar de minor nou cu custodie comună ce necesită verificarea documentelor.
               </p>
             </div>
           </div>
-          <Button asChild variant="outline" size="sm" className="border-amber-300 bg-white text-amber-800 hover:bg-amber-100 font-bold shrink-0 gap-1">
+          <Button asChild variant="outline" size="sm" className="shrink-0 gap-1 border-amber-300 bg-background font-bold text-amber-900 hover:bg-amber-100 dark:border-amber-800 dark:text-amber-100 dark:hover:bg-amber-900/40">
             <Link href="/dashboard/clients?filter=review">
               Vezi Dosare
               <ChevronRight className="h-4 w-4" />

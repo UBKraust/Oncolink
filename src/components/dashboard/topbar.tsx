@@ -9,6 +9,7 @@ import { signOut } from "@/app/login/actions";
 import { dashboardNavGroups } from "@/components/dashboard/nav-groups";
 import { Button } from "@/components/ui/button";
 import { interactiveState } from "@/components/ui/interactive-state";
+import { useOverlayA11y } from "@/components/ui/use-overlay-a11y";
 import { cn } from "@/lib/utils";
 import { VaultIndicator } from "@/components/notes/vault-indicator";
 
@@ -21,6 +22,8 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const searchRef = useRef<HTMLDivElement>(null);
+  const mobilePanelRef = useRef<HTMLDivElement>(null);
+  const mobileCloseButtonRef = useRef<HTMLButtonElement>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
@@ -60,25 +63,12 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, []);
 
-  useEffect(() => {
-    if (!mobileMenuOpen) return;
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setMobileMenuOpen(false);
-      }
-    }
-
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [mobileMenuOpen]);
+  useOverlayA11y({
+    open: mobileMenuOpen,
+    onClose: () => setMobileMenuOpen(false),
+    containerRef: mobilePanelRef,
+    initialFocusRef: mobileCloseButtonRef,
+  });
 
   function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -91,7 +81,7 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
   }
 
   return (
-    <header className="flex h-16 shrink-0 items-center gap-4 border-b bg-background px-4 md:px-6">
+    <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur md:px-6">
       <button
         type="button"
         className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-border bg-background text-foreground md:hidden"
@@ -104,7 +94,7 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
       </button>
 
       {mobileMenuOpen ? (
-        <div className="fixed inset-0 z-50 md:hidden" aria-hidden={!mobileMenuOpen}>
+        <div className="fixed inset-0 z-50 md:hidden">
           <button
             type="button"
             className="absolute inset-0 bg-slate-950/30 backdrop-blur-sm"
@@ -114,10 +104,12 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
 
           <div
             id="mobile-dashboard-nav"
+            ref={mobilePanelRef}
             className="absolute left-4 right-4 top-20 max-h-[calc(100svh-6rem)] overflow-y-auto rounded-3xl border bg-card p-4 shadow-2xl"
             role="dialog"
             aria-modal="true"
             aria-label="Navigație dashboard"
+            tabIndex={-1}
           >
             <div className="mb-4 flex items-start justify-between border-b border-border pb-3">
               <div>
@@ -125,6 +117,7 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
                 <p className="text-xs text-muted-foreground">Navigație rapidă în dashboard</p>
               </div>
               <Button
+                ref={mobileCloseButtonRef}
                 type="button"
                 size="icon"
                 variant="ghost"

@@ -10,11 +10,19 @@ import {
   ShieldX, FileDown, Loader2, BrainCircuit, RotateCcw,
   CheckCircle2, CalendarRange, Banknote
 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { MonthlyReview } from "@/app/api/analytics/monthly-review/route";
-import { DashboardPage, EmptyState, PageHeader, SetupBanner } from "@/components/app/page-shell";
+import {
+  DashboardPage,
+  EmptyState,
+  MetricCard,
+  PageHeader,
+  SectionCard,
+  SetupBanner,
+} from "@/components/app/page-shell";
 
 const MONTHS_RO = ["Ianuarie","Februarie","Martie","Aprilie","Mai","Iunie",
   "Iulie","August","Septembrie","Octombrie","Noiembrie","Decembrie"];
@@ -147,43 +155,42 @@ Scrie direct rezumatul, fără titlu.`;
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <KpiCard icon={<Clock className="h-5 w-5" />} label="Ore lucrate" value={`${data.totalHours}h`}
+            <KpiCard icon={Clock} label="Ore lucrate" value={`${data.totalHours}h`}
               sub={`${data.totalSessions} ședințe`} accent="violet"
               hint={data.totalHours > 80 ? "⚠ Risc burnout — peste 80h/lună" : undefined} />
-            <KpiCard icon={<Users className="h-5 w-5" />} label="Clienți unici" value={String(data.uniqueClients)}
+            <KpiCard icon={Users} label="Clienți unici" value={String(data.uniqueClients)}
               sub={`~${data.avgSessionsPerClient} șed/client`} accent="blue" />
-            <KpiCard icon={<UserX className="h-5 w-5" />} label="Rată anulări" value={`${data.noShowRate}%`}
+            <KpiCard icon={UserX} label="Rată anulări" value={`${data.noShowRate}%`}
               sub={`${data.cancelledSessions} anulate`}
               accent={data.noShowRate > 30 ? "rose" : data.noShowRate > 15 ? "amber" : "emerald"}
               hint={data.noShowRate > 30 ? "⚠ Rată mare — consideră politică de anulare" : undefined} />
-            <KpiCard icon={<Banknote className="h-5 w-5" />} label="Venit mediu/șed." value={`${fmt(data.avgRevenuePerSession)} RON`}
+            <KpiCard icon={Banknote} label="Venit mediu/șed." value={`${fmt(data.avgRevenuePerSession)} RON`}
               sub="per ședință" accent="teal" />
-            <KpiCard icon={<TrendingUp className="h-5 w-5" />} label="Profit Net" value={`${fmt(data.netProfit)} RON`}
+            <KpiCard icon={TrendingUp} label="Profit Net" value={`${fmt(data.netProfit)} RON`}
               sub="Venit efectiv - Cheltuieli" accent="emerald"
               hint={data.netProfit < 0 ? "⚠ Profit negativ luna aceasta" : undefined} />
           </div>
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Wallet className="h-4 w-4 text-emerald-500" /> Sănătate Financiară
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
+          <SectionCard
+            title="Sănătate financiară"
+            description="Venituri, cheltuieli și rată de încasare pentru luna selectată."
+            icon={Wallet}
+          >
+            <CardContent className="space-y-3 pt-0">
               <div className="grid gap-3 sm:grid-cols-4">
-                <div className="text-center p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30">
-                  <p className="text-xl font-bold text-blue-700 dark:text-blue-400">{fmt(data.totalRevenue)} <span className="text-sm font-normal">RON</span></p>
+                <div className="rounded-2xl border border-border/60 bg-muted/40 p-3 text-center">
+                  <p className="text-xl font-bold text-foreground">{fmt(data.totalRevenue)} <span className="text-sm font-normal">RON</span></p>
                   <p className="text-[10px] text-muted-foreground mt-0.5 uppercase tracking-tighter">Total Facturat</p>
                 </div>
-                <div className="text-center p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30">
-                  <p className="text-xl font-bold text-emerald-700 dark:text-emerald-400">{fmt(data.collectedRevenue)} <span className="text-sm font-normal">RON</span></p>
+                <div className="rounded-2xl border border-emerald-200/70 bg-emerald-50/60 p-3 text-center dark:border-emerald-900/50 dark:bg-emerald-950/20">
+                  <p className="text-xl font-bold text-emerald-900 dark:text-emerald-100">{fmt(data.collectedRevenue)} <span className="text-sm font-normal">RON</span></p>
                   <p className="text-[10px] text-muted-foreground mt-0.5 uppercase tracking-tighter">Venit Încasat (Brut)</p>
                 </div>
-                <div className="text-center p-3 rounded-lg bg-rose-50 dark:bg-rose-950/30">
-                  <p className="text-xl font-bold text-rose-600 dark:text-rose-400">{fmt(data.totalExpenses)} <span className="text-sm font-normal">RON</span></p>
+                <div className="rounded-2xl border border-border/60 bg-muted/40 p-3 text-center">
+                  <p className="text-xl font-bold text-foreground">{fmt(data.totalExpenses)} <span className="text-sm font-normal">RON</span></p>
                   <p className="text-[10px] text-muted-foreground mt-0.5 uppercase tracking-tighter">Cheltuieli</p>
                 </div>
-                <div className="text-center p-3 rounded-lg bg-primary/10 border border-primary/20">
+                <div className="rounded-2xl border border-primary/20 bg-primary/10 p-3 text-center">
                   <p className="text-xl font-bold text-primary">{fmt(data.netProfit)} <span className="text-sm font-normal">RON</span></p>
                   <p className="text-[10px] text-muted-foreground mt-0.5 uppercase tracking-tighter font-bold">Profit Net</p>
                 </div>
@@ -198,16 +205,15 @@ Scrie direct rezumatul, fără titlu.`;
                 </div>
               </div>
             </CardContent>
-          </Card>
+          </SectionCard>
 
           {data.weeklyBreakdown.length > 0 && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-primary" /> Distribuție Ședințe & Venituri / Săptămână
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+            <SectionCard
+              title="Distribuție ședințe și venituri / săptămână"
+              description="Compară încărcarea clinică cu venitul generat în cursul lunii."
+              icon={TrendingUp}
+            >
+              <CardContent className="pt-0">
                 <ResponsiveContainer width="100%" height={200}>
                   <BarChart data={data.weeklyBreakdown} margin={{ top:4, right:8, left:-16, bottom:4 }}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -219,26 +225,24 @@ Scrie direct rezumatul, fără titlu.`;
                         name === "revenue" ? [`${fmt(val)} RON`, "Venit"] : [val, "Ședințe"]}
                       contentStyle={{ borderRadius:"8px", fontSize:"12px" }}
                     />
-                    <Bar yAxisId="left" dataKey="sessions" fill="#8b5cf6" radius={[4,4,0,0]} name="Ședințe" />
+                    <Bar yAxisId="left" dataKey="sessions" fill="#0f766e" radius={[4,4,0,0]} name="Ședințe" />
                     <Bar yAxisId="right" dataKey="revenue" fill="#10b981" radius={[4,4,0,0]} name="Venit" opacity={0.8} />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
-            </Card>
+            </SectionCard>
           )}
 
           {data.alerts.length > 0 && (
-            <Card className="border-amber-200 dark:border-amber-900">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2 text-amber-800 dark:text-amber-400">
-                  <AlertTriangle className="h-4 w-4" /> Alerte Conformitate & Acțiuni Necesare
-                </CardTitle>
-                <CardDescription className="text-xs">Rezolvați acestea înainte de închiderea lunii.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2">
+            <SectionCard
+              title="Alerte conformitate și acțiuni necesare"
+              description="Rezolvați acestea înainte de închiderea lunii."
+              icon={AlertTriangle}
+            >
+              <CardContent className="space-y-2 pt-0">
                 {data.alerts.map(alert => (
                   <div key={alert.id}
-                    className={cn("flex items-center gap-3 rounded-lg border px-3 py-2.5",
+                    className={cn("flex items-center gap-3 rounded-2xl border px-3 py-3",
                       alert.severity === "CRITICAL"
                         ? "border-rose-200 bg-rose-50/60 dark:bg-rose-950/20"
                         : "border-amber-200 bg-amber-50/60 dark:bg-amber-950/20"
@@ -259,34 +263,30 @@ Scrie direct rezumatul, fără titlu.`;
                   </div>
                 ))}
               </CardContent>
-            </Card>
+            </SectionCard>
           )}
 
           {data.alerts.length === 0 && (
-            <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50/50 dark:bg-emerald-950/20 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-400">
+            <div className="flex items-center gap-2 rounded-3xl border border-emerald-200 bg-emerald-50/50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/20 dark:text-emerald-100">
               <CheckCircle2 className="h-4 w-4 shrink-0" />
               Fără alerte de conformitate luna aceasta. Cabinet în regulă. ✓
             </div>
           )}
 
-          <Card className="border-violet-200 dark:border-violet-900">
-            <CardHeader className="pb-2">
+          <SectionCard
+            title="Sinteză AI — Raport executiv"
+            description="Analiză narativă generată local de Gemma 2 (Ollama). Nu include date sensibile."
+            icon={BrainCircuit}
+          >
+            <CardContent className="pt-0">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm flex items-center gap-2 text-violet-700 dark:text-violet-400">
-                  <BrainCircuit className="h-4 w-4" /> Sinteză AI — Raport Executiv
-                </CardTitle>
                 <Button size="sm" variant="outline"
                   onClick={generateAiInsight} disabled={aiLoading}
-                  className="h-7 text-xs border-violet-200 text-violet-700 hover:bg-violet-50 dark:border-violet-800 dark:text-violet-400 gap-1.5">
+                  className="h-7 gap-1.5 text-xs">
                   {aiLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <BrainCircuit className="h-3.5 w-3.5" />}
                   {aiSummary ? "Regenerează" : "Generează"}
                 </Button>
               </div>
-              <CardDescription className="text-xs">
-                Analiză narativă generată local de Gemma 2 (Ollama). Nu include date sensibile.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
               {aiSummary ? (
                 <div className="space-y-3">
                   <p className="text-sm leading-relaxed text-foreground/90 whitespace-pre-wrap">{aiSummary}</p>
@@ -301,7 +301,7 @@ Scrie direct rezumatul, fără titlu.`;
                 </p>
               )}
             </CardContent>
-          </Card>
+          </SectionCard>
 
           <p className="text-[10px] text-muted-foreground text-center pt-2">
             Generat de Ce`ai Pățit? ERP · {practiceLabel} · {new Date().toLocaleDateString("ro-RO")}
@@ -321,28 +321,30 @@ Scrie direct rezumatul, fără titlu.`;
 }
 
 function KpiCard({ icon, label, value, sub, accent, hint }: {
-  icon: React.ReactNode; label: string; value: string;
+  icon: typeof Clock; label: string; value: string;
   sub?: string; hint?: string;
   accent: "violet"|"blue"|"emerald"|"amber"|"rose"|"teal";
 }) {
   const styles = {
-    violet:  { wrap:"border-violet-100 dark:border-violet-900/40",  icon:"bg-violet-50 dark:bg-violet-950 text-violet-600 dark:text-violet-400",  val:"text-violet-700 dark:text-violet-300" },
-    blue:    { wrap:"border-blue-100 dark:border-blue-900/40",    icon:"bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400",      val:"text-blue-700 dark:text-blue-300" },
-    emerald: { wrap:"border-emerald-100 dark:border-emerald-900/40", icon:"bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400", val:"text-emerald-700 dark:text-emerald-300" },
-    amber:   { wrap:"border-amber-100 dark:border-amber-900/40",  icon:"bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400",    val:"text-amber-700 dark:text-amber-300" },
-    rose:    { wrap:"border-rose-100 dark:border-rose-900/40",    icon:"bg-rose-50 dark:bg-rose-950 text-rose-600 dark:text-rose-400",       val:"text-rose-700 dark:text-rose-300" },
-    teal:    { wrap:"border-teal-100 dark:border-teal-900/40",    icon:"bg-teal-50 dark:bg-teal-950 text-teal-600 dark:text-teal-400",       val:"text-teal-700 dark:text-teal-300" },
+    violet:  "bg-muted text-foreground",
+    blue:    "bg-sky-100 text-sky-900 dark:bg-sky-950 dark:text-sky-100",
+    emerald: "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100",
+    amber:   "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-100",
+    rose:    "bg-destructive/15 text-destructive",
+    teal:    "bg-primary/10 text-primary",
   };
-  const s = styles[accent];
   return (
-    <Card className={cn("rounded-[1.5rem] border shadow-sm", s.wrap)}>
-      <CardContent className="p-4">
-        <div className={cn("mb-3 inline-flex items-center justify-center rounded-2xl p-2", s.icon)}>{icon}</div>
-        <p className={cn("text-2xl font-bold tracking-tight", s.val)}>{value}</p>
-        <p className="mt-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
-        {sub && <p className="text-[11px] text-muted-foreground mt-0.5">{sub}</p>}
-        {hint && <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1 font-medium">{hint}</p>}
-      </CardContent>
-    </Card>
+    <MetricCard
+      icon={icon}
+      label={label}
+      value={value}
+      iconClassName={styles[accent]}
+      trend={
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {sub ? <span>{sub}</span> : null}
+          {hint ? <Badge variant="warning">{hint}</Badge> : null}
+        </div>
+      }
+    />
   );
 }

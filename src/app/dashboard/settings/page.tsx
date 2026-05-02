@@ -1,7 +1,8 @@
 import { SettingsClient } from "@/components/settings/SettingsClient";
 import { getTherapistSettings } from "./settings-actions";
 import { EMPTY_REMOTE_SETTINGS } from "./settings-defaults";
-import { DashboardPage, PageHeader, SetupBanner } from "@/components/app/page-shell";
+import { DashboardPage, PageHeader, SectionCard, SetupBanner } from "@/components/app/page-shell";
+import { AlertCircle } from "lucide-react";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 export default async function SettingsPage() {
@@ -25,9 +26,13 @@ export default async function SettingsPage() {
         <SetupBanner description="Setările sunt pregătite pentru completare, dar salvarea este dezactivată până când configurezi Supabase." />
       ) : null}
       {loadError ? (
-        <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          {loadError}
-        </div>
+        <SectionCard
+          title="Eroare la încărcarea setărilor"
+          description="Poți revizui structura paginii, dar datele reale nu au putut fi preluate în această încărcare."
+          icon={AlertCircle}
+        >
+          <div className="px-6 py-5 text-sm text-muted-foreground">{loadError}</div>
+        </SectionCard>
       ) : null}
       <SettingsClient settings={settings} />
     </DashboardPage>

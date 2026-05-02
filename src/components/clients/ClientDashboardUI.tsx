@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { deriveClientLifecycle } from "@/lib/clients/lifecycle";
 import { cn } from "@/lib/utils";
-import { EmptyState, PageHeader, SectionCard, SetupBanner } from "@/components/app/page-shell";
+import { ActionCard, EmptyState, PageHeader, SectionCard, SetupBanner } from "@/components/app/page-shell";
 import { toast } from "@/components/ui/toast";
 import { createClientOnboardingLink } from "@/app/dashboard/clients/onboarding-actions";
 import {
@@ -95,6 +95,7 @@ export function ClientDashboardUI({
   assessmentParam,
   aiClientContext,
 }: ClientDashboardUIProps) {
+  type ClientWorkspaceView = "overview" | "clinic" | "appointments" | "lifecycle";
   const router = useRouter();
   const [isLifecyclePending, startLifecycleTransition] = useTransition();
   const [isContractModalOpen, setIsContractModalOpen] = useState(false);
@@ -102,6 +103,12 @@ export function ClientDashboardUI({
   const id = client.id;
   const isMinor = client.is_minor ?? false;
   const baseUrl = `/dashboard/clients/${id}`;
+  const closeSectionOverlay = () => {
+    router.replace(baseUrl, { scroll: false });
+  };
+  const [activeView, setActiveView] = useState<ClientWorkspaceView>(() =>
+    assessmentParam ? "clinic" : "overview",
+  );
   const lifecycle = deriveClientLifecycle(client, appointments);
 
   const selectedAssessment = assessmentParam
@@ -291,24 +298,24 @@ export function ClientDashboardUI({
                   </Badge>
                 )}
                 {isMinor && (
-                  <Badge variant="outline" className="bg-indigo-50 text-indigo-600 border-indigo-200 uppercase text-[10px] h-5">
+                  <Badge variant="warning" className="h-5 text-[10px]">
                     Minor
                   </Badge>
                 )}
                 {isB2B && (
-                  <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 uppercase text-[10px] h-5">
+                  <Badge variant="info" className="h-5 text-[10px]">
                     B2B
                   </Badge>
                 )}
                 {sessionFreqLabel && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+                  <Badge variant="success" className="gap-1.5 border-transparent px-3 py-1 text-xs normal-case tracking-normal">
                     <RefreshCw className="h-3 w-3" /> {sessionFreqLabel}
-                  </span>
+                  </Badge>
                 )}
                 {client.session_price && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">
+                  <Badge variant="info" className="gap-1.5 border-transparent px-3 py-1 text-xs normal-case tracking-normal">
                     <TrendingUp className="h-3 w-3" /> {client.session_price} RON/ședință
-                  </span>
+                  </Badge>
                 )}
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -482,220 +489,255 @@ export function ClientDashboardUI({
         />
       )}
 
-      {/* ── 4 Widget Cards ────────────────────────────────────────────────── */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <WidgetCard
-          icon={Mail}
-          title="Contact & Profil"
-          value={anonymized ? "REDACTED" : (client.email ?? "—")}
-          link="?section=contact"
-          badge={client.gdpr_consent_signed ? "GDPR OK" : "GDPR LIPSĂ"}
-          badgeVariant={client.gdpr_consent_signed ? "success" : "warning"}
-        />
-        <WidgetCard
-          icon={Wallet}
-          title="Financiar"
-          value={`${aiClientContext.totalAmount} RON`}
-          link="?section=finance"
-          subtitle={`${aiClientContext.totalSessions} ședințe totale`}
-        />
-        <WidgetCard
-          icon={FileText}
-          title="Dosar Medical"
-          value={`${clientDocs.length + clientMeds.length} Fișiere`}
-          link="?section=medical"
-          subtitle={`${clientMeds.length} medicamente active`}
-        />
-        <WidgetCard
-          icon={ShieldOff}
-          title="Monitorizare Risc"
-          value={crisisNotes.length > 0 ? `${crisisNotes.length} Note active` : "Fără incidente"}
-          link="?section=crisis"
-          badge={crisisNotes.length > 0 ? "URGENT" : "STABIL"}
-          badgeVariant={crisisNotes.length > 0 ? "destructive" : "outline"}
-        />
-      </div>
+      <section className="rounded-[1.75rem] border border-border/60 bg-card p-3 shadow-sm">
+        <div className="flex flex-wrap gap-2">
+          {[
+            { id: "overview", label: "Overview" },
+            { id: "clinic", label: "Clinic" },
+            { id: "appointments", label: "Programări" },
+            { id: "lifecycle", label: "Lifecycle" },
+          ].map((view) => {
+            const active = activeView === view.id;
 
-      <SectionCard
-        title="Istoric lifecycle"
-        description="Ultimele schimbări de status pentru această fișă, utile pentru context administrativ și continuitate."
-        icon={Clock}
-      >
-        <div className="p-6">
-          {lifecycleHistory.length > 0 ? (
-            <div className="space-y-3">
-              {lifecycleHistory.map((entry) => (
-                <div
-                  key={entry.id}
-                  className="flex flex-col gap-2 rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 md:flex-row md:items-center md:justify-between"
-                >
-                  <div className="space-y-1">
-                    <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-foreground">
-                      <span>{STATUS_LABELS[entry.from_status ?? ""] ?? "Inițial"}</span>
-                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                      <span>{STATUS_LABELS[entry.to_status] ?? entry.to_status}</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {entry.reason ?? "Fără motiv explicit"}
-                    </p>
-                  </div>
-                  <div className="flex flex-col items-end gap-0.5 text-right">
-                    <span className="text-xs font-medium text-muted-foreground">
-                      {format(new Date(entry.changed_at), "d MMM yyyy, HH:mm", { locale: ro })}
-                    </span>
-                    {entry.changed_by_name && (
-                      <span className="text-xs text-muted-foreground/70">
-                        de {entry.changed_by_name}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <EmptyState
-              title="Istoricul nu este disponibil încă"
-              description="După aplicarea migrării și primele tranziții reale, aici vor apărea schimbările de status ale clientului."
-              icon={Clock}
-            />
-          )}
+            return (
+              <button
+                key={view.id}
+                type="button"
+                onClick={() => setActiveView(view.id as ClientWorkspaceView)}
+                className={cn(
+                  "rounded-2xl px-4 py-2.5 text-sm font-semibold transition-colors",
+                  active
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                )}
+                aria-pressed={active}
+              >
+                {view.label}
+              </button>
+            );
+          })}
         </div>
-      </SectionCard>
+      </section>
 
-      {/* ── Programări ────────────────────────────────────────────────────── */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Upcoming */}
-        <SectionCard
-          title="Programări viitoare"
-          description="Următoarele sesiuni programate pentru acest client."
-          icon={Calendar}
-        >
-          <div className="space-y-4 p-6">
-          <div className="flex items-center justify-between">
-            <Link
-              href={`/dashboard/appointments?clientId=${id}`}
-              className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline flex items-center gap-1"
-            >
-              Toate <ArrowRight className="h-3 w-3" />
-            </Link>
-          </div>
-
-          {upcomingAppointments.length === 0 ? (
-            <EmptyState
-              title="Nicio programare viitoare"
-              description="Când programezi următoarea sesiune, ea va apărea aici împreună cu durata și tipul întâlnirii."
-              icon={Calendar}
-              action={!anonymized ? { label: "Adaugă programare", href: `/dashboard/appointments/new?clientId=${id}` } : undefined}
+      {activeView === "overview" ? (
+        <>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <WidgetCard
+              icon={Mail}
+              title="Contact & Profil"
+              value={anonymized ? "REDACTED" : (client.email ?? "—")}
+              link="?section=contact"
+              badge={client.gdpr_consent_signed ? "GDPR OK" : "GDPR LIPSĂ"}
+              badgeVariant={client.gdpr_consent_signed ? "success" : "warning"}
             />
-          ) : (
-            <div className="space-y-2">
-              {upcomingAppointments.map((appt) => (
-                <AppointmentRow key={appt.id} appt={appt} upcoming />
-              ))}
-            </div>
-          )}
+            <WidgetCard
+              icon={Wallet}
+              title="Financiar"
+              value={`${aiClientContext.totalAmount} RON`}
+              link="?section=finance"
+              subtitle={`${aiClientContext.totalSessions} ședințe totale`}
+            />
+            <WidgetCard
+              icon={FileText}
+              title="Dosar Medical"
+              value={`${clientDocs.length + clientMeds.length} Fișiere`}
+              link="?section=medical"
+              subtitle={`${clientMeds.length} medicamente active`}
+            />
+            <WidgetCard
+              icon={ShieldOff}
+              title="Monitorizare Risc"
+              value={crisisNotes.length > 0 ? `${crisisNotes.length} Note active` : "Fără incidente"}
+              link="?section=crisis"
+              badge={crisisNotes.length > 0 ? "URGENT" : "STABIL"}
+              badgeVariant={crisisNotes.length > 0 ? "destructive" : "outline"}
+            />
           </div>
-        </SectionCard>
 
-        {/* Past */}
+          {!anonymized && <ClientAiAssistant clientContext={aiClientContext} />}
+        </>
+      ) : null}
+
+      {activeView === "appointments" ? (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <SectionCard
+            title="Programări viitoare"
+            description="Următoarele sesiuni programate pentru acest client."
+            icon={Calendar}
+          >
+            <div className="space-y-4 p-6">
+            <div className="flex items-center justify-between">
+              <Link
+                href={`/dashboard/appointments?clientId=${id}`}
+                className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline flex items-center gap-1"
+              >
+                Toate <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+
+            {upcomingAppointments.length === 0 ? (
+              <EmptyState
+                title="Nicio programare viitoare"
+                description="Când programezi următoarea sesiune, ea va apărea aici împreună cu durata și tipul întâlnirii."
+                icon={Calendar}
+                action={!anonymized ? { label: "Adaugă programare", href: `/dashboard/appointments/new?clientId=${id}` } : undefined}
+              />
+            ) : (
+              <div className="space-y-2">
+                {upcomingAppointments.map((appt) => (
+                  <AppointmentRow key={appt.id} appt={appt} upcoming />
+                ))}
+              </div>
+            )}
+            </div>
+          </SectionCard>
+
+          <SectionCard
+            title="Istoricul ședințelor"
+            description="Ultimele sesiuni finalizate sau încheiate pentru acest client."
+            icon={Clock}
+          >
+            <div className="space-y-4 p-6">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                {appointments.filter(a => isPast(new Date(a.appointment_date))).length} total
+              </span>
+            </div>
+
+            {pastAppointments.length === 0 ? (
+              <EmptyState
+                title="Nicio ședință anterioară"
+                description="Istoricul clinic va apărea aici după primele programări finalizate."
+                icon={Clock}
+              />
+            ) : (
+              <div className="space-y-2">
+                {pastAppointments.map((appt) => (
+                  <AppointmentRow key={appt.id} appt={appt} upcoming={false} />
+                ))}
+              </div>
+            )}
+            </div>
+          </SectionCard>
+        </div>
+      ) : null}
+
+      {activeView === "clinic" ? (
+        <>
+          <div className="grid gap-6 lg:grid-cols-3">
+            <div className="lg:col-span-2">
+              <ClientEvolutionChart assessments={assessments} />
+            </div>
+            <div className="lg:col-span-1">
+              <ClientDriveDocuments clientId={id} documents={clientDocs.slice(0, 5)} />
+            </div>
+          </div>
+
+          <SectionCard
+            title="Evaluări psihologice"
+            description="Istoric scoruri, sumar clinic și rezultate administrate în timp."
+            icon={Brain}
+          >
+            <div className="space-y-6 p-6">
+              <div className="flex justify-end">
+                {!anonymized && (
+                  <Button variant="outline" size="sm" asChild className="rounded-xl font-bold uppercase text-[10px] tracking-widest">
+                    <Link href="/dashboard/assessments/new">
+                      <Plus className="mr-1 h-3.5 w-3.5" /> Adaugă
+                    </Link>
+                  </Button>
+                )}
+              </div>
+
+              {assessments.length === 0 ? (
+                <EmptyState
+                  title="Nu există evaluări încă"
+                  description="După primele teste administrate, aici vor apărea scorurile și interpretările relevante."
+                  icon={Brain}
+                />
+              ) : (
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {assessments.map((acc) => (
+                    <AssessmentCard key={acc.id} acc={acc} clientId={id} isActive={assessmentParam === acc.id} />
+                  ))}
+                </div>
+              )}
+            </div>
+          </SectionCard>
+        </>
+      ) : null}
+
+      {activeView === "lifecycle" ? (
         <SectionCard
-          title="Istoricul ședințelor"
-          description="Ultimele sesiuni finalizate sau încheiate pentru acest client."
+          title="Istoric lifecycle"
+          description="Ultimele schimbări de status pentru această fișă, utile pentru context administrativ și continuitate."
           icon={Clock}
         >
-          <div className="space-y-4 p-6">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-              {appointments.filter(a => isPast(new Date(a.appointment_date))).length} total
-            </span>
-          </div>
-
-          {pastAppointments.length === 0 ? (
-            <EmptyState
-              title="Nicio ședință anterioară"
-              description="Istoricul clinic va apărea aici după primele programări finalizate."
-              icon={Clock}
-            />
-          ) : (
-            <div className="space-y-2">
-              {pastAppointments.map((appt) => (
-                <AppointmentRow key={appt.id} appt={appt} upcoming={false} />
-              ))}
-            </div>
-          )}
-          </div>
-        </SectionCard>
-      </div>
-
-      {/* ── Evolution + Documents ─────────────────────────────────────────── */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <ClientEvolutionChart assessments={assessments} />
-        </div>
-        <div className="lg:col-span-1">
-          <ClientDriveDocuments clientId={id} documents={clientDocs.slice(0, 5)} />
-        </div>
-      </div>
-
-      {/* ── Evaluări Psihologice ─────────────────────────────────────────── */}
-      <SectionCard
-        title="Evaluări psihologice"
-        description="Istoric scoruri, sumar clinic și rezultate administrate în timp."
-        icon={Brain}
-      >
-        <div className="space-y-6 p-6">
-          <div className="flex justify-end">
-            {!anonymized && (
-              <Button variant="outline" size="sm" asChild className="rounded-xl font-bold uppercase text-[10px] tracking-widest">
-                <Link href="/dashboard/assessments/new">
-                  <Plus className="mr-1 h-3.5 w-3.5" /> Adaugă
-                </Link>
-              </Button>
+          <div className="p-6">
+            {lifecycleHistory.length > 0 ? (
+              <div className="space-y-3">
+                {lifecycleHistory.map((entry) => (
+                  <div
+                    key={entry.id}
+                    className="flex flex-col gap-2 rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 md:flex-row md:items-center md:justify-between"
+                  >
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-foreground">
+                        <span>{STATUS_LABELS[entry.from_status ?? ""] ?? "Inițial"}</span>
+                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                        <span>{STATUS_LABELS[entry.to_status] ?? entry.to_status}</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {entry.reason ?? "Fără motiv explicit"}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-0.5 text-right">
+                      <span className="text-xs font-medium text-muted-foreground">
+                        {format(new Date(entry.changed_at), "d MMM yyyy, HH:mm", { locale: ro })}
+                      </span>
+                      {entry.changed_by_name && (
+                        <span className="text-xs text-muted-foreground/70">
+                          de {entry.changed_by_name}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                title="Istoricul nu este disponibil încă"
+                description="După aplicarea migrării și primele tranziții reale, aici vor apărea schimbările de status ale clientului."
+                icon={Clock}
+              />
             )}
           </div>
-
-          {assessments.length === 0 ? (
-            <EmptyState
-              title="Nu există evaluări încă"
-              description="După primele teste administrate, aici vor apărea scorurile și interpretările relevante."
-              icon={Brain}
-            />
-          ) : (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {assessments.map((acc) => (
-                <AssessmentCard key={acc.id} acc={acc} clientId={id} isActive={assessmentParam === acc.id} />
-              ))}
-            </div>
-          )}
-        </div>
-      </SectionCard>
-
-      {/* ── Floating AI ───────────────────────────────────────────────────── */}
-      {!anonymized && <ClientAiAssistant clientContext={aiClientContext} />}
+        </SectionCard>
+      ) : null}
 
       {/* ── Overlays ──────────────────────────────────────────────────────── */}
       <PersonalInfoOverlay
         isOpen={sectionParam === "contact"}
-        onClose={() => { window.location.href = baseUrl; }}
+        onClose={closeSectionOverlay}
         client={client}
         anonymized={anonymized}
       />
       <FinancialDetailOverlay
         isOpen={sectionParam === "finance"}
-        onClose={() => { window.location.href = baseUrl; }}
+        onClose={closeSectionOverlay}
         payments={payments}
         clientName={client.full_name ?? "Client"}
       />
       <MedicalDetailOverlay
         isOpen={sectionParam === "medical"}
-        onClose={() => { window.location.href = baseUrl; }}
+        onClose={closeSectionOverlay}
         documents={clientDocs}
         medications={clientMeds}
         clientName={client.full_name ?? "Client"}
       />
       <CrisisNotesDetailOverlay
         isOpen={sectionParam === "crisis"}
-        onClose={() => { window.location.href = baseUrl; }}
+        onClose={closeSectionOverlay}
         notes={crisisNotes}
         clientName={client.full_name ?? "Client"}
       />
@@ -723,46 +765,49 @@ export function ClientDashboardUI({
 
 function AppointmentRow({ appt, upcoming }: { appt: ClientAppointment; upcoming: boolean }) {
   const date = new Date(appt.appointment_date);
-  const statusColors: Record<string, string> = {
-    PROGRAMAT: "bg-blue-100 text-blue-700",
-    FINALIZAT: "bg-emerald-100 text-emerald-700",
-    ANULAT: "bg-slate-100 text-slate-500",
-    REPROGRAMAT: "bg-amber-100 text-amber-700",
-  };
   const statusLabels: Record<string, string> = {
     PROGRAMAT: "Programat",
     FINALIZAT: "Finalizat",
     ANULAT: "Anulat",
     REPROGRAMAT: "Reprogramat",
   };
+  const statusVariants: Record<string, "info" | "success" | "warning" | "secondary"> = {
+    PROGRAMAT: "info",
+    FINALIZAT: "success",
+    ANULAT: "secondary",
+    REPROGRAMAT: "warning",
+  };
 
   return (
     <Link
       href={`/dashboard/appointments/${appt.id}`}
-      className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 hover:bg-primary/5 hover:border-primary/20 border border-transparent transition-all group"
+      className="group flex items-center justify-between rounded-2xl border border-transparent bg-muted/40 p-3 transition-all hover:border-primary/20 hover:bg-primary/5"
     >
       <div className="flex items-center gap-3">
         <div className={cn(
-          "h-9 w-9 flex items-center justify-center rounded-xl text-xs font-black shrink-0",
-          upcoming ? "bg-primary/10 text-primary" : "bg-slate-200 text-slate-500"
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-black",
+          upcoming ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
         )}>
           {format(date, "d", { locale: ro })}
         </div>
         <div>
-          <p className="text-xs font-black text-slate-800 leading-none">
+          <p className="text-xs font-black leading-none text-foreground">
             {format(date, "EEEE, d MMM", { locale: ro })}
           </p>
-          <p className="text-[10px] font-bold text-slate-400 mt-0.5 flex items-center gap-1">
+          <p className="mt-0.5 flex items-center gap-1 text-[10px] font-bold text-muted-foreground">
             <Clock className="h-2.5 w-2.5" />
             {format(date, "HH:mm")} · {appt.duration_minutes} min
-            {appt.meet_link && <><Video className="h-2.5 w-2.5 ml-1" /> Online</>}
-            {appt.location_tag && <><MapPin className="h-2.5 w-2.5 ml-1" /> {appt.location_tag}</>}
+            {appt.meet_link && <><Video className="ml-1 h-2.5 w-2.5" /> Online</>}
+            {appt.location_tag && <><MapPin className="ml-1 h-2.5 w-2.5" /> {appt.location_tag}</>}
           </p>
         </div>
       </div>
-      <span className={cn("text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-wide", statusColors[appt.status] ?? "bg-slate-100 text-slate-500")}>
+      <Badge
+        variant={statusVariants[appt.status] ?? "secondary"}
+        className="rounded-lg px-2 py-1 text-[10px] tracking-wide"
+      >
         {statusLabels[appt.status] ?? appt.status}
-      </span>
+      </Badge>
     </Link>
   );
 }
@@ -779,23 +824,21 @@ function WidgetCard({
   badgeVariant = "default",
 }: WidgetCardProps) {
   return (
-    <Link
+    <ActionCard
       href={link}
-      className="group relative flex flex-col rounded-[1.75rem] border border-border/60 bg-card p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 hover:border-primary/20"
-    >
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-all">
-          <Icon className="h-5 w-5" />
-        </div>
-        {badge && <Badge variant={badgeVariant} className="text-[9px] font-black tracking-widest">{badge}</Badge>}
-      </div>
-      <h3 className="mb-1 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">{title}</h3>
-      <p className="truncate text-lg font-black leading-tight text-foreground">{value}</p>
-      {subtitle && <p className="mt-1 text-[11px] font-medium leading-none text-muted-foreground">{subtitle}</p>}
-      <div className="absolute bottom-6 right-6 flex h-8 w-8 items-center justify-center rounded-xl bg-muted opacity-0 transition-all text-primary group-hover:opacity-100">
-        <ArrowRight className="h-4 w-4" />
-      </div>
-    </Link>
+      icon={Icon}
+      title={title}
+      value={value}
+      subtitle={subtitle}
+      badge={
+        badge ? (
+          <Badge variant={badgeVariant} className="text-[9px] font-black tracking-widest">
+            {badge}
+          </Badge>
+        ) : undefined
+      }
+      trailing={<ArrowRight className="h-4 w-4" />}
+    />
   );
 }
 
@@ -816,50 +859,52 @@ function AssessmentCard({
       : "Rezultat Test";
 
   return (
-    <Link
+    <ActionCard
       href={`/dashboard/clients/${clientId}?assessment=${acc.id}`}
-      className={cn(
-        "group flex flex-col rounded-[1.75rem] border border-border/60 bg-card p-6 transition-all hover:shadow-md hover:border-primary/30",
-        isActive && "border-primary ring-4 ring-primary/5 shadow-2xl"
-      )}
-    >
-      <div className="flex items-center justify-between mb-4">
-        <Badge variant="outline" className="text-[9px] font-black uppercase tracking-widest bg-muted border-border/60">
+      icon={Brain}
+      title={scoringTestType}
+      value={acc.assessment_type.replace(/_/g, " ")}
+      subtitle={format(new Date(acc.created_at), "d MMM yyyy", { locale: ro })}
+      badge={
+        <Badge variant="outline" className="bg-muted border-border/60 text-[9px] font-black uppercase tracking-widest">
           {acc.assessment_type.replace(/_/g, " ")}
         </Badge>
-        <span className="text-[10px] font-bold text-muted-foreground tracking-wide">
-          {format(new Date(acc.created_at), "d MMM yyyy", { locale: ro })}
-        </span>
-      </div>
-      <div className="flex-1 space-y-4">
-        <div className="rounded-3xl border border-border/60 bg-muted/30 p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Brain className="h-4 w-4 text-primary" />
-            <span className="text-xs font-black uppercase tracking-tighter text-foreground">
-              {scoringTestType}
-            </span>
-          </div>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-            {Object.entries(acc.scoring_data).slice(0, 2).map(([k, v]) => (
-              <div key={k} className="flex flex-col">
-                <span className="text-[9px] uppercase font-bold tracking-tight text-muted-foreground">{k.replace(/_/g, " ")}</span>
-                <span className="text-xs font-black text-foreground">{String(v)}</span>
-              </div>
-            ))}
-          </div>
+      }
+      className={cn(
+        "min-h-full",
+        isActive && "border-primary ring-4 ring-primary/5 shadow-2xl"
+      )}
+      trailing={<ArrowRight className="h-4 w-4" />}
+      footer={
+        <div className="flex items-center justify-between">
+          <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-primary transition-transform group-hover:translate-x-1">
+            Vezi Detalii <ArrowRight className="h-3 w-3" />
+          </span>
+          {acc.sent_to_parent_at ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> : null}
         </div>
-        {acc.content_summary && (
-          <p className="line-clamp-2 text-xs font-medium italic leading-relaxed text-muted-foreground">
-            &quot;{acc.content_summary}&quot;
-          </p>
-        )}
+      }
+    >
+      <div className="rounded-3xl border border-border/60 bg-muted/30 p-4">
+        <div className="mb-3 flex items-center gap-2">
+          <Brain className="h-4 w-4 text-primary" />
+          <span className="text-xs font-black uppercase tracking-tighter text-foreground">
+            {scoringTestType}
+          </span>
+        </div>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+          {Object.entries(acc.scoring_data).slice(0, 2).map(([k, v]) => (
+            <div key={k} className="flex flex-col">
+              <span className="text-[9px] font-bold uppercase tracking-tight text-muted-foreground">{k.replace(/_/g, " ")}</span>
+              <span className="text-xs font-black text-foreground">{String(v)}</span>
+            </div>
+          ))}
+        </div>
       </div>
-      <div className="mt-6 flex items-center justify-between border-t border-border/60 pt-4">
-        <span className="text-[10px] font-black text-primary uppercase tracking-widest group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
-          Vezi Detalii <ArrowRight className="h-3 w-3" />
-        </span>
-        {acc.sent_to_parent_at && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />}
-      </div>
-    </Link>
+      {acc.content_summary ? (
+        <p className="mt-4 line-clamp-2 text-xs font-medium italic leading-relaxed text-muted-foreground">
+          &quot;{acc.content_summary}&quot;
+        </p>
+      ) : null}
+    </ActionCard>
   );
 }

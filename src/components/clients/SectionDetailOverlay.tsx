@@ -40,7 +40,7 @@ export function SectionDetailOverlay({
 
   return (
     <div className={cn(
-      "fixed inset-0 z-[110] flex justify-end transition-opacity duration-300",
+      "fixed inset-0 z-60 flex justify-end transition-opacity duration-300",
       "opacity-100"
     )}>
       {/* Backdrop */}
@@ -53,7 +53,7 @@ export function SectionDetailOverlay({
       <div
         ref={panelRef}
         className={cn(
-        "relative h-full w-full bg-white shadow-2xl transition-transform duration-500 ease-out flex flex-col",
+        "relative h-full w-full bg-card shadow-2xl transition-transform duration-500 ease-out flex flex-col",
         maxWidth,
         "translate-x-0"
         )}
@@ -63,17 +63,17 @@ export function SectionDetailOverlay({
         tabIndex={-1}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b px-6 py-5 bg-slate-50/50">
+        <div className="flex items-center justify-between border-b border-border/70 bg-muted/30 px-6 py-5">
           <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-inner">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <Icon className="h-6 w-6" />
             </div>
             <div>
-              <h2 id="section-detail-title" className="text-lg font-black text-slate-900 uppercase tracking-tight leading-none">
+              <h2 id="section-detail-title" className="text-lg font-black uppercase tracking-tight leading-none text-foreground">
                 {title}
               </h2>
               {subtitle && (
-                <p className="mt-1 text-[10px] font-bold text-slate-500 uppercase tracking-widest italic">
+                <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                   {subtitle}
                 </p>
               )}
@@ -83,7 +83,7 @@ export function SectionDetailOverlay({
             ref={closeButtonRef}
             type="button"
             onClick={onClose}
-            className="p-2 rounded-full hover:bg-slate-200 text-slate-400 transition-colors"
+            className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             aria-label={`Închide secțiunea ${title}`}
           >
             <X className="h-5 w-5" />
@@ -97,7 +97,7 @@ export function SectionDetailOverlay({
 
         {/* Optional Footer */}
         {footer && (
-          <div className="border-t p-6 bg-slate-50/80 backdrop-blur-sm">
+          <div className="border-t border-border/70 bg-muted/30 p-6">
             {footer}
           </div>
         )}

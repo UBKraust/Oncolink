@@ -30,6 +30,7 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { initialsFromName } from "@/lib/clients/validation";
+import { cn } from "@/lib/utils";
 import { ClientDetailOverlay } from "./ClientDetailOverlay";
 import { ContractGeneratorModal } from "./ContractGeneratorModal";
 import Link from "next/link";
@@ -83,21 +84,21 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
   return (
     <div className="space-y-6">
       {/* Search & Actions Bar */}
-      <div className="flex flex-col gap-4 rounded-3xl border border-slate-100 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 rounded-[1.75rem] border border-border/60 bg-card p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
         <div className="relative flex-1 max-w-md group">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
           <Input 
             placeholder="Caută în baza de date pacienți..." 
-            className="pl-10 h-11 bg-slate-50 border-none rounded-2xl focus-visible:ring-2 focus-visible:ring-primary/20 transition-all font-medium"
+            className="h-11 rounded-2xl border-border/60 bg-muted/40 pl-10 font-medium transition-all focus-visible:ring-2 focus-visible:ring-primary/20"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         <div className="flex flex-wrap items-center gap-2">
-           <Badge variant="secondary" className="h-11 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-xs font-bold text-slate-600">
+           <Badge variant="secondary" className="h-11 rounded-2xl px-4 text-xs font-bold">
               <Filter className="mr-2 h-4 w-4" /> {activeFiltersLabel}
            </Badge>
-           <Button asChild className="h-11 px-6 rounded-2xl font-black shadow-xl shadow-primary/20 gap-2">
+           <Button asChild className="h-11 gap-2 rounded-2xl px-6 font-black shadow-sm">
              <Link href="/dashboard/clients/new">
                 <Plus className="h-5 w-5" /> Adaugă Client
              </Link>
@@ -107,8 +108,8 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
 
       <div className="grid gap-4 md:hidden">
         {filteredClients.length === 0 ? (
-          <div className="rounded-[2rem] border border-slate-100 bg-white px-6 py-12 text-center shadow-sm">
-            <div className="flex flex-col items-center gap-3 text-slate-400">
+          <div className="rounded-[1.75rem] border border-border/60 bg-card px-6 py-12 text-center shadow-sm">
+            <div className="flex flex-col items-center gap-3 text-muted-foreground">
               <Users className="h-12 w-12 opacity-20" />
               <p className="font-medium">Nu am găsit niciun client cu acest nume.</p>
             </div>
@@ -120,15 +121,15 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
             return (
               <article
                 key={client.id}
-                className="rounded-[2rem] border border-slate-100 bg-white p-5 shadow-sm"
+                className="rounded-[1.75rem] border border-border/60 bg-card p-5 shadow-sm"
               >
                 <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 text-xs font-black text-slate-700">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-muted text-xs font-black text-foreground">
                     {initialsFromName(client.full_name)}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-bold text-slate-800">{client.full_name}</p>
-                    <p className="truncate text-xs text-slate-400">
+                    <p className="truncate text-sm font-bold text-foreground">{client.full_name}</p>
+                    <p className="truncate text-xs text-muted-foreground">
                       {anonymized ? "REDACTED@cepaipatit.ro" : client.email || "fără email"}
                     </p>
                   </div>
@@ -139,12 +140,12 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
                     {lifecycle.label}
                   </Badge>
                   {client.is_minor && (
-                    <Badge variant="secondary" className="bg-amber-100/60 text-amber-700">
+                    <Badge variant="warning">
                       <Baby className="mr-1 h-3 w-3" /> Minor
                     </Badge>
                   )}
                   {client.billing_type === "B2B_COMPANY" && (
-                    <Badge variant="outline" className="border-blue-100 bg-blue-50/60 text-blue-700">
+                    <Badge variant="info">
                       <Building className="mr-1 h-3 w-3" /> B2B
                     </Badge>
                   )}
@@ -158,21 +159,21 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
                   </Badge>
                 </div>
 
-                <p className="mt-3 text-xs leading-relaxed text-slate-500">
+                <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
                   {lifecycle.nextActions[0] ?? lifecycle.summary}
                 </p>
 
-                <div className="mt-4 grid grid-cols-2 gap-3 rounded-2xl bg-slate-50 p-3 text-xs">
+                <div className="mt-4 grid grid-cols-2 gap-3 rounded-2xl bg-muted/40 p-3 text-xs">
                   <div>
-                    <p className="font-black uppercase tracking-widest text-slate-400">Locație</p>
-                    <p className="mt-1 flex items-center gap-1 font-medium text-slate-600">
+                    <p className="font-black uppercase tracking-widest text-muted-foreground">Locație</p>
+                    <p className="mt-1 flex items-center gap-1 font-medium text-foreground/80">
                       <MapPin className="h-3 w-3" />
                       {client.location === "CLINICA" ? "Clinică" : "Cabinet"}
                     </p>
                   </div>
                   <div>
-                    <p className="font-black uppercase tracking-widest text-slate-400">Vechime</p>
-                    <p className="mt-1 font-medium text-slate-600">
+                    <p className="font-black uppercase tracking-widest text-muted-foreground">Vechime</p>
+                    <p className="mt-1 font-medium text-foreground/80">
                       {format(new Date(client.created_at), "MMM yyyy", { locale: ro })}
                     </p>
                   </div>
@@ -205,22 +206,22 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
       </div>
 
       {/* Modern Dense Table */}
-      <div className="hidden overflow-x-auto rounded-[2.5rem] border border-slate-100 bg-white shadow-xl shadow-slate-200/40 md:block">
+      <div className="hidden overflow-x-auto rounded-[1.75rem] border border-border/60 bg-card shadow-sm md:block">
         <Table>
-          <TableHeader className="bg-slate-50/50">
-            <TableRow className="hover:bg-transparent border-b-slate-100">
-              <TableHead className="w-[300px] py-4 font-black uppercase text-[10px] tracking-widest text-slate-400 pl-8">Informații Pacient</TableHead>
-              <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">Status & Profil</TableHead>
-              <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">Legal (GDPR)</TableHead>
-              <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">Vechime</TableHead>
-              <TableHead className="text-right pr-8 font-black uppercase text-[10px] tracking-widest text-slate-400">Fișă</TableHead>
+          <TableHeader className="bg-muted/30">
+            <TableRow className="border-b-border/70 hover:bg-transparent">
+              <TableHead className="w-[300px] py-4 pl-8 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Informații Pacient</TableHead>
+              <TableHead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Status & Profil</TableHead>
+              <TableHead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Legal (GDPR)</TableHead>
+              <TableHead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Vechime</TableHead>
+              <TableHead className="pr-8 text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground">Fișă</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredClients.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="h-64 text-center">
-                   <div className="flex flex-col items-center gap-3 text-slate-400">
+                   <div className="flex flex-col items-center gap-3 text-muted-foreground">
                       <Users className="h-12 w-12 opacity-20" />
                       <p className="font-medium">Nu am găsit niciun client cu acest nume.</p>
                    </div>
@@ -233,7 +234,7 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
                 return (
                   <TableRow 
                     key={client.id} 
-                    className="group cursor-pointer hover:bg-slate-50/80 transition-all border-b-slate-50 focus-visible:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                    className="group cursor-pointer border-b-border/50 transition-all hover:bg-muted/30 focus-visible:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
                     onClick={() => openClient(client.id)}
                     onKeyDown={(event) => handleRowKeyDown(event, client.id)}
                     tabIndex={0}
@@ -242,14 +243,14 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
                   >
                     <TableCell className="py-4 pl-8">
                       <div className="flex items-center gap-4">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 text-xs font-black text-slate-700 shadow-inner group-hover:from-primary/10 group-hover:to-primary/20 group-hover:text-primary transition-colors">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-muted text-xs font-black text-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary">
                           {initialsFromName(client.full_name)}
                         </div>
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-bold text-slate-800 group-hover:text-primary transition-colors">
+                          <p className="truncate text-sm font-bold text-foreground transition-colors group-hover:text-primary">
                             {client.full_name}
                           </p>
-                          <p className="text-[11px] text-slate-400 font-medium truncate">
+                          <p className="truncate text-[11px] font-medium text-muted-foreground">
                             {anonymized ? "REDACTED@cepaipatit.ro" : client.email || "fără email"}
                           </p>
                         </div>
@@ -262,20 +263,20 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
                             {lifecycle.label}
                           </Badge>
                           {client.is_minor && (
-                            <Badge variant="secondary" className="bg-amber-100/50 text-amber-700 border-amber-100 hover:bg-amber-100 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-lg h-6">
+                            <Badge variant="warning" className="h-6 rounded-lg px-2 py-0.5 text-[9px] tracking-wider">
                               <Baby className="mr-1 h-3 w-3" /> Minor
                             </Badge>
                           )}
                           {client.billing_type === "B2B_COMPANY" && (
-                            <Badge variant="outline" className="bg-blue-50/50 text-blue-700 border-blue-100 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-lg h-6">
+                            <Badge variant="info" className="h-6 rounded-lg px-2 py-0.5 text-[9px] tracking-wider">
                               <Building className="mr-1 h-3 w-3" /> B2B
                             </Badge>
                           )}
                         </div>
-                        <p className="max-w-xs text-[11px] font-medium leading-relaxed text-slate-500">
+                        <p className="max-w-xs text-[11px] font-medium leading-relaxed text-muted-foreground">
                           {lifecycle.nextActions[0] ?? lifecycle.summary}
                         </p>
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-400 px-1">
+                        <span className="inline-flex items-center gap-1 px-1 text-[10px] font-bold text-muted-foreground">
                           <MapPin className="h-3 w-3" /> 
                           {client.location === "CLINICA" ? "Clinică" : "Cabinet"}
                         </span>
@@ -283,25 +284,28 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-3">
-                         {client.gdpr_consent_signed ? (
-                           <div className="flex h-7 px-3 items-center gap-1.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">
-                             <ShieldCheck className="h-3 w-3" />
-                             <span className="text-[10px] font-black uppercase tracking-tight">Semnat</span>
-                           </div>
-                         ) : (
-                           <div className="flex h-7 px-3 items-center gap-1.5 rounded-full bg-rose-50 text-rose-600 border border-rose-100 animate-pulse-subtle">
-                             <ShieldOff className="h-3 w-3" />
-                             <span className="text-[10px] font-black uppercase tracking-tight">Lipsă</span>
-                           </div>
-                         )}
+                        <Badge
+                          variant={client.gdpr_consent_signed ? "success" : "warning"}
+                          className={cn(
+                            "h-7 px-3 tracking-tight",
+                            !client.gdpr_consent_signed && "animate-pulse-subtle",
+                          )}
+                        >
+                          {client.gdpr_consent_signed ? (
+                            <ShieldCheck className="mr-1 h-3 w-3" />
+                          ) : (
+                            <ShieldOff className="mr-1 h-3 w-3" />
+                          )}
+                          {client.gdpr_consent_signed ? "Semnat" : "Lipsă"}
+                        </Badge>
                       </div>
                     </TableCell>
                     <TableCell>
                        <div className="flex flex-col">
-                          <span className="text-xs font-bold text-slate-600">
+                          <span className="text-xs font-bold text-foreground/80">
                              {format(new Date(client.created_at), "MMM yyyy", { locale: ro })}
                           </span>
-                          <span className="text-[10px] text-slate-400 font-medium">înregistrat</span>
+                          <span className="text-[10px] font-medium text-muted-foreground">înregistrat</span>
                        </div>
                     </TableCell>
                     <TableCell className="text-right pr-8">
@@ -310,7 +314,7 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
                            <Button 
                              variant="ghost" 
                              size="icon" 
-                             className="h-9 w-9 rounded-xl text-slate-400 hover:text-primary hover:bg-primary/5 transition-all"
+                             className="h-9 w-9 rounded-xl text-muted-foreground transition-all hover:bg-primary/5 hover:text-primary"
                              onClick={(e) => {
                                e.stopPropagation();
                                setContractClientId(client.id);
@@ -323,7 +327,7 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
                          <Button 
                            variant="ghost" 
                            size="icon" 
-                           className="h-9 w-9 rounded-xl text-slate-400 group-hover:text-primary group-hover:bg-primary/5 transition-all"
+                           className="h-9 w-9 rounded-xl text-muted-foreground transition-all group-hover:bg-primary/5 group-hover:text-primary"
                            onClick={(e) => {
                              e.stopPropagation();
                              openClient(client.id);

@@ -409,7 +409,7 @@ export function SessionDrawer({
             <div className="space-y-6">
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Etichetă Locație</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Etichetă Locație</p>
                   <div className="flex gap-2">
                     {[null, "#cabinet", "#Clinica"].map((tag) => (
                       <button
@@ -422,7 +422,7 @@ export function SessionDrawer({
                           "flex-1 py-2 rounded-xl text-[10px] font-black uppercase transition-all border",
                           appointment.location_tag === tag 
                             ? "bg-primary text-white border-primary shadow-lg shadow-primary/20" 
-                            : "bg-slate-50 text-slate-500 border-slate-100 hover:bg-white hover:border-slate-300"
+                            : "border-border/60 bg-muted/40 text-muted-foreground hover:bg-card hover:border-border"
                         )}
                       >
                         {tag === null ? "Fără" : tag}
@@ -432,7 +432,7 @@ export function SessionDrawer({
                 </div>
 
                 <div className="space-y-2">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Note Personale (Private)</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Note Personale (Private)</p>
                   <textarea
                     defaultValue={appointment.personal_notes || ""}
                     onBlur={(e) => {
@@ -443,15 +443,15 @@ export function SessionDrawer({
                       }
                     }}
                     placeholder="Note doar pentru tine..."
-                    className="w-full min-h-[100px] rounded-2xl bg-slate-50 border border-slate-100 p-4 text-xs font-medium focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all outline-none"
+                    className="min-h-[100px] w-full rounded-2xl border border-border/60 bg-muted/40 p-4 text-xs font-medium outline-none transition-all focus:bg-card focus:ring-2 focus:ring-primary/20"
                   />
                 </div>
 
-                <div className="space-y-4 rounded-2xl bg-slate-50 p-4 border border-slate-100">
+                <div className="space-y-4 rounded-2xl border border-border/60 bg-muted/40 p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Settings className="h-4 w-4 text-slate-400" />
-                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Notificări App</p>
+                      <Settings className="h-4 w-4 text-muted-foreground" />
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Notificări App</p>
                     </div>
                     <button
                       type="button"
@@ -473,8 +473,8 @@ export function SessionDrawer({
                   </div>
                   
                   {appointment.reminders_enabled && (
-                    <div className="flex items-center justify-between pt-2 border-t border-slate-200">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase">Trimite cu</span>
+                    <div className="flex items-center justify-between border-t border-border/60 pt-2">
+                      <span className="text-[10px] font-bold uppercase text-muted-foreground">Trimite cu</span>
                       <div className="flex items-center gap-2">
                         <input 
                           type="number"
@@ -482,17 +482,17 @@ export function SessionDrawer({
                           onBlur={(e) => startTransition(() => {
                             void updateAppointmentFields(appointment.id, { reminder_minutes: parseInt(e.target.value) });
                           })}
-                          className="w-12 h-8 rounded-lg bg-white border border-slate-200 text-center text-xs font-bold font-mono outline-none"
+                          className="h-8 w-12 rounded-lg border border-border/60 bg-card text-center text-xs font-bold font-mono outline-none"
                         />
-                        <span className="text-[10px] font-bold text-slate-400 uppercase">min înainte</span>
+                        <span className="text-[10px] font-bold uppercase text-muted-foreground">min înainte</span>
                       </div>
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-dashed p-4 bg-slate-50/50">
-                 <p className="text-[10px] font-bold text-slate-400 leading-relaxed italic">
+              <div className="rounded-2xl border border-dashed border-border/60 bg-muted/30 p-4">
+                 <p className="text-[10px] font-bold leading-relaxed italic text-muted-foreground">
                    💡 Notele personale și etichetele sunt vizibile doar în calendarul tău și nu sunt partajate cu pacientul sau trimise către Google Calendar.
                  </p>
               </div>

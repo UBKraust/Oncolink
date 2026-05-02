@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { 
   Plus, 
   UserPlus, 
@@ -9,7 +10,6 @@ import {
   Calendar, 
   Receipt, 
   X,
-  Zap
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -24,13 +24,27 @@ interface QuickAction {
 export function QuickActionsWheel() {
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
+
+  const hiddenRoutes = [
+    "/dashboard/clients",
+    "/dashboard/appointments",
+    "/dashboard/calendar",
+  ];
+
+  const shouldHide =
+    hiddenRoutes.some((route) => pathname === route || pathname?.startsWith(`${route}/`)) ||
+    pathname?.startsWith("/dashboard/clients/") ||
+    pathname?.startsWith("/dashboard/appointments/");
+
+  if (shouldHide) return null;
 
   const actions: QuickAction[] = [
     {
       id: "minor",
       label: "Pacient Minor",
       icon: Baby,
-      color: "bg-amber-500 shadow-amber-200",
+      color: "text-amber-700 bg-amber-50 border-amber-200",
       action: () => {
         router.push("/dashboard/clients/new-minor");
         setIsOpen(false);
@@ -40,7 +54,7 @@ export function QuickActionsWheel() {
       id: "adult",
       label: "Client Adult",
       icon: UserPlus,
-      color: "bg-blue-500 shadow-blue-200",
+      color: "text-sky-700 bg-sky-50 border-sky-200",
       action: () => {
         router.push("/dashboard/clients/new");
         setIsOpen(false);
@@ -50,7 +64,7 @@ export function QuickActionsWheel() {
       id: "app",
       label: "Programare Nouă",
       icon: Calendar,
-      color: "bg-emerald-500 shadow-emerald-200",
+      color: "text-emerald-700 bg-emerald-50 border-emerald-200",
       action: () => {
         router.push("/dashboard/appointments/new");
         setIsOpen(false);
@@ -60,7 +74,7 @@ export function QuickActionsWheel() {
       id: "expense",
       label: "Cheltuială Nouă",
       icon: Receipt,
-      color: "bg-rose-500 shadow-rose-200",
+      color: "text-rose-700 bg-rose-50 border-rose-200",
       action: () => {
         router.push("/dashboard/expenses");
         setIsOpen(false);
@@ -69,61 +83,77 @@ export function QuickActionsWheel() {
   ];
 
   return (
-    <div className="fixed bottom-8 right-8 z-[100] flex flex-col items-end gap-4 print:hidden">
-      {/* Actions */}
+    <div className="fixed bottom-6 right-6 z-30 hidden flex-col items-end gap-3 print:hidden md:flex">
       <div className="relative">
-        {/* The "Wheel" of buttons */}
         {isOpen && (
-          <div className="absolute bottom-16 right-0 flex flex-col items-end gap-3 animate-in slide-in-from-bottom-8 fade-in duration-300">
-            {actions.map((act, idx) => (
+          <div className="absolute bottom-16 right-0 w-64 overflow-hidden rounded-3xl border border-border/80 bg-card/98 p-2 shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-200">
+            <div className="border-b border-border/70 px-3 py-2">
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground">
+                Quick Add
+              </p>
+            </div>
+            <div className="grid gap-1 pt-2">
+            {actions.map((act) => (
               <button
                 key={act.id}
                 onClick={act.action}
-                className="group flex items-center gap-3 transition-all duration-300 hover:-translate-x-2"
-                style={{ transitionDelay: `${idx * 50}ms` }}
+                className="flex items-center gap-3 rounded-2xl px-3 py-3 text-left transition-colors hover:bg-muted/60"
               >
-                <span className="rounded-lg bg-white/90 backdrop-blur-md border border-slate-200 px-3 py-1.5 text-xs font-black text-slate-700 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
-                  {act.label}
-                </span>
                 <div className={cn(
-                  "flex h-12 w-12 items-center justify-center rounded-2xl text-white shadow-lg transition-transform hover:scale-110 active:scale-95",
+                  "flex h-10 w-10 items-center justify-center rounded-2xl border",
                   act.color
                 )}>
-                  <act.icon className="h-6 w-6" />
+                  <act.icon className="h-4 w-4" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground">{act.label}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {act.id === "minor"
+                      ? "Deschide fluxul pentru reprezentant legal"
+                      : act.id === "adult"
+                        ? "Creează rapid o fișă nouă"
+                        : act.id === "app"
+                          ? "Programează o nouă ședință"
+                          : "Înregistrează o cheltuială"}
+                  </p>
                 </div>
               </button>
             ))}
+            </div>
+            <div className="border-t border-border/70 px-3 py-2">
+              <Link
+                href="/dashboard"
+                className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                onClick={() => setIsOpen(false)}
+              >
+                Înapoi la dashboard
+              </Link>
+            </div>
           </div>
         )}
 
-        {/* Trigger Button */}
         <button
           onClick={() => setIsOpen(!isOpen)}
           className={cn(
-            "group relative flex h-16 w-16 items-center justify-center rounded-[2rem] transition-all duration-500 shadow-2xl hover:scale-105 active:scale-95 overflow-hidden",
+            "flex h-14 w-14 items-center justify-center rounded-2xl border border-border/80 bg-card text-primary transition-all duration-200 shadow-lg hover:border-primary/20 hover:bg-primary/5 hover:text-primary active:scale-95",
             isOpen 
-              ? "bg-slate-900 rotate-45" 
-              : "bg-primary hover:bg-primary/90"
+              ? "rotate-45 border-primary/30 bg-primary/10" 
+              : ""
           )}
+          aria-expanded={isOpen}
+          aria-label={isOpen ? "Închide meniul de acțiuni rapide" : "Deschide meniul de acțiuni rapide"}
         >
-          {/* Subtle glow effect */}
-          <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-          
           {isOpen ? (
-            <X className="h-8 w-8 text-white -rotate-45" />
+            <X className="h-6 w-6 -rotate-45" />
           ) : (
-            <div className="relative">
-               <Zap className="h-8 w-8 text-white animate-pulse" />
-               <Plus className="absolute -bottom-1 -right-1 h-4 w-4 text-white bg-slate-900 rounded-full border-2 border-primary" />
-            </div>
+            <Plus className="h-6 w-6" />
           )}
         </button>
       </div>
-      
-      {/* Overlay backing when menu is open */}
+
       {isOpen && (
         <div 
-          className="fixed inset-0 -z-10 bg-slate-900/10 backdrop-blur-[2px] transition-all duration-500 animate-in fade-in"
+          className="fixed inset-0 -z-10 bg-slate-900/8 backdrop-blur-[1px] animate-in fade-in duration-200"
           onClick={() => setIsOpen(false)}
         />
       )}

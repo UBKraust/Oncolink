@@ -6,12 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { AppointmentStatus, DashboardAppointment, LocationKind } from "@/lib/mock/dashboard";
 
-const statusVariant: Record<AppointmentStatus, string> = {
-  PROGRAMAT:   "bg-slate-100 text-slate-600",
-  CONFIRMAT:   "bg-emerald-100 text-emerald-700",
-  FINALIZAT:   "bg-blue-100 text-blue-700",
-  ANULAT:      "bg-rose-100 text-rose-600",
-  LIPSA:       "bg-amber-100 text-amber-700",
+const statusVariant: Record<AppointmentStatus, "secondary" | "success" | "info" | "destructive" | "warning"> = {
+  PROGRAMAT:   "secondary",
+  CONFIRMAT:   "success",
+  FINALIZAT:   "info",
+  ANULAT:      "destructive",
+  LIPSA:       "warning",
 };
 
 const statusLabel: Record<AppointmentStatus, string> = {
@@ -49,15 +49,15 @@ export function AppointmentRow({ appointment, showDate = false }: AppointmentRow
 
   return (
     <div className={cn(
-      "flex items-center gap-4 rounded-2xl border px-4 py-3 transition-colors hover:bg-slate-50",
-      isDuty ? "border-dashed bg-slate-50/60 border-slate-200" : "bg-white border-slate-100",
+      "flex items-center gap-4 rounded-2xl border border-border/60 px-4 py-3 transition-colors hover:bg-muted/30",
+      isDuty ? "border-dashed bg-muted/30" : "bg-card",
     )}>
       {/* Time block */}
       <div className="w-14 shrink-0 text-center">
-        <p className="text-sm font-black tabular-nums text-slate-800">
+        <p className="text-sm font-black tabular-nums text-foreground">
           {format(appointment.startsAt, "HH:mm")}
         </p>
-        <p className="text-[10px] font-bold text-slate-400">
+        <p className="text-[10px] font-bold text-muted-foreground">
           {appointment.durationMinutes} min
         </p>
       </div>
@@ -65,16 +65,16 @@ export function AppointmentRow({ appointment, showDate = false }: AppointmentRow
       {/* Name + location */}
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 flex-wrap">
-          <p className="text-sm font-bold text-slate-800 truncate">
+          <p className="truncate text-sm font-bold text-foreground">
             {isDuty ? appointment.clientName : `${appointment.clientName} · ${appointment.clientInitials}`}
           </p>
           {isDuty && (
-            <Badge variant="outline" className="text-[10px] font-bold border-slate-300 text-slate-500">
+            <Badge variant="outline" className="text-[10px] font-bold">
               Gardă externă
             </Badge>
           )}
         </div>
-        <div className="mt-0.5 flex items-center gap-3 text-[11px] text-slate-400 font-medium flex-wrap">
+        <div className="mt-0.5 flex items-center gap-3 text-[11px] font-medium text-muted-foreground flex-wrap">
           <span className="flex items-center gap-1">
             <LocationIcon className="h-3 w-3" />
             {locationLabel[appointment.location]}
@@ -96,12 +96,9 @@ export function AppointmentRow({ appointment, showDate = false }: AppointmentRow
       </div>
 
       {/* Status badge */}
-      <span className={cn(
-        "shrink-0 rounded-xl px-2.5 py-1 text-[10px] font-black uppercase tracking-wide",
-        statusVariant[appointment.status],
-      )}>
+      <Badge variant={statusVariant[appointment.status]} className="shrink-0 rounded-xl px-2.5 py-1 text-[10px] tracking-wide">
         {statusLabel[appointment.status]}
-      </span>
+      </Badge>
     </div>
   );
 }

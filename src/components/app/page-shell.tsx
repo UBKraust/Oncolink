@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { AlertTriangle, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -106,6 +107,107 @@ export function SectionCard({
       </div>
       <div>{children}</div>
     </section>
+  );
+}
+
+export function MetricCard({
+  icon: Icon,
+  label,
+  value,
+  trend,
+  iconClassName = "bg-primary/10 text-primary",
+  className,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: ReactNode;
+  trend?: ReactNode;
+  iconClassName?: string;
+  className?: string;
+}) {
+  return (
+    <section
+      className={cn(
+        "overflow-hidden rounded-[1.75rem] border border-border/60 bg-card shadow-sm transition-shadow hover:shadow-md",
+        className,
+      )}
+    >
+      <div className="p-6">
+        <div className="flex items-center justify-between">
+          <div className={cn("rounded-2xl p-3", iconClassName)}>
+            <Icon className="h-6 w-6" />
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+              {label}
+            </p>
+            <p className="text-2xl font-black text-foreground">{value}</p>
+          </div>
+        </div>
+        {trend ? (
+          <div className="mt-4 text-[10px] font-bold text-muted-foreground">
+            {trend}
+          </div>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+export function ActionCard({
+  href,
+  icon: Icon,
+  title,
+  value,
+  subtitle,
+  badge,
+  children,
+  footer,
+  trailing,
+  className,
+}: {
+  href: string;
+  icon: LucideIcon;
+  title: string;
+  value: ReactNode;
+  subtitle?: ReactNode;
+  badge?: ReactNode;
+  children?: ReactNode;
+  footer?: ReactNode;
+  trailing?: ReactNode;
+  className?: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "group relative flex flex-col rounded-[1.75rem] border border-border/60 bg-card p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-md",
+        className,
+      )}
+    >
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-all">
+          <Icon className="h-5 w-5" />
+        </div>
+        {badge}
+      </div>
+      <h3 className="mb-1 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
+        {title}
+      </h3>
+      <p className="truncate text-lg font-black leading-tight text-foreground">
+        {value}
+      </p>
+      {subtitle ? (
+        <p className="mt-1 text-[11px] font-medium leading-none text-muted-foreground">
+          {subtitle}
+        </p>
+      ) : null}
+      {children ? <div className="mt-4 flex-1">{children}</div> : null}
+      {footer ? <div className="mt-6 border-t border-border/60 pt-4">{footer}</div> : null}
+      <div className="absolute bottom-6 right-6 flex h-8 w-8 items-center justify-center rounded-xl bg-muted text-primary opacity-0 transition-all group-hover:opacity-100">
+        {trailing ?? <AlertTriangle className="h-4 w-4" />}
+      </div>
+    </Link>
   );
 }
 

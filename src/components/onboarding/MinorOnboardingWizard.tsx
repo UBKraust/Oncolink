@@ -167,7 +167,7 @@ export function MinorOnboardingWizard({
   if (isSuccess) {
     return (
       <div className="flex flex-col items-center justify-center space-y-6 text-center animate-in fade-in duration-1000">
-        <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-emerald-100 text-emerald-600 shadow-inner">
+        <div className="flex h-24 w-24 items-center justify-center rounded-[1.75rem] bg-emerald-100 text-emerald-600 shadow-inner dark:bg-emerald-950 dark:text-emerald-200">
           <Check className="h-12 w-12" />
         </div>
         <div className="space-y-2">
@@ -176,8 +176,8 @@ export function MinorOnboardingWizard({
             Vă mulțumim! Dosarul minorului este acum complet și pregătit pentru prima ședință. Terapeutul va analiza documentele încărcate.
           </p>
         </div>
-        <div className="rounded-2xl border border-primary/10 bg-primary/5 p-8 flex flex-col gap-4">
-          <p className="text-sm font-medium italic">&ldquo;Siguranța legala a copilului este prioritatea noastră.&rdquo;</p>
+        <div className="flex flex-col gap-4 rounded-[1.75rem] border border-border/60 bg-card p-8 shadow-sm">
+          <p className="text-sm font-medium italic">&ldquo;Siguranța legală a copilului este prioritatea noastră.&rdquo;</p>
           <Button asChild className="w-full font-bold">
             <a href="https://cepaipatit.ro">Reveniți la site</a>
           </Button>
@@ -211,14 +211,15 @@ export function MinorOnboardingWizard({
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
         <input type="text" tabIndex={-1} autoComplete="off" className="hidden" {...register("website")} />
         {flowError ? (
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-900">
-            {flowError}
+          <div className="flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50/80 px-4 py-3 text-sm text-rose-800 dark:border-rose-900 dark:bg-rose-950/20 dark:text-rose-200">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span className="font-medium">{flowError}</span>
           </div>
         ) : null}
         {/* Step 1: Parent Info */}
         {step === 1 && (
           <div className="space-y-6 rounded-[1.75rem] border border-border/60 bg-card p-6 shadow-sm animate-in slide-in-from-right-4 duration-300">
-            <div className="rounded-2xl border border-blue-100 bg-blue-50/50 p-4 flex gap-3 text-sm text-blue-700">
+            <div className="flex gap-3 rounded-xl border border-sky-200 bg-sky-50/70 p-4 text-sm text-sky-800 dark:border-sky-900 dark:bg-sky-950/20 dark:text-sky-200">
               <Info className="h-5 w-5 shrink-0" />
               <p>Acest formular trebuie completat de părintele sau reprezentantul legal al minorului.</p>
             </div>
@@ -275,7 +276,7 @@ export function MinorOnboardingWizard({
         {/* Step 3: Legal Situation (The "Bomb" Step) */}
         {step === 3 && (
           <div className="space-y-6 rounded-[1.75rem] border border-border/60 bg-card p-6 shadow-sm animate-in slide-in-from-right-4 duration-300">
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 flex gap-3 text-sm text-amber-800">
+            <div className="flex gap-3 rounded-xl border border-amber-200 bg-amber-50/80 p-4 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/20 dark:text-amber-200">
               <AlertTriangle className="h-5 w-5 shrink-0 text-amber-600" />
               <div>
                 <p className="font-bold">Atenție la regimul juridic!</p>
@@ -299,9 +300,9 @@ export function MinorOnboardingWizard({
               </div>
 
               {(maritalStatus === "DIVORTATI_CUSTODIE_COMUNA" || maritalStatus === "DIVORTATI_CUSTODIE_EXCLUSIVA") && (
-                <div className="space-y-4 rounded-2xl border border-rose-100 bg-rose-50/30 p-6 animate-in zoom-in-95 duration-500">
-                  <p className="text-sm font-bold text-rose-900">Încărcare document obligatoriu:</p>
-                  <p className="text-xs text-rose-700">
+                <div className="animate-in zoom-in-95 space-y-4 rounded-xl border border-rose-200 bg-rose-50/50 p-6 duration-500 dark:border-rose-900 dark:bg-rose-950/20">
+                  <p className="text-sm font-bold text-rose-900 dark:text-rose-100">Încărcare document obligatoriu:</p>
+                  <p className="text-xs text-rose-700 dark:text-rose-200">
                     {maritalStatus === "DIVORTATI_CUSTODIE_COMUNA" 
                       ? "Vă rugăm încărcați Acordul scris al celuilalt părinte (poză sau PDF)." 
                       : "Vă rugăm încărcați Sentința Judecătorească definitivă de custodie exclusivă."}
@@ -315,7 +316,7 @@ export function MinorOnboardingWizard({
                     />
                     <div className="flex flex-col items-center justify-center border-2 border-dashed border-rose-200 rounded-xl p-8 transition-colors group-hover:border-rose-400 group-hover:bg-rose-50">
                       {file ? (
-                        <div className="flex items-center gap-2 text-emerald-600 font-bold">
+                        <div className="flex items-center gap-2 font-bold text-emerald-600 dark:text-emerald-300">
                           <Check className="h-5 w-5" /> {file.name.substring(0, 20)}...
                         </div>
                       ) : (
@@ -369,14 +370,14 @@ export function MinorOnboardingWizard({
         {/* Step 5: Consents & Liability */}
         {step === 5 && (
           <div className="space-y-6 rounded-[1.75rem] border border-border/60 bg-card p-6 shadow-sm animate-in slide-in-from-right-4 duration-300">
-             <div className="rounded-2xl border-4 border-rose-600 bg-rose-50 p-6 space-y-4">
+             <div className="space-y-4 rounded-[1.75rem] border border-rose-200 bg-rose-50/80 p-6 dark:border-rose-900 dark:bg-rose-950/20">
                 <div className="flex items-start gap-4">
-                   <div className="h-8 w-8 bg-rose-600 rounded-full flex items-center justify-center shrink-0">
+                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-rose-600">
                       <ShieldCheck className="h-5 w-5 text-white" />
                    </div>
                    <div className="space-y-2">
-                      <p className="text-sm font-black text-rose-900 uppercase tracking-tight">Declarație pe proprie răspundere</p>
-                      <p className="text-[11px] text-rose-800 leading-relaxed font-medium">
+                      <p className="text-sm font-black uppercase tracking-tight text-rose-900 dark:text-rose-100">Declarație pe proprie răspundere</p>
+                      <p className="text-[11px] font-medium leading-relaxed text-rose-800 dark:text-rose-200">
                         Prin prezenta declar că datele furnizate cu privire la identitatea minorului și regimul său juridic sunt conforme cu realitatea. Înțeleg că furnizarea de informații false despre custodia copilului poate atrage răspunderea civilă sau penală conform Codului Civil Român.
                       </p>
                       <Link href="/legal/declaration" target="_blank" className="text-[10px] text-rose-600 font-bold underline flex items-center gap-1 hover:text-rose-700">
@@ -385,7 +386,7 @@ export function MinorOnboardingWizard({
                    </div>
                 </div>
                 
-                <div className="flex items-center space-x-3 p-3 bg-white rounded-lg border border-rose-200">
+                <div className="flex items-center space-x-3 rounded-xl border border-rose-200 bg-background p-3 dark:border-rose-900">
                   <Checkbox 
                     id="legal_liability_consent" 
                     onChange={(e) => setValue("legal_liability_consent", (e.target as HTMLInputElement).checked)}
@@ -397,7 +398,7 @@ export function MinorOnboardingWizard({
                 {errors.legal_liability_consent && <p className="text-xs text-rose-600 font-bold">{errors.legal_liability_consent.message}</p>}
              </div>
 
-             <div className="rounded-2xl border border-slate-200 p-6 space-y-4">
+             <div className="space-y-4 rounded-[1.75rem] border border-border/60 bg-muted/20 p-6">
                 <div className="flex items-center space-x-3">
                   <Checkbox 
                     id="gdpr_consent" 
@@ -405,7 +406,7 @@ export function MinorOnboardingWizard({
                   />
                   <div className="grid gap-1">
                     <label htmlFor="gdpr_consent" className="text-sm font-bold leading-none cursor-pointer">Acord GDPR & Servicii</label>
-                    <p className="text-[10px] text-slate-500">Sunt de acord cu prelucrarea datelor medicale pentru mine și minor conform legii.</p>
+                    <p className="text-[10px] text-muted-foreground">Sunt de acord cu prelucrarea datelor medicale pentru mine și minor conform legii.</p>
                   </div>
                 </div>
                 {errors.gdpr_consent && <p className="text-xs text-rose-500 font-medium">{errors.gdpr_consent.message}</p>}

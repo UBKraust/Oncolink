@@ -14,10 +14,10 @@ import { useNotesVault } from "@/components/notes/notes-context";
 import { encryptNote } from "@/lib/crypto/notes";
 
 const SEVERITY_COLORS: Record<string, string> = {
-  minimal: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300",
-  mild:    "bg-yellow-100 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-300",
-  moderate:"bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300",
-  severe:  "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300",
+  minimal: "success",
+  mild:    "warning",
+  moderate:"warning",
+  severe:  "destructive",
 };
 
 interface Props {
@@ -207,13 +207,13 @@ export function TestExecutionForm({ test, clientId, clientName = "Pacient" }: Pr
       {/* Score Result */}
       {score && (
         <Card
-          className={`border-2 ${
+          className={`rounded-[2rem] border bg-card shadow-sm ${
             band?.severity === "severe"
               ? "border-rose-300 dark:border-rose-800"
               : "border-emerald-200 dark:border-emerald-900"
           }`}
         >
-          <CardHeader className="pb-3">
+          <CardHeader className="border-b border-border/60 bg-muted/20 pb-4">
             <div className="flex justify-between items-start">
               <CardTitle className="flex items-center gap-2 text-base">
                 <CheckCircle className="h-5 w-5 text-emerald-500" />
@@ -238,9 +238,8 @@ export function TestExecutionForm({ test, clientId, clientName = "Pacient" }: Pr
               </div>
               {band && (
                 <Badge
-                  className={`text-sm px-3 py-1.5 h-auto ${
-                    SEVERITY_COLORS[band.severity ?? "minimal"]
-                  }`}
+                  variant={SEVERITY_COLORS[band.severity ?? "minimal"] as "success" | "warning" | "destructive"}
+                  className="h-auto px-3 py-1.5 text-sm"
                 >
                   {score.interpretation}
                 </Badge>
@@ -251,7 +250,7 @@ export function TestExecutionForm({ test, clientId, clientName = "Pacient" }: Pr
             {Object.keys(score.subscales).length > 0 && (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {Object.entries(score.subscales).map(([name, val]) => (
-                  <div key={name} className="rounded-md border bg-muted/30 p-3 text-center">
+                  <div key={name} className="rounded-xl border border-border/60 bg-muted/20 p-3 text-center">
                     <p className="text-xl font-semibold">{val}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">{name}</p>
                   </div>
@@ -266,7 +265,7 @@ export function TestExecutionForm({ test, clientId, clientName = "Pacient" }: Pr
                   variant="outline"
                   onClick={handleAiInterpret}
                   disabled={aiLoading}
-                  className="gap-2 w-full border-indigo-200 text-indigo-700 hover:bg-indigo-50 dark:text-indigo-300 dark:border-indigo-800 dark:hover:bg-indigo-950"
+                  className="w-full gap-2"
                 >
                   <Cpu className="h-4 w-4" />
                   {aiLoading
@@ -276,7 +275,7 @@ export function TestExecutionForm({ test, clientId, clientName = "Pacient" }: Pr
               )}
 
               {aiError && (
-                <div className="flex items-start gap-2 rounded-md border border-rose-200 bg-rose-50/50 p-3 text-sm text-rose-700 dark:bg-rose-950/20 dark:text-rose-400">
+                <div className="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50/70 p-3 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/20 dark:text-rose-300">
                   <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
                   {aiError}
                 </div>
@@ -285,32 +284,34 @@ export function TestExecutionForm({ test, clientId, clientName = "Pacient" }: Pr
               {aiText && (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <Brain className="h-4 w-4 text-purple-500" />
-                    <span className="text-sm font-semibold text-purple-800 dark:text-purple-300">
+                    <Brain className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-semibold text-foreground">
                       Interpretare Clinică (AI)
                     </span>
                   </div>
                   <textarea
-                    className="w-full rounded-md border bg-background p-3 text-sm leading-relaxed resize-none focus-visible:ring-1"
+                    className="w-full resize-none rounded-xl border border-border/60 bg-background p-3 text-sm leading-relaxed focus-visible:ring-1"
                     rows={5}
                     value={aiText}
                     onChange={(e) => setAiText(e.target.value)}
                   />
                   <p className="text-xs text-muted-foreground">
-                    ⚠️ Revizuiți și ajustați textul înainte de salvare. AI-ul nu înlocuiește judecata clinică.
+                    Revizuiți și ajustați textul înainte de salvare. AI-ul nu înlocuiește judecata clinică.
                   </p>
                 </div>
               )}
 
               {saveError && (
-                <p className="text-xs text-destructive font-medium">{saveError}</p>
+                <p className="text-xs font-medium text-destructive">{saveError}</p>
               )}
               {saveSuccess && (
-                <p className="text-xs text-emerald-600 font-bold">Rezultat salvat cu succes!</p>
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-xs font-semibold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-300">
+                  Rezultat salvat cu succes.
+                </div>
               )}
             </div>
           </CardContent>
-          <CardFooter className="border-t">
+          <CardFooter className="border-t border-border/60">
             <Button 
               className="ml-auto" 
               onClick={handleSave} 

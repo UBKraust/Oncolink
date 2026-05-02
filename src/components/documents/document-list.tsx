@@ -112,8 +112,8 @@ export function DocumentList({
   }
 
   return (
-    <Card className="rounded-[1.75rem] border-border/60 shadow-sm">
-      <CardHeader className="pb-3">
+    <Card className="rounded-[2rem] border-border/60 bg-card shadow-sm">
+      <CardHeader className="border-b border-border/60 bg-muted/20 pb-4">
         <CardTitle className="text-base font-black tracking-tight">Clienți activi</CardTitle>
       </CardHeader>
       <CardContent className="p-0">

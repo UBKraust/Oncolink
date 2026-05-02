@@ -132,8 +132,8 @@ export function AssessmentDetailOverlay({
 
           {/* Severity card */}
           {severityCfg && (
-            <div className={`rounded-lg border p-4 ${severityCfg.bg} ${severityCfg.border}`}>
-              <div className="flex items-center justify-between mb-2">
+            <div className={`rounded-xl border p-4 ${severityCfg.bg} ${severityCfg.border}`}>
+              <div className="mb-2 flex items-center justify-between">
                 <span className={`text-sm font-semibold ${severityCfg.text}`}>
                   {severityCfg.label}
                 </span>
@@ -156,12 +156,12 @@ export function AssessmentDetailOverlay({
 
           {/* Score entries */}
           {hasNumericScore && scoreEntries.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                <TrendingUp className="h-3.5 w-3.5" />
-                Scoruri detaliate
-              </p>
-              <div className="divide-y rounded-md border">
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                  <TrendingUp className="h-3.5 w-3.5" />
+                  Scoruri detaliate
+                </p>
+              <div className="divide-y rounded-xl border border-border/60 bg-card">
                 {scoreEntries.map(([key, val]) => (
                   <div key={key} className="flex items-center justify-between px-3 py-2.5">
                     <span className="text-sm text-muted-foreground capitalize">
@@ -209,7 +209,7 @@ export function AssessmentDetailOverlay({
                 <FileText className="h-3.5 w-3.5" />
                 Concluzie / Sumar Clinic
               </p>
-              <div className="rounded-md border bg-muted/20 p-3">
+              <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
                 <p className="text-sm leading-relaxed">{assessment.content_summary}</p>
               </div>
             </div>
@@ -219,13 +219,13 @@ export function AssessmentDetailOverlay({
         {/* Footer */}
         <div className="border-t px-5 py-4">
           {assessment.sent_to_parent_at ? (
-            <div className="flex items-center gap-2 text-sm text-emerald-600 font-medium">
+            <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50/60 px-3 py-2 text-sm font-medium text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-300">
               <CheckCircle2 className="h-4 w-4" />
               Trimis părintelui pe{" "}
               {format(new Date(assessment.sent_to_parent_at), "d MMM yyyy", { locale: ro })}
             </div>
           ) : isMinor && sendReportToParent ? (
-            <button className="flex items-center gap-2 text-sm text-amber-600 hover:text-amber-700 font-medium transition-colors">
+            <button className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50/70 px-3 py-2 text-sm font-medium text-amber-700 transition-colors hover:bg-amber-100 dark:border-amber-900 dark:bg-amber-950/20 dark:text-amber-200">
               <Mail className="h-4 w-4" />
               Generează email pentru părinte
             </button>

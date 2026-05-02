@@ -21,9 +21,9 @@ const STATUS_ICON = {
 };
 
 const STATUS_BADGE = {
-  COMPLIANT: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400",
-  WARNING:   "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400",
-  CRITICAL:  "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-400",
+  COMPLIANT: "success",
+  WARNING:   "warning",
+  CRITICAL:  "destructive",
 };
 
 const SEVERITY_ICON = {
@@ -62,7 +62,7 @@ function ClientRow({ result }: { result: ClientComplianceResult }) {
 
   return (
     <div className={cn(
-      "border rounded-lg overflow-hidden transition-colors",
+      "overflow-hidden rounded-xl border transition-colors",
       result.status === "CRITICAL" && "border-rose-200 dark:border-rose-900",
       result.status === "WARNING"  && "border-amber-200 dark:border-amber-900",
       result.status === "COMPLIANT" && "border-emerald-100 dark:border-emerald-900/40"
@@ -74,10 +74,10 @@ function ClientRow({ result }: { result: ClientComplianceResult }) {
         {STATUS_ICON[result.status]}
         <span className="flex-1 font-medium text-sm">
           {result.clientName}
-          {result.isMinor && <Badge className="ml-2 text-[10px] py-0 bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-400">Minor</Badge>}
-          {result.isAnonymized && <Badge className="ml-2 text-[10px] py-0 bg-zinc-100 text-zinc-600 dark:bg-zinc-800">Anonimizat</Badge>}
+          {result.isMinor && <Badge variant="warning" className="ml-2 py-0">Minor</Badge>}
+          {result.isAnonymized && <Badge variant="outline" className="ml-2 py-0">Anonimizat</Badge>}
         </span>
-        <Badge className={cn("text-xs font-medium shrink-0", STATUS_BADGE[result.status])}>
+        <Badge variant={STATUS_BADGE[result.status] as "success" | "warning" | "destructive"} className="shrink-0">
           {result.status === "COMPLIANT" ? "Conform" : result.status === "WARNING" ? "Atenție" : "Critic"}
         </Badge>
         <span className="text-xs text-muted-foreground w-8 text-right">{result.score}%</span>
@@ -88,15 +88,15 @@ function ClientRow({ result }: { result: ClientComplianceResult }) {
       </button>
 
       {expanded && result.issues.length > 0 && (
-        <div className="border-t bg-muted/20 divide-y">
+        <div className="divide-y border-t bg-muted/20">
           {result.issues.map(issue => (
-            <div key={issue.ruleId} className="px-4 py-3 space-y-1">
+            <div key={issue.ruleId} className="space-y-1 px-4 py-3">
               <div className="flex items-start gap-2">
                 {SEVERITY_ICON[issue.severity]}
                 <div className="flex-1">
                   <p className="text-xs font-semibold">[{issue.ruleId}] {issue.message}</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">📜 {issue.law}</p>
-                  <p className="text-[11px] text-primary mt-1">→ {issue.action}</p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">{issue.law}</p>
+                  <p className="mt-1 text-[11px] text-primary">{issue.action}</p>
                 </div>
               </div>
             </div>
@@ -142,13 +142,14 @@ export function CompliancePanel({ compact = false, initialData }: Props) {
 
   return (
     <Card className={cn(
+      "rounded-[2rem] border bg-card shadow-sm",
       data.criticalCount > 0
         ? "border-rose-200 dark:border-rose-900"
         : data.warningCount > 0
         ? "border-amber-200 dark:border-amber-900"
         : "border-emerald-200 dark:border-emerald-900"
     )}>
-      <CardHeader className="pb-3">
+      <CardHeader className="border-b border-border/60 bg-muted/20 pb-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-3">
             <ScoreRing score={data.overallScore} />
@@ -161,17 +162,17 @@ export function CompliancePanel({ compact = false, initialData }: Props) {
                 GDPR · Legea 213/2004 · Legea 272/2004 · e-Factura · Legea 82/1991
               </CardDescription>
               <div className="flex flex-wrap gap-1.5 mt-2">
-                <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400 text-[10px]">
-                  ✓ {data.compliantCount} conformi
+                <Badge variant="success">
+                  {data.compliantCount} conformi
                 </Badge>
                 {data.warningCount > 0 && (
-                  <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400 text-[10px]">
-                    ⚠ {data.warningCount} atenționări
+                  <Badge variant="warning">
+                    {data.warningCount} atenționări
                   </Badge>
                 )}
                 {data.criticalCount > 0 && (
-                  <Badge className="bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-400 text-[10px]">
-                    ✗ {data.criticalCount} critice
+                  <Badge variant="destructive">
+                    {data.criticalCount} critice
                   </Badge>
                 )}
               </div>
@@ -183,11 +184,11 @@ export function CompliancePanel({ compact = false, initialData }: Props) {
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-2">
+      <CardContent className="space-y-2 pt-6">
         {visible.length === 0 && (
-          <div className="flex items-center gap-2 py-3 text-sm text-emerald-700 dark:text-emerald-400">
+          <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50/60 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-300">
             <CheckCircle2 className="h-4 w-4" />
-            Toți pacienții sunt în conformitate juridică. ✓
+            Toți pacienții sunt în conformitate juridică.
           </div>
         )}
 

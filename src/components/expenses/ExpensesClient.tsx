@@ -186,13 +186,13 @@ export function ExpensesClient({
           tone="warning"
         />
 
-        <Card className="md:col-span-2 rounded-[1.75rem] border-border/60 shadow-sm">
-          <CardHeader className="pb-2">
+        <Card className="md:col-span-2 rounded-[2rem] border-border/60 bg-card shadow-sm">
+          <CardHeader className="border-b border-border/60 bg-muted/20 pb-3">
             <CardTitle className="text-xs font-black uppercase tracking-[0.18em] text-muted-foreground">
               Filtrare Perioadă
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-wrap items-center gap-3">
+          <CardContent className="flex flex-wrap items-center gap-3 pt-6">
             <Select
               defaultValue={String(month)}
               onChange={(e) => handleFilterChange(year, parseInt(e.target.value))}

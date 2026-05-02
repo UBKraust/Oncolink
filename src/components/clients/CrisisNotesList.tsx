@@ -48,8 +48,8 @@ export function CrisisNotesList({ clientId, clientName, initialNotes }: Props) {
   }
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-3">
+    <Card className="rounded-[2rem] border-border/60 bg-card shadow-sm">
+      <CardHeader className="flex flex-row items-center justify-between border-b border-border/60 bg-muted/20 pb-4">
         <CardTitle className="flex items-center gap-2 text-base">
           <AlertTriangle className="h-4 w-4 text-amber-500" />
           Note de Criză
@@ -149,7 +149,7 @@ function CrisisNoteItem({
     : note.note;
 
   return (
-    <div className="rounded-md border border-amber-200 bg-amber-50/50 p-3 dark:border-amber-900/40 dark:bg-amber-950/20">
+    <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3 dark:border-amber-900/40 dark:bg-amber-950/20">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1 space-y-1.5">
           <p className={cn(

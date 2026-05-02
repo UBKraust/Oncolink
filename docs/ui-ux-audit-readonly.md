@@ -31,6 +31,10 @@ Status legend:
 | 13. Align assessments, AI, and settings entry surfaces | `done` | Secondary dashboard pages now use calmer status, chip, and error surfaces closer to the shared system |
 | 14. Align visible vault surfaces | `done` | Expiry badges, archive cards, and upload modal states now match the calmer semantic/dashboard language |
 | 15. Clean deeper settings and import support surfaces | `done` | Settings tabs, legacy accent cards, and import feedback states now use calmer shared shells and semantic treatment closer to the rest of the dashboard |
+| 16. Align secondary compliance, expenses, CAS, and documents surfaces | `done` | Support panels now reuse calmer headers, badge semantics, and less bespoke accent treatment across compliance, document generation, expense filtering, and referral upload |
+| 17. Align onboarding and patient document support flows | `done` | Minor onboarding, patient document upload, and assessment support states now use calmer alert/success shells and less bespoke emphasis |
+| 18. Align contextual AI assistant surface | `done` | The client-side AI drawer now matches the calmer dashboard language instead of keeping a separate consumer-style visual tone |
+| 19. Align remaining assessment and crisis support surfaces | `done` | Test execution, client financial drilldown, and crisis note surfaces now use calmer shells and semantic feedback closer to the shared system |
 
 ### Progress Log
 
@@ -112,7 +116,26 @@ Status legend:
 - Legacy accent-heavy panels in `Security`, `CAS`, and the SmartBill import entry were toned down toward the shared dashboard language.
 - `ImportDashboard` upload, success, and error states now sit on calmer token-driven surfaces instead of older utility styling.
 - Validation: targeted ESLint run passed for `SettingsClient.tsx` and `ImportDashboard.tsx`.
-- Current focus: continue through any remaining older dashboard modules outside the main settings/import path.
+- Completed task 16 across another support-surface wave:
+- `CompliancePanel` now leans more consistently on shared badge semantics and calmer card/header shells instead of bespoke severity pills and noisier status framing.
+- `DocumentList`, `ExpensesClient`, and `ReferralUploader` now use the same calmer header/surface treatment as the rest of the dashboard.
+- Success and error states in CAS referral upload were toned down toward the shared semantic system while preserving operational clarity.
+- Validation: targeted ESLint run passed for `document-list.tsx`, `CompliancePanel.tsx`, `ExpensesClient.tsx`, and `ReferralUploader.tsx`.
+- Completed task 17 across onboarding and patient-document support flows:
+- `MinorOnboardingWizard` now uses calmer shared alert/success shells instead of harsher accent framing in the legal and consent steps.
+- `PatientDocuments` upload and missing-document states now sit closer to the shared dashboard card language.
+- `AssessmentDetailOverlay` success and email action states were toned down toward the same semantic surface treatment.
+- Validation: targeted ESLint run passed for `MinorOnboardingWizard.tsx`, `PatientDocuments.tsx`, and `AssessmentDetailOverlay.tsx`.
+- Completed task 18 in the contextual AI area:
+- `ClientAiAssistant` floating trigger, drawer header, empty state, chat bubbles, error surface, and composer now align more closely with the calmer dashboard and dedicated AI page language.
+- The assistant still reads as an interactive tool, but no longer looks like a separate consumer micro-product inside the client file.
+- Validation: targeted ESLint run passed for `ClientAiAssistant.tsx`.
+- Completed task 19 across another small support-surface pass:
+- `TestExecutionForm` now uses calmer result, AI-interpretation, and success/error shells instead of older accent-heavy utility styling.
+- `ClientFinancialHistory` transaction drilldown and summary cards now sit closer to the shared card/header language.
+- `CrisisNotesList` now uses the same calmer header and note-surface treatment as the rest of the dashboard support modules.
+- Validation: targeted ESLint run passed for `TestExecutionForm.tsx`, `ClientFinancialHistory.tsx`, and `CrisisNotesList.tsx`.
+- Current focus: continue through any remaining older dashboard modules that still carry one-off utility styling.
 
 ## 1. Executive Summary
 

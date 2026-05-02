@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Bot, Send, Loader2, Sparkles, Trash2, User, AlertCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useOverlayA11y } from "@/components/ui/use-overlay-a11y";
 
@@ -184,7 +185,7 @@ export function ClientAiAssistant({ clientContext }: Props) {
       <Button
         onClick={() => setOpen(true)}
         className={cn(
-          "fixed bottom-6 right-6 z-[100] h-14 w-14 rounded-2xl shadow-2xl transition-all hover:scale-105 active:scale-95",
+          "fixed bottom-6 right-6 z-[100] h-14 w-14 rounded-2xl shadow-lg transition-all hover:scale-105 active:scale-95",
           open && "scale-0 opacity-0"
         )}
       >
@@ -201,7 +202,7 @@ export function ClientAiAssistant({ clientContext }: Props) {
       )}>
         {/* Backdrop */}
         <div 
-          className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" 
+          className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" 
           onClick={() => setOpen(false)}
         />
 
@@ -218,34 +219,39 @@ export function ClientAiAssistant({ clientContext }: Props) {
           tabIndex={-1}
         >
           {/* Header */}
-          <div className="flex items-center justify-between border-b px-5 py-4 bg-slate-50/50">
+          <div className="flex items-center justify-between border-b border-border/60 bg-muted/20 px-5 py-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-white shadow-lg shadow-primary/20">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                 <Sparkles className="h-5 w-5" />
               </div>
               <div>
-                <h2 id="client-ai-assistant-title" className="text-sm font-black text-slate-900 uppercase tracking-tight">Asistent AI Contextual</h2>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{clientContext.name ?? "Pacient"}</p>
+                <h2 id="client-ai-assistant-title" className="text-sm font-black tracking-tight text-foreground">Asistent AI contextual</h2>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{clientContext.name ?? "Pacient"}</p>
               </div>
             </div>
-            <button
-              ref={closeButtonRef}
-              type="button"
-              onClick={() => setOpen(false)}
-              className="rounded-full p-2 hover:bg-slate-200 transition-colors"
-              aria-label="Închide asistentul AI"
-            >
-              <X className="h-5 w-5 text-slate-500" />
-            </button>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="hidden sm:inline-flex">
+                Local
+              </Badge>
+              <button
+                ref={closeButtonRef}
+                type="button"
+                onClick={() => setOpen(false)}
+                className="rounded-xl p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                aria-label="Închide asistentul AI"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
           </div>
 
           {/* Messages area */}
-          <div className="flex-1 overflow-y-auto p-5 space-y-4 custom-scrollbar bg-slate-50/30">
+          <div className="custom-scrollbar flex-1 space-y-4 overflow-y-auto bg-background p-5">
             {messages.length === 0 && (
               <div className="space-y-4 py-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="rounded-2xl bg-white border border-slate-100 p-4 shadow-sm">
-                  <p className="text-xs font-bold text-slate-600 leading-relaxed">
-                    Salut! Am analizat fișa lui <span className="text-primary">{clientContext.name ?? "pacientului"}</span>. Sunt gata să te ajut cu obiective terapeutice, sumarizări de ședințe sau strategii clinice.
+                <div className="rounded-[1.75rem] border border-border/60 bg-card p-4 shadow-sm">
+                  <p className="text-xs font-bold leading-relaxed text-muted-foreground">
+                    Salut. Am analizat fișa lui <span className="text-foreground">{clientContext.name ?? "pacientului"}</span>. Pot ajuta cu obiective terapeutice, sumarizări de ședințe sau strategii clinice.
                   </p>
                 </div>
                 <div className="grid gap-2">
@@ -254,7 +260,7 @@ export function ClientAiAssistant({ clientContext }: Props) {
                       key={p}
                       type="button"
                       onClick={() => handleSend(p)}
-                      className="group text-left text-[11px] border bg-white rounded-xl px-4 py-3 hover:bg-primary hover:text-white hover:border-primary transition-all duration-200 font-medium shadow-sm active:scale-[0.98]"
+                      className="text-left text-[11px] rounded-xl border border-border/60 bg-card px-4 py-3 font-medium shadow-sm transition-colors hover:border-primary/20 hover:bg-muted/40"
                     >
                       {p}
                     </button>
@@ -267,15 +273,15 @@ export function ClientAiAssistant({ clientContext }: Props) {
               <div key={m.id} className={cn("flex gap-3", m.role === "user" ? "flex-row-reverse" : "flex-row")}>
                 <div className={cn(
                   "flex h-8 w-8 shrink-0 items-center justify-center rounded-xl font-black text-[10px]",
-                  m.role === "assistant" ? "bg-primary text-white" : "bg-slate-200 text-slate-600"
+                  m.role === "assistant" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
                 )}>
                   {m.role === "assistant" ? <Bot className="h-4 w-4" /> : <User className="h-4 w-4" />}
                 </div>
                 <div className={cn(
                   "max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm",
                   m.role === "user" 
-                    ? "bg-slate-100 text-slate-800 rounded-tr-none" 
-                    : "bg-white border text-slate-800 rounded-tl-none"
+                    ? "rounded-tr-none border border-border/60 bg-muted/40 text-foreground" 
+                    : "rounded-tl-none border border-border/60 bg-card text-foreground"
                 )}>
                   {m.content}
                   {m.isStreaming && (
@@ -286,9 +292,9 @@ export function ClientAiAssistant({ clientContext }: Props) {
             ))}
 
             {error && (
-              <div className="flex items-start gap-3 rounded-2xl border-2 border-rose-100 bg-rose-50 px-4 py-3 text-xs text-rose-700 shadow-sm animate-in zoom-in-95 duration-200">
+              <div className="animate-in zoom-in-95 flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50/80 px-4 py-3 text-xs text-rose-700 shadow-sm duration-200 dark:border-rose-900 dark:bg-rose-950/20 dark:text-rose-200">
                 <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                <p className="font-bold leading-relaxed">{error}</p>
+                <p className="font-semibold leading-relaxed">{error}</p>
               </div>
             )}
 
@@ -296,8 +302,8 @@ export function ClientAiAssistant({ clientContext }: Props) {
           </div>
 
           {/* Footer Input */}
-          <div className="p-5 border-t bg-white">
-            <div className="relative flex items-end gap-3 rounded-[2rem] border bg-slate-50 px-4 py-3 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all group">
+          <div className="border-t border-border/60 bg-muted/10 p-5">
+            <div className="group relative flex items-end gap-3 rounded-[1.75rem] border border-border/60 bg-card px-4 py-3 transition-all focus-within:border-primary/30 focus-within:ring-2 focus-within:ring-primary/10">
               <textarea
                 ref={textareaRef}
                 rows={1}
@@ -305,7 +311,7 @@ export function ClientAiAssistant({ clientContext }: Props) {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Ex: Sugerează obiective terapeutice..."
-                className="flex-1 resize-none bg-transparent text-sm outline-none placeholder:text-slate-400 py-1 min-h-[24px] max-h-[150px] font-medium"
+                className="min-h-[24px] max-h-[150px] flex-1 resize-none bg-transparent py-1 text-sm font-medium outline-none placeholder:text-muted-foreground"
                 disabled={isLoading}
                 aria-label="Mesaj pentru asistentul AI"
               />
@@ -314,7 +320,7 @@ export function ClientAiAssistant({ clientContext }: Props) {
                   <button
                     type="button"
                     onClick={() => { setMessages([]); setError(null); }}
-                    className="p-1.5 text-slate-400 hover:text-rose-500 transition-colors"
+                    className="p-1.5 text-muted-foreground transition-colors hover:text-rose-500"
                     title="Șterge conversația"
                     aria-label="Șterge conversația"
                   >
@@ -323,7 +329,7 @@ export function ClientAiAssistant({ clientContext }: Props) {
                 )}
                 <Button
                   size="icon"
-                  className="h-10 w-10 shrink-0 rounded-2xl shadow-lg shadow-primary/20 active:scale-90 transition-transform"
+                  className="h-10 w-10 shrink-0 rounded-2xl active:scale-90 transition-transform"
                   onClick={() => handleSend()}
                   disabled={!input.trim() || isLoading}
                 >
@@ -331,8 +337,8 @@ export function ClientAiAssistant({ clientContext }: Props) {
                 </Button>
               </div>
             </div>
-            <p className="mt-3 text-[10px] text-center text-slate-400 font-bold uppercase tracking-widest">
-              Securizat • Date Anonimizate • Powered by AI
+            <p className="mt-3 text-center text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              Securizat • Date anonimizate • AI local
             </p>
           </div>
         </div>

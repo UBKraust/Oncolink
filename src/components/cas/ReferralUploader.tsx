@@ -123,8 +123,8 @@ export function ReferralUploader({
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
+    <Card className="rounded-[2rem] border-border/60 bg-card shadow-sm">
+      <CardHeader className="border-b border-border/60 bg-muted/20 pb-4">
         <CardTitle className="flex items-center gap-2 text-base">
           <FileScan className="h-4 w-4 text-primary" />
           Încarcă Bilet de Trimitere
@@ -134,11 +134,11 @@ export function ReferralUploader({
           Fișierul va fi arhivat pe Google Drive.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-5">
+      <CardContent className="space-y-5 pt-6">
 
         {/* Success state */}
         {status === "success" && result && (
-          <div className="rounded-lg border border-emerald-300 bg-emerald-50/60 p-4 dark:bg-emerald-950/20 dark:border-emerald-900">
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 dark:border-emerald-900 dark:bg-emerald-950/20">
             <div className="flex items-start gap-3">
               <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
@@ -178,11 +178,11 @@ export function ReferralUploader({
               onDrop={handleDrop}
               onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
               onDragLeave={() => setDragOver(false)}
-              className={`relative flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 cursor-pointer transition-colors text-center ${
+              className={`relative flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed p-6 text-center transition-colors ${
                 dragOver
                   ? "border-primary bg-primary/5"
                   : selectedFile
-                  ? "border-emerald-400 bg-emerald-50/40 dark:border-emerald-700 dark:bg-emerald-950/20"
+                  ? "border-emerald-300 bg-emerald-50/40 dark:border-emerald-800 dark:bg-emerald-950/20"
                   : "border-muted-foreground/30 hover:border-primary/50 hover:bg-muted/30"
               }`}
             >
@@ -262,7 +262,7 @@ export function ReferralUploader({
 
             {/* Error */}
             {errorMsg && (
-              <div className="flex items-center gap-2 rounded-md border border-rose-200 bg-rose-50/60 px-3 py-2 text-xs text-rose-700 dark:bg-rose-950/20 dark:text-rose-400">
+              <div className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50/60 px-3 py-2 text-xs text-rose-700 dark:border-rose-900 dark:bg-rose-950/20 dark:text-rose-300">
                 <AlertCircle className="h-3.5 w-3.5 shrink-0" />
                 {errorMsg}
               </div>

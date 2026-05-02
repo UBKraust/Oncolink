@@ -113,7 +113,7 @@ export function PatientDocuments({ clientId, isMinor, documents }: Props) {
     <div className="space-y-5">
       {/* Minor alert — missing docs */}
       {isMinor && missingMinorDocs.length > 0 && (
-        <div className="flex items-start gap-3 rounded-lg border border-rose-200 bg-rose-50/60 p-4 dark:bg-rose-950/20 dark:border-rose-900">
+        <div className="flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50/60 p-4 dark:border-rose-900 dark:bg-rose-950/20">
           <ShieldAlert className="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
           <div>
             <p className="font-semibold text-sm text-rose-800 dark:text-rose-300">Documente obligatorii lipsă pentru minor</p>
@@ -129,13 +129,13 @@ export function PatientDocuments({ clientId, isMinor, documents }: Props) {
       )}
 
       {/* Upload panel */}
-      <Card>
-        <CardHeader className="pb-3">
+      <Card className="rounded-[2rem] border-border/60 bg-card shadow-sm">
+        <CardHeader className="border-b border-border/60 bg-muted/20 pb-4">
           <CardTitle className="text-base flex items-center gap-2">
             <Plus className="h-4 w-4" /> Adaugă Document
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 pt-6">
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label className="text-xs">Tip Document</Label>
@@ -168,9 +168,9 @@ export function PatientDocuments({ clientId, isMinor, documents }: Props) {
             onDrop={(e) => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) setSelectedFile(f); }}
             onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
-            className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-5 cursor-pointer transition-colors text-center ${
+            className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed p-5 text-center transition-colors ${
               dragOver ? "border-primary bg-primary/5"
-              : selectedFile ? "border-emerald-400 bg-emerald-50/40 dark:border-emerald-700 dark:bg-emerald-950/20"
+              : selectedFile ? "border-emerald-300 bg-emerald-50/40 dark:border-emerald-800 dark:bg-emerald-950/20"
               : "border-muted-foreground/30 hover:border-primary/50 hover:bg-muted/20"
             }`}
           >
@@ -302,7 +302,7 @@ export function PatientDocuments({ clientId, isMinor, documents }: Props) {
               </h4>
               <div className="space-y-1.5">
                 {typeDocs!.map((doc) => (
-                  <div key={doc.id} className="flex items-start gap-3 rounded-lg border bg-card px-3 py-2.5 hover:bg-muted/30 transition-colors group cursor-pointer"
+                  <div key={doc.id} className="group flex cursor-pointer items-start gap-3 rounded-xl border border-border/60 bg-card px-3 py-2.5 transition-colors hover:bg-muted/30"
                     onClick={() => setPreviewDoc(doc)}>
                     <FileIcon mime={doc.mime_type} />
                     <div className="flex-1 min-w-0">

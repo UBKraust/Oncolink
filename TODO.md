@@ -30,7 +30,7 @@ LIMIT 20;
 
 ---
 
-## 🟠 Validare lifecycle (următorul pas)
+## ✅ Validare lifecycle
 
 Testează fiecare buton din fișa unui client real și confirmă că scrie în `client_status_history`:
 
@@ -45,6 +45,17 @@ Testează fiecare buton din fișa unui client real și confirmă că scrie în `
 Verifică și că secțiunea "Istoric lifecycle" din fișă afișează tranzițiile cu timestamp + `de [Nume Terapeut]`.
 
 Verifică că fluxurile automate (booking public `/book`, onboarding, anonimizare) scriu și ele în istoric **fără** `changed_by_name` — asta e comportamentul corect (sistem, nu terapeut).
+
+Status validat pe remote la nivel de persistență:
+- [x] `Marchează activ` → `ACTIV` + `changed_by_name`
+- [x] `Marchează inactiv` → `INACTIV` + `changed_by_name`
+- [x] `Încheie caz` → `INCHEIAT` + `changed_by_name`
+- [x] `Neconversie` → `NECONVERSIE` + `changed_by_name`
+- [x] `Reactivează` → `ACTIV` derivat + `changed_by_name`
+- [x] Fluxuri automate scriu în istoric fără `changed_by_name`
+
+Notă:
+- În timpul validării a fost descoperit un drift de schemă pe remote: migrarea lifecycle apărea în istoricul de migrare, dar obiectele (`clients.lifecycle_status`, `client_status_history`, policy-ul RLS) lipseau efectiv. Drift-ul a fost reparat prin reaplicarea SQL-ului din [supabase/migrations/20260429223610_client_lifecycle_status.sql](/Users/sch_work/Documents/Oncolink/supabase/migrations/20260429223610_client_lifecycle_status.sql) direct pe baza linkată.
 
 ---
 
@@ -83,17 +94,32 @@ Testare manuală, în ordine de prioritate:
 3. Verifică redirect la fișa clientului după submit reușit
 4. Verifică că `lifecycle_status = 'LEAD'` apare în fișă
 
+Status backend:
+- [x] Persistența stării inițiale `LEAD` este confirmată
+- [ ] Validare UI formular + redirect
+
 ### Flux 2 — Onboarding adult (link securizat)
 1. Din fișa clientului, copiază linkul de onboarding
 2. Deschide în browser incognito
 3. Completează wizard-ul în 3 pași
 4. Verifică că datele apar în fișă și `lifecycle_status` trece la `ONBOARDING`
 
+Status backend:
+- [x] `submitClientOnboarding` mută clientul în `ONBOARDING`
+- [ ] Validare UI wizard + link securizat + afișare fișă
+
 ### Flux 3 — Onboarding minor (tutore)
 1. Creează client minor din `/dashboard/clients/new-minor`
 2. Din fișă, copiază linkul de onboarding minor
 3. Completează ca tutore în browser incognito (date guardian)
 4. Verifică că `is_onboarding_complete` devine `true` și bannerul dispare din fișă
+
+Status backend:
+- [x] `submitMinorOnboarding` setează `onboarding_completed_at`, `legal_liability_consent_signed_at`, `needs_legal_review` și `lifecycle_status = 'ONBOARDING'`
+- [ ] Validare UI banner/link/wizard minor
+
+Notă:
+- În cod, semnalul real folosit de UI este `onboarding_completed_at` / `lifecycle.isOnboardingComplete`, nu un câmp literal `is_onboarding_complete`.
 
 ### Flux 4 — Booking public
 1. Deschide `/book` fără autentificare
@@ -102,11 +128,19 @@ Testare manuală, în ordine de prioritate:
 4. Verifică că programarea apare în `/dashboard/appointments`
 5. Verifică că clientul apare în registru (sau că cel existent a primit o programare nouă)
 
+Status backend:
+- [x] `createPublicBooking` creează `appointments.status = 'PROGRAMAT'` și mută clientul în `PROGRAMAT`
+- [ ] Validare UI booking public + redirect `?confirmed=1`
+
 ### Flux 5 — Marcare ședință completă
 1. Din `/dashboard/appointments`, deschide o programare `PROGRAMAT`
 2. Din SessionDrawer, marchează ca `FINALIZAT`
 3. Verifică că `lifecycle_status` clientului trece la `ACTIV` (sync automat)
 4. Verifică intrarea în `client_status_history` fără `changed_by_name` (sistem)
+
+Status backend:
+- [x] `updateAppointmentStatus -> FINALIZAT` mută clientul în `ACTIV` și scrie în istoric fără `changed_by_name`
+- [ ] Validare UI din `SessionDrawer`
 
 ### Flux 6 — Emitere factură SmartBill
 1. Din fișa clientului sau `/dashboard/invoices/new`, creează factură
@@ -130,6 +164,10 @@ Testare manuală, în ordine de prioritate:
 3. Scrie `ȘTERGE PII` în câmpul de confirmare
 4. Verifică redirect cu `?anonymized=1` și banner verde
 5. Verifică că `lifecycle_status = 'ANONIMIZAT'` și datele PII sunt șterse
+
+Status backend:
+- [x] Anonimizarea mută clientul în `ANONIMIZAT` și scrie istoric fără `changed_by_name`
+- [ ] Validare UI dialog + redirect + banner
 
 ---
 
@@ -168,9 +206,8 @@ Testare manuală, în ordine de prioritate:
 ## Ordine recomandată de lucru
 
 ```
-1. Validare lifecycle (butoane + istoric)
-2. QA funcțional (flux 1→9)
-3. QA accesibilitate
-4. Separare model `guardian` (opțional, cu migrare nouă)
-5. Viitor / opțional
+1. QA funcțional UI (flux 1→9) pentru pașii încă neverificați vizual
+2. QA accesibilitate
+3. Separare model `guardian` (opțional, cu migrare nouă)
+4. Viitor / opțional
 ```

@@ -25,6 +25,27 @@ Lead → Onboarding → Evaluare inițială → Plan de lucru → Ședințe → 
 
 Diferența între servicii este ce anume se întâmplă în fiecare etapă.
 
+## Cum se vede asta în dashboard
+
+După refactorul `/dashboard` către clinical command center, service tracks nu mai sunt doar context în fișa clientului, ci apar și agregat în dashboard:
+
+- `ServiceTracksOverview` grupează cazurile active pe:
+  - `CLINICAL_PSYCHOLOGY`
+  - `CBT`
+  - `DBT`
+  - `COUNSELING`
+  - `UNDECIDED`
+- `ClinicalAlertsPanel` și `DocumentTasksPanel` expun blocajele administrative și legale care afectează track-urile
+- `AssessmentTasksPanel` este puntea către viitorul catalog de teste și către rapoarte
+- `ResearchReadinessPanel` rămâne discret și nu domină experiența clinică zilnică
+
+Scopul dashboard-ului nu este să înlocuiască fișa clientului, ci să răspundă dimineața la:
+
+1. Ce se întâmplă azi?
+2. Ce cazuri sunt blocate?
+3. Ce documente lipsesc?
+4. Ce evaluări sau rapoarte trebuie urmărite?
+
 ---
 
 ## 1. Psihologie Clinică

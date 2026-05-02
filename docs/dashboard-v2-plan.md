@@ -3,7 +3,48 @@
 **Repository:** `UBKraust/Oncolink`  
 **Branch:** `Ceai-Patit`  
 **Data:** 2026-05-02  
-**Mod:** plan și audit, fără modificări de implementare
+**Mod:** plan, audit și status de implementare incrementală
+
+---
+
+## 0. Status actual
+
+Refactorul principal pentru `/dashboard` a fost implementat incremental în aceeași zi, fără rescriere totală și fără dependințe noi.
+
+### Implementat acum
+
+- header operațional cu descriere dinamică și CTA-uri vizibile:
+  - `Client nou`
+  - `Pacient minor`
+  - `Programare`
+- `TodayCommandCenter`
+- `ClinicalAlertsPanel`
+- `DocumentTasksPanel`
+- `ServiceTracksOverview`
+- `AssessmentTasksPanel`
+- `ResearchReadinessPanel`
+- mutarea financiarului mai jos, în zonă compactă
+- păstrarea widget-urilor existente:
+  - `AppointmentsToday`
+  - `UpcomingAppointments`
+  - `UnpaidInvoices`
+  - `CompliancePanel`
+  - `VaultStatusWidget`
+  - `RealtimeDashboard`
+- helper-e reziliente noi în `src/lib/dashboard/queries.ts`
+
+### Implementat cu fallback safe
+
+- `ServiceTracksOverview` folosește `clients.service_type` când există și degradează la gol / fallback calm dacă nu există date utile
+- `AssessmentTasksPanel` folosește tabela `assessments` existentă, fără scoring complex și fără dependență de `client_assessments`
+- `ResearchReadinessPanel` nu face integrare nouă cu Ollama și nu încearcă să implementeze Research Hub
+
+### Rămas pentru fazele următoare
+
+- `TodayCommandCenter` cu note clinice lipsă reale și context de sesiune mai bogat
+- alerte DBT / CBT bazate pe tabelele P2 (`dbt_diary_cards`, `safety_plans`, `homework_items`)
+- task-uri T0 / T1 / T2 bazate pe `client_assessments`
+- research readiness cu coverage real și status local Ollama
 
 ---
 
@@ -14,13 +55,14 @@
 Structura curentă în [`src/app/dashboard/page.tsx`](../src/app/dashboard/page.tsx):
 
 ```
-1. Header — "Bună ziua, [Terapeut]" + badge "Sistem online"
-2. Alert minori — condiționat dacă pendingMinorReviews > 0
-3. KPI Cards (4 carduri) — Profit Net / Încasări Lună / Ședințe Azi / Ore Prestate
-4. Financial + Vault — FinancialSummary (2/3) + VaultStatusWidget (1/3)
-5. Patient Analytics (3 carduri) — Mix locație / Demografic / B2B
-6. Appointments + Invoices — AppointmentsToday (2/3) + UnpaidInvoices (1/3)
-7. Upcoming + Compliance — UpcomingAppointments (3/5) + CompliancePanel (2/5)
+1. Header dinamic — "Azi ai X ședințe, Y dosare incomplete și Z acțiuni de rezolvat."
+2. Today Command Center
+3. Clinical & Legal Alerts + Documente & Onboarding
+4. Service Tracks Overview
+5. AppointmentsToday + AssessmentTasksPanel
+6. Financiar compact — FinancialSummary + UnpaidInvoices
+7. UpcomingAppointments + CompliancePanel
+8. VaultStatusWidget + ResearchReadinessPanel
 ```
 
 ### Date deja disponibile în queries.ts
@@ -40,6 +82,11 @@ Din [`src/lib/dashboard/queries.ts`](../src/lib/dashboard/queries.ts):
 | `getUpcomingAppointments()` — next 10 | `appointments + clients` | ✅ |
 | `getUnpaidInvoices()` — max 5 | `invoices + appointments + clients` | ✅ |
 | Compliance check | `runServerComplianceCheck()` | ✅ |
+| `getDashboardClinicalAlerts()` | `clients + assessments + invoices + vault` | ✅ |
+| `getDashboardDocumentTasks()` | `clients + generated_contracts + assessments` | ✅ |
+| `getDashboardServiceTrackStats()` | `clients.service_type` | ✅ |
+| `getDashboardAssessmentTasks()` | `assessments + clients` | ✅ |
+| `getDashboardResearchReadiness()` | `clients + assessments` | ✅ |
 
 ### Componente care pot fi păstrate
 
@@ -54,17 +101,15 @@ Din [`src/lib/dashboard/queries.ts`](../src/lib/dashboard/queries.ts):
 | [`StatCard`](../src/components/dashboard/stat-card.tsx) | KPI cards | Reutilizat în secțiunile noi |
 | [`RealtimeDashboard`](../src/components/dashboard/realtime-dashboard.tsx) | Subscripție Supabase realtime | Păstrat, montat în layout |
 
-### Ce lipsește după noile update-uri
+### Ce încă lipsește după update-ul actual
 
 | Lipsă | De ce e necesar |
 |---|---|
-| Clinical alerts agregat (GDPR, contract, risc, onboarding) | Terapeutul nu vede ce e urgent clinic |
-| Service track stats (cât lucru per CBT/DBT/Clinică/Consiliere) | ERP nu reflectă tipul real de muncă |
-| Azi complet — notă lipsă, contract lipsă, diary card lipsă | AppointmentsToday nu include context clinic |
-| Tasks legate de teste/evaluări (T0 lipsă, T1 due) | Catalogul de teste nu apare deloc în dashboard |
-| Document tasks (contracte draft, onboarding incomplet) | Legate de generatorul de contracte |
-| Research readiness (T0/T1/T2 coverage, export status) | Relevant pentru doctorat |
-| Header dinamic — rezumă ziua reală | Acum e generic |
+| Note clinice lipsă reale în `TodayCommandCenter` | Terapeutul nu vede încă gap-ul post-sesiune |
+| Alerte DBT / CBT pe tabele dedicate | Contextul clinic avansat lipsește fără P2 |
+| Tasks legate de T0/T1/T2 pe `client_assessments` | Catalogul de teste nu alimentează încă dashboard-ul |
+| Research readiness real pentru export / doctorat | Momentan este doar readiness discret |
+| Ollama status în dashboard | AI local nu trebuie încă dominant, dar poate apărea mai târziu |
 
 ### Problemele principale ale dashboard-ului v1
 
@@ -74,6 +119,16 @@ Din [`src/lib/dashboard/queries.ts`](../src/lib/dashboard/queries.ts):
 4. **Financiarul ocupă 2/3 din a doua secțiune** înainte de orice altceva clinic
 5. **Patient analytics cu locație/B2B/demografic** nu spune nimic util dimineața
 6. **CompliancePanel** e bun dar e comprimat și pus la final
+
+### Probleme rezolvate în implementarea actuală
+
+1. dashboard-ul nu mai începe cu profit / încasări
+2. prima zonă operațională după header este `TodayCommandCenter`
+3. există panou separat pentru `Clinical & Legal Alerts`
+4. există panou separat pentru `Documente & Onboarding`
+5. există `ServiceTracksOverview` cu fallback sigur
+6. există `AssessmentTasksPanel` cu fallback sigur
+7. financiarul este prezent, dar mai jos și mai calm
 
 ---
 
@@ -798,6 +853,8 @@ Compact, subtil — nu dominant
 
 ### P0 — Reorganizare fără migrări noi
 
+**Status:** implementat ✅
+
 **Obiectiv:** dashboard-ul operațional din prima zi, fără să depindă de migrările neaplicate.
 
 **Ce facem:**
@@ -812,8 +869,8 @@ Compact, subtil — nu dominant
 
 **Dependințe:** zero migrări noi — totul bazat pe coloanele existente
 
-**Componente noi:** `TodayCommandCenter`, `ClinicalAlertsPanel` (subset), `DocumentTasksPanel`  
-**Queries noi:** `getTodayCommandData()`, `getDashboardClinicalAlerts()` (subset), `getDashboardDocumentTasks()`
+**Componente noi:** `TodayCommandCenter`, `ClinicalAlertsPanel`, `DocumentTasksPanel`, `AssessmentTasksPanel`, `ResearchReadinessPanel`  
+**Queries noi:** `getDashboardClinicalAlerts()`, `getDashboardDocumentTasks()`, `getDashboardAssessmentTasks()`, `getDashboardResearchReadiness()`
 
 ---
 
@@ -821,13 +878,15 @@ Compact, subtil — nu dominant
 
 **Obiectiv:** dashboard-ul reflectă tipul real de muncă al terapeutului.
 
+**Status:** parțial implementat 🟡
+
 **Ce facem:**
-1. `ServiceTracksOverview` — după ce migrările P0 sunt aplicate
+1. `ServiceTracksOverview` — implementat cu `clients.service_type` și fallback sigur
 2. `ClinicalAlertsPanel` extins cu alerte per service type (diary card DBT lipsă, teme CBT restante, risc ridicat)
 3. `AppointmentsToday` extins cu `service_type`, `risk_level` din clients
 4. Next best action per service track în fișa clientului
 
-**Dependințe:** migrarea `20260502_service_type_and_clinical_fields.sql` aplicată
+**Dependințe rămase:** date P2 și, unde e cazul, migrarea `20260502_service_type_and_clinical_fields.sql` aplicată în toate mediile
 
 **Componente noi:** `ServiceTracksOverview`  
 **Queries noi:** `getDashboardServiceTrackStats()`
@@ -838,8 +897,10 @@ Compact, subtil — nu dominant
 
 **Obiectiv:** catalogul de teste se conectează cu dashboard-ul.
 
+**Status:** parțial implementat 🟡
+
 **Ce facem:**
-1. `AssessmentTasksPanel` — T0 lipsă, T1 due, diary card DBT, rapoarte overdue
+1. `AssessmentTasksPanel` — implementat momentan pe `assessments` legacy pentru rapoarte și summary-uri lipsă
 2. Conexiune cu `client_assessments` și `dbt_diary_cards`
 
 **Dependințe:** migrările P0 și P2 aplicate, catalog teste implementat
@@ -853,8 +914,10 @@ Compact, subtil — nu dominant
 
 **Obiectiv:** pregătire pentru research hub și AI local.
 
+**Status:** placeholder implementat 🟡
+
 **Ce facem:**
-1. `ResearchReadinessPanel` — coverage stats
+1. `ResearchReadinessPanel` — implementat cu coverage de bază
 2. Ollama status check client-side
 3. Export readiness (% clienți anonimizabili)
 

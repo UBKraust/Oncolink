@@ -1,9 +1,19 @@
+import {
+  addDays,
+  differenceInDays,
+  endOfDay,
+  endOfMonth,
+  startOfDay,
+  startOfMonth,
+  subDays,
+} from "date-fns";
+
+import { isServiceType, SERVICE_TYPE_LABELS, type ServiceType } from "@/lib/clients/service-track";
+import { deriveLocation, type AppointmentStatus, type LocationKind } from "@/lib/appointments/helpers";
+import { initialsFromName } from "@/lib/clients/validation";
+import { isPaidInvoiceStatus, normalizeInvoiceStatus } from "@/lib/invoices/status";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { startOfMonth, endOfMonth, startOfDay, endOfDay, differenceInDays, addDays } from "date-fns";
-import { initialsFromName } from "@/lib/clients/validation";
-import { deriveLocation, type AppointmentStatus, type LocationKind } from "@/lib/appointments/helpers";
-import { isPaidInvoiceStatus, normalizeInvoiceStatus } from "@/lib/invoices/status";
 
 type InvoiceWithAppointmentClient = {
   id: string;
@@ -32,6 +42,50 @@ type AppointmentWithClient = {
     | null;
 };
 
+type DashboardClientRow = {
+  id: string;
+  full_name: string | null;
+  gdpr_consent_signed: boolean | null;
+  onboarding_completed_at: string | null;
+  needs_legal_review: boolean | null;
+  is_minor: boolean | null;
+  contract_url: string | null;
+  terms_consent_signed_at: string | null;
+  service_type: string | null;
+  service_track_status: string | null;
+  lifecycle_status: string | null;
+  location: string | null;
+  billing_type: string | null;
+  company_name: string | null;
+  risk_level: string | null;
+  send_report_to_parent: boolean | null;
+  research_consent: boolean | null;
+};
+
+type DashboardDocumentRow = {
+  id: string;
+  client_id: string | null;
+  document_type: string;
+  file_name: string;
+  uploaded_at: string | null;
+};
+
+type DashboardGeneratedContractRow = {
+  id: string;
+  client_id: string;
+};
+
+type DashboardAssessmentRow = {
+  id: string;
+  client_id: string | null;
+  assessment_type: string | null;
+  scoring_data: Record<string, unknown> | null;
+  content_summary: string | null;
+  sent_to_parent_at: string | null;
+  created_at: string | null;
+  clients?: { full_name: string | null } | { full_name: string | null }[] | null;
+};
+
 export interface DashboardStats {
   totalRevenue: number;
   expensesMonth: number;
@@ -47,6 +101,74 @@ export interface DashboardStats {
   vaultAlertsCount: number;
   vaultTotalDocs: number;
 }
+
+export type DashboardAlert = {
+  id: string;
+  type: "LEGAL" | "CLINICAL" | "DOCUMENT" | "FINANCIAL" | "SYSTEM";
+  severity: "info" | "warning" | "critical";
+  title: string;
+  description: string;
+  href?: string;
+  ctaLabel?: string;
+};
+
+export type DashboardTask = {
+  id: string;
+  clientId?: string;
+  clientName?: string;
+  type: "CONTRACT" | "ONBOARDING" | "GDPR" | "MINOR_LEGAL" | "CAS" | "REPORT";
+  title: string;
+  description: string;
+  href?: string;
+  ctaLabel?: string;
+  priority: "low" | "medium" | "high";
+};
+
+export type DashboardServiceTrackStat = {
+  serviceType: ServiceType;
+  label: string;
+  activeClients: number;
+  nextActionCount: number;
+  nextActionLabel: string;
+  href: string;
+};
+
+export type DashboardAssessmentTask = {
+  id: string;
+  clientId?: string;
+  clientName?: string;
+  title: string;
+  description: string;
+  href?: string;
+  ctaLabel?: string;
+  priority: "low" | "medium" | "high";
+};
+
+export type DashboardResearchReadiness = {
+  serviceTypesConfigured: number;
+  totalClients: number;
+  assessmentsCount: number;
+  clientsWithScores: number;
+  researchConsents: number;
+  hasData: boolean;
+};
+
+export type TodayFinanceNotification = {
+  id: string;
+  title: string;
+  description: string;
+  href: string;
+  ctaLabel: string;
+  tone: "default" | "warning" | "danger";
+};
+
+export type TodayFinanceSnapshot = {
+  outstandingCount: number;
+  outstandingTotal: number;
+  invoicesToIssueCount: number;
+  invoicesToFollowUpCount: number;
+  notifications: TodayFinanceNotification[];
+};
 
 const EMPTY_DASHBOARD_STATS: DashboardStats = {
   totalRevenue: 0,
@@ -64,102 +186,208 @@ const EMPTY_DASHBOARD_STATS: DashboardStats = {
   vaultTotalDocs: 0,
 };
 
+const SERVICE_TRACK_ORDER: ServiceType[] = [
+  "CLINICAL_PSYCHOLOGY",
+  "CBT",
+  "DBT",
+  "COUNSELING",
+  "UNDECIDED",
+];
+
+const CLOSED_LIFECYCLE_STATUSES = new Set(["INCHEIAT", "NECONVERSIE", "ANONIMIZAT"]);
+
+function emptyResearchReadiness(): DashboardResearchReadiness {
+  return {
+    serviceTypesConfigured: 0,
+    totalClients: 0,
+    assessmentsCount: 0,
+    clientsWithScores: 0,
+    researchConsents: 0,
+    hasData: false,
+  };
+}
+
+function emptyTodayFinanceSnapshot(): TodayFinanceSnapshot {
+  return {
+    outstandingCount: 0,
+    outstandingTotal: 0,
+    invoicesToIssueCount: 0,
+    invoicesToFollowUpCount: 0,
+    notifications: [],
+  };
+}
+
+function uniqueClientName(name: string | null | undefined) {
+  return name?.trim() || "Client";
+}
+
+function normalizeServiceType(value: string | null | undefined): ServiceType {
+  return isServiceType(value) && value !== "MIXED" ? value : "UNDECIDED";
+}
+
+function getAssessmentClientName(
+  relation: DashboardAssessmentRow["clients"],
+  fallback = "Client",
+) {
+  const clientRelation = Array.isArray(relation) ? relation[0] : relation;
+  return uniqueClientName(clientRelation?.full_name ?? fallback);
+}
+
+async function getDashboardCollections() {
+  if (!isSupabaseConfigured()) {
+    return {
+      clients: [] as DashboardClientRow[],
+      documents: [] as DashboardDocumentRow[],
+      generatedContracts: [] as DashboardGeneratedContractRow[],
+      assessments: [] as DashboardAssessmentRow[],
+      unpaidInvoices: [] as Awaited<ReturnType<typeof getUnpaidInvoices>>,
+      vaultAlertsCount: 0,
+    };
+  }
+
+  const supabase = await createSupabaseServerClient();
+
+  const [clientsRes, documentsRes, contractsRes, assessmentsRes, unpaidInvoices, vaultAlertsRes] =
+    await Promise.all([
+      supabase
+        .from("clients")
+        .select(
+          "id, full_name, gdpr_consent_signed, onboarding_completed_at, needs_legal_review, is_minor, contract_url, terms_consent_signed_at, service_type, service_track_status, lifecycle_status, location, billing_type, company_name, risk_level, send_report_to_parent, research_consent",
+        )
+        .then((r) => (r.error ? { data: [] as DashboardClientRow[] } : r)),
+      supabase
+        .from("patient_documents")
+        .select("id, client_id, document_type, file_name, uploaded_at")
+        .then((r) => (r.error ? { data: [] as DashboardDocumentRow[] } : r)),
+      supabase
+        .from("generated_contracts")
+        .select("id, client_id")
+        .then((r) => (r.error ? { data: [] as DashboardGeneratedContractRow[] } : r)),
+      supabase
+        .from("assessments")
+        .select("id, client_id, assessment_type, scoring_data, content_summary, sent_to_parent_at, created_at, clients(full_name)")
+        .order("created_at", { ascending: false })
+        .limit(20)
+        .then((r) => (r.error ? { data: [] as DashboardAssessmentRow[] } : r)),
+      getUnpaidInvoices(),
+      supabase
+        .from("therapist_documents")
+        .select("*", { count: "exact", head: true })
+        .not("expiry_date", "is", null)
+        .lte("expiry_date", endOfDay(addDays(new Date(), 30)).toISOString())
+        .then((r) => (r.error ? { count: 0 } : r)),
+    ]);
+
+  return {
+    clients: (clientsRes.data ?? []) as DashboardClientRow[],
+    documents: (documentsRes.data ?? []) as DashboardDocumentRow[],
+    generatedContracts: (contractsRes.data ?? []) as DashboardGeneratedContractRow[],
+    assessments: (assessmentsRes.data ?? []) as DashboardAssessmentRow[],
+    unpaidInvoices,
+    vaultAlertsCount: vaultAlertsRes.count ?? 0,
+  };
+}
+
 export async function getDashboardStats(): Promise<DashboardStats> {
   if (!isSupabaseConfigured()) {
     return EMPTY_DASHBOARD_STATS;
   }
 
-  const supabase = await createSupabaseServerClient();
-  const now = new Date();
-  const startMonth = startOfMonth(now).toISOString();
-  const endMonth = endOfMonth(now).toISOString();
-  const startToday = startOfDay(now).toISOString();
-  const endToday = endOfDay(now).toISOString();
+  try {
+    const supabase = await createSupabaseServerClient();
+    const now = new Date();
+    const startMonth = startOfMonth(now).toISOString();
+    const endMonth = endOfMonth(now).toISOString();
+    const startToday = startOfDay(now).toISOString();
+    const endToday = endOfDay(now).toISOString();
 
-  // 1. Total Revenue (Invoiced this month)
-  const { data: invoices } = await supabase
-    .from("invoices")
-    .select("amount")
-    .gte("issued_at", startMonth)
-    .lte("issued_at", endMonth);
-  const totalRevenue = invoices?.reduce((sum, inv) => sum + Number(inv.amount), 0) || 0;
+    const [invoicesRes, expensesRes, todayCountRes, monthlyAppsRes, minorRes, clientsRes, vaultTotalRes, vaultAlertsRes] =
+      await Promise.all([
+        supabase
+          .from("invoices")
+          .select("amount")
+          .gte("issued_at", startMonth)
+          .lte("issued_at", endMonth),
+        supabase
+          .from("cabinet_expenses")
+          .select("amount")
+          .gte("expense_date", startMonth)
+          .lte("expense_date", endMonth),
+        supabase
+          .from("appointments")
+          .select("*", { count: "exact", head: true })
+          .gte("appointment_date", startToday)
+          .lte("appointment_date", endToday),
+        supabase
+          .from("appointments")
+          .select("duration_minutes")
+          .gte("appointment_date", startMonth)
+          .lte("appointment_date", endMonth)
+          .eq("status", "FINALIZAT"),
+        supabase
+          .from("clients")
+          .select("*", { count: "exact", head: true })
+          .eq("is_minor", true)
+          .eq("needs_legal_review", true),
+        supabase
+          .from("clients")
+          .select("is_minor, billing_type, company_name, location"),
+        supabase
+          .from("therapist_documents")
+          .select("*", { count: "exact", head: true })
+          .then((r) => (r.error ? { count: 0 } : r)),
+        supabase
+          .from("therapist_documents")
+          .select("*", { count: "exact", head: true })
+          .not("expiry_date", "is", null)
+          .lte("expiry_date", endOfDay(addDays(now, 30)).toISOString())
+          .then((r) => (r.error ? { count: 0 } : r)),
+      ]);
 
-  // 2. Expenses (this month)
-  const { data: expenses } = await supabase
-    .from("cabinet_expenses")
-    .select("amount")
-    .gte("expense_date", startMonth)
-    .lte("expense_date", endMonth);
-  const expensesMonth = expenses?.reduce((sum, exp) => sum + Number(exp.amount), 0) || 0;
+    const totalRevenue = (invoicesRes.data ?? []).reduce(
+      (sum, invoice) => sum + Number(invoice.amount ?? 0),
+      0,
+    );
+    const expensesMonth = (expensesRes.data ?? []).reduce(
+      (sum, expense) => sum + Number(expense.amount ?? 0),
+      0,
+    );
+    const totalMinutes = (monthlyAppsRes.data ?? []).reduce(
+      (sum, appointment) => sum + (appointment.duration_minutes || 50),
+      0,
+    );
 
-  // 3. Appointments Today
-  const { count: appointmentsToday } = await supabase
-    .from("appointments")
-    .select("*", { count: "exact", head: true })
-    .gte("appointment_date", startToday)
-    .lte("appointment_date", endToday);
+    const clients = clientsRes.data ?? [];
+    const minorPatients = clients.filter((client) => client.is_minor).length;
+    const adultPatients = clients.length - minorPatients;
+    const b2bPatients = clients.filter(
+      (client) => client.billing_type === "B2B_COMPANY" || client.company_name,
+    ).length;
+    const privatePatients = clients.filter(
+      (client) => client.location === "CABINET_PARTICULAR",
+    ).length;
+    const clinicPatients = clients.filter(
+      (client) => client.location === "CLINICA",
+    ).length;
 
-  // 4. Total Hours (completed this month - assuming 50min sessions as ~0.83h)
-  const { data: monthlyApps } = await supabase
-    .from("appointments")
-    .select("duration_minutes")
-    .gte("appointment_date", startMonth)
-    .lte("appointment_date", endMonth)
-    .eq("status", "FINALIZAT");
-  const totalMinutes = monthlyApps?.reduce((sum, app) => sum + (app.duration_minutes || 50), 0) || 0;
-  const totalHours = Math.round(totalMinutes / 60);
-
-  // 5. Pending Minor Reviews
-  const { count: pendingMinorReviews, error: minorError } = await supabase
-    .from("clients")
-    .select("*", { count: "exact", head: true })
-    .eq("is_minor", true)
-    .eq("needs_legal_review", true);
-
-  if (minorError) console.error("Error fetching pending minor reviews:", minorError);
-
-  // 6. Demographics
-  const { data: clients, error: demographicsError } = await supabase
-    .from("clients")
-    .select("is_minor, billing_type, company_name, location");
-  
-  if (demographicsError) console.error("Error fetching demographics:", demographicsError);
-  
-  const minorPatients = clients?.filter(c => c.is_minor).length || 0;
-  const adultPatients = (clients?.length || 0) - minorPatients;
-  const b2bPatients = clients?.filter(c => c.billing_type === "B2B_COMPANY" || c.company_name).length || 0;
-  const privatePatients = clients?.filter(c => c.location === "CABINET_PARTICULAR").length || 0;
-  const clinicPatients = clients?.filter(c => c.location === "CLINICA").length || 0;
-
-  // 7. Vault Stats — therapist_documents (profesional vault, nu patient_documents)
-  const { count: vaultTotalDocs } = await supabase
-    .from("therapist_documents")
-    .select("*", { count: "exact", head: true })
-    .then((r) => (r.error ? { count: 0 } : r));
-
-  const vaultAlertDeadline = endOfDay(addDays(now, 30)).toISOString();
-  const { count: vaultAlertsCount } = await supabase
-    .from("therapist_documents")
-    .select("*", { count: "exact", head: true })
-    .not("expiry_date", "is", null)
-    .lte("expiry_date", vaultAlertDeadline)
-    .then((r) => (r.error ? { count: 0 } : r));
-
-  return {
-    totalRevenue,
-    expensesMonth,
-    netProfitMonth: totalRevenue - expensesMonth,
-    appointmentsToday: appointmentsToday || 0,
-    totalHours,
-    pendingMinorReviews: pendingMinorReviews || 0,
-    privatePatients,
-    clinicPatients,
-    minorPatients,
-    adultPatients,
-    b2bPatients,
-    vaultAlertsCount: vaultAlertsCount || 0,
-    vaultTotalDocs: vaultTotalDocs || 0,
-  };
+    return {
+      totalRevenue,
+      expensesMonth,
+      netProfitMonth: totalRevenue - expensesMonth,
+      appointmentsToday: todayCountRes.count || 0,
+      totalHours: Math.round(totalMinutes / 60),
+      pendingMinorReviews: minorRes.count || 0,
+      privatePatients,
+      clinicPatients,
+      minorPatients,
+      adultPatients,
+      b2bPatients,
+      vaultAlertsCount: vaultAlertsRes.count || 0,
+      vaultTotalDocs: vaultTotalRes.count || 0,
+    };
+  } catch {
+    return EMPTY_DASHBOARD_STATS;
+  }
 }
 
 export async function getUnpaidInvoices() {
@@ -167,42 +395,46 @@ export async function getUnpaidInvoices() {
     return [];
   }
 
-  const supabase = await createSupabaseServerClient();
-  const { data } = await supabase
-    .from("invoices")
-    .select("*, appointments(clients(full_name))")
-    .order("issued_at", { ascending: false })
-    .limit(20);
-  
-  const now = new Date();
-  
-  return (
-    (data as InvoiceWithAppointmentClient[] | null)
-      ?.filter((invoice) => {
-        const normalizedStatus = normalizeInvoiceStatus(invoice.status);
-        return normalizedStatus !== "ANULATĂ" && !isPaidInvoiceStatus(normalizedStatus);
-      })
-      .slice(0, 5)
-      .map((invoice) => {
-        const appointmentRelation = Array.isArray(invoice.appointments)
-          ? invoice.appointments[0]
-          : invoice.appointments;
-        const clientRelation = Array.isArray(appointmentRelation?.clients)
-          ? appointmentRelation.clients[0]
-          : appointmentRelation?.clients;
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data } = await supabase
+      .from("invoices")
+      .select("*, appointments(clients(full_name))")
+      .order("issued_at", { ascending: false })
+      .limit(20);
 
-        return {
-          id: invoice.id,
-          clientName: clientRelation?.full_name || "Client Necunoscut",
-          series: invoice.smartbill_series || "FĂRĂ",
-          number: invoice.smartbill_number || "0000",
-          amount: Number(invoice.amount ?? 0),
-          issuedAt: new Date(invoice.issued_at),
-          daysOverdue: differenceInDays(now, new Date(invoice.issued_at)),
-          status: invoice.status,
-        };
-      }) || []
-  );
+    const now = new Date();
+
+    return (
+      (data as InvoiceWithAppointmentClient[] | null)
+        ?.filter((invoice) => {
+          const normalizedStatus = normalizeInvoiceStatus(invoice.status);
+          return normalizedStatus !== "ANULATĂ" && !isPaidInvoiceStatus(normalizedStatus);
+        })
+        .slice(0, 5)
+        .map((invoice) => {
+          const appointmentRelation = Array.isArray(invoice.appointments)
+            ? invoice.appointments[0]
+            : invoice.appointments;
+          const clientRelation = Array.isArray(appointmentRelation?.clients)
+            ? appointmentRelation.clients[0]
+            : appointmentRelation?.clients;
+
+          return {
+            id: invoice.id,
+            clientName: uniqueClientName(clientRelation?.full_name ?? "Client necunoscut"),
+            series: invoice.smartbill_series || "FĂRĂ",
+            number: invoice.smartbill_number || "0000",
+            amount: Number(invoice.amount ?? 0),
+            issuedAt: new Date(invoice.issued_at),
+            daysOverdue: differenceInDays(now, new Date(invoice.issued_at)),
+            status: invoice.status,
+          };
+        }) || []
+    );
+  } catch {
+    return [];
+  }
 }
 
 export async function getAppointmentsToday() {
@@ -210,39 +442,43 @@ export async function getAppointmentsToday() {
     return [];
   }
 
-  const supabase = await createSupabaseServerClient();
-  const now = new Date();
-  const { data } = await supabase
-    .from("appointments")
-    .select("*, clients(full_name)")
-    .gte("appointment_date", startOfDay(now).toISOString())
-    .lte("appointment_date", endOfDay(now).toISOString())
-    .order("appointment_date", { ascending: true });
+  try {
+    const supabase = await createSupabaseServerClient();
+    const now = new Date();
+    const { data } = await supabase
+      .from("appointments")
+      .select("*, clients(full_name)")
+      .gte("appointment_date", startOfDay(now).toISOString())
+      .lte("appointment_date", endOfDay(now).toISOString())
+      .order("appointment_date", { ascending: true });
 
-  return (
-    (data as AppointmentWithClient[] | null)?.map((appointment) => {
-      const clientRelation = Array.isArray(appointment.clients)
-        ? appointment.clients[0]
-        : appointment.clients;
-      const clientName = clientRelation?.full_name || "Client";
+    return (
+      (data as AppointmentWithClient[] | null)?.map((appointment) => {
+        const clientRelation = Array.isArray(appointment.clients)
+          ? appointment.clients[0]
+          : appointment.clients;
+        const clientName = uniqueClientName(clientRelation?.full_name);
 
-      return {
-        id: appointment.id,
-        clientName,
-        clientInitials: initialsFromName(clientName),
-        startsAt: new Date(appointment.appointment_date),
-        durationMinutes: appointment.duration_minutes || 50,
-        status: (appointment.status || "PROGRAMAT") as AppointmentStatus,
-        location: deriveLocation({
-          meet_link: appointment.meet_link,
-          is_external_duty: appointment.is_external_duty || false,
-          location_tag: appointment.location_tag,
-        }) as LocationKind,
-        isExternalDuty: appointment.is_external_duty || false,
-        meetLink: appointment.meet_link || undefined,
-      };
-    }) || []
-  );
+        return {
+          id: appointment.id,
+          clientName,
+          clientInitials: initialsFromName(clientName),
+          startsAt: new Date(appointment.appointment_date),
+          durationMinutes: appointment.duration_minutes || 50,
+          status: (appointment.status || "PROGRAMAT") as AppointmentStatus,
+          location: deriveLocation({
+            meet_link: appointment.meet_link,
+            is_external_duty: appointment.is_external_duty || false,
+            location_tag: appointment.location_tag,
+          }) as LocationKind,
+          isExternalDuty: appointment.is_external_duty || false,
+          meetLink: appointment.meet_link || undefined,
+        };
+      }) || []
+    );
+  } catch {
+    return [];
+  }
 }
 
 export async function getUpcomingAppointments() {
@@ -250,40 +486,553 @@ export async function getUpcomingAppointments() {
     return [];
   }
 
-  const supabase = await createSupabaseServerClient();
-  const now = new Date();
-  const tomorrow = new Date(now);
-  tomorrow.setDate(tomorrow.getDate() + 1);
+  try {
+    const supabase = await createSupabaseServerClient();
+    const tomorrow = addDays(new Date(), 1);
+    const { data } = await supabase
+      .from("appointments")
+      .select("*, clients(full_name)")
+      .gte("appointment_date", startOfDay(tomorrow).toISOString())
+      .order("appointment_date", { ascending: true })
+      .limit(10);
 
-  const { data } = await supabase
-    .from("appointments")
-    .select("*, clients(full_name)")
-    .gte("appointment_date", startOfDay(tomorrow).toISOString())
-    .order("appointment_date", { ascending: true })
-    .limit(10);
+    return (
+      (data as AppointmentWithClient[] | null)?.map((appointment) => {
+        const clientRelation = Array.isArray(appointment.clients)
+          ? appointment.clients[0]
+          : appointment.clients;
+        const clientName = uniqueClientName(clientRelation?.full_name);
 
-  return (
-    (data as AppointmentWithClient[] | null)?.map((appointment) => {
-      const clientRelation = Array.isArray(appointment.clients)
-        ? appointment.clients[0]
-        : appointment.clients;
-      const clientName = clientRelation?.full_name || "Client";
+        return {
+          id: appointment.id,
+          clientName,
+          clientInitials: initialsFromName(clientName),
+          startsAt: new Date(appointment.appointment_date),
+          durationMinutes: appointment.duration_minutes || 50,
+          status: (appointment.status || "PROGRAMAT") as AppointmentStatus,
+          location: deriveLocation({
+            meet_link: appointment.meet_link,
+            is_external_duty: appointment.is_external_duty || false,
+            location_tag: appointment.location_tag,
+          }) as LocationKind,
+          isExternalDuty: appointment.is_external_duty || false,
+          meetLink: appointment.meet_link || undefined,
+        };
+      }) || []
+    );
+  } catch {
+    return [];
+  }
+}
 
-      return {
-        id: appointment.id,
-        clientName,
-        clientInitials: initialsFromName(clientName),
-        startsAt: new Date(appointment.appointment_date),
-        durationMinutes: appointment.duration_minutes || 50,
-        status: (appointment.status || "PROGRAMAT") as AppointmentStatus,
-        location: deriveLocation({
-          meet_link: appointment.meet_link,
-          is_external_duty: appointment.is_external_duty || false,
-          location_tag: appointment.location_tag,
-        }) as LocationKind,
-        isExternalDuty: appointment.is_external_duty || false,
-        meetLink: appointment.meet_link || undefined,
-      };
-    }) || []
-  );
+export async function getDashboardClinicalAlerts(): Promise<DashboardAlert[]> {
+  if (!isSupabaseConfigured()) {
+    return [];
+  }
+
+  try {
+    const { clients, assessments, unpaidInvoices, vaultAlertsCount } = await getDashboardCollections();
+    const alerts: DashboardAlert[] = [];
+
+    const pendingMinorReviews = clients.filter(
+      (client) => client.is_minor && client.needs_legal_review,
+    ).length;
+    if (pendingMinorReviews > 0) {
+      alerts.push({
+        id: "minor-legal-review",
+        type: "LEGAL",
+        severity: "critical",
+        title: "Validare juridică pentru minori",
+        description: `${pendingMinorReviews} dosare de minori necesită verificare juridică înainte de continuarea fluxului.`,
+        href: "/dashboard/clients?filter=review",
+        ctaLabel: "Vezi dosare",
+      });
+    }
+
+    const gdprMissing = clients.filter(
+      (client) => !client.gdpr_consent_signed && client.lifecycle_status !== "ANONIMIZAT",
+    ).length;
+    if (gdprMissing > 0) {
+      alerts.push({
+        id: "gdpr-missing",
+        type: "LEGAL",
+        severity: gdprMissing >= 3 ? "critical" : "warning",
+        title: "Consimțământ GDPR lipsă",
+        description: `${gdprMissing} fișe active au nevoie de confirmarea consimțământului GDPR.`,
+        href: "/dashboard/clients",
+        ctaLabel: "Vezi clienți",
+      });
+    }
+
+    const onboardingIncomplete = clients.filter(
+      (client) => !client.onboarding_completed_at && client.lifecycle_status !== "ANONIMIZAT",
+    ).length;
+    if (onboardingIncomplete > 0) {
+      alerts.push({
+        id: "onboarding-incomplete",
+        type: "DOCUMENT",
+        severity: "warning",
+        title: "Onboarding incomplet",
+        description: `${onboardingIncomplete} clienți au rămas blocați înainte de finalizarea onboardingului.`,
+        href: "/dashboard/clients",
+        ctaLabel: "Continuă fluxul",
+      });
+    }
+
+    const missingServiceType = clients.filter(
+      (client) => normalizeServiceType(client.service_type) === "UNDECIDED",
+    ).length;
+    if (missingServiceType > 0) {
+      alerts.push({
+        id: "service-type-missing",
+        type: "CLINICAL",
+        severity: "info",
+        title: "Service track neconfigurat",
+        description: `${missingServiceType} fișe nu au încă tipul principal de serviciu setat.`,
+        href: "/dashboard/clients",
+        ctaLabel: "Vezi fișe",
+      });
+    }
+
+    const reportPending = assessments.filter(
+      (assessment) =>
+        assessment.assessment_type === "RAPORT_LUNAR" &&
+        !assessment.sent_to_parent_at,
+    ).length;
+    if (reportPending > 0) {
+      alerts.push({
+        id: "report-pending",
+        type: "DOCUMENT",
+        severity: "warning",
+        title: "Rapoarte către aparținători în așteptare",
+        description: `${reportPending} rapoarte lunare nu au fost marcate ca trimise.`,
+        href: "/dashboard/assessments",
+        ctaLabel: "Vezi evaluări",
+      });
+    }
+
+    const overdueInvoices = unpaidInvoices.filter((invoice) => invoice.daysOverdue >= 21).length;
+    if (overdueInvoices > 0) {
+      alerts.push({
+        id: "overdue-invoices",
+        type: "FINANCIAL",
+        severity: overdueInvoices >= 3 ? "warning" : "info",
+        title: "Facturi restante vechi",
+        description: `${overdueInvoices} facturi sunt neachitate de peste 21 de zile.`,
+        href: "/dashboard/invoices",
+        ctaLabel: "Vezi facturi",
+      });
+    }
+
+    if (vaultAlertsCount > 0) {
+      alerts.push({
+        id: "vault-alerts",
+        type: "SYSTEM",
+        severity: "info",
+        title: "Documente profesionale care expiră",
+        description: `${vaultAlertsCount} documente din seiful cabinetului expiră în următoarele 30 de zile.`,
+        href: "/dashboard/vault",
+        ctaLabel: "Deschide seiful",
+      });
+    }
+
+    return alerts
+      .sort((a, b) => {
+        const severityScore = { critical: 0, warning: 1, info: 2 };
+        return severityScore[a.severity] - severityScore[b.severity];
+      })
+      .slice(0, 5);
+  } catch {
+    return [];
+  }
+}
+
+export async function getDashboardDocumentTasks(): Promise<DashboardTask[]> {
+  if (!isSupabaseConfigured()) {
+    return [];
+  }
+
+  try {
+    const { clients, generatedContracts, assessments } = await getDashboardCollections();
+    const tasks: DashboardTask[] = [];
+    const generatedContractClientIds = new Set(generatedContracts.map((contract) => contract.client_id));
+    const recentAssessmentsByClient = new Set(
+      assessments
+        .filter((assessment) => assessment.client_id)
+        .map((assessment) => assessment.client_id as string),
+    );
+
+    for (const client of clients) {
+      const clientName = uniqueClientName(client.full_name);
+      const isArchived = client.lifecycle_status === "ANONIMIZAT";
+      if (isArchived) continue;
+
+      if (!client.gdpr_consent_signed) {
+        tasks.push({
+          id: `${client.id}-gdpr`,
+          clientId: client.id,
+          clientName,
+          type: "GDPR",
+          title: `${clientName} — GDPR lipsă`,
+          description: "Confirmă consimțământul înainte de continuarea fluxului clinic.",
+          href: `/dashboard/clients/${client.id}/edit`,
+          ctaLabel: "Vezi fișă",
+          priority: "high",
+        });
+      }
+
+      if (!client.onboarding_completed_at) {
+        tasks.push({
+          id: `${client.id}-onboarding`,
+          clientId: client.id,
+          clientName,
+          type: "ONBOARDING",
+          title: `${clientName} — onboarding incomplet`,
+          description: client.is_minor
+            ? "Fluxul minorului trebuie finalizat împreună cu reprezentantul legal."
+            : "Trimite sau reia formularul de onboarding pentru a completa dosarul.",
+          href: `/dashboard/clients/${client.id}/onboarding`,
+          ctaLabel: "Trimite link",
+          priority: "high",
+        });
+      }
+
+      const hasContract = Boolean(client.contract_url || client.terms_consent_signed_at || generatedContractClientIds.has(client.id));
+      if (!hasContract) {
+        tasks.push({
+          id: `${client.id}-contract`,
+          clientId: client.id,
+          clientName,
+          type: "CONTRACT",
+          title: `${clientName} — contract lipsă`,
+          description: "Generează documentul contractual minim pentru dosarul activ.",
+          href: `/dashboard/clients/${client.id}`,
+          ctaLabel: "Generează",
+          priority: "medium",
+        });
+      }
+
+      if (client.is_minor && client.needs_legal_review) {
+        tasks.push({
+          id: `${client.id}-minor-legal`,
+          clientId: client.id,
+          clientName,
+          type: "MINOR_LEGAL",
+          title: `${clientName} — revizuire legală minor`,
+          description: "Verifică acordurile parentale și documentele de reprezentare legală.",
+          href: `/dashboard/clients/${client.id}`,
+          ctaLabel: "Verifică",
+          priority: "high",
+        });
+      }
+
+      if (client.send_report_to_parent && recentAssessmentsByClient.has(client.id)) {
+        const latestPendingReport = assessments.find(
+          (assessment) =>
+            assessment.client_id === client.id &&
+            assessment.assessment_type === "RAPORT_LUNAR" &&
+            !assessment.sent_to_parent_at,
+        );
+        if (latestPendingReport) {
+          tasks.push({
+            id: `${client.id}-report-parent`,
+            clientId: client.id,
+            clientName,
+            type: "REPORT",
+            title: `${clientName} — raport nesendat către părinte`,
+            description: "Marchează trimiterea raportului sau revizuiește dacă mai este necesar.",
+            href: "/dashboard/assessments",
+            ctaLabel: "Vezi raport",
+            priority: "medium",
+          });
+        }
+      }
+    }
+
+    const priorityScore = { high: 0, medium: 1, low: 2 };
+    return tasks.sort((a, b) => priorityScore[a.priority] - priorityScore[b.priority]).slice(0, 5);
+  } catch {
+    return [];
+  }
+}
+
+export async function getDashboardServiceTrackStats(): Promise<DashboardServiceTrackStat[]> {
+  if (!isSupabaseConfigured()) {
+    return [];
+  }
+
+  try {
+    const { clients } = await getDashboardCollections();
+    const trackMap = new Map<ServiceType, DashboardServiceTrackStat>();
+
+    for (const serviceType of SERVICE_TRACK_ORDER) {
+      trackMap.set(serviceType, {
+        serviceType,
+        label: SERVICE_TYPE_LABELS[serviceType],
+        activeClients: 0,
+        nextActionCount: 0,
+        nextActionLabel: serviceType === "DBT" ? "cazuri sensibile" : "acțiuni următoare",
+        href:
+          serviceType === "UNDECIDED"
+            ? "/dashboard/clients?service=UNDECIDED"
+            : `/dashboard/clients?service=${serviceType}`,
+      });
+    }
+
+    for (const client of clients) {
+      if (CLOSED_LIFECYCLE_STATUSES.has(client.lifecycle_status ?? "")) continue;
+
+      const serviceType = normalizeServiceType(client.service_type);
+      const track = trackMap.get(serviceType);
+      if (!track) continue;
+
+      track.activeClients += 1;
+
+      const needsNextAction =
+        !client.gdpr_consent_signed ||
+        !client.onboarding_completed_at ||
+        (serviceType === "DBT" && (client.risk_level === "HIGH" || client.risk_level === "CRISIS")) ||
+        !client.service_track_status;
+
+      if (needsNextAction) {
+        track.nextActionCount += 1;
+      }
+    }
+
+    const stats = SERVICE_TRACK_ORDER.map((serviceType) => trackMap.get(serviceType) as DashboardServiceTrackStat);
+    const hasConfiguredTrack = stats.some(
+      (track) => track.serviceType !== "UNDECIDED" && track.activeClients > 0,
+    );
+
+    return hasConfiguredTrack ? stats : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function getDashboardAssessmentTasks(): Promise<DashboardAssessmentTask[]> {
+  if (!isSupabaseConfigured()) {
+    return [];
+  }
+
+  try {
+    const { clients, assessments } = await getDashboardCollections();
+    const tasks: DashboardAssessmentTask[] = [];
+    const thirtyDaysAgo = subDays(new Date(), 30);
+    const clientsWithAssessments = new Set(
+      assessments
+        .filter((assessment) => assessment.client_id)
+        .map((assessment) => assessment.client_id as string),
+    );
+
+    for (const assessment of assessments) {
+      const clientName = getAssessmentClientName(assessment.clients);
+      const createdAt = assessment.created_at ? new Date(assessment.created_at) : null;
+
+      if (assessment.assessment_type === "RAPORT_LUNAR" && !assessment.sent_to_parent_at) {
+        tasks.push({
+          id: `${assessment.id}-report`,
+          clientId: assessment.client_id ?? undefined,
+          clientName,
+          title: `${clientName} — raport lunar în așteptare`,
+          description: "Raportul există, dar nu este încă marcat ca trimis.",
+          href: "/dashboard/assessments",
+          ctaLabel: "Vezi evaluări",
+          priority: "high",
+        });
+      }
+
+      if (
+        createdAt &&
+        createdAt >= thirtyDaysAgo &&
+        (!assessment.content_summary || !assessment.content_summary.trim())
+      ) {
+        tasks.push({
+          id: `${assessment.id}-summary`,
+          clientId: assessment.client_id ?? undefined,
+          clientName,
+          title: `${clientName} — evaluare fără summary`,
+          description: "Adaugă un rezumat clinic scurt pentru continuitatea dosarului.",
+          href: "/dashboard/assessments",
+          ctaLabel: "Completează",
+          priority: "medium",
+        });
+      }
+    }
+
+    for (const client of clients) {
+      if (CLOSED_LIFECYCLE_STATUSES.has(client.lifecycle_status ?? "")) continue;
+      if (clientsWithAssessments.has(client.id)) continue;
+      if (!client.onboarding_completed_at) continue;
+
+      tasks.push({
+        id: `${client.id}-initial-assessment`,
+        clientId: client.id,
+        clientName: uniqueClientName(client.full_name),
+        title: `${uniqueClientName(client.full_name)} — fără evaluare inițială`,
+        description: "Adaugă prima evaluare pentru a ancora traseul clinic și raportarea ulterioară.",
+        href: `/dashboard/assessments/new?clientId=${client.id}`,
+        ctaLabel: "Evaluare nouă",
+        priority: "medium",
+      });
+    }
+
+    const priorityScore = { high: 0, medium: 1, low: 2 };
+    return tasks.sort((a, b) => priorityScore[a.priority] - priorityScore[b.priority]).slice(0, 5);
+  } catch {
+    return [];
+  }
+}
+
+export async function getDashboardResearchReadiness(): Promise<DashboardResearchReadiness> {
+  if (!isSupabaseConfigured()) {
+    return emptyResearchReadiness();
+  }
+
+  try {
+    const { clients, assessments } = await getDashboardCollections();
+    const serviceTypesConfigured = clients.filter(
+      (client) => normalizeServiceType(client.service_type) !== "UNDECIDED",
+    ).length;
+    const clientsWithScores = assessments.filter((assessment) => {
+      const scoring = assessment.scoring_data;
+      return Boolean(scoring && Object.keys(scoring).length > 0);
+    }).length;
+    const researchConsents = clients.filter((client) => client.research_consent).length;
+
+    return {
+      serviceTypesConfigured,
+      totalClients: clients.length,
+      assessmentsCount: assessments.length,
+      clientsWithScores,
+      researchConsents,
+      hasData:
+        serviceTypesConfigured > 0 ||
+        assessments.length > 0 ||
+        clientsWithScores > 0 ||
+        researchConsents > 0,
+    };
+  } catch {
+    return emptyResearchReadiness();
+  }
+}
+
+export async function getTodayFinanceSnapshot(): Promise<TodayFinanceSnapshot> {
+  if (!isSupabaseConfigured()) {
+    return emptyTodayFinanceSnapshot();
+  }
+
+  try {
+    const supabase = await createSupabaseServerClient();
+    const now = new Date();
+    const sevenDaysAgo = subDays(now, 7).toISOString();
+    const startToday = startOfDay(now).toISOString();
+    const endToday = endOfDay(now).toISOString();
+
+    const [unpaidInvoices, completedTodayRes, recentIssuedRes] = await Promise.all([
+      getUnpaidInvoices(),
+      supabase
+        .from("appointments")
+        .select("id, appointment_date, clients(full_name), invoices(id)")
+        .eq("status", "FINALIZAT")
+        .gte("appointment_date", startToday)
+        .lte("appointment_date", endToday)
+        .then((r) =>
+          r.error
+            ? {
+                data: [] as Array<{
+                  id: string;
+                  appointment_date: string;
+                  clients: { full_name: string | null } | { full_name: string | null }[] | null;
+                  invoices: { id: string } | { id: string }[] | null;
+                }>,
+              }
+            : r,
+        ),
+      supabase
+        .from("invoices")
+        .select("id, issued_at, status, client_name, amount")
+        .gte("issued_at", sevenDaysAgo)
+        .order("issued_at", { ascending: false })
+        .limit(20)
+        .then((r) =>
+          r.error
+            ? {
+                data: [] as Array<{
+                  id: string;
+                  issued_at: string;
+                  status: string;
+                  client_name: string | null;
+                  amount: number | null;
+                }>,
+              }
+            : r,
+        ),
+    ]);
+
+    const outstandingCount = unpaidInvoices.length;
+    const outstandingTotal = unpaidInvoices.reduce(
+      (sum, invoice) => sum + Number(invoice.amount ?? 0),
+      0,
+    );
+
+    const invoicesToIssueRows =
+      completedTodayRes.data?.filter((appointment) => {
+        const relation = Array.isArray(appointment.invoices)
+          ? appointment.invoices[0]
+          : appointment.invoices;
+        return !relation?.id;
+      }) ?? [];
+
+    const invoicesToFollowUpRows =
+      recentIssuedRes.data?.filter((invoice) => {
+        const normalizedStatus = normalizeInvoiceStatus(invoice.status);
+        return normalizedStatus === "EMISĂ" || normalizedStatus === "RESTANTĂ";
+      }) ?? [];
+
+    const notifications: TodayFinanceNotification[] = [];
+
+    if (outstandingCount > 0) {
+      notifications.push({
+        id: "outstanding",
+        title: `${outstandingCount} plăți restante`,
+        description: `${outstandingTotal.toFixed(2)} RON încă de recuperat din facturile emise.`,
+        href: "/dashboard/invoices?status=RESTANTĂ",
+        ctaLabel: "Vezi restante",
+        tone: outstandingCount >= 3 ? "danger" : "warning",
+      });
+    }
+
+    if (invoicesToIssueRows.length > 0) {
+      notifications.push({
+        id: "to-issue",
+        title: `${invoicesToIssueRows.length} facturi de emis`,
+        description: "Ședințe finalizate astăzi fără factură asociată.",
+        href: "/dashboard/invoices/new",
+        ctaLabel: "Emite acum",
+        tone: "warning",
+      });
+    }
+
+    if (invoicesToFollowUpRows.length > 0) {
+      notifications.push({
+        id: "to-follow-up",
+        title: `${invoicesToFollowUpRows.length} facturi de urmărit`,
+        description: "Fallback sigur: facturi emise recent care încă nu apar ca plătite.",
+        href: "/dashboard/invoices?status=EMISĂ",
+        ctaLabel: "Verifică",
+        tone: "default",
+      });
+    }
+
+    return {
+      outstandingCount,
+      outstandingTotal,
+      invoicesToIssueCount: invoicesToIssueRows.length,
+      invoicesToFollowUpCount: invoicesToFollowUpRows.length,
+      notifications,
+    };
+  } catch {
+    return emptyTodayFinanceSnapshot();
+  }
 }

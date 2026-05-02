@@ -14,11 +14,11 @@ export function FinancialSummary({ gross, expenses, net }: FinancialSummaryProps
   const profitMargin = Math.round((net / (gross || 1)) * 100);
 
   return (
-    <Card className="overflow-hidden rounded-[1.75rem] border-primary/20 shadow-sm">
+    <Card className="overflow-hidden rounded-[1.75rem] border-border/60 shadow-sm">
       <CardHeader className="border-b border-border/60 bg-muted/20 pb-4">
         <CardTitle className="flex items-center gap-2 text-sm font-black tracking-tight">
           <TrendingUp className="h-4 w-4 text-primary" />
-          Sănătate Financiară (Luna aceasta)
+          Financiar lunar
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-6">
@@ -29,7 +29,7 @@ export function FinancialSummary({ gross, expenses, net }: FinancialSummaryProps
               Venit Brut
             </div>
             <div className="text-2xl font-black tracking-tight">{gross.toLocaleString("ro-RO")} RON</div>
-            <p className="text-[11px] text-muted-foreground">Venit facturat și încasat</p>
+            <p className="text-[11px] text-muted-foreground">Încasări și facturare din luna curentă</p>
           </div>
 
           <div className="space-y-1">
@@ -40,18 +40,18 @@ export function FinancialSummary({ gross, expenses, net }: FinancialSummaryProps
             <div className="text-2xl font-black tracking-tight text-rose-600">
               -{expenses.toLocaleString("ro-RO")} RON
             </div>
-            <p className="text-[11px] text-muted-foreground">Chirie, utilități, cursuri</p>
+            <p className="text-[11px] text-muted-foreground">Cheltuieli operaționale estimate</p>
           </div>
 
-          <div className="relative flex flex-col justify-center rounded-[1.5rem] bg-emerald-50 p-4 dark:bg-emerald-950/20">
+          <div className="relative flex flex-col justify-center rounded-[1.5rem] bg-muted/30 p-4">
             <div className="mb-1 text-xs font-black uppercase tracking-[0.18em] text-emerald-800 dark:text-emerald-400">
-              Profit Net
+              Profit estimat
             </div>
             <div className="text-3xl font-black text-emerald-600 dark:text-emerald-400">
               {net.toLocaleString("ro-RO")} RON
             </div>
             <div className="mt-2 flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-800/70 dark:text-emerald-400/70">Margine Profit</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.16em] text-emerald-800/70 dark:text-emerald-400/70">Margine</span>
               <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">{profitMargin}%</span>
             </div>
           </div>
@@ -64,7 +64,7 @@ export function FinancialSummary({ gross, expenses, net }: FinancialSummaryProps
               "font-bold",
               profitMargin > 50 ? "text-emerald-600" : "text-amber-600"
             )}>
-              {profitMargin > 50 ? "Eficiență Excelentă" : "Eficiență Moderată"}
+              {profitMargin > 50 ? "Stabil" : "De urmărit"}
             </span>
           </div>
           <div className="h-2 w-full overflow-hidden rounded-full bg-muted flex">

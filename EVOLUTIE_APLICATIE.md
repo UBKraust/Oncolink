@@ -580,3 +580,50 @@ La fiecare task finalizat:
 - Fisiere principale atinse
 - Status: `npm run lint` ✅ | `npm run build` ✅
 ```
+### 12. Dashboard refactorizat ca clinical command center
+
+- Am reorganizat `/dashboard` dintr-un dashboard financial-first într-un panou clinic-operațional de dimineață, fără rescriere totală și fără dependențe noi.
+- Am înlocuit descrierea generică din `PageHeader` cu o formulare operațională bazată pe date reale: ședințe azi, dosare incomplete și acțiuni de rezolvat.
+- Am adăugat CTA-uri vizibile în header:
+  - `Client nou`
+  - `Pacient minor`
+  - `Programare`
+- Am introdus componente noi în dashboard:
+  - `TodayCommandCenter`
+  - `ClinicalAlertsPanel`
+  - `DocumentTasksPanel`
+  - `ServiceTracksOverview`
+  - `AssessmentTasksPanel`
+  - `ResearchReadinessPanel`
+- Am extins `src/lib/dashboard/queries.ts` cu helper-e reziliente și fallback safe:
+  - `getDashboardClinicalAlerts()`
+  - `getDashboardDocumentTasks()`
+  - `getDashboardServiceTrackStats()`
+  - `getDashboardAssessmentTasks()`
+  - `getDashboardResearchReadiness()`
+- Am mutat financiarul mai jos în pagină și i-am redus tonul vizual, păstrând totuși:
+  - `FinancialSummary`
+  - `UnpaidInvoices`
+- Am păstrat componentele existente care se potriveau deja fluxului clinic:
+  - `AppointmentsToday`
+  - `UpcomingAppointments`
+  - `CompliancePanel`
+  - `VaultStatusWidget`
+  - `RealtimeDashboard`
+- Am adăugat mai mult spațiu de siguranță la baza shell-ului dashboard pe mobil (`pb-24`) pentru a reduce suprapunerea cu `QuickActionsWheel`.
+
+`npm run lint` ✅ | `npm run build` ✅
+
+Fișiere principale:
+
+- [src/app/dashboard/page.tsx](/Users/sch_work/Documents/Oncolink/src/app/dashboard/page.tsx)
+- [src/lib/dashboard/queries.ts](/Users/sch_work/Documents/Oncolink/src/lib/dashboard/queries.ts)
+- [src/components/dashboard/TodayCommandCenter.tsx](/Users/sch_work/Documents/Oncolink/src/components/dashboard/TodayCommandCenter.tsx)
+- [src/components/dashboard/ClinicalAlertsPanel.tsx](/Users/sch_work/Documents/Oncolink/src/components/dashboard/ClinicalAlertsPanel.tsx)
+- [src/components/dashboard/DocumentTasksPanel.tsx](/Users/sch_work/Documents/Oncolink/src/components/dashboard/DocumentTasksPanel.tsx)
+- [src/components/dashboard/ServiceTracksOverview.tsx](/Users/sch_work/Documents/Oncolink/src/components/dashboard/ServiceTracksOverview.tsx)
+- [src/components/dashboard/AssessmentTasksPanel.tsx](/Users/sch_work/Documents/Oncolink/src/components/dashboard/AssessmentTasksPanel.tsx)
+- [src/components/dashboard/ResearchReadinessPanel.tsx](/Users/sch_work/Documents/Oncolink/src/components/dashboard/ResearchReadinessPanel.tsx)
+- [src/components/dashboard/financial-summary.tsx](/Users/sch_work/Documents/Oncolink/src/components/dashboard/financial-summary.tsx)
+- [src/components/dashboard/vault-status-widget.tsx](/Users/sch_work/Documents/Oncolink/src/components/dashboard/vault-status-widget.tsx)
+- [src/components/app/page-shell.tsx](/Users/sch_work/Documents/Oncolink/src/components/app/page-shell.tsx)

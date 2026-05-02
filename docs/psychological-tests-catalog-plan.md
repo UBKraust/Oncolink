@@ -56,6 +56,23 @@ RLS activ pe toate trei tabelele, izolare per `therapist_id`.
 - Export anonim pentru research
 - Zona pentru minori / adolescenți
 
+### Legătura actuală cu dashboard-ul
+
+Refactorul dashboard-ului a introdus deja o primă zonă de integrare prin `AssessmentTasksPanel`, dar într-o formă intenționat conservatoare:
+
+- folosește tabela `assessments` existentă, nu `client_assessments`
+- poate afișa:
+  - rapoarte lunare nesendate
+  - evaluări recente fără `content_summary`
+  - clienți fără evaluare inițială, când se poate deduce sigur
+- nu implementează încă:
+  - T0 / T1 / T2 tracking real
+  - comparații longitudinale
+  - scoring complex
+  - integrare completă cu Research Hub
+
+Concluzie: dashboard-ul este pregătit să consume catalogul de teste, dar nu trebuie considerat încă integrat complet cu arhitectura finală de assessments.
+
 ---
 
 ## 2. Structură metadata recomandată per test

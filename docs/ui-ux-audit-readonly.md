@@ -8,6 +8,34 @@
 
 ---
 
+## 0. Addendum — după refactorul dashboard-ului din 2026-05-02
+
+Între momentul auditului inițial și starea actuală a branch-ului a fost implementat un refactor important al `/dashboard` către un clinical command center.
+
+### Îmbunătățiri deja vizibile
+
+- dashboard-ul nu mai este financial-first
+- `PageHeader` este mai operațional și include CTA-uri directe utile
+- există `TodayCommandCenter` ca primă suprafață de lucru
+- secțiunile administrative și clinice sunt separate mai clar:
+  - `ClinicalAlertsPanel`
+  - `DocumentTasksPanel`
+  - `ServiceTracksOverview`
+  - `AssessmentTasksPanel`
+- financiarul a fost mutat mai jos și vizual domolit
+- `DashboardPage` are acum mai mult spațiu bottom pe mobil, astfel încât `QuickActionsWheel` să acopere mai greu CTA-uri importante
+
+### Ce rămâne valid din audit
+
+- `QuickActionsWheel` încă are o personalitate prea consumer pentru context clinic
+- layeringul / overlay contractul încă merită standardizat
+- există în continuare hardcodări de culoare în mai multe zone ale produsului
+- fișa clientului rămâne mai încărcată și mai zgomotoasă decât dashboard-ul nou
+
+Acest document rămâne util ca audit structural, dar observațiile despre dashboard trebuie citite acum în cheia: **parțial rezolvate în `/dashboard`, încă deschise în alte suprafețe**.
+
+---
+
 ## 1. Executive Summary
 
 Aplicația are o fundație UI/UX solidă: există design system documentat cu tokens OKLCH, layout de dashboard coerent (sidebar + topbar + content), componente shell reutilizabile (`DashboardPage`, `PageHeader`, `SectionCard`, `EmptyState`) și un sistem de accesibilitate funcțional pentru overlay-uri (`useOverlayA11y`). Aceasta nu e o aplicație improvizată.
@@ -444,4 +472,4 @@ Produsul transmite substanță și direcție clară. Nu arată ca un prototip fr
 
 **Nu este nevoie de redesign total. Este nevoie de disciplină de sistem.**
 
-Ordinea logică de intervenție: overlay standardization → z-index cleanup → QuickActions calm → client dashboard restructure → semantic colors migration.
+Ordinea logică de intervenție, după refactorul dashboard-ului: overlay standardization → z-index cleanup → QuickActions calm → client dashboard restructure → semantic colors migration.

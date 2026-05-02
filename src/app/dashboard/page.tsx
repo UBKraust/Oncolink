@@ -1,10 +1,16 @@
 import Link from "next/link";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
-import { CalendarDays, CreditCard, Users, TrendingUp, ShieldCheck, AlertTriangle, ChevronRight } from "lucide-react";
+import { CalendarDays, ShieldCheck, Users, Wallet } from "lucide-react";
 
 import { AppointmentsToday } from "@/components/dashboard/appointments-today";
+import { AssessmentTasksPanel } from "@/components/dashboard/AssessmentTasksPanel";
+import { ClinicalAlertsPanel } from "@/components/dashboard/ClinicalAlertsPanel";
+import { DocumentTasksPanel } from "@/components/dashboard/DocumentTasksPanel";
 import { StatCard } from "@/components/dashboard/stat-card";
+import { ResearchReadinessPanel } from "@/components/dashboard/ResearchReadinessPanel";
+import { ServiceTracksOverview } from "@/components/dashboard/ServiceTracksOverview";
+import { TodayCommandCenter } from "@/components/dashboard/TodayCommandCenter";
 import { UnpaidInvoices } from "@/components/dashboard/unpaid-invoices";
 import { UpcomingAppointments } from "@/components/dashboard/upcoming-appointments";
 import { CompliancePanel } from "@/components/compliance/CompliancePanel";
@@ -18,6 +24,12 @@ import {
   getAppointmentsToday,
   getUnpaidInvoices,
   getUpcomingAppointments,
+  getDashboardClinicalAlerts,
+  getDashboardDocumentTasks,
+  getDashboardServiceTrackStats,
+  getDashboardAssessmentTasks,
+  getDashboardResearchReadiness,
+  getTodayFinanceSnapshot,
 } from "@/lib/dashboard/queries";
 import { runServerComplianceCheck } from "@/lib/compliance/server-engine";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -26,15 +38,38 @@ import { getTherapistSettings } from "@/app/dashboard/settings/settings-actions"
 export default async function DashboardPage() {
   const today = new Date();
   const configured = isSupabaseConfigured();
-  const [stats, appointmentsToday, unpaidInvoices, upcomingAppointments, complianceData, settings] = await Promise.all([
+  const [
+    stats,
+    appointmentsToday,
+    unpaidInvoices,
+    upcomingAppointments,
+    complianceData,
+    settings,
+    clinicalAlerts,
+    documentTasks,
+    serviceTracks,
+    assessmentTasks,
+    researchReadiness,
+    todayFinance,
+  ] = await Promise.all([
     getDashboardStats(),
     getAppointmentsToday(),
     getUnpaidInvoices(),
     getUpcomingAppointments(),
     runServerComplianceCheck(),
     getTherapistSettings().catch(() => null),
+    getDashboardClinicalAlerts(),
+    getDashboardDocumentTasks(),
+    getDashboardServiceTrackStats(),
+    getDashboardAssessmentTasks(),
+    getDashboardResearchReadiness(),
+    getTodayFinanceSnapshot(),
   ]);
   const therapistName = settings?.full_name ?? settings?.practice_name ?? "Terapeut";
+  const incompleteFiles = documentTasks.filter((task) =>
+    ["GDPR", "ONBOARDING", "MINOR_LEGAL"].includes(task.type),
+  ).length;
+  const actionsToResolve = clinicalAlerts.length + documentTasks.length;
 
   return (
     <DashboardShell>
@@ -43,71 +78,77 @@ export default async function DashboardPage() {
       <PageHeader
         eyebrow={format(today, "EEEE, d MMMM yyyy", { locale: ro })}
         title={`Bună ziua, ${therapistName}`}
-        description="Panoul tău operațional pentru activitatea clinică, administrativă și juridică."
+        description={`Azi ai ${stats.appointmentsToday} ședințe, ${incompleteFiles} dosare incomplete și ${actionsToResolve} acțiuni de rezolvat.`}
         action={
-          <div className="hidden items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100 sm:flex">
-            <ShieldCheck className="h-3.5 w-3.5" />
-            Sistem online și securizat
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100">
+              <ShieldCheck className="h-3.5 w-3.5" />
+              Sistem online și securizat
+            </div>
+            <Button asChild size="sm">
+              <Link href="/dashboard/clients/new">Client nou</Link>
+            </Button>
+            <Button asChild size="sm" variant="outline">
+              <Link href="/dashboard/clients/new-minor">Pacient minor</Link>
+            </Button>
+            <Button asChild size="sm" variant="outline">
+              <Link href="/dashboard/appointments/new">Programare</Link>
+            </Button>
           </div>
         }
       />
 
-      {/* ── Alert minori ─────────────────────────────────────────────────── */}
-      {stats.pendingMinorReviews > 0 && (
-        <div className="flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50/70 px-5 py-4 shadow-sm dark:border-amber-900 dark:bg-amber-950/25">
-          <div className="flex items-center gap-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-100">
-              <AlertTriangle className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-sm font-black text-amber-950 dark:text-amber-100">Validare juridică necesară</p>
-              <p className="mt-0.5 text-xs text-amber-800 dark:text-amber-200">
-                Există {stats.pendingMinorReviews} dosar de minor nou cu custodie comună ce necesită verificarea documentelor.
-              </p>
-            </div>
-          </div>
-          <Button asChild variant="outline" size="sm" className="shrink-0 gap-1 border-amber-300 bg-background font-bold text-amber-900 hover:bg-amber-100 dark:border-amber-800 dark:text-amber-100 dark:hover:bg-amber-900/40">
-            <Link href="/dashboard/clients?filter=review">
-              Vezi Dosare
-              <ChevronRight className="h-4 w-4" />
-            </Link>
-          </Button>
-        </div>
-      )}
+      <TodayCommandCenter
+        appointmentsToday={appointmentsToday}
+        stats={stats}
+        finance={todayFinance}
+      />
 
-      {/* ── KPI Cards ────────────────────────────────────────────────────── */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label="Profit Net (Lunar)"
-          value={`${stats.netProfitMonth.toLocaleString("ro-RO")} RON`}
-          hint={`După ${stats.expensesMonth.toLocaleString("ro-RO")} RON cheltuieli`}
-          icon={TrendingUp}
-          tone="success"
-        />
-        <StatCard
-          label="Încasări Lună"
-          value={`${stats.totalRevenue.toLocaleString("ro-RO")} RON`}
-          hint="Venit Brut Facturat"
-          icon={CreditCard}
-          tone="default"
-        />
+      <div className="grid gap-4 lg:grid-cols-2">
+        <ClinicalAlertsPanel alerts={clinicalAlerts} />
+        <DocumentTasksPanel tasks={documentTasks} />
+      </div>
+
+      <ServiceTracksOverview tracks={serviceTracks} />
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label="Ședințe Azi"
           value={String(stats.appointmentsToday)}
-          hint="din totalul programat"
+          hint="focusul principal al zilei"
           icon={CalendarDays}
           tone="default"
         />
         <StatCard
-          label="Ore Prestate"
-          value={`${stats.totalHours}h`}
-          hint="volum clinic lunar"
+          label="Revizuiri Minori"
+          value={String(stats.pendingMinorReviews)}
+          hint="dosare sensibile în așteptare"
           icon={Users}
+          tone={stats.pendingMinorReviews > 0 ? "warning" : "default"}
+        />
+        <StatCard
+          label="Mix Pacienți"
+          value={`${stats.minorPatients} Minori / ${stats.adultPatients} Adulți`}
+          hint="perspectivă demografică"
+          icon={Users}
+          tone="default"
+        />
+        <StatCard
+          label="Locații Active"
+          value={`${stats.privatePatients} Cabinet / ${stats.clinicPatients} Clinică`}
+          hint={`${stats.b2bPatients} cazuri B2B active`}
+          icon={Wallet}
           tone="default"
         />
       </div>
 
-      {/* ── Financial + Vault ────────────────────────────────────────────── */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <AppointmentsToday appointments={appointmentsToday} />
+        </div>
+        <AssessmentTasksPanel tasks={assessmentTasks} />
+      </div>
+
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <FinancialSummary
@@ -116,52 +157,25 @@ export default async function DashboardPage() {
             net={stats.netProfitMonth}
           />
         </div>
-        <VaultStatusWidget
-          alerts={stats.vaultAlertsCount}
-          totalDocs={stats.vaultTotalDocs}
-        />
-      </div>
-
-      {/* ── Patient Analytics ────────────────────────────────────────────── */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard
-          label="Mix Pacienți"
-          value={`${stats.privatePatients} Cabinet / ${stats.clinicPatients} Clinică`}
-          hint="Distribuție locație de lucru"
-          icon={Users}
-          tone="default"
-        />
-        <StatCard
-          label="Demografic Pacienți"
-          value={`${stats.minorPatients} Minori / ${stats.adultPatients} Adulți`}
-          hint="Monitorizare vârstă"
-          icon={Users}
-          tone="warning"
-        />
-        <StatCard
-          label="Sesiuni Decontate / B2B"
-          value={`${stats.b2bPatients} Pacienți active`}
-          hint="Contracte speciale / Companii"
-          icon={CreditCard}
-          tone="default"
-        />
-      </div>
-
-      {/* ── Appointments + Invoices ──────────────────────────────────────── */}
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <AppointmentsToday appointments={appointmentsToday} />
-        </div>
         <UnpaidInvoices invoices={unpaidInvoices} />
       </div>
 
-      {/* ── Upcoming + Compliance ────────────────────────────────────────── */}
       <div className="grid gap-4 lg:grid-cols-5">
         <div className="lg:col-span-3">
           <UpcomingAppointments appointments={upcomingAppointments} />
         </div>
         <div className="lg:col-span-2">
           <CompliancePanel compact initialData={complianceData} />
+        </div>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <VaultStatusWidget
+          alerts={stats.vaultAlertsCount}
+          totalDocs={stats.vaultTotalDocs}
+        />
+        <div className="lg:col-span-2">
+          <ResearchReadinessPanel readiness={researchReadiness} />
         </div>
       </div>
 

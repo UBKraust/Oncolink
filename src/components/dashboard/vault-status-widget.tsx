@@ -41,7 +41,7 @@ export function VaultStatusWidget({ alerts, totalDocs }: VaultStatusWidgetProps)
             "flex h-12 w-12 items-center justify-center rounded-full",
             alerts > 0 ? "bg-rose-100 text-rose-600" : "bg-emerald-100 text-emerald-600"
           )}>
-            {alerts > 0 ? <AlertTriangle className="h-6 w-6 animate-pulse" /> : <ShieldCheck className="h-6 w-6" />}
+            {alerts > 0 ? <AlertTriangle className="h-6 w-6" /> : <ShieldCheck className="h-6 w-6" />}
           </div>
         </div>
 

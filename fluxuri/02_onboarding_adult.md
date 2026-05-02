@@ -4,6 +4,12 @@
 
 Onboarding-ul pentru adulți este un flux cu doi actori: terapeutul inițiază din dashboard, pacientul finalizează pe un link public securizat cu token. Fluxul garantează că datele clinice ajung în fișa corectă fără a expune date despre alți clienți.
 
+În dashboard-ul nou, onboarding-ul incomplet este tratat ca blocaj operațional explicit:
+
+- intră în numărul de `dosare incomplete` din header
+- apare în `ClinicalAlertsPanel` când devine alertă agregată
+- apare în `DocumentTasksPanel` ca task actionabil cu CTA de reluare / trimitere link
+
 ## Fișiere Cheie
 
 - [src/app/onboarding/page.tsx](../src/app/onboarding/page.tsx) — pagina publică

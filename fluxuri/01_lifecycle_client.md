@@ -4,6 +4,13 @@
 
 Fiecare client trece printr-un ciclu de viață explicit, urmărit persistent în Supabase (`clients.status` + tabel `client_status_history`). Stările sunt derivate din acțiuni reale (onboarding finalizat, programare creată, ședință completată, inactivitate) și nu din input manual arbitrar.
 
+Lifecycle-ul nu mai este relevant doar în registrul de clienți și în fișa clientului. După refactorul `/dashboard`, el alimentează și rezumatul operațional de dimineață:
+
+- dosare incomplete în `PageHeader`
+- blocaje în `ClinicalAlertsPanel`
+- sarcini administrative în `DocumentTasksPanel`
+- distribuția cazurilor în `ServiceTracksOverview`
+
 ## Fișiere Cheie
 
 - [src/lib/clients/lifecycle.ts](../src/lib/clients/lifecycle.ts) — logica stărilor lifecycle

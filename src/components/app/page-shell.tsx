@@ -12,7 +12,7 @@ export function DashboardPage({
   className?: string;
 }) {
   return (
-    <div className={cn("mx-auto w-full max-w-7xl space-y-6 pb-10", className)}>
+    <div className={cn("mx-auto w-full max-w-7xl space-y-6 pb-24 md:pb-10", className)}>
       {children}
     </div>
   );

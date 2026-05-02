@@ -1,4 +1,5 @@
 import type { ComponentType, ReactNode } from "react";
+import type { LucideIcon } from "lucide-react";
 
 export type IconComponent = ComponentType<{ className?: string }>;
 
@@ -60,6 +61,9 @@ export interface ClientProfile {
   service_type: string | null;
   service_track_status: string | null;
   main_complaint: string | null;
+  clinical_focus: unknown[] | null;
+  treatment_goals: unknown[] | null;
+  treatment_plan: string | null;
   risk_level: string | null;
   research_consent: boolean | null;
 }
@@ -164,7 +168,7 @@ export interface ClientOverview {
 }
 
 export interface WidgetCardProps {
-  icon: IconComponent;
+  icon: LucideIcon;
   title: string;
   value: ReactNode;
   link: string;

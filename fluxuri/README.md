@@ -15,6 +15,12 @@ Acest director conține documentația completă a fluxurilor operaționale ale a
 | [07_facturare.md](07_facturare.md) | Facturare + SmartBill | Terapeut |
 | [08_compliance_gdpr.md](08_compliance_gdpr.md) | Conformitate GDPR, CAS export, Anonimizare | Terapeut |
 
+## Document de plan servicii clinice
+
+[docs/client-service-flows.md](../docs/client-service-flows.md) — Plan complet pentru cele 4 tipuri de servicii (Psihologie clinică, CBT, DBT, Consiliere) cu flow-uri, statusuri, documente, carduri UI, model de date și faze de implementare P0→P3.
+
+---
+
 ## Arhitectura la Nivel Înalt
 
 ```mermaid

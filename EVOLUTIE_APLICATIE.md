@@ -16,12 +16,32 @@ Aceasta regula ramane activa pe tot parcursul proiectului.
 ## Status Curent
 
 - `npm run lint`: ✅ verde
-- `npm run build`: ✅ verde (2 erori TS pre-existente IconComponent vs LucideIcon, noi în P0)
+- `npm run build`: ✅ verde
 - Migrarea lifecycle (`20260429223610_client_lifecycle_status.sql`) este scrisa dar **neaplicata inca in baza reala**
 - Migrarea P0 service_type (`20260502_service_type_and_clinical_fields.sql`) este scrisa dar **neaplicata inca in baza reala** — aplică ambele migrări împreună
 - Urmeaza: P1 — mapare documente recomandate per service_type, checklist documente lipsă
 
 ## Ce s-a facut
+
+### 17. P1 — Document Requirements per Service Track
+
+- **`src/lib/clients/document-requirements.ts`** (fișier nou): logica de mapare documente per `ServiceType`. `COMMON_REQUIREMENTS` (GDPR, onboarding, contract, consimțământ informat) + cerințe specifice per tip: `CLINICAL_PSYCHOLOGY` (anamneză, interviu clinic, teste, raport), `CBT` (obiective, formulare caz, raport progres), `DBT` (evaluare risc, plan siguranță, angajament, raport), `COUNSELING` (obiectiv, recomandări, raport scurt). Funcții: `getDocumentRequirements()`, `checkDocumentRequirements()`, `getDocumentCompletionStats()`.
+- **`src/components/clients/DocumentRequirementsCard.tsx`** (componentă nouă): checklist vizual în fișa clientului — afișează documentele recomandate per `service_type` cu starea fiecăruia (✅/⚠/○), badge "Obligatoriu" pe cele lipsă cu prioritate mandatory, buton inline de acțiune per document lipsă, toggle "arată toate / ascunde complete", header cu stats `N/M obligatorii`. Ascunsă pentru `UNDECIDED`/`MIXED`.
+- **`src/components/clients/ClientDashboardUI.tsx`**: montat `DocumentRequirementsCard` după `ServiceTrackCard` (ascuns pe clienți anonimizați).
+- **Fix TS pre-existent** (`clients/page.tsx`): înlocuit SVG inline `AlertCircle` cu import real din lucide-react, eliminat funcție locală.
+- **Fix TS pre-existent** (`types.ts`): `WidgetCardProps.icon` schimbat din `IconComponent` în `LucideIcon`; adăugate câmpurile din migrarea P0 (`clinical_focus`, `treatment_goals`, `treatment_plan`) pe `ClientProfile`.
+
+`npm run lint` ✅ | `npm run build` ✅
+
+Fișiere principale:
+
+- [src/lib/clients/document-requirements.ts](src/lib/clients/document-requirements.ts)
+- [src/components/clients/DocumentRequirementsCard.tsx](src/components/clients/DocumentRequirementsCard.tsx)
+- [src/components/clients/ClientDashboardUI.tsx](src/components/clients/ClientDashboardUI.tsx)
+- [src/components/clients/types.ts](src/components/clients/types.ts)
+- [src/app/dashboard/clients/page.tsx](src/app/dashboard/clients/page.tsx)
+
+---
 
 ### 16. P0 — Service Type & Service Track Card (Client Service Flows)
 
@@ -35,7 +55,9 @@ Aceasta regula ramane activa pe tot parcursul proiectului.
 - **`src/components/clients/ServiceTrackCard.tsx`** (componentă nouă): afișează tip serviciu (badge colorat), `service_track_status` opțional, next best action calculat din `computeServiceTrackNextAction`. Reutilizabilă.
 - **`src/components/clients/ClientDashboardUI.tsx`**: badge service type în header (vizibil doar dacă nu e UNDECIDED), `ServiceTrackCard` randată deasupra gridului Status/Pași/Semnale.
 
-**Urmează P1**: mapare documente recomandate per `service_type`, checklist documente lipsă în fișa clientului.
+**Document de plan**: [docs/client-service-flows.md](docs/client-service-flows.md) — arhitectura completă a 4 service tracks (Psihologie clinică, CBT, DBT, Consiliere), cu statusuri, documente, carduri UI, model de date P1–P3, și principii AI assistant.
+
+**Urmează P1**: mapare documente recomandate per `service_type`, checklist documente lipsă în fișa clientului, carduri condiționate în fișa clientului.
 
 ### 15. Fix query vault în dashboard + audit baza de date
 

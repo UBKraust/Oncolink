@@ -34,6 +34,7 @@ import { CrisisNotesDetailOverlay } from "@/components/clients/CrisisNotesDetail
 import { AssessmentDetailOverlay } from "@/components/clients/AssessmentDetailOverlay";
 import { ContractGeneratorModal } from "@/components/clients/ContractGeneratorModal";
 import { ServiceTrackCard } from "@/components/clients/ServiceTrackCard";
+import { DocumentRequirementsCard } from "@/components/clients/DocumentRequirementsCard";
 import {
   SERVICE_TYPE_LABELS,
   SERVICE_TYPE_BADGE_VARIANTS,
@@ -372,6 +373,14 @@ export function ClientDashboardUI({
         hasAppointments={lifecycle.hasCompletedSession || lifecycle.hasUpcomingSession}
         riskLevel={client.risk_level ?? null}
       />
+
+      {!anonymized && (
+        <DocumentRequirementsCard
+          client={client}
+          docs={clientDocs}
+          assessments={assessments}
+        />
+      )}
 
       <div className="grid gap-4 lg:grid-cols-3">
         <section className="rounded-[1.75rem] border border-border/60 bg-card p-5 shadow-sm">

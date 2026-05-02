@@ -8,11 +8,17 @@ import { listClients } from "@/lib/clients/queries";
 import { DocumentList } from "@/components/documents/document-list";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { DashboardPage, PageHeader, SectionCard, SetupBanner } from "@/components/app/page-shell";
+import { getTherapistSettings } from "@/app/dashboard/settings/settings-actions";
 
 export default async function DocumentsPage() {
   const configured = isSupabaseConfigured();
-  const clients = await listClients();
+  const [clients, settings] = await Promise.all([
+    listClients(),
+    getTherapistSettings().catch(() => null),
+  ]);
   const activeClients = clients.filter((c) => !c.notes_anonymized_at);
+  const therapistName = settings?.full_name ?? settings?.practice_name ?? "Terapeut";
+  const therapistEntity = settings?.practice_name ?? settings?.full_name ?? "Cabinet";
 
   return (
     <DashboardPage className="max-w-5xl">
@@ -56,7 +62,13 @@ export default async function DocumentsPage() {
         icon={FileText}
       >
         <div className="p-0">
-          <DocumentList clients={activeClients} />
+          <DocumentList
+            clients={activeClients}
+            therapistName={therapistName}
+            therapistEntity={therapistEntity}
+            therapistCif={settings?.cif ?? undefined}
+            defaultSessionPrice={settings?.default_session_price ?? 250}
+          />
         </div>
       </SectionCard>
     </DashboardPage>

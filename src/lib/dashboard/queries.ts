@@ -1,6 +1,6 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { startOfMonth, endOfMonth, startOfDay, endOfDay, differenceInDays } from "date-fns";
+import { startOfMonth, endOfMonth, startOfDay, endOfDay, differenceInDays, addDays } from "date-fns";
 import { initialsFromName } from "@/lib/clients/validation";
 import { deriveLocation, type AppointmentStatus, type LocationKind } from "@/lib/appointments/helpers";
 import { isPaidInvoiceStatus, normalizeInvoiceStatus } from "@/lib/invoices/status";
@@ -136,6 +136,15 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     .from("patient_documents")
     .select("*", { count: "exact", head: true });
 
+  const vaultAlertDeadline = endOfDay(addDays(now, 30)).toISOString();
+  const { count: vaultAlertsCount, error: vaultAlertsError } = await supabase
+    .from("patient_documents")
+    .select("*", { count: "exact", head: true })
+    .not("expiry_date", "is", null)
+    .lte("expiry_date", vaultAlertDeadline);
+
+  if (vaultAlertsError) console.error("Error fetching vault alerts count:", vaultAlertsError);
+
   return {
     totalRevenue,
     expensesMonth,
@@ -148,7 +157,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     minorPatients,
     adultPatients,
     b2bPatients,
-    vaultAlertsCount: 0, 
+    vaultAlertsCount: vaultAlertsCount || 0,
     vaultTotalDocs: vaultTotalDocs || 0,
   };
 }

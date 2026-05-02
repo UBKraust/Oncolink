@@ -11,6 +11,11 @@
 const GDRIVE_UPLOAD_BASE = "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart";
 const GDRIVE_BASE = "https://www.googleapis.com/drive/v3/files";
 
+interface DriveTemplateTherapistProfile {
+  fullName?: string | null;
+  practiceName?: string | null;
+}
+
 // ── Shared upload helper ──────────────────────────────────────────────────────
 
 async function _upload(
@@ -154,7 +159,8 @@ export async function getOrCreateRootFolder(accessToken: string): Promise<string
 export async function provisionClientDriveFolder(
   accessToken: string,
   clientName: string,
-  clientId: string
+  clientId: string,
+  therapistProfile?: DriveTemplateTherapistProfile,
 ): Promise<{ folderId: string; folderUrl: string }> {
   // 1. Ensure root cabinet folder exists
   const rootFolderId = await getOrCreateRootFolder(accessToken);
@@ -164,7 +170,7 @@ export async function provisionClientDriveFolder(
   const folder = await createDriveFolder(accessToken, safeName, rootFolderId);
 
   // 3. Upload template: Contract Terapeutic (plain text placeholder)
-  const contractTemplate = generateContractTemplate(clientName);
+  const contractTemplate = generateContractTemplate(clientName, therapistProfile);
   const contractBlob = new Blob([contractTemplate], { type: "text/plain;charset=utf-8" });
   await uploadFileToDriveFolder(
     accessToken,
@@ -174,7 +180,7 @@ export async function provisionClientDriveFolder(
   );
 
   // 4. Upload template: Acord GDPR
-  const gdprTemplate = generateGdprTemplate(clientName);
+  const gdprTemplate = generateGdprTemplate(clientName, therapistProfile);
   const gdprBlob = new Blob([gdprTemplate], { type: "text/plain;charset=utf-8" });
   await uploadFileToDriveFolder(
     accessToken,
@@ -188,14 +194,18 @@ export async function provisionClientDriveFolder(
 
 // ── Document templates (RO) ───────────────────────────────────────────────────
 
-function generateContractTemplate(clientName: string): string {
+function generateContractTemplate(
+  clientName: string,
+  therapistProfile?: DriveTemplateTherapistProfile,
+): string {
   const today = new Date().toLocaleDateString("ro-RO");
+  const therapistName = therapistProfile?.fullName?.trim() || "Terapeut";
   return `CONTRACT DE PRESTĂRI SERVICII PSIHOLOGICE
 ════════════════════════════════════════════════
 
 Data: ${today}
 
-TERAPEUT: Ioana Cosmina Terente
+TERAPEUT: ${therapistName}
   Colegiul Psihologilor din România
   Nr. parafă: 123456
 
@@ -220,13 +230,20 @@ Terapeut: __________________________    Data: ______________
 `;
 }
 
-function generateGdprTemplate(clientName: string): string {
+function generateGdprTemplate(
+  clientName: string,
+  therapistProfile?: DriveTemplateTherapistProfile,
+): string {
   const today = new Date().toLocaleDateString("ro-RO");
+  const operatorName =
+    therapistProfile?.practiceName?.trim()
+    || therapistProfile?.fullName?.trim()
+    || "Cabinet";
   return `ACORD PRELUCRARE DATE CU CARACTER PERSONAL (GDPR)
 ════════════════════════════════════════════════════
 
 Data: ${today}
-Operator: Cabinet Psihoterapie Ioana Cosmina Terente
+Operator: ${operatorName}
 Persoana vizată: ${clientName}
 
 TEMEI LEGAL

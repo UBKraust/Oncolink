@@ -7,6 +7,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getValidAccessToken } from "@/lib/google/sync";
 import { provisionClientDriveFolder, uploadFileToDriveFolder } from "@/lib/google/drive";
+import { getTherapistSettings } from "@/app/dashboard/settings/settings-actions";
 import {
   isValidEmail,
   isValidRomanianPhone,
@@ -208,10 +209,15 @@ export async function createClient(
     try {
       const accessToken = await getValidAccessToken();
       if (accessToken && payload.full_name) {
+        const settings = await getTherapistSettings().catch(() => null);
         const { folderUrl } = await provisionClientDriveFolder(
           accessToken,
           payload.full_name,
-          clientResult.id
+          clientResult.id,
+          {
+            fullName: settings?.full_name ?? null,
+            practiceName: settings?.practice_name ?? null,
+          },
         );
         // Save folder URL as contract_url for easy reference
         await supabase

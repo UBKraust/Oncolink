@@ -31,9 +31,19 @@ type DocumentClient = {
 
 interface DocumentListProps {
   clients: DocumentClient[];
+  therapistName: string;
+  therapistEntity?: string;
+  therapistCif?: string;
+  defaultSessionPrice?: number;
 }
 
-export function DocumentList({ clients }: DocumentListProps) {
+export function DocumentList({
+  clients,
+  therapistName,
+  therapistEntity,
+  therapistCif,
+  defaultSessionPrice = 250,
+}: DocumentListProps) {
   const [loading, setLoading] = useState<string | null>(null);
 
   const downloadBlob = (blob: Blob, fileName: string) => {
@@ -55,9 +65,10 @@ export function DocumentList({ clients }: DocumentListProps) {
         clientName: c.full_name ?? "Client",
         clientCNP: c.cnp_cif ?? "—",
         clientAddress: c.address ?? "—",
-        therapistName: "Dr. Psiholog",
-        therapistCIF: process.env.NEXT_PUBLIC_THERAPIST_CIF ?? "—",
-        sessionPrice: 250,
+        therapistName,
+        therapistCIF: therapistCif ?? process.env.NEXT_PUBLIC_THERAPIST_CIF ?? "—",
+        therapistPracticeName: therapistEntity,
+        sessionPrice: defaultSessionPrice,
         startDate: new Date().toLocaleDateString("ro-RO"),
       });
       downloadBlob(result.blob, result.fileName);
@@ -72,7 +83,9 @@ export function DocumentList({ clients }: DocumentListProps) {
       const result = await generateGdprConsent({
         clientName: c.full_name ?? "Client",
         clientCNP: c.cnp_cif ?? "—",
-        therapistName: "Dr. Psiholog",
+        therapistName,
+        therapistEntity,
+        therapistCIF: therapistCif ?? process.env.NEXT_PUBLIC_THERAPIST_CIF ?? "—",
         date: new Date().toLocaleDateString("ro-RO"),
       });
       downloadBlob(result.blob, result.fileName);

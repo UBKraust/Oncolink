@@ -25,6 +25,7 @@ import {
 import type { ClientLifecycleStatus } from "@/lib/clients/lifecycle";
 import { upsertClientByIdentifiers } from "@/lib/clients/upsert";
 import { createSignedObjectUrl } from "@/lib/storage/private-urls";
+import type { TemplateType } from "@/lib/contracts/types";
 
 type ClientUpsertDb = Parameters<typeof upsertClientByIdentifiers>[0];
 
@@ -658,7 +659,7 @@ export async function getLatestReferralDocument(clientId: string) {
 
 export async function issueGeneratedContractNumber(
   clientId: string,
-  templateType: "STANDARD" | "MINOR" | "B2B" | "CAS",
+  templateType: TemplateType,
 ) {
   if (!isSupabaseConfigured()) {
     const year = new Date().getFullYear();

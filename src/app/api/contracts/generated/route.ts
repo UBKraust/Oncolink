@@ -2,12 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { getValidAccessToken } from "@/lib/google/sync";
 import { uploadFileToDriveFolder } from "@/lib/google/drive";
+import type { TemplateType } from "@/lib/contracts/types";
 import { createSignedObjectUrl } from "@/lib/storage/private-urls";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const runtime = "edge";
-
-type TemplateType = "STANDARD" | "MINOR" | "B2B" | "CAS";
 
 function sanitizeFileName(value: string) {
   return value.replace(/[^a-zA-Z0-9._-]/g, "_");
@@ -21,6 +20,7 @@ export async function POST(req: NextRequest) {
     const generatedContractId = String(formData.get("generatedContractId") ?? "");
     const contractNumber = String(formData.get("contractNumber") ?? "");
     const templateType = String(formData.get("templateType") ?? "") as TemplateType;
+    const templateVersion = String(formData.get("templateVersion") ?? "").trim();
 
     if (!file || !clientId || !generatedContractId || !contractNumber || !templateType) {
       return NextResponse.json(
@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
         drive_file_id: driveFileId,
         document_url: driveUrl,
         document_type: "CONTRACT",
-        notes: `Contract ${contractNumber} (${templateType}) generat din aplicație.`,
+        notes: `Contract ${contractNumber} (${templateType}${templateVersion ? `, ${templateVersion}` : ""}) generat din aplicație.`,
       })
       .select("id")
       .single();

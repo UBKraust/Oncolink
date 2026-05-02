@@ -4,6 +4,7 @@
  */
 
 import type { jsPDF } from "jspdf";
+import type { ContractPdfData, GeneratedPdfResult, TemplateType } from "@/lib/contracts/types";
 
 function loadJsPDF(): Promise<typeof import("jspdf").jsPDF> {
   return import("jspdf").then((m) => m.jsPDF);
@@ -146,64 +147,6 @@ function therapistRoleLabel(cprCode?: string) {
   return `psiholog cu drept de liberă practică, cod CPR ${cprCode}`;
 }
 
-export interface ContractData {
-  contractNumber: string;
-  startDate: string;
-  clientName: string;
-  clientCNP: string;
-  clientAddress: string;
-  clientBirthDate?: string;
-  clientPhone?: string;
-  clientEmail?: string;
-  clientIdSeries?: string;
-  clientIdNumber?: string;
-  therapistName: string;
-  therapistCIF: string;
-  therapistIBAN?: string;
-  therapistPracticeName?: string;
-  therapistPracticeAddress?: string;
-  therapistPracticePhone?: string;
-  therapistPracticeEmail?: string;
-  therapistPracticeCaen?: string;
-  therapistCPRCode?: string;
-  sessionPrice: number;
-
-  isMinor?: boolean;
-  parent1Name?: string;
-  parentCNP?: string;
-  parentAddress?: string;
-  parentPhone?: string;
-  parentEmail?: string;
-  parentIdSeries?: string;
-  parentIdNumber?: string;
-  parent2Name?: string;
-  parentsMaritalStatus?: string;
-  courtSentenceNumber?: string;
-
-  isB2B?: boolean;
-  companyName?: string;
-  companyCIF?: string;
-  companyRegCom?: string;
-  companyAddress?: string;
-  companyIBAN?: string;
-  companyBank?: string;
-  representativeName?: string;
-  representativeRole?: string;
-  representativeEmail?: string;
-
-  isCas?: boolean;
-  referralNumber?: string;
-  referralDate?: string;
-  referringDoctor?: string;
-  casContractNumber?: string;
-  casCounty?: string;
-}
-
-export interface GeneratedPdfResult {
-  blob: Blob;
-  fileName: string;
-}
-
 function signatureBlock(doc: jsPDF, y: number, labelLeft: string, labelRight: string, noteRight?: string) {
   y = ensurePage(doc, y, 230);
   y += 10;
@@ -273,17 +216,58 @@ function writeDocumentMeta(doc: jsPDF, numberLabel: string, docNumber: string, d
   metaCard(doc, numberLabel, docNumber, dateLabel, dateValue);
 }
 
-export async function generateContract(data: ContractData): Promise<GeneratedPdfResult> {
+function resolveTemplateType(data: ContractPdfData): TemplateType {
+  if (data.templateType) return data.templateType;
+  if (data.isCas) return "CAS";
+  if (data.isB2B) return "B2B";
+  if (data.isMinor) return "MINOR";
+  return "STANDARD";
+}
+
+function drawStatusBadge(doc: jsPDF, statusLabel: string, isDraft: boolean) {
+  const x = PAGE_W - MARGIN - 48;
+  const y = 31;
+  doc.setFillColor(isDraft ? 254 : 240, isDraft ? 226 : 249, isDraft ? 226 : 250);
+  doc.setDrawColor(isDraft ? 239 : 45, isDraft ? 68 : 125, isDraft ? 68 : 50);
+  doc.roundedRect(x, y, 48, 10, 2, 2, "FD");
+  doc.setFontSize(8.5);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(isDraft ? 185 : 36, isDraft ? 28 : 45, isDraft ? 28 : 56);
+  doc.text(statusLabel, x + 24, y + 6.5, { align: "center" });
+}
+
+function drawDraftWatermark(doc: jsPDF) {
+  const pages = doc.getNumberOfPages();
+  for (let i = 1; i <= pages; i++) {
+    doc.setPage(i);
+    doc.setTextColor(240, 146, 146);
+    doc.setFontSize(34);
+    doc.setFont("helvetica", "bold");
+    doc.text("DRAFT - NEEMIS", PAGE_W / 2, 170, {
+      align: "center",
+      angle: 28,
+    });
+  }
+}
+
+function writeFooterMetadata(doc: jsPDF, templateVersion: string, statusLabel: string) {
+  const pages = doc.getNumberOfPages();
+  for (let i = 1; i <= pages; i++) {
+    doc.setPage(i);
+    doc.setFontSize(7.5);
+    doc.setTextColor(160, 160, 160);
+    doc.text(`Template: ${templateVersion}  ·  Status: ${statusLabel}`, PAGE_W - MARGIN, 285, {
+      align: "right",
+    });
+  }
+}
+
+export async function generateContract(data: ContractPdfData): Promise<GeneratedPdfResult> {
   const JsPDF = await loadJsPDF();
   const doc = new JsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
-  const templateType: "STANDARD" | "MINOR" | "B2B" | "CAS" = data.isCas
-    ? "CAS"
-    : data.isB2B
-      ? "B2B"
-      : data.isMinor
-        ? "MINOR"
-        : "STANDARD";
+  const templateType = resolveTemplateType(data);
+  const isDraft = data.documentStatus === "DRAFT";
 
   const title = templateType === "CAS"
     ? "Consimțământ Informat pentru Servicii Psihologice"
@@ -298,10 +282,11 @@ export async function generateContract(data: ContractData): Promise<GeneratedPdf
     : templateType === "B2B"
       ? "Model Business · B2B / Firmă"
       : templateType === "MINOR"
-        ? "Model Minor · Legea 272/2004"
-        : "Model Standard · Client individual adult";
+      ? "Model Minor · Legea 272/2004"
+      : "Model Standard · Client individual adult";
 
   header(doc, title, subtitle);
+  drawStatusBadge(doc, data.statusLabel, isDraft);
   writeDocumentMeta(
     doc,
     templateType === "CAS" ? "Document nr." : "Contract nr.",
@@ -309,6 +294,12 @@ export async function generateContract(data: ContractData): Promise<GeneratedPdf
     "Data:",
     data.startDate,
   );
+  doc.setProperties({
+    title,
+    subject: `${data.statusLabel} · Template ${data.templateVersion}`,
+    creator: "Ce-ai Pățit?",
+    keywords: `${templateType}, ${data.templateVersion}, ${data.documentStatus}`,
+  });
 
   let y = 79;
 
@@ -327,7 +318,9 @@ export async function generateContract(data: ContractData): Promise<GeneratedPdf
   y = infoBox(
     doc,
     y,
-    "Document generat din șablonul contractual intern al cabinetului și formatat automat pentru semnare.",
+    isDraft
+      ? `Document de previzualizare. Status: ${data.statusLabel}. Numărul afișat este placeholder și nu a fost emis în registru.`
+      : `Document emis și generat din șablonul contractual intern al cabinetului. Template: ${data.templateVersion}.`,
   );
 
   if (templateType === "STANDARD") {
@@ -620,6 +613,10 @@ export async function generateContract(data: ContractData): Promise<GeneratedPdf
   }
 
   footer(doc);
+  writeFooterMetadata(doc, data.templateVersion, data.statusLabel);
+  if (isDraft) {
+    drawDraftWatermark(doc);
+  }
   pageHeaderRenderer = null;
 
   const fileNameBase = templateType === "B2B"

@@ -1,69 +1,39 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { 
-  FileCheck, 
-  FileText, 
-  Building, 
-  Baby, 
-  Stethoscope, 
-  Download, 
-  Loader2,
+import React, { useEffect, useState } from "react";
+import {
   AlertCircle,
+  Baby,
+  Building,
+  Download,
+  Eye,
+  FileCheck,
+  FileText,
   Hash,
   Info,
-  Eye
+  Loader2,
+  Stethoscope,
 } from "lucide-react";
+
+import { getLatestReferralDocument, issueGeneratedContractNumber } from "@/app/dashboard/clients/actions";
+import { getTherapistSettings, type TherapistSettings } from "@/app/dashboard/settings/settings-actions";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
-import { generateContract } from "@/lib/pdf/templates";
-import { getTherapistSettings, TherapistSettings } from "@/app/dashboard/settings/settings-actions";
-import { getLatestReferralDocument, issueGeneratedContractNumber } from "@/app/dashboard/clients/actions";
-import type { Database } from "@/lib/supabase/types";
-import type { ClientProfile } from "./types";
 import { toast } from "@/components/ui/toast";
+import { buildDraftContractNumber, buildInitialContractNumber, getTemplateVersion } from "@/lib/contracts/numbering";
+import { buildContractPayload, formatDateForDisplay, formatDateForInput } from "@/lib/contracts/payload";
+import type { ReferralDocumentSummary, TemplateType } from "@/lib/contracts/types";
+import { getMissingContractData } from "@/lib/contracts/validation";
+import { generateContract } from "@/lib/pdf/templates";
+
+import type { ClientProfile } from "./types";
 
 interface ContractGeneratorProps {
   client: ClientProfile;
   onSuccess?: () => void;
-}
-
-type TemplateType = "STANDARD" | "MINOR" | "B2B" | "CAS";
-type ReferralDocumentRow = Database["public"]["Tables"]["referral_documents"]["Row"];
-
-function formatDateForDisplay(value?: string | null) {
-  if (!value) return "—";
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return date.toLocaleDateString("ro-RO");
-}
-
-function formatDateForInput(value?: string | null) {
-  if (!value) return "";
-
-  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    return value;
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
-
-  return date.toISOString().slice(0, 10);
-}
-
-function buildSuggestedContractNumber() {
-  const now = new Date();
-  const year = now.getFullYear();
-  return `CTR-${year}-....`;
 }
 
 async function persistGeneratedContract(params: {
@@ -73,6 +43,7 @@ async function persistGeneratedContract(params: {
   generatedContractId: string;
   contractNumber: string;
   templateType: TemplateType;
+  templateVersion: string;
 }) {
   const file = new File([params.blob], params.fileName, { type: "application/pdf" });
   const formData = new FormData();
@@ -81,13 +52,14 @@ async function persistGeneratedContract(params: {
   formData.append("generatedContractId", params.generatedContractId);
   formData.append("contractNumber", params.contractNumber);
   formData.append("templateType", params.templateType);
+  formData.append("templateVersion", params.templateVersion);
 
   const response = await fetch("/api/contracts/generated", {
     method: "POST",
     body: formData,
   });
 
-  const payload = await response.json() as { error?: string };
+  const payload = (await response.json()) as { error?: string };
   if (!response.ok) {
     throw new Error(payload.error || "Nu am putut salva contractul în baza de date.");
   }
@@ -98,16 +70,11 @@ export function ContractGenerator({ client, onSuccess }: ContractGeneratorProps)
   const [previewLoading, setPreviewLoading] = useState(false);
   const [settings, setSettings] = useState<TherapistSettings | null>(null);
   const [settingsError, setSettingsError] = useState<string | null>(null);
-  const [latestReferral, setLatestReferral] = useState<Pick<
-    ReferralDocumentRow,
-    "id" | "referral_number" | "referral_date" | "referring_doctor_code" | "uploaded_at"
-  > | null>(null);
+  const [latestReferral, setLatestReferral] = useState<ReferralDocumentSummary | null>(null);
   const [template, setTemplate] = useState<TemplateType>(
-    client.is_minor ? "MINOR" : client.billing_type === "B2B_COMPANY" ? "B2B" : "STANDARD"
+    client.is_minor ? "MINOR" : client.billing_type === "B2B_COMPANY" ? "B2B" : "STANDARD",
   );
-  
-  // Form fields
-  const [contractNumber, setContractNumber] = useState(() => buildSuggestedContractNumber());
+  const [issuedContractNumber, setIssuedContractNumber] = useState<string | null>(null);
   const [repName, setRepName] = useState(client.company_representative_name || "");
   const [repRole, setRepRole] = useState(client.company_representative_role || "");
   const [regCom, setRegCom] = useState(client.company_reg_com || "");
@@ -115,7 +82,6 @@ export function ContractGenerator({ client, onSuccess }: ContractGeneratorProps)
   const [referralDate, setReferralDate] = useState("");
   const [referringDoctor, setReferringDoctor] = useState("");
 
-  // Auto-detection and numbering
   useEffect(() => {
     let active = true;
 
@@ -144,6 +110,7 @@ export function ContractGenerator({ client, onSuccess }: ContractGeneratorProps)
         setSettingsError(message);
       }
     }
+
     load();
 
     return () => {
@@ -151,88 +118,22 @@ export function ContractGenerator({ client, onSuccess }: ContractGeneratorProps)
     };
   }, [client]);
 
-  const missingData: string[] = [];
-  const missingTherapistIdentity = !settings?.full_name || !settings?.cif;
-  const missingPracticeIdentity = !settings?.practice_name || !settings?.practice_address || !settings?.practice_phone || !settings?.practice_email;
-
-  if (missingTherapistIdentity) {
-    missingData.push("Completează numele și CIF-ul cabinetului în Setări.");
-  }
-  if (missingPracticeIdentity) {
-    missingData.push("Completează denumirea cabinetului, adresa, telefonul și e-mailul în Setări.");
-  }
-
-  if (template === "B2B") {
-    if (!client.company_name) missingData.push("Lipsește numele firmei.");
-    if (!repName) missingData.push("Lipsește numele reprezentantului legal.");
-    if (!repRole) missingData.push("Lipsește calitatea reprezentantului legal.");
-  }
-
-  if (template === "MINOR" && !client.parent_1_name && !client.parent_name) {
-    missingData.push("Lipsesc datele reprezentantului legal pentru minor.");
-  }
-  if (template === "MINOR" && !client.minor_cnp) {
-    missingData.push("Lipsește CNP-ul minorului.");
-  }
-
-  if (template === "CAS") {
-    if (!settings?.cas_active) missingData.push("CAS nu este activ în setările cabinetului.");
-    if (!settings?.cas_contract_number) missingData.push("Lipsește numărul contractului CAS din Setări.");
-    if (!referralNumber) missingData.push("Lipsește numărul biletului de trimitere.");
-    if (!referralDate) missingData.push("Lipsește data biletului de trimitere.");
-  }
-
-  const buildContractPayload = () => {
-    if (!settings) return null;
-
-    return {
-      startDate: new Date().toLocaleDateString("ro-RO"),
-      clientName: client.full_name || "—",
-      clientCNP: template === "MINOR" ? client.minor_cnp || "—" : client.cnp_cif || "—",
-      clientAddress: client.address || "—",
-      clientBirthDate: client.date_of_birth ? formatDateForDisplay(client.date_of_birth) : undefined,
-      clientPhone: client.phone || undefined,
-      clientEmail: client.email || undefined,
-      clientIdSeries: client.client_id_series || undefined,
-      clientIdNumber: client.client_id_number || undefined,
-      therapistName: settings.full_name || "—",
-      therapistCIF: settings.cif || "—",
-      therapistCPRCode: settings.cpr_code || undefined,
-      therapistIBAN: settings.iban || undefined,
-      therapistPracticeName: settings.practice_name || undefined,
-      therapistPracticeAddress: settings.practice_address || undefined,
-      therapistPracticePhone: settings.practice_phone || undefined,
-      therapistPracticeEmail: settings.practice_email || undefined,
-      therapistPracticeCaen: settings.practice_caen || undefined,
-      sessionPrice: Number(client.session_price) || settings.default_session_price,
-      isMinor: template === "MINOR",
-      parent1Name: client.parent_1_name || client.parent_name || undefined,
-      parentCNP: template === "MINOR" ? client.parent_cnp || client.cnp_cif || undefined : undefined,
-      parentAddress: template === "MINOR" ? client.parent_address || client.address || undefined : undefined,
-      parentPhone: client.parent_1_phone || client.parent_phone || undefined,
-      parentEmail: client.parent_1_email || undefined,
-      parentIdSeries: client.parent_id_series || undefined,
-      parentIdNumber: client.parent_id_number || undefined,
-      parent2Name: client.parent_2_name || undefined,
-      parentsMaritalStatus: client.parents_marital_status || undefined,
-      isB2B: template === "B2B",
-      companyName: client.company_name || undefined,
-      companyCIF: client.cnp_cif || undefined,
-      companyAddress: client.company_address || client.address || undefined,
-      companyIBAN: client.company_iban || undefined,
-      companyBank: client.company_bank || undefined,
-      companyRegCom: regCom || undefined,
-      representativeName: repName || undefined,
-      representativeRole: repRole || undefined,
-      representativeEmail: client.company_representative_email || client.email || undefined,
-      isCas: template === "CAS",
-      referralNumber,
-      referralDate: formatDateForDisplay(referralDate),
-      referringDoctor: referringDoctor || undefined,
-      casContractNumber: settings.cas_contract_number || undefined,
-      casCounty: settings.cas_county || undefined,
-    };
+  const contractContext = {
+    client,
+    settings,
+    template,
+    repName,
+    repRole,
+    regCom,
+    referralNumber,
+    referralDate,
+    referringDoctor,
   };
+
+  const missingDataGroups = getMissingContractData(contractContext);
+  const hasMissingData = missingDataGroups.length > 0;
+  const templateVersion = getTemplateVersion(template);
+  const displayContractNumber = issuedContractNumber ?? buildInitialContractNumber();
 
   const downloadBlob = (blob: Blob, fileName: string) => {
     const url = URL.createObjectURL(blob);
@@ -252,29 +153,49 @@ export function ContractGenerator({ client, onSuccess }: ContractGeneratorProps)
   };
 
   const handleGenerate = async (mode: "download" | "preview") => {
-    if (!settings || missingData.length > 0) return;
+    if (!settings || hasMissingData) return;
+
     if (mode === "download") setLoading(true);
     else setPreviewLoading(true);
 
     try {
+      if (mode === "preview") {
+        const previewContractNumber = buildDraftContractNumber();
+        const previewPayload = buildContractPayload(contractContext, {
+          contractNumber: previewContractNumber,
+          status: "DRAFT",
+        });
+
+        if (!previewPayload) {
+          toast.error("Nu am putut pregăti contractul.");
+          return;
+        }
+
+        const previewResult = await generateContract(previewPayload);
+        previewBlob(previewResult.blob);
+        toast.success(`Previzualizarea ${previewContractNumber} a fost deschisă local.`);
+        return;
+      }
+
       const issuedContract = await issueGeneratedContractNumber(client.id, template);
       if ("error" in issuedContract) {
         toast.error(issuedContract.error || "Nu am putut emite numărul contractului.");
         return;
       }
 
-      setContractNumber(issuedContract.contract_number);
+      setIssuedContractNumber(issuedContract.contract_number);
 
-      const payload = buildContractPayload();
-      if (!payload) {
+      const finalPayload = buildContractPayload(contractContext, {
+        contractNumber: issuedContract.contract_number,
+        status: "ISSUED",
+      });
+
+      if (!finalPayload) {
         toast.error("Nu am putut pregăti contractul.");
         return;
       }
 
-      const result = await generateContract({
-        contractNumber: issuedContract.contract_number,
-        ...payload,
-      });
+      const result = await generateContract(finalPayload);
 
       let persistenceWarning: string | null = null;
       try {
@@ -285,29 +206,21 @@ export function ContractGenerator({ client, onSuccess }: ContractGeneratorProps)
           generatedContractId: issuedContract.id,
           contractNumber: issuedContract.contract_number,
           templateType: template,
+          templateVersion,
         });
       } catch (persistError) {
-        const message = persistError instanceof Error
-          ? persistError.message
-          : "Nu am putut salva contractul în baza de date.";
-        persistenceWarning = message;
-        console.warn("Contract persistence skipped:", persistError);
+        persistenceWarning =
+          persistError instanceof Error
+            ? persistError.message
+            : "Nu am putut salva contractul în baza de date.";
+        console.warn("Generated contract persistence failed:", persistError);
       }
 
-      if (mode === "download") {
-        downloadBlob(result.blob, result.fileName);
-        if (persistenceWarning) {
-          toast.success(`Contractul ${issuedContract.contract_number} a fost descărcat local. Salvarea remote este dezactivată momentan.`);
-        } else {
-          toast.success(`Contractul ${issuedContract.contract_number} a fost descărcat local.`);
-        }
+      downloadBlob(result.blob, result.fileName);
+      if (persistenceWarning) {
+        toast.success(`Contractul ${issuedContract.contract_number} a fost emis și descărcat local. Persistarea remote a întâmpinat o problemă.`);
       } else {
-        previewBlob(result.blob);
-        if (persistenceWarning) {
-          toast.success(`Previzualizarea pentru ${issuedContract.contract_number} a fost deschisă. PDF-ul rămâne disponibil local momentan.`);
-        } else {
-          toast.success(`Previzualizarea pentru ${issuedContract.contract_number} a fost deschisă.`);
-        }
+        toast.success(`Contractul ${issuedContract.contract_number} a fost emis și descărcat local.`);
       }
 
       onSuccess?.();
@@ -320,12 +233,16 @@ export function ContractGenerator({ client, onSuccess }: ContractGeneratorProps)
     }
   };
 
-  const getTemplateIcon = (t: TemplateType) => {
-    switch (t) {
-      case "MINOR": return <Baby className="h-4 w-4" />;
-      case "B2B": return <Building className="h-4 w-4" />;
-      case "CAS": return <Stethoscope className="h-4 w-4" />;
-      default: return <FileText className="h-4 w-4" />;
+  const getTemplateIcon = (value: TemplateType) => {
+    switch (value) {
+      case "MINOR":
+        return <Baby className="h-4 w-4" />;
+      case "B2B":
+        return <Building className="h-4 w-4" />;
+      case "CAS":
+        return <Stethoscope className="h-4 w-4" />;
+      default:
+        return <FileText className="h-4 w-4" />;
     }
   };
 
@@ -333,22 +250,27 @@ export function ContractGenerator({ client, onSuccess }: ContractGeneratorProps)
     <Card className="border-primary/10 shadow-sm overflow-hidden bg-slate-50/30">
       <CardHeader className="pb-3 border-b bg-white">
         <div className="flex items-center gap-3">
-           <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-              <FileCheck className="h-5 w-5" />
-           </div>
-           <div>
-              <CardTitle className="text-base font-bold">Generator Contracte</CardTitle>
-              <CardDescription className="text-xs">Selectează modelul și generează PDF-ul pentru semnare.</CardDescription>
-           </div>
+          <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+            <FileCheck className="h-5 w-5" />
+          </div>
+          <div>
+            <CardTitle className="text-base font-bold">Generator Contracte</CardTitle>
+            <CardDescription className="text-xs">
+              Selectează modelul și generează PDF-ul pentru semnare.
+            </CardDescription>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="pt-6 space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Model Contract</Label>
-            <Select 
-              value={template} 
-              onChange={(e) => setTemplate(e.target.value as TemplateType)}
+            <Select
+              value={template}
+              onChange={(e) => {
+                setTemplate(e.target.value as TemplateType);
+                setIssuedContractNumber(null);
+              }}
               className="rounded-xl border-slate-200 bg-white"
             >
               <option value="STANDARD">Standard (Individual)</option>
@@ -360,60 +282,60 @@ export function ContractGenerator({ client, onSuccess }: ContractGeneratorProps)
           <div className="space-y-1.5">
             <Label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Număr Contract</Label>
             <div className="relative">
-               <Hash className="absolute left-3 top-2.5 h-4 w-4 text-slate-300" />
-               <Input 
-                 value={contractNumber} 
-                 readOnly
-                 className="pl-9 rounded-xl border-slate-200 bg-white font-mono text-sm"
-               />
+              <Hash className="absolute left-3 top-2.5 h-4 w-4 text-slate-300" />
+              <Input
+                value={displayContractNumber}
+                readOnly
+                className="pl-9 rounded-xl border-slate-200 bg-white font-mono text-sm"
+              />
             </div>
             <p className="text-[9px] text-slate-400 font-medium">
-              Numărul oficial se alocă automat la generare și se salvează în registru.
+              Preview-ul folosește un număr draft. Numărul oficial se alocă doar la emitere și se salvează în registru.
             </p>
           </div>
         </div>
 
         {template === "B2B" && (
           <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-100 space-y-3 animate-in fade-in slide-in-from-top-1">
-             <p className="text-[10px] font-black uppercase tracking-widest text-blue-600">Detalii Reprezentant Legal</p>
-             <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-1">
-                   <Label className="text-[10px] text-slate-500 font-bold">Nume Complet</Label>
-                   <Input 
-                     value={repName} 
-                     onChange={(e) => setRepName(e.target.value)} 
-                     placeholder="Ex: Ion Popescu"
-                     className="h-8 text-sm rounded-lg bg-white"
-                   />
-                </div>
-                <div className="space-y-1">
-                   <Label className="text-[10px] text-slate-500 font-bold">Calitate / Rol</Label>
-                   <Input 
-                     value={repRole} 
-                     onChange={(e) => setRepRole(e.target.value)} 
-                     placeholder="Ex: Administrator"
-                     className="h-8 text-sm rounded-lg bg-white"
-                   />
-                </div>
-                <div className="sm:col-span-2 space-y-1">
-                   <Label className="text-[10px] text-slate-500 font-bold">Reg. Com.</Label>
-                   <Input 
-                     value={regCom} 
-                     onChange={(e) => setRegCom(e.target.value)} 
-                     placeholder="Ex: J40/1234/2020"
-                     className="h-8 text-sm rounded-lg bg-white"
-                   />
-                </div>
-             </div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-blue-600">Detalii Reprezentant Legal</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label className="text-[10px] text-slate-500 font-bold">Nume Complet</Label>
+                <Input
+                  value={repName}
+                  onChange={(e) => setRepName(e.target.value)}
+                  placeholder="Ex: Ion Popescu"
+                  className="h-8 text-sm rounded-lg bg-white"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[10px] text-slate-500 font-bold">Calitate / Rol</Label>
+                <Input
+                  value={repRole}
+                  onChange={(e) => setRepRole(e.target.value)}
+                  placeholder="Ex: Administrator"
+                  className="h-8 text-sm rounded-lg bg-white"
+                />
+              </div>
+              <div className="sm:col-span-2 space-y-1">
+                <Label className="text-[10px] text-slate-500 font-bold">Reg. Com.</Label>
+                <Input
+                  value={regCom}
+                  onChange={(e) => setRegCom(e.target.value)}
+                  placeholder="Ex: J40/1234/2020"
+                  className="h-8 text-sm rounded-lg bg-white"
+                />
+              </div>
+            </div>
           </div>
         )}
 
         {template === "MINOR" && !client.parent_1_name && !client.parent_name && (
           <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 border border-amber-100">
-             <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-             <p className="text-[10px] text-amber-700 font-medium leading-tight">
-               Eroare: Lipsesc datele părinților. Te rugăm să actualizezi profilul clientului înainte de a genera contractul de minor.
-             </p>
+            <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+            <p className="text-[10px] text-amber-700 font-medium leading-tight">
+              Eroare: Lipsesc datele părinților. Te rugăm să actualizezi profilul clientului înainte de a genera contractul de minor.
+            </p>
           </div>
         )}
 
@@ -462,18 +384,23 @@ export function ContractGenerator({ client, onSuccess }: ContractGeneratorProps)
           </div>
         )}
 
-        {missingData.length > 0 && (
+        {missingDataGroups.length > 0 && (
           <div className="flex items-start gap-2 p-3 rounded-xl bg-rose-50 border border-rose-100">
             <AlertCircle className="h-4 w-4 text-rose-500 shrink-0 mt-0.5" />
             <div className="space-y-1">
               <p className="text-[10px] text-rose-700 font-black uppercase tracking-wider">
                 Date necesare înainte de generare
               </p>
-              <div className="space-y-1">
-                {missingData.map((item) => (
-                  <p key={item} className="text-[10px] text-rose-700 font-medium leading-tight">
-                    • {item}
-                  </p>
+              <div className="space-y-2">
+                {missingDataGroups.map((group) => (
+                  <div key={group.category} className="space-y-1">
+                    <p className="text-[10px] text-rose-700 font-bold leading-tight">{group.category}</p>
+                    {group.items.map((item) => (
+                      <p key={item} className="text-[10px] text-rose-700 font-medium leading-tight">
+                        • {item}
+                      </p>
+                    ))}
+                  </div>
                 ))}
               </div>
             </div>
@@ -487,41 +414,46 @@ export function ContractGenerator({ client, onSuccess }: ContractGeneratorProps)
               <p className="text-[10px] text-amber-700 font-black uppercase tracking-wider">
                 Setările terapeutului nu au putut fi încărcate
               </p>
-              <p className="text-[10px] text-amber-700 font-medium leading-tight">
-                {settingsError}
-              </p>
+              <p className="text-[10px] text-amber-700 font-medium leading-tight">{settingsError}</p>
             </div>
           </div>
         ) : null}
       </CardContent>
       <CardFooter className="bg-white border-t p-4 flex flex-col gap-3">
-         <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 italic">
-            {getTemplateIcon(template)}
-            {template === "B2B" ? "Model Business" : template === "MINOR" ? "Model Protecție Minor" : template === "CAS" ? "Model Asigurări Sănătate" : "Model Standard Client"}
-         </div>
-         <div className="grid w-full gap-2 sm:grid-cols-2">
-           <Button
-             type="button"
-             variant="outline"
-             onClick={() => handleGenerate("preview")}
-             disabled={previewLoading || loading || !settings || missingData.length > 0}
-             className="w-full rounded-xl font-black gap-2 h-11 border-slate-200"
-           >
-              {previewLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Eye className="h-5 w-5" />}
-              PREVIZUALIZEAZĂ PDF
-           </Button>
-           <Button 
-             onClick={() => handleGenerate("download")} 
-             disabled={loading || previewLoading || !settings || missingData.length > 0}
-             className="w-full rounded-xl font-black shadow-lg shadow-primary/20 gap-2 h-11"
-           >
-              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Download className="h-5 w-5" />}
-              DESCARCĂ PDF
-           </Button>
-         </div>
-         <p className="text-[9px] text-center text-slate-400 font-medium">
-           Pentru test poți deschide previzualizarea în browser sau descărca local fișierul PDF.
-         </p>
+        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 italic">
+          {getTemplateIcon(template)}
+          {template === "B2B"
+            ? "Model Business"
+            : template === "MINOR"
+              ? "Model Protecție Minor"
+              : template === "CAS"
+                ? "Model Asigurări Sănătate"
+                : "Model Standard Client"}{" "}
+          · {templateVersion}
+        </div>
+        <div className="grid w-full gap-2 sm:grid-cols-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => handleGenerate("preview")}
+            disabled={previewLoading || loading || !settings || hasMissingData}
+            className="w-full rounded-xl font-black gap-2 h-11 border-slate-200"
+          >
+            {previewLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Eye className="h-5 w-5" />}
+            PREVIZUALIZEAZĂ PDF
+          </Button>
+          <Button
+            onClick={() => handleGenerate("download")}
+            disabled={loading || previewLoading || !settings || hasMissingData}
+            className="w-full rounded-xl font-black shadow-lg shadow-primary/20 gap-2 h-11"
+          >
+            {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Download className="h-5 w-5" />}
+            EMITE ȘI DESCARCĂ PDF
+          </Button>
+        </div>
+        <p className="text-[9px] text-center text-slate-400 font-medium">
+          Preview-ul rămâne local. Emiterea finală înregistrează contractul și apoi descarcă PDF-ul.
+        </p>
       </CardFooter>
     </Card>
   );

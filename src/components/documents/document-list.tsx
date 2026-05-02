@@ -20,6 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { getTemplateVersion } from "@/lib/contracts/numbering";
 import { generateContract, generateGdprConsent } from "@/lib/pdf/templates";
 
 type DocumentClient = {
@@ -71,6 +72,10 @@ export function DocumentList({
         therapistPracticeName: therapistEntity,
         sessionPrice: defaultSessionPrice,
         startDate: new Date().toLocaleDateString("ro-RO"),
+        templateType: "STANDARD",
+        templateVersion: getTemplateVersion("STANDARD"),
+        documentStatus: "ISSUED",
+        statusLabel: "EMIS",
       });
       downloadBlob(result.blob, result.fileName);
     } finally {

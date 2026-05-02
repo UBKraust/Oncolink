@@ -11,8 +11,6 @@ import {
 } from "@/lib/smartbill/client";
 import type { InvoiceFormState } from "@/lib/invoices/form-state";
 
-export type { InvoiceFormState };
-
 /**
  * Creates an invoice via SmartBill for the given appointment.
  * Requires client to have CNP/CIF and address set.

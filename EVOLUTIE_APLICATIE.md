@@ -23,6 +23,21 @@ Aceasta regula ramane activa pe tot parcursul proiectului.
 
 ## Ce s-a facut
 
+### 15. Fix query vault în dashboard + audit baza de date
+
+- Identificat bug: `getDashboardStats` interoga `patient_documents.expiry_date` — coloana nu există pe `patient_documents` (migrare `0012`). `expiry_date` există doar pe `therapist_documents` (vault profesional, migrare `0016`).
+- Fixate ambele query-uri vault din `queries.ts`: `vaultTotalDocs` și `vaultAlertsCount` pointează acum corect la `therapist_documents`, cu `.then(r => r.error ? { count: 0 } : r)` pentru fallback graceful.
+- Eroarea din consolă `"Error fetching vault alerts count: {}"` este rezolvată.
+- Adăugat în TODO secțiunea completă **🟠 TODO Baza de date** cu 4 categorii de migrări/task-uri necesare.
+
+`npm run lint` ✅ | `npm run build` ✅
+
+Fișiere principale:
+
+- [src/lib/dashboard/queries.ts](src/lib/dashboard/queries.ts)
+
+---
+
 ### 14. Revizie texte UI — mesaje de eroare contextuale
 
 - Audit complet diacritice: **PASS** — toate formele greșite (`Inapoi`, `Sterge`, `Adauga`, etc.) fie nu există, fie sunt corect scrise cu diacritice.
@@ -283,9 +298,38 @@ Fisiere principale:
 
 ### 🔴 Blocker: Aplicare migrare in baza reala
 
-- [ ] Ruleaza `supabase db push` sau aplica manual `20260429223610_client_lifecycle_status.sql` in baza remote
-- [ ] Verifica ca tabela `client_status_history` exista si RLS-ul este activ
-- [ ] Verifica backfill-ul initial: clientii existenti trebuie sa aiba cel putin o intrare in `client_status_history` (din migrare)
+- [ ] Rulează `supabase db push` sau aplică manual `20260429223610_client_lifecycle_status.sql` în baza remote
+- [ ] Verifică că tabela `client_status_history` există și RLS-ul este activ
+- [ ] Verifică backfill-ul inițial: clienții existenți trebuie să aibă cel puțin o intrare în `client_status_history` (din migrare)
+
+### 🟠 TODO Baza de date — migrări necesare
+
+#### A. `patient_documents` — coloana `expiry_date` lipsă
+- Tabela `patient_documents` (migrarea `0012`) nu are coloana `expiry_date`.
+- Coloana există doar pe `therapist_documents` (vault-ul terapeutului, migrarea `0016`).
+- Dashboard-ul interoga greșit `patient_documents.expiry_date` — **bug fixat în cod**, query-ul pointează acum corect la `therapist_documents`.
+- Dacă în viitor vrei să urmărești expirarea documentelor de pacient (ex: sentințe de custodie, acorduri parentale), va fi nevoie de o migrare:
+  ```sql
+  ALTER TABLE public.patient_documents ADD COLUMN expiry_date date DEFAULT NULL;
+  CREATE INDEX patient_documents_expiry_idx ON public.patient_documents (expiry_date) WHERE expiry_date IS NOT NULL;
+  ```
+- [ ] Decide dacă `patient_documents` are nevoie de `expiry_date` (task separat, nu blocker)
+
+#### B. Guardian — câmpuri plate pe `clients`, fără subtabel dedicat
+- Câmpurile `parent_name`, `parent_phone`, `parent_1_name`, `parent_1_phone`, `parent_2_name`, `parent_2_phone` sunt coloane plate pe tabela `clients`.
+- Nu există o tabelă `client_guardians` dedicată — dacă un minor are doi tutori cu date diferite, structura devine redundantă.
+- Migrarea `20260425234603_backfill_legacy_minor_guardian_fields.sql` a sincronizat câmpurile vechi → noi, dar structura rămâne plată.
+- [ ] Crează migrare `client_guardians (id, client_id, name, phone, email, relationship, is_primary)` + backfill din câmpurile existente + depreciere câmpuri plate (task separat, după stabilizare)
+
+#### C. `therapist_documents` — RLS verificare izolare per-terapeut
+- Politica actuală (`therapist full access own documents`) filtrează după `auth.uid() = therapist_id` — corect.
+- Dacă se adaugă suport multi-terapeut, trebuie verificat că nu există query-uri fără filtru explicit pe `therapist_id`.
+- [ ] Re-verifică RLS pe `therapist_documents` când se adaugă suport multi-terapeut (task viitor)
+
+#### D. Indexuri lipsă pentru interogări frecvente
+- `client_status_history` (din migrarea blocată) — verifică că are index pe `(client_id, changed_at DESC)` după aplicare.
+- `invoices` — verifică index pe `(therapist_id, status)` pentru filtrele din pagina de facturi.
+- [ ] Audit indexuri după aplicarea migrării lifecycle (post-blocker)
 
 ### 🟠 Validare cap-la-cap lifecycle (dupa migrare)
 

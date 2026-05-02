@@ -131,14 +131,15 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   const privatePatients = clients?.filter(c => c.location === "CABINET_PARTICULAR").length || 0;
   const clinicPatients = clients?.filter(c => c.location === "CLINICA").length || 0;
 
-  // 7. Vault Stats
+  // 7. Vault Stats — therapist_documents (profesional vault, nu patient_documents)
   const { count: vaultTotalDocs } = await supabase
-    .from("patient_documents")
-    .select("*", { count: "exact", head: true });
+    .from("therapist_documents")
+    .select("*", { count: "exact", head: true })
+    .then((r) => (r.error ? { count: 0 } : r));
 
   const vaultAlertDeadline = endOfDay(addDays(now, 30)).toISOString();
   const { count: vaultAlertsCount } = await supabase
-    .from("patient_documents")
+    .from("therapist_documents")
     .select("*", { count: "exact", head: true })
     .not("expiry_date", "is", null)
     .lte("expiry_date", vaultAlertDeadline)

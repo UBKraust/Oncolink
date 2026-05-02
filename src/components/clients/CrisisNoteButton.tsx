@@ -82,7 +82,7 @@ export function CrisisNoteButton({ clientId, clientName }: Props) {
       <Button
         variant="ghost"
         size="sm"
-        className="gap-1.5 text-amber-600 hover:bg-amber-50 hover:text-amber-700 dark:hover:bg-amber-950/30"
+        className="gap-1.5 text-amber-700 hover:bg-amber-50/70 hover:text-amber-800 dark:hover:bg-amber-950/30"
         onClick={handleOpen}
         title="Adaugă notă de criză"
       >
@@ -95,8 +95,8 @@ export function CrisisNoteButton({ clientId, clientName }: Props) {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
           onClick={(e) => e.target === e.currentTarget && handleClose()}
         >
-          <div className="w-full max-w-md rounded-lg border bg-background shadow-xl">
-            <div className="flex items-center justify-between border-b p-4">
+          <div className="w-full max-w-md rounded-[1.75rem] border border-border/60 bg-background shadow-xl">
+            <div className="flex items-center justify-between border-b border-border/60 bg-muted/20 p-4">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-amber-500" />
                 <div>
@@ -136,7 +136,7 @@ export function CrisisNoteButton({ clientId, clientName }: Props) {
                       type="button"
                       onClick={() => setContactMethod(contactMethod === value ? null : value)}
                       disabled={isPending || success}
-                      className={`flex flex-1 items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-xs font-medium transition-colors ${
+                      className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium transition-colors ${
                         contactMethod === value
                           ? "border-primary bg-primary text-primary-foreground"
                           : "border-input bg-background hover:bg-muted"
@@ -150,12 +150,12 @@ export function CrisisNoteButton({ clientId, clientName }: Props) {
               </div>
 
               {error && (
-                <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                <p className="rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
                   {error}
                 </p>
               )}
               {success && (
-                <p className="rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
+                <p className="rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
                   Nota a fost salvată.
                 </p>
               )}
@@ -169,7 +169,7 @@ export function CrisisNoteButton({ clientId, clientName }: Props) {
                 size="sm"
                 onClick={handleSubmit}
                 disabled={isPending || success}
-                className="bg-amber-600 hover:bg-amber-700 text-white"
+                className="bg-amber-600 text-white hover:bg-amber-700"
               >
                 {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvează nota"}
               </Button>

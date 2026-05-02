@@ -37,6 +37,7 @@ Status legend:
 | 19. Align remaining assessment and crisis support surfaces | `done` | Test execution, client financial drilldown, and crisis note surfaces now use calmer shells and semantic feedback closer to the shared system |
 | 20. Align CAS registry and remaining client detail overlays | `done` | CAS registry tables and the remaining medical/financial client overlays now use calmer card, empty-state, and semantic surface treatment |
 | 21. Final support-surface polish sweep | `done` | The last small Drive, assessment-builder, and crisis-detail utility surfaces now sit on the same calmer shell language as the rest of the dashboard |
+| 22. Micro-finish on residual utility overlays and buttons | `done` | Remaining small crisis/contact/section-title utility surfaces now follow the same calmer shell and control treatment |
 
 ### Progress Log
 
@@ -146,7 +147,11 @@ Status legend:
 - `TestBuilderForm` question and subscale shells were tightened slightly toward the shared card language.
 - `CrisisNotesDetailOverlay` no longer relies on bespoke dramatic accent blocks and now sits closer to the standard overlay/support treatment.
 - Validation: targeted ESLint run passed for `ClientDriveDocuments.tsx`, `TestBuilderForm.tsx`, and `CrisisNotesDetailOverlay.tsx`.
-- Current focus: the visible cleanup wave is effectively complete; only isolated micro-tweaks remain if another pass is wanted.
+- Completed task 22 in a final micro-finish pass:
+- `CrisisNoteButton` modal and control chips now sit closer to the same calm modal/surface language used elsewhere.
+- `PersonalInfoOverlay` section headers were normalized further toward shared muted dividers/titles.
+- Validation: targeted ESLint run passed for `PersonalInfoOverlay.tsx`, `CrisisNoteButton.tsx`, and `ClientDriveDocuments.tsx`.
+- Current focus: the visible cleanup wave is complete; remaining changes would be true one-off micro-tweaks only.
 
 ## 1. Executive Summary
 

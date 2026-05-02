@@ -35,6 +35,7 @@ import { AssessmentDetailOverlay } from "@/components/clients/AssessmentDetailOv
 import { ContractGeneratorModal } from "@/components/clients/ContractGeneratorModal";
 import { ServiceTrackCard } from "@/components/clients/ServiceTrackCard";
 import { DocumentRequirementsCard } from "@/components/clients/DocumentRequirementsCard";
+import { ClinicalContextCard } from "@/components/clients/ClinicalContextCard";
 import {
   SERVICE_TYPE_LABELS,
   SERVICE_TYPE_BADGE_VARIANTS,
@@ -365,6 +366,7 @@ export function ClientDashboardUI({
       </section>
 
       <ServiceTrackCard
+        clientId={client.id}
         serviceType={client.service_type ?? null}
         serviceTrackStatus={client.service_track_status ?? null}
         lifecycleStatus={lifecycle.status}
@@ -380,6 +382,10 @@ export function ClientDashboardUI({
           docs={clientDocs}
           assessments={assessments}
         />
+      )}
+
+      {!anonymized && (
+        <ClinicalContextCard client={client} />
       )}
 
       <div className="grid gap-4 lg:grid-cols-3">

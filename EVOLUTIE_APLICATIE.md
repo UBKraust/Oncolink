@@ -23,6 +23,39 @@ Aceasta regula ramane activa pe tot parcursul proiectului.
 
 ## Ce s-a facut
 
+### 18. P1 — Service Track Progression + Clinical Context Card
+
+- **`src/lib/clients/service-track.ts`** extins:
+  - `RISK_LEVELS`, `RiskLevel`, `RISK_LEVEL_LABELS`, `RISK_LEVEL_BADGE_VARIANTS`, `isRiskLevel()` — definire și clasificare vizuală risc (LOW/MEDIUM/HIGH/CRISIS)
+  - `SERVICE_TRACK_STATUSES` — etapele ordonate per ServiceType (9 etape Clinică, 8 CBT, 9 DBT, 5 Consiliere)
+  - `getNextTrackStatus()` — returnează etapa următoare în flux
+  - `computeServiceTrackNextAction()` refăcut — folosește `service_track_status` pentru acțiuni granulare cu tabele dedicate per tip; fallback pe lifecycle; atenție specială DBT risc ridicat
+- **`src/app/dashboard/clients/actions.ts`**: adăugat `updateServiceTrack()` — Server Action pentru actualizare `service_track_status`, `main_complaint`, `risk_level`, `treatment_plan`
+- **`src/components/clients/ServiceTrackCard.tsx`** rescris:
+  - Progress bar vizual (etape parcurse / curentă / viitoare)
+  - Afișare etapă curentă + etapă următoare
+  - Buton "Avansează" cu `useTransition` + toast + `router.refresh()`
+  - Primește `clientId` pentru apelul Server Action
+- **`src/components/clients/ClinicalContextCard.tsx`** (componentă nouă):
+  - Afișată per tip de serviciu (ascunsă pentru UNDECIDED/MIXED)
+  - Câmpuri afișate condiționat: `main_complaint` (toate), `risk_level` (DBT + Clinică), `treatment_plan` (CBT/DBT/Consiliere/Clinică), `treatment_goals` (read-only list)
+  - Editare inline: buton creion → textarea/select → buton salvar cu X anulare
+  - Risc DBT: highlight roșu când lipsește evaluarea de risc
+  - Salvare prin `updateServiceTrack` Server Action
+- **`ClientDashboardUI.tsx`**: adăugat `clientId` la `ServiceTrackCard`, montat `ClinicalContextCard` după `DocumentRequirementsCard`
+
+`npm run lint` ✅ | `npm run build` ✅
+
+Fișiere principale:
+
+- [src/lib/clients/service-track.ts](src/lib/clients/service-track.ts)
+- [src/app/dashboard/clients/actions.ts](src/app/dashboard/clients/actions.ts)
+- [src/components/clients/ServiceTrackCard.tsx](src/components/clients/ServiceTrackCard.tsx)
+- [src/components/clients/ClinicalContextCard.tsx](src/components/clients/ClinicalContextCard.tsx)
+- [src/components/clients/ClientDashboardUI.tsx](src/components/clients/ClientDashboardUI.tsx)
+
+---
+
 ### 17. P1 — Document Requirements per Service Track
 
 - **`src/lib/clients/document-requirements.ts`** (fișier nou): logica de mapare documente per `ServiceType`. `COMMON_REQUIREMENTS` (GDPR, onboarding, contract, consimțământ informat) + cerințe specifice per tip: `CLINICAL_PSYCHOLOGY` (anamneză, interviu clinic, teste, raport), `CBT` (obiective, formulare caz, raport progres), `DBT` (evaluare risc, plan siguranță, angajament, raport), `COUNSELING` (obiectiv, recomandări, raport scurt). Funcții: `getDocumentRequirements()`, `checkDocumentRequirements()`, `getDocumentCompletionStats()`.

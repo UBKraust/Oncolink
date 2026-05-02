@@ -385,6 +385,36 @@ export async function cancelAnonymization(id: string) {
   return { success: true };
 }
 
+export async function updateServiceTrack(
+  id: string,
+  data: {
+    service_track_status?: string | null;
+    main_complaint?: string;
+    risk_level?: string | null;
+    treatment_plan?: string;
+  },
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createSupabaseServerClient();
+
+  const updatePayload: Record<string, unknown> = {};
+  if ("service_track_status" in data) updatePayload.service_track_status = data.service_track_status;
+  if ("main_complaint" in data) updatePayload.main_complaint = data.main_complaint;
+  if ("risk_level" in data) updatePayload.risk_level = data.risk_level;
+  if ("treatment_plan" in data) updatePayload.treatment_plan = data.treatment_plan;
+
+  if (!Object.keys(updatePayload).length) return { success: true };
+
+  const { error } = await supabase
+    .from("clients")
+    .update(updatePayload)
+    .eq("id", id);
+
+  if (error) return { success: false, error: "Nu am putut actualiza contextul clinic." };
+
+  revalidatePath(`/dashboard/clients/${id}`);
+  return { success: true };
+}
+
 export async function anonymizeClient(id: string, formData: FormData) {
   // Existing function kept for "Hard Delete" logic if needed, 
   // but we transition to scheduled logic in UI.

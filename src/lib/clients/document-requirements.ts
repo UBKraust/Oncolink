@@ -13,6 +13,7 @@ export type DocumentRequirement = {
     client: ClientProfile,
     docs: ClientDocument[],
     assessments: ClientAssessment[],
+    completedArtifacts: string[],
   ) => boolean;
   actionLabel: string;
   actionHref: (clientId: string) => string;
@@ -65,7 +66,8 @@ const CLINICAL_PSYCHOLOGY_REQUIREMENTS: DocumentRequirement[] = [
     label: "Fișă anamneză",
     priority: "mandatory",
     category: "clinical",
-    checkPresent: (_client, docs) =>
+    checkPresent: (_client, docs, _assessments, completedArtifacts) =>
+      completedArtifacts.includes("ANAMNESIS") ||
       docs.some((d) => d.document_type?.toLowerCase().includes("anamnez")),
     actionLabel: "Completează fișă",
     actionHref: (id) => `/dashboard/clients/${id}`,
@@ -75,7 +77,8 @@ const CLINICAL_PSYCHOLOGY_REQUIREMENTS: DocumentRequirement[] = [
     label: "Fișă interviu clinic",
     priority: "recommended",
     category: "clinical",
-    checkPresent: (_client, docs) =>
+    checkPresent: (_client, docs, _assessments, completedArtifacts) =>
+      completedArtifacts.includes("CLINICAL_INTERVIEW") ||
       docs.some((d) => d.document_type?.toLowerCase().includes("interviu")),
     actionLabel: "Completează fișă",
     actionHref: (id) => `/dashboard/clients/${id}`,
@@ -108,7 +111,8 @@ const CLINICAL_PSYCHOLOGY_REQUIREMENTS: DocumentRequirement[] = [
     label: "Recomandări finale",
     priority: "optional",
     category: "report",
-    checkPresent: (_client, docs) =>
+    checkPresent: (_client, docs, _assessments, completedArtifacts) =>
+      completedArtifacts.includes("RECOMMENDATIONS") ||
       docs.some((d) => d.document_type?.toLowerCase().includes("recomand")),
     actionLabel: "Completează fișă",
     actionHref: (id) => `/dashboard/clients/${id}`,
@@ -131,7 +135,8 @@ const CBT_REQUIREMENTS: DocumentRequirement[] = [
     label: "Formulare de caz CBT",
     priority: "recommended",
     category: "clinical",
-    checkPresent: (_client, docs) =>
+    checkPresent: (_client, docs, _assessments, completedArtifacts) =>
+      completedArtifacts.includes("CBT_CASE_FORMULATION") ||
       docs.some(
         (d) =>
           d.document_type?.toLowerCase().includes("formular") ||
@@ -145,7 +150,8 @@ const CBT_REQUIREMENTS: DocumentRequirement[] = [
     label: "Raport progres",
     priority: "recommended",
     category: "report",
-    checkPresent: (_client, docs) =>
+    checkPresent: (_client, docs, _assessments, completedArtifacts) =>
+      completedArtifacts.includes("CBT_PROGRESS") ||
       docs.some(
         (d) =>
           d.document_type?.toLowerCase().includes("progres") ||
@@ -162,7 +168,8 @@ const DBT_REQUIREMENTS: DocumentRequirement[] = [
     label: "Fișă evaluare risc",
     priority: "mandatory",
     category: "safety",
-    checkPresent: (client) => client.risk_level !== null,
+    checkPresent: (client, _docs, _assessments, completedArtifacts) =>
+      completedArtifacts.includes("RISK_ASSESSMENT") || client.risk_level !== null,
     actionLabel: "Completează evaluare risc",
     actionHref: (id) => `/dashboard/clients/${id}/edit`,
   },
@@ -171,7 +178,8 @@ const DBT_REQUIREMENTS: DocumentRequirement[] = [
     label: "Plan de siguranță",
     priority: "mandatory",
     category: "safety",
-    checkPresent: (_client, docs) =>
+    checkPresent: (_client, docs, _assessments, completedArtifacts) =>
+      completedArtifacts.includes("SAFETY_PLAN") ||
       docs.some(
         (d) =>
           d.document_type?.toLowerCase().includes("sigurant") ||
@@ -186,7 +194,8 @@ const DBT_REQUIREMENTS: DocumentRequirement[] = [
     label: "Angajament terapeutic DBT",
     priority: "recommended",
     category: "contract",
-    checkPresent: (_client, docs) =>
+    checkPresent: (_client, docs, _assessments, completedArtifacts) =>
+      completedArtifacts.includes("DBT_COMMITMENT") ||
       docs.some(
         (d) =>
           d.document_type?.toLowerCase().includes("angajament") ||
@@ -200,7 +209,8 @@ const DBT_REQUIREMENTS: DocumentRequirement[] = [
     label: "Raport progres DBT",
     priority: "recommended",
     category: "report",
-    checkPresent: (_client, docs) =>
+    checkPresent: (_client, docs, _assessments, completedArtifacts) =>
+      completedArtifacts.includes("DBT_PROGRESS") ||
       docs.some(
         (d) =>
           d.document_type?.toLowerCase().includes("progres") ||
@@ -227,7 +237,8 @@ const COUNSELING_REQUIREMENTS: DocumentRequirement[] = [
     label: "Fișă recomandări",
     priority: "recommended",
     category: "clinical",
-    checkPresent: (_client, docs) =>
+    checkPresent: (_client, docs, _assessments, completedArtifacts) =>
+      completedArtifacts.includes("RECOMMENDATIONS") ||
       docs.some((d) => d.document_type?.toLowerCase().includes("recomand")),
     actionLabel: "Completează fișă",
     actionHref: (id) => `/dashboard/clients/${id}`,
@@ -237,7 +248,8 @@ const COUNSELING_REQUIREMENTS: DocumentRequirement[] = [
     label: "Raport scurt progres",
     priority: "optional",
     category: "report",
-    checkPresent: (_client, docs) =>
+    checkPresent: (_client, docs, _assessments, completedArtifacts) =>
+      completedArtifacts.includes("COUNSELING_PROGRESS") ||
       docs.some(
         (d) =>
           d.document_type?.toLowerCase().includes("progres") ||
@@ -270,10 +282,11 @@ export function checkDocumentRequirements(
   client: ClientProfile,
   docs: ClientDocument[],
   assessments: ClientAssessment[],
+  completedArtifacts: string[] = [],
 ): DocumentCheckResult[] {
   return getDocumentRequirements(serviceType).map((req) => ({
     requirement: req,
-    present: req.checkPresent(client, docs, assessments),
+    present: req.checkPresent(client, docs, assessments, completedArtifacts),
   }));
 }
 

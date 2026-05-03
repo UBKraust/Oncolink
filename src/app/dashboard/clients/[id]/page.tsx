@@ -86,8 +86,11 @@ export default async function ClientDetailPage({
     clinicalInterviewForm,
     riskAssessmentForm,
     dbtCommitmentForm,
+    dbtProgressForm,
+    cbtProgressForm,
     counselingPlanForm,
     recommendationsForm,
+    counselingProgressForm,
   ] = await Promise.all([
     isCbt && !anonymized ? getHomeworkItems(id) : Promise.resolve([] as HomeworkItem[]),
     isCbt && !anonymized ? getCbtCaseFormulation(id) : Promise.resolve(null as CbtCaseFormulation | null),
@@ -97,8 +100,11 @@ export default async function ClientDetailPage({
     isClinical && !anonymized ? getLatestClinicalForm(id, "CLINICAL_INTERVIEW") : null_,
     (isClinical || isDbt) && !anonymized ? getLatestClinicalForm(id, "RISK_ASSESSMENT") : null_,
     isDbt && !anonymized ? getLatestClinicalForm(id, "DBT_COMMITMENT") : null_,
+    isDbt && !anonymized ? getLatestClinicalForm(id, "DBT_PROGRESS") : null_,
+    isCbt && !anonymized ? getLatestClinicalForm(id, "CBT_PROGRESS") : null_,
     isCounseling && !anonymized ? getLatestClinicalForm(id, "COUNSELING_PLAN") : null_,
     isCounseling && !anonymized ? getLatestClinicalForm(id, "RECOMMENDATIONS") : null_,
+    isCounseling && !anonymized ? getLatestClinicalForm(id, "COUNSELING_PROGRESS") : null_,
   ]);
 
   const assessments = (assessmentsData || []) as ClientAssessment[];
@@ -189,8 +195,11 @@ export default async function ClientDetailPage({
       clinicalInterviewForm={clinicalInterviewForm}
       riskAssessmentForm={riskAssessmentForm}
       dbtCommitmentForm={dbtCommitmentForm}
+      dbtProgressForm={dbtProgressForm}
+      cbtProgressForm={cbtProgressForm}
       counselingPlanForm={counselingPlanForm}
       recommendationsForm={recommendationsForm}
+      counselingProgressForm={counselingProgressForm}
     />
   );
 }

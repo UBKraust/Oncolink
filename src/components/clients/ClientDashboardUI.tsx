@@ -39,12 +39,15 @@ import { ClinicalContextCard } from "@/components/clients/ClinicalContextCard";
 import { HomeworkCard } from "@/components/clients/HomeworkCard";
 import { SafetyPlanCard } from "@/components/clients/SafetyPlanCard";
 import { CbtCaseFormulationCard } from "@/components/clients/CbtCaseFormulationCard";
+import { CbtProgressCard } from "@/components/clients/CbtProgressCard";
 import { DbtDiaryCardsPanel } from "@/components/clients/DbtDiaryCardsPanel";
 import { AnamnesisCard } from "@/components/clients/AnamnesisCard";
 import { ClinicalInterviewCard } from "@/components/clients/ClinicalInterviewCard";
 import { RiskAssessmentCard } from "@/components/clients/RiskAssessmentCard";
 import { DbtCommitmentCard } from "@/components/clients/DbtCommitmentCard";
+import { DbtProgressCard } from "@/components/clients/DbtProgressCard";
 import { CounselingPlanCard } from "@/components/clients/CounselingPlanCard";
+import { CounselingProgressCard } from "@/components/clients/CounselingProgressCard";
 import { RecommendationsCard } from "@/components/clients/RecommendationsCard";
 import type { ClinicalFormRow } from "@/app/dashboard/forms/forms-actions";
 import {
@@ -96,8 +99,11 @@ interface ClientDashboardUIProps {
   clinicalInterviewForm: ClinicalFormRow | null;
   riskAssessmentForm: ClinicalFormRow | null;
   dbtCommitmentForm: ClinicalFormRow | null;
+  dbtProgressForm: ClinicalFormRow | null;
+  cbtProgressForm: ClinicalFormRow | null;
   counselingPlanForm: ClinicalFormRow | null;
   recommendationsForm: ClinicalFormRow | null;
+  counselingProgressForm: ClinicalFormRow | null;
 }
 
 const SESSION_FREQ_LABELS: Record<string, string> = {
@@ -140,8 +146,11 @@ export function ClientDashboardUI({
   clinicalInterviewForm,
   riskAssessmentForm,
   dbtCommitmentForm,
+  dbtProgressForm,
+  cbtProgressForm,
   counselingPlanForm,
   recommendationsForm,
+  counselingProgressForm,
 }: ClientDashboardUIProps) {
   type ClientWorkspaceView = "overview" | "clinic" | "appointments" | "lifecycle";
   const router = useRouter();
@@ -182,6 +191,19 @@ export function ClientDashboardUI({
   const riskLabel = riskLevel && isRiskLevel(riskLevel) ? RISK_LEVEL_LABELS[riskLevel] : null;
   const riskVariant =
     riskLevel && isRiskLevel(riskLevel) ? RISK_LEVEL_BADGE_VARIANTS[riskLevel] : null;
+  const completedArtifacts: string[] = [
+    anamnesisForm?.form_type,
+    clinicalInterviewForm?.form_type,
+    riskAssessmentForm?.form_type,
+    dbtCommitmentForm?.form_type,
+    dbtProgressForm?.form_type,
+    cbtProgressForm?.form_type,
+    counselingPlanForm?.form_type,
+    recommendationsForm?.form_type,
+    counselingProgressForm?.form_type,
+    cbtFormulation ? "CBT_CASE_FORMULATION" : null,
+    safetyPlan ? "SAFETY_PLAN" : null,
+  ].flatMap((value) => (value ? [value] : []));
   const nextSessionChecklist = [
     !client.gdpr_consent_signed ? "Consimțământ GDPR lipsă" : null,
     !lifecycle.isOnboardingComplete ? "Onboarding incomplet" : null,
@@ -447,6 +469,7 @@ export function ClientDashboardUI({
           client={client}
           docs={clientDocs}
           assessments={assessments}
+          completedArtifacts={completedArtifacts}
         />
       )}
 
@@ -614,6 +637,7 @@ export function ClientDashboardUI({
         <>
           <HomeworkCard clientId={client.id} items={homeworkItems} />
           <CbtCaseFormulationCard clientId={client.id} formulation={cbtFormulation} />
+          <CbtProgressCard clientId={client.id} form={cbtProgressForm} />
         </>
       )}
 
@@ -644,6 +668,7 @@ export function ClientDashboardUI({
         <>
           <RiskAssessmentCard clientId={client.id} form={riskAssessmentForm} currentRiskLevel={client.risk_level as import("@/lib/clients/service-track").RiskLevel | null} />
           <DbtCommitmentCard clientId={client.id} form={dbtCommitmentForm} />
+          <DbtProgressCard clientId={client.id} form={dbtProgressForm} />
         </>
       )}
 
@@ -652,6 +677,7 @@ export function ClientDashboardUI({
         <>
           <CounselingPlanCard clientId={client.id} form={counselingPlanForm} />
           <RecommendationsCard clientId={client.id} form={recommendationsForm} />
+          <CounselingProgressCard clientId={client.id} form={counselingProgressForm} />
         </>
       )}
 

@@ -56,13 +56,23 @@ export function RiskAssessmentCard({ clientId, form, currentRiskLevel }: RiskAss
   const [isPending, startTransition] = useTransition();
   const [editing, setEditing] = useState(!form);
 
+  function parseStoredRiskLevel(f: ClinicalFormRow | null): RiskLevel | null {
+    if (!f || !f.content || typeof f.content !== "object" || Array.isArray(f.content)) return null;
+    const riskLevel = (f.content as Record<string, unknown>).risk_level;
+    return typeof riskLevel === "string" && riskLevel in RISK_LEVEL_LABELS
+      ? (riskLevel as RiskLevel)
+      : null;
+  }
+
   function parse(f: ClinicalFormRow | null): RiskContent {
     if (!f) return { ...EMPTY };
     return { ...EMPTY, ...(f.content as Partial<RiskContent>) };
   }
 
   const [values, setValues] = useState<RiskContent>(() => parse(form));
-  const [riskLevel, setRiskLevel] = useState<RiskLevel>(currentRiskLevel ?? "MEDIUM");
+  const [riskLevel, setRiskLevel] = useState<RiskLevel>(
+    parseStoredRiskLevel(form) ?? currentRiskLevel ?? "MEDIUM",
+  );
 
   function set(key: keyof RiskContent, value: string) {
     setValues((prev) => ({ ...prev, [key]: value }));
@@ -70,7 +80,7 @@ export function RiskAssessmentCard({ clientId, form, currentRiskLevel }: RiskAss
 
   function handleCancel() {
     setValues(parse(form));
-    setRiskLevel(currentRiskLevel ?? "MEDIUM");
+    setRiskLevel(parseStoredRiskLevel(form) ?? currentRiskLevel ?? "MEDIUM");
     setEditing(false);
   }
 

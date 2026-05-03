@@ -165,7 +165,23 @@ export function computeServiceTrackNextAction(ctx: NextActionContext): string {
   const { serviceType, lifecycleStatus, serviceTrackStatus, gdprSigned, onboardingComplete, hasAppointments, riskLevel } = ctx;
 
   if (!gdprSigned) return "Obține consimțământul GDPR semnat";
-  if (!onboardingComplete) return "Finalizează onboarding-ul clientului";
+
+  // În onboarding, terapeutul are nevoie de un singur pas clinic concret,
+  // nu de un mesaj generic care dublează starea lifecycle.
+  if (!onboardingComplete) {
+    switch (serviceType) {
+      case "CLINICAL_PSYCHOLOGY":
+        return "Completează fișa de anamneză și pregătește evaluarea clinică inițială";
+      case "CBT":
+        return "Definește obiectivele terapeutice SMART pentru pornirea planului CBT";
+      case "DBT":
+        return "Completează evaluarea de risc înainte de angajamentul terapeutic";
+      case "COUNSELING":
+        return "Clarifică obiectivul consilierii și stabilește planul scurt de lucru";
+      default:
+        return "Finalizează onboarding-ul clientului";
+    }
+  }
 
   // DBT risc ridicat — prioritate maximă indiferent de track status
   if (serviceType === "DBT" && (riskLevel === "HIGH" || riskLevel === "CRISIS")) {

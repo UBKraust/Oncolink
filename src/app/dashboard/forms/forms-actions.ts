@@ -1,12 +1,15 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { isRiskLevel, type RiskLevel } from "@/lib/clients/service-track";
 
 export type ClinicalFormType =
   | "ANAMNESIS"
   | "CLINICAL_INTERVIEW"
   | "RISK_ASSESSMENT"
   | "DBT_COMMITMENT"
+  | "DBT_PROGRESS"
   | "COUNSELING_PLAN"
   | "RECOMMENDATIONS"
   | "CBT_PROGRESS"
@@ -47,6 +50,59 @@ function isP3TableMissing(error: { code?: string; message?: string } | null): bo
     error.code === "42P01" ||
     (error.message?.includes("does not exist") ?? false)
   );
+}
+
+function extractRiskLevel(content: unknown): RiskLevel | null | undefined {
+  if (!content || typeof content !== "object" || Array.isArray(content)) return undefined;
+  const riskLevel = (content as Record<string, unknown>).risk_level;
+  if (typeof riskLevel !== "string") return undefined;
+  return isRiskLevel(riskLevel) ? riskLevel : null;
+}
+
+function extractClientSyncPayload(
+  formType: ClinicalFormType,
+  content: unknown,
+): Record<string, unknown> {
+  if (!content || typeof content !== "object" || Array.isArray(content)) return {};
+
+  const values = content as Record<string, unknown>;
+  const payload: Record<string, unknown> = {};
+
+  if (formType === "RISK_ASSESSMENT") {
+    const riskLevel = extractRiskLevel(content);
+    if (riskLevel !== undefined) {
+      payload.risk_level = riskLevel;
+    }
+  }
+
+  if (formType === "ANAMNESIS") {
+    const chiefComplaint = values.chief_complaint;
+    if (typeof chiefComplaint === "string" && chiefComplaint.trim()) {
+      payload.main_complaint = chiefComplaint.trim();
+    }
+  }
+
+  if (formType === "DBT_COMMITMENT") {
+    const therapyGoals = values.therapy_goals;
+    if (
+      Array.isArray(therapyGoals) &&
+      therapyGoals.every((goal) => typeof goal === "string")
+    ) {
+      payload.treatment_goals = therapyGoals
+        .map((goal) => goal.trim())
+        .filter(Boolean);
+    }
+  }
+
+  return payload;
+}
+
+function revalidateClinicalPaths(clientId: string, reportId?: string) {
+  revalidatePath("/dashboard/forms");
+  revalidatePath(`/dashboard/clients/${clientId}`);
+  if (reportId) {
+    revalidatePath(`/dashboard/forms/report/${reportId}`);
+  }
 }
 
 // ─── Clinical Forms ───────────────────────────────────────────────────────────
@@ -116,6 +172,8 @@ export async function upsertClinicalForm(data: {
   } = await supabase.auth.getUser();
   if (!user) return { error: "Neautentificat" };
 
+  const clientSyncPayload = extractClientSyncPayload(data.formType, data.content);
+
   const payload = {
     client_id: data.clientId,
     therapist_id: user.id,
@@ -133,6 +191,17 @@ export async function upsertClinicalForm(data: {
       .eq("id", data.id)
       .eq("therapist_id", user.id);
     if (error) return { error: error.message };
+    if (Object.keys(clientSyncPayload).length > 0) {
+      const { error: clientError } = await supabase
+        .from("clients")
+        .update(clientSyncPayload)
+        .eq("id", data.clientId)
+        .eq("therapist_id", user.id);
+      if (clientError) {
+        return { error: "Fișa a fost salvată, dar datele nu s-au sincronizat complet în dosarul clientului." };
+      }
+    }
+    revalidateClinicalPaths(data.clientId);
     return { id: data.id };
   }
 
@@ -142,13 +211,32 @@ export async function upsertClinicalForm(data: {
     .select("id")
     .single();
   if (error) return { error: error.message };
+  if (Object.keys(clientSyncPayload).length > 0) {
+    const { error: clientError } = await supabase
+      .from("clients")
+      .update(clientSyncPayload)
+      .eq("id", data.clientId)
+      .eq("therapist_id", user.id);
+    if (clientError) {
+      return { error: "Fișa a fost salvată, dar datele nu s-au sincronizat complet în dosarul clientului." };
+    }
+  }
+  revalidateClinicalPaths(data.clientId);
   return { id: inserted.id };
 }
 
 export async function deleteClinicalForm(id: string): Promise<{ error?: string }> {
   const supabase = await createClient();
+  const { data: existing } = await supabase
+    .from("clinical_forms")
+    .select("client_id")
+    .eq("id", id)
+    .maybeSingle();
   const { error } = await supabase.from("clinical_forms").delete().eq("id", id);
   if (error) return { error: error.message };
+  if (existing?.client_id) {
+    revalidateClinicalPaths(existing.client_id);
+  }
   return {};
 }
 
@@ -220,6 +308,7 @@ export async function upsertTherapyReport(data: {
       .eq("id", data.id)
       .eq("therapist_id", user.id);
     if (error) return { error: error.message };
+    revalidateClinicalPaths(data.clientId, data.id);
     return { id: data.id };
   }
 
@@ -229,6 +318,7 @@ export async function upsertTherapyReport(data: {
     .select("id")
     .single();
   if (error) return { error: error.message };
+  revalidateClinicalPaths(data.clientId, inserted.id);
   return { id: inserted.id };
 }
 
@@ -248,5 +338,13 @@ export async function finalizeTherapyReport(
     .eq("id", id)
     .eq("therapist_id", user.id);
   if (error) return { error: error.message };
+  const { data: report } = await supabase
+    .from("therapy_reports")
+    .select("client_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (report?.client_id) {
+    revalidateClinicalPaths(report.client_id, id);
+  }
   return {};
 }

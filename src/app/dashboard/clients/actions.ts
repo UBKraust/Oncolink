@@ -390,6 +390,7 @@ export async function updateServiceTrack(
   data: {
     service_track_status?: string | null;
     main_complaint?: string;
+    clinical_focus?: string[];
     risk_level?: string | null;
     treatment_plan?: string;
     treatment_goals?: string[];
@@ -400,6 +401,7 @@ export async function updateServiceTrack(
   const updatePayload: Record<string, unknown> = {};
   if ("service_track_status" in data) updatePayload.service_track_status = data.service_track_status;
   if ("main_complaint" in data) updatePayload.main_complaint = data.main_complaint;
+  if ("clinical_focus" in data) updatePayload.clinical_focus = data.clinical_focus;
   if ("risk_level" in data) updatePayload.risk_level = data.risk_level;
   if ("treatment_plan" in data) updatePayload.treatment_plan = data.treatment_plan;
   if ("treatment_goals" in data) updatePayload.treatment_goals = data.treatment_goals;

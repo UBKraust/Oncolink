@@ -78,6 +78,30 @@ Fișa clientului are un panou nou de `Pregătire sesiune`, care sintetizează:
 
 Scopul acestui panou este să reducă salturile între module exact înaintea unei intervenții clinice.
 
+## Principii UX pentru terapeut
+
+Ca să ajutăm munca terapeutului și să nu o îngreunăm, fluxurile din produs ar trebui să respecte consecvent câteva reguli:
+
+1. `Un singur next action util`
+Sistemul ar trebui să propună următorul pas clinic sau administrativ concret, nu un mesaj generic care repetă statusul cazului.
+
+2. `Fără dublă documentare`
+Dacă o informație este deja completată într-un formular structurat din fișa clientului, checklist-ul nu ar trebui să o ceară din nou ca upload separat decât dacă există o nevoie legală sau operațională clară.
+
+3. `Fișa clientului este suprafața principală de lucru`
+Terapeutul ar trebui să poată completa din dosar cele mai frecvente artefacte clinice: anamneză, evaluare risc, obiective, formulare de caz, recomandări, rapoarte de progres.
+
+4. `Checklist-ul trebuie să fie orientat pe blocaje reale`
+Elementele marcate ca lipsă trebuie să reflecte ceva ce împiedică efectiv continuarea cazului sau crește riscul de omisiune clinică ori legală.
+
+5. `Contextul critic trebuie să fie vizibil fără navigare suplimentară`
+În special pentru DBT și cazurile cu risc, nivelul de risc, planul de siguranță și următorul pas trebuie să fie accesibile direct din fișa clientului.
+
+6. `Datele clinice trebuie sincronizate automat`
+Când terapeutul completează un formular clinic, câmpurile sumare relevante din dosar trebuie actualizate automat pentru a evita muncă duplicată și inconsistențe între carduri.
+
+Aceste principii sunt importante pentru că un ERP clinic bun nu cere terapeutului să „hrănească sistemul”, ci reduce fricțiunea administrativă și susține continuitatea clinică.
+
 ---
 
 ## 1. Psihologie Clinică

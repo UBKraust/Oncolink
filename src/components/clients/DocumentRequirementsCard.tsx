@@ -18,6 +18,7 @@ interface DocumentRequirementsCardProps {
   client: ClientProfile;
   docs: ClientDocument[];
   assessments: ClientAssessment[];
+  completedArtifacts?: string[];
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -83,13 +84,20 @@ export function DocumentRequirementsCard({
   client,
   docs,
   assessments,
+  completedArtifacts = [],
 }: DocumentRequirementsCardProps) {
   const [showAll, setShowAll] = useState(false);
   const serviceType = isServiceType(client.service_type) ? client.service_type : "UNDECIDED";
 
   if (serviceType === "UNDECIDED" || serviceType === "MIXED") return null;
 
-  const results = checkDocumentRequirements(serviceType, client, docs, assessments);
+  const results = checkDocumentRequirements(
+    serviceType,
+    client,
+    docs,
+    assessments,
+    completedArtifacts,
+  );
   const stats = getDocumentCompletionStats(results);
 
   const grouped = results.reduce<Record<string, DocumentCheckResult[]>>((acc, r) => {

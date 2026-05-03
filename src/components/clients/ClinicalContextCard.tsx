@@ -30,6 +30,44 @@ interface ClinicalContextCardProps {
 const SHOW_RISK_TYPES: ServiceType[] = ["DBT", "CLINICAL_PSYCHOLOGY"];
 const SHOW_GOALS_TYPES: ServiceType[] = ["CBT", "DBT", "COUNSELING", "CLINICAL_PSYCHOLOGY"];
 const SHOW_PLAN_TYPES: ServiceType[] = ["CBT", "DBT", "COUNSELING", "CLINICAL_PSYCHOLOGY"];
+const SHOW_FOCUS_TYPES: ServiceType[] = ["CBT", "DBT", "COUNSELING", "CLINICAL_PSYCHOLOGY"];
+
+const CLINICAL_FOCUS_SUGGESTIONS: Record<ServiceType, string[]> = {
+  CLINICAL_PSYCHOLOGY: [
+    "Clarificare diagnostică",
+    "Simptomatologie anxioasă",
+    "Simptomatologie depresivă",
+    "Funcționare socio-profesională",
+    "Istoric traumatic",
+    "Recomandare psihiatrică",
+  ],
+  CBT: [
+    "Gânduri automate",
+    "Distorsiuni cognitive",
+    "Evitare comportamentală",
+    "Expunere graduală",
+    "Activare comportamentală",
+    "Prevenție recădere",
+  ],
+  DBT: [
+    "Reglare emoțională",
+    "Toleranță la distres",
+    "Comportamente țintă",
+    "Self-harm / risc",
+    "Mindfulness",
+    "Eficiență interpersonală",
+  ],
+  COUNSELING: [
+    "Clarificare problemă",
+    "Decizie personală",
+    "Stress ocupațional",
+    "Relații",
+    "Resurse și coping",
+    "Plan pași practici",
+  ],
+  MIXED: [],
+  UNDECIDED: [],
+};
 
 function RiskBadge({ level }: { level: string }) {
   if (!isRiskLevel(level)) return null;
@@ -47,6 +85,9 @@ export function ClinicalContextCard({ client }: ClinicalContextCardProps) {
   const [editing, setEditing] = useState(false);
 
   const [mainComplaint, setMainComplaint] = useState(client.main_complaint ?? "");
+  const [clinicalFocus, setClinicalFocus] = useState<string[]>(
+    Array.isArray(client.clinical_focus) ? (client.clinical_focus as string[]) : [],
+  );
   const [riskLevel, setRiskLevel] = useState(client.risk_level ?? "");
   const [treatmentPlan, setTreatmentPlan] = useState(client.treatment_plan ?? "");
   const [goals, setGoals] = useState<string[]>(
@@ -58,17 +99,21 @@ export function ClinicalContextCard({ client }: ClinicalContextCardProps) {
   if (serviceType === "UNDECIDED" || serviceType === "MIXED") return null;
 
   const showRisk = SHOW_RISK_TYPES.includes(serviceType);
+  const showFocus = SHOW_FOCUS_TYPES.includes(serviceType);
   const showGoals = SHOW_GOALS_TYPES.includes(serviceType);
   const showPlan = SHOW_PLAN_TYPES.includes(serviceType);
+  const focusSuggestions = CLINICAL_FOCUS_SUGGESTIONS[serviceType];
 
   const hasAnyData =
     client.main_complaint ||
+    (showFocus && clinicalFocus.length > 0) ||
     (showRisk && client.risk_level) ||
     (showPlan && client.treatment_plan) ||
     (showGoals && goals.length > 0);
 
   function handleCancel() {
     setMainComplaint(client.main_complaint ?? "");
+    setClinicalFocus(Array.isArray(client.clinical_focus) ? (client.clinical_focus as string[]) : []);
     setRiskLevel(client.risk_level ?? "");
     setTreatmentPlan(client.treatment_plan ?? "");
     setGoals(Array.isArray(client.treatment_goals) ? (client.treatment_goals as string[]) : []);
@@ -79,6 +124,14 @@ export function ClinicalContextCard({ client }: ClinicalContextCardProps) {
     startTransition(async () => {
       const payload: Parameters<typeof updateServiceTrack>[1] = {};
       if (mainComplaint !== (client.main_complaint ?? "")) payload.main_complaint = mainComplaint;
+      if (showFocus) {
+        const currentFocus = Array.isArray(client.clinical_focus) ? (client.clinical_focus as string[]) : [];
+        const filteredFocus = clinicalFocus.map((item) => item.trim()).filter(Boolean);
+        const changed =
+          filteredFocus.length !== currentFocus.length ||
+          filteredFocus.some((item, i) => item !== currentFocus[i]);
+        if (changed) payload.clinical_focus = filteredFocus;
+      }
       if (showRisk && riskLevel !== (client.risk_level ?? "")) {
         payload.risk_level = riskLevel || null;
       }
@@ -183,6 +236,74 @@ export function ClinicalContextCard({ client }: ClinicalContextCardProps) {
             <p className="text-sm text-muted-foreground italic">Necompletat</p>
           )}
         </div>
+
+        {showFocus && (
+          <div className="py-4 space-y-2">
+            <Label className="text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground">
+              Focus clinic curent
+            </Label>
+            {editing ? (
+              <div className="space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  {focusSuggestions.map((item) => {
+                    const active = clinicalFocus.includes(item);
+                    return (
+                      <Button
+                        key={item}
+                        type="button"
+                        variant={active ? "default" : "outline"}
+                        size="sm"
+                        onClick={() =>
+                          setClinicalFocus((prev) =>
+                            prev.includes(item)
+                              ? prev.filter((entry) => entry !== item)
+                              : [...prev, item],
+                          )
+                        }
+                        className="h-8 rounded-full px-3 text-xs"
+                      >
+                        {item}
+                      </Button>
+                    );
+                  })}
+                </div>
+                {clinicalFocus.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {clinicalFocus.map((item) => (
+                      <Badge key={item} variant="secondary" className="gap-1 rounded-full px-3 py-1">
+                        {item}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setClinicalFocus((prev) => prev.filter((entry) => entry !== item))
+                          }
+                          className="text-muted-foreground transition-colors hover:text-foreground"
+                          aria-label={`Elimină ${item}`}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">
+                    Selectează temele dominante pentru cazul curent.
+                  </p>
+                )}
+              </div>
+            ) : clinicalFocus.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {clinicalFocus.map((item) => (
+                  <Badge key={item} variant="outline" className="rounded-full px-3 py-1 normal-case">
+                    {item}
+                  </Badge>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground italic">Necompletat</p>
+            )}
+          </div>
+        )}
 
         {/* Nivel de risc — DBT și Psihologie clinică */}
         {showRisk && (

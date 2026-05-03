@@ -889,45 +889,36 @@ Fisiere principale:
 
 ## Ce urmeaza — TODO
 
-### 🔴 P3 — Fișe Clinice + Editor Rapoarte (task #35)
+### ~~🔴 P3 — Fișe Clinice + Editor Rapoarte (task #35)~~ ✅ COMPLET
 
-#### Pas 1 — Migrare DB
-- [ ] Crează `supabase/migrations/20260503120000_p3_clinical_forms.sql` cu tabelele `clinical_forms` + `therapy_reports` (schema completă în task #35 de mai sus)
-- [ ] RLS per `therapist_id = auth.uid()` pe ambele tabele
-- [ ] Indexuri: `(client_id, form_type)`, `(therapist_id, created_at DESC)` pe `clinical_forms`; `(client_id, report_type)` pe `therapy_reports`
-- [ ] `supabase db push` + `supabase gen types` → actualizare `src/lib/supabase/types.ts`
+#### Pas 1 — Migrare DB ✅
+- [x] `supabase/migrations/20260503120000_p3_clinical_forms.sql` — `clinical_forms` + `therapy_reports`
+- [x] RLS per `therapist_id = auth.uid()` + indexuri pe ambele tabele
+- [x] Tipuri manuale adăugate în `src/lib/supabase/types.ts`
 
-#### Pas 2 — Server Actions
-- [ ] `src/app/dashboard/forms/forms-actions.ts` — `listClinicalForms`, `getClinicalForm`, `upsertClinicalForm`, `deleteClinicalForm`, `listTherapyReports`, `getTherapyReport`, `upsertTherapyReport`
-- [ ] Queries în `src/lib/clients/queries.ts` — `getAnamnesisForm`, `getRiskAssessmentForm`, `getCounselingPlan` (lazy fallback dacă migrarea nu e aplicată)
+#### Pas 2 — Server Actions ✅
+- [x] `src/app/dashboard/forms/forms-actions.ts` — CRUD complet cu `isP3TableMissing()` guard
+- [x] `getLatestClinicalForm(clientId, formType)` pentru fetch condițional în page.tsx
 
-#### Pas 3 — Fișe clinice noi (componente)
-- [ ] `AnamnesisCard.tsx` (CLINICAL_PSYCHOLOGY) — 7 câmpuri textarea
-- [ ] `ClinicalInterviewCard.tsx` (CLINICAL_PSYCHOLOGY) — 5 câmpuri textarea
-- [ ] `RiskAssessmentCard.tsx` (DBT + CLINICAL_PSYCHOLOGY HIGH/CRISIS) — leagă `risk_level` existent
-- [ ] `DbtCommitmentCard.tsx` (DBT) — angajamente + obiective
-- [ ] `CounselingPlanCard.tsx` (COUNSELING) — obiectiv + abordare + durată
-- [ ] `RecommendationsCard.tsx` (COUNSELING) — recomandări + plan urmărire
-- [ ] Integrare în `ClientDashboardUI.tsx` condițional per `service_type`
-- [ ] Integrare în `page.tsx` (fetch paralel condițional)
+#### Pas 3 — Fișe clinice noi (componente) ✅
+- [x] `AnamnesisCard.tsx`, `ClinicalInterviewCard.tsx`, `RiskAssessmentCard.tsx`
+- [x] `DbtCommitmentCard.tsx`, `CounselingPlanCard.tsx`, `RecommendationsCard.tsx`
+- [x] Integrare condițională per `service_type` în `ClientDashboardUI.tsx` + `page.tsx`
 
-#### Pas 4 — Pagina `/dashboard/forms`
-- [ ] `src/app/dashboard/forms/page.tsx` — PageHeader + 3 tabs (Fișe Clinice / Rapoarte / Prestabilite)
-- [ ] `src/app/dashboard/forms/loading.tsx` — skeleton complet
-- [ ] Tabel fișe: client, tip, track, dată, status, acțiuni (editează / șterge)
-- [ ] Tabel rapoarte: client, tip, nr. raport, dată, status, Export PDF
-- [ ] Filtre native select: client, tip serviciu, tip fișă, status
-- [ ] Update `src/components/dashboard/nav-groups.ts` — adaugă "Fișe & Rapoarte" cu icon `ClipboardList`
+#### Pas 4 — Pagina `/dashboard/forms` ✅
+- [x] `src/app/dashboard/forms/page.tsx` — tabel fișe clinice + tabel rapoarte
+- [x] `src/app/dashboard/forms/loading.tsx` — skeleton complet
+- [x] `nav-groups.ts` — "Fișe & Rapoarte" cu icon `ClipboardPen`
 
-#### Pas 5 — Editor Raport Psihologic
-- [ ] `src/app/dashboard/forms/report/[id]/page.tsx` — editor cu 8 secțiuni
-- [ ] `src/app/dashboard/forms/report/new/page.tsx` — `searchParams`: `clientId`, `reportType`
-- [ ] `src/app/dashboard/forms/report/[id]/loading.tsx` — skeleton editor
-- [ ] `generatePsychologicalReport()` în `src/lib/pdf/templates.ts` — export PDF secțional
+#### Pas 5 — Editor Raport Psihologic ✅
+- [x] `src/app/dashboard/forms/report/new/page.tsx` — raport nou cu `searchParams.clientId`
+- [x] `src/app/dashboard/forms/report/[id]/page.tsx` — editare raport existent
+- [x] `src/components/forms/ReportEditor.tsx` — 8 secțiuni, auto-save 2s, export PDF, finalizare
+- [x] `generatePsychologicalReport()` adăugat în `src/lib/pdf/templates.ts`
 
-#### Pas 6 — Integrare DocumentChecklist
-- [ ] Update `document-requirements.ts` — actionHref-uri pentru "Generează raport" → `/dashboard/forms/report/new?clientId={id}`
-- [ ] actionHref pentru fișe lipsă (anamneză, interviu clinic etc.) → `/dashboard/clients/{id}#anamnesis`
+#### Pas 6 — Integrare DocumentChecklist ✅
+- [x] `document-requirements.ts` — "Generează raport" → `/dashboard/forms/report/new?clientId={id}`
+- [x] Fișe clinice → `actionLabel: "Completează fișă"` pointing la fișa clientului
 
 ---
 
@@ -1132,3 +1123,55 @@ Fișiere principale:
 - Cu acest pas, zona publică a produsului este mai bine aliniată la tonul clinic-operațional introdus în dashboard.
 
 `npm run lint` ✅ | `npm run build` ✅
+
+
+### 35. P3 — Fișe clinice editabile + editor raport psihologic
+
+Am construit complet stratul de documentație clinică editabilă direct în aplicație, pentru toate tipurile de servicii ale cabinetului.
+
+**Infrastructură DB:**
+- Migrare `20260503120000_p3_clinical_forms.sql` — tabelele `clinical_forms` + `therapy_reports` cu RLS per `therapist_id` și indexuri optimizate
+- Tipuri adăugate manual în `src/lib/supabase/types.ts`
+
+**Server Actions:**
+- `src/app/dashboard/forms/forms-actions.ts` — CRUD complet pentru fișe și rapoarte, cu guard `isP3TableMissing()` pentru fallback graceful dacă migrarea nu e aplicată
+
+**Fișe clinice (componente card inline):**
+- `AnamnesisCard.tsx` — 7 câmpuri (CLINICAL_PSYCHOLOGY)
+- `ClinicalInterviewCard.tsx` — 6 câmpuri (CLINICAL_PSYCHOLOGY)
+- `RiskAssessmentCard.tsx` — selector nivel risc + 6 câmpuri; roșu la HIGH/CRISIS (DBT + CLINICAL_PSYCHOLOGY)
+- `DbtCommitmentCard.tsx` — angajamente + obiective terapeutice ca liste (DBT)
+- `CounselingPlanCard.tsx` — obiectiv, abordare, durată, teme, resurse (COUNSELING)
+- `RecommendationsCard.tsx` — recomandări + resurse + plan urmărire (COUNSELING)
+
+**Pagina centralizată Fișe & Rapoarte:**
+- `src/app/dashboard/forms/page.tsx` — tabel fișe clinice + tabel rapoarte, cu link la fișa clientului sau editor
+- `src/app/dashboard/forms/loading.tsx` — skeleton complet
+- `nav-groups.ts` — intrare nouă "Fișe & Rapoarte" cu icon `ClipboardPen`
+
+**Editor raport psihologic:**
+- `src/components/forms/ReportEditor.tsx` — 8 secțiuni (identificare, motiv, antecedente, metodologie, rezultate, profil, concluzii, recomandări), auto-save draft la 2s, buton finalizare cu nr. raport, export PDF
+- `src/app/dashboard/forms/report/new/page.tsx` + `src/app/dashboard/forms/report/[id]/page.tsx`
+- `generatePsychologicalReport()` în `src/lib/pdf/templates.ts` — PDF secțional cu header cabinet
+
+**Document checklist:**
+- `document-requirements.ts` — "Generează raport" actualizat → `/dashboard/forms/report/new?clientId={id}` pentru toate track-urile
+
+`tsc --noEmit` ✅
+
+Fișiere principale:
+- [supabase/migrations/20260503120000_p3_clinical_forms.sql](supabase/migrations/20260503120000_p3_clinical_forms.sql)
+- [src/app/dashboard/forms/forms-actions.ts](src/app/dashboard/forms/forms-actions.ts)
+- [src/components/clients/AnamnesisCard.tsx](src/components/clients/AnamnesisCard.tsx)
+- [src/components/clients/ClinicalInterviewCard.tsx](src/components/clients/ClinicalInterviewCard.tsx)
+- [src/components/clients/RiskAssessmentCard.tsx](src/components/clients/RiskAssessmentCard.tsx)
+- [src/components/clients/DbtCommitmentCard.tsx](src/components/clients/DbtCommitmentCard.tsx)
+- [src/components/clients/CounselingPlanCard.tsx](src/components/clients/CounselingPlanCard.tsx)
+- [src/components/clients/RecommendationsCard.tsx](src/components/clients/RecommendationsCard.tsx)
+- [src/components/forms/ReportEditor.tsx](src/components/forms/ReportEditor.tsx)
+- [src/app/dashboard/forms/page.tsx](src/app/dashboard/forms/page.tsx)
+- [src/app/dashboard/forms/report/new/page.tsx](src/app/dashboard/forms/report/new/page.tsx)
+- [src/app/dashboard/forms/report/[id]/page.tsx](src/app/dashboard/forms/report/[id]/page.tsx)
+- [src/lib/pdf/templates.ts](src/lib/pdf/templates.ts)
+- [src/lib/clients/document-requirements.ts](src/lib/clients/document-requirements.ts)
+- [src/components/dashboard/nav-groups.ts](src/components/dashboard/nav-groups.ts)

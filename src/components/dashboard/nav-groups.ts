@@ -6,6 +6,7 @@ import {
   CalendarDays,
   CalendarRange,
   ClipboardList,
+  ClipboardPen,
   FileText,
   Hospital,
   LayoutDashboard,
@@ -33,6 +34,7 @@ export const dashboardNavGroups = [
     title: "Clinic & Documente",
     items: [
       { href: "/dashboard/assessments", label: "Evaluări", icon: ClipboardList },
+      { href: "/dashboard/forms", label: "Fișe & Rapoarte", icon: ClipboardPen },
       { href: "/dashboard/documents", label: "Documente", icon: FileText },
       { href: "/dashboard/vault", label: "Seif cabinet", icon: Lock },
     ],

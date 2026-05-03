@@ -67,7 +67,7 @@ const CLINICAL_PSYCHOLOGY_REQUIREMENTS: DocumentRequirement[] = [
     category: "clinical",
     checkPresent: (_client, docs) =>
       docs.some((d) => d.document_type?.toLowerCase().includes("anamnez")),
-    actionLabel: "Încarcă fișă",
+    actionLabel: "Completează fișă",
     actionHref: (id) => `/dashboard/clients/${id}`,
   },
   {
@@ -77,7 +77,7 @@ const CLINICAL_PSYCHOLOGY_REQUIREMENTS: DocumentRequirement[] = [
     category: "clinical",
     checkPresent: (_client, docs) =>
       docs.some((d) => d.document_type?.toLowerCase().includes("interviu")),
-    actionLabel: "Încarcă fișă",
+    actionLabel: "Completează fișă",
     actionHref: (id) => `/dashboard/clients/${id}`,
   },
   {
@@ -100,8 +100,8 @@ const CLINICAL_PSYCHOLOGY_REQUIREMENTS: DocumentRequirement[] = [
           d.document_type?.toLowerCase().includes("raport") ||
           d.file_name?.toLowerCase().includes("raport"),
       ),
-    actionLabel: "Generează raport",
-    actionHref: (id) => `/dashboard/documents?clientId=${id}`,
+    actionLabel: "Crează raport",
+    actionHref: (id) => `/dashboard/forms/report/new?clientId=${id}`,
   },
   {
     key: "recommendations",
@@ -110,7 +110,7 @@ const CLINICAL_PSYCHOLOGY_REQUIREMENTS: DocumentRequirement[] = [
     category: "report",
     checkPresent: (_client, docs) =>
       docs.some((d) => d.document_type?.toLowerCase().includes("recomand")),
-    actionLabel: "Adaugă recomandări",
+    actionLabel: "Completează fișă",
     actionHref: (id) => `/dashboard/clients/${id}`,
   },
 ];
@@ -151,8 +151,8 @@ const CBT_REQUIREMENTS: DocumentRequirement[] = [
           d.document_type?.toLowerCase().includes("progres") ||
           d.document_type?.toLowerCase().includes("raport"),
       ),
-    actionLabel: "Generează raport",
-    actionHref: (id) => `/dashboard/documents?clientId=${id}`,
+    actionLabel: "Crează raport",
+    actionHref: (id) => `/dashboard/forms/report/new?clientId=${id}`,
   },
 ];
 
@@ -206,8 +206,8 @@ const DBT_REQUIREMENTS: DocumentRequirement[] = [
           d.document_type?.toLowerCase().includes("progres") ||
           d.document_type?.toLowerCase().includes("raport"),
       ),
-    actionLabel: "Generează raport",
-    actionHref: (id) => `/dashboard/documents?clientId=${id}`,
+    actionLabel: "Crează raport",
+    actionHref: (id) => `/dashboard/forms/report/new?clientId=${id}`,
   },
 ];
 
@@ -229,7 +229,7 @@ const COUNSELING_REQUIREMENTS: DocumentRequirement[] = [
     category: "clinical",
     checkPresent: (_client, docs) =>
       docs.some((d) => d.document_type?.toLowerCase().includes("recomand")),
-    actionLabel: "Adaugă recomandări",
+    actionLabel: "Completează fișă",
     actionHref: (id) => `/dashboard/clients/${id}`,
   },
   {
@@ -243,8 +243,8 @@ const COUNSELING_REQUIREMENTS: DocumentRequirement[] = [
           d.document_type?.toLowerCase().includes("progres") ||
           d.document_type?.toLowerCase().includes("raport"),
       ),
-    actionLabel: "Generează raport",
-    actionHref: (id) => `/dashboard/documents?clientId=${id}`,
+    actionLabel: "Crează raport",
+    actionHref: (id) => `/dashboard/forms/report/new?clientId=${id}`,
   },
 ];
 

@@ -730,3 +730,113 @@ export async function generateGdprConsent(data: {
     fileName: normalizePdfFileName(`anexa-gdpr-${safeValue(data.clientName, "client")}`),
   };
 }
+
+export interface ReportPdfData {
+  reportNumber?: string;
+  date?: string;
+  reportType?: string;
+  psychologistName?: string;
+  // Section 1
+  clientName?: string;
+  birthDate?: string;
+  referralSource?: string;
+  evaluationPeriod?: string;
+  // Section 2
+  referralReason?: string;
+  presentingProblem?: string;
+  // Section 3
+  personalHistory?: string;
+  familyHistory?: string;
+  medicalHistory?: string;
+  // Section 4
+  methodsUsed?: string;
+  instrumentsApplied?: string;
+  // Section 5
+  resultsCognitive?: string;
+  resultsEmotional?: string;
+  resultsBehavioral?: string;
+  resultsInterpersonal?: string;
+  // Section 6
+  psychologicalProfile?: string;
+  // Section 7
+  conclusions?: string;
+  diagnosticFormulation?: string;
+  // Section 8
+  recommendations?: string;
+  followUp?: string;
+}
+
+export async function generatePsychologicalReport(data: ReportPdfData): Promise<GeneratedPdfResult> {
+  const JsPDF = await loadJsPDF();
+  const doc = new JsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+
+  const reportTypeLabel = data.reportType === "MINOR"
+    ? "Raport de Evaluare Psihologică · Minor"
+    : data.reportType === "B2B_WELLBEING"
+      ? "Raport de Evaluare Psihologică · Wellbeing B2B"
+      : "Raport de Evaluare Psihologică";
+
+  header(doc, reportTypeLabel, `Nr. ${safeValue(data.reportNumber, "—")} · ${safeValue(data.date, new Date().toLocaleDateString("ro-RO"))}`);
+
+  let y = 66;
+
+  y = section(doc, y, "1. Date de identificare");
+  y = para(doc, y, `Client: ${safeValue(data.clientName)}`);
+  if (data.birthDate) y = para(doc, y, `Data nașterii: ${data.birthDate}`);
+  if (data.referralSource) y = para(doc, y, `Sursă de trimitere: ${data.referralSource}`);
+  if (data.evaluationPeriod) y = para(doc, y, `Perioada evaluării: ${data.evaluationPeriod}`);
+  if (data.psychologistName) y = para(doc, y, `Psiholog: ${data.psychologistName}`);
+
+  if (data.referralReason || data.presentingProblem) {
+    y = section(doc, y, "2. Motivul evaluării");
+    if (data.referralReason) y = para(doc, y, data.referralReason);
+    if (data.presentingProblem) y = para(doc, y, data.presentingProblem);
+  }
+
+  if (data.personalHistory || data.familyHistory || data.medicalHistory) {
+    y = section(doc, y, "3. Antecedente");
+    if (data.personalHistory) { y = para(doc, y, "Antecedente personale:"); y = para(doc, y, data.personalHistory); }
+    if (data.familyHistory) { y = para(doc, y, "Antecedente familiale:"); y = para(doc, y, data.familyHistory); }
+    if (data.medicalHistory) { y = para(doc, y, "Antecedente medicale relevante:"); y = para(doc, y, data.medicalHistory); }
+  }
+
+  if (data.methodsUsed || data.instrumentsApplied) {
+    y = section(doc, y, "4. Metodologie");
+    if (data.methodsUsed) { y = para(doc, y, "Metode utilizate:"); y = para(doc, y, data.methodsUsed); }
+    if (data.instrumentsApplied) { y = para(doc, y, "Instrumente aplicate:"); y = para(doc, y, data.instrumentsApplied); }
+  }
+
+  if (data.resultsCognitive || data.resultsEmotional || data.resultsBehavioral || data.resultsInterpersonal) {
+    y = section(doc, y, "5. Rezultate și interpretare");
+    if (data.resultsCognitive) { y = para(doc, y, "Domeniu cognitiv:"); y = para(doc, y, data.resultsCognitive); }
+    if (data.resultsEmotional) { y = para(doc, y, "Domeniu emoțional:"); y = para(doc, y, data.resultsEmotional); }
+    if (data.resultsBehavioral) { y = para(doc, y, "Domeniu comportamental:"); y = para(doc, y, data.resultsBehavioral); }
+    if (data.resultsInterpersonal) { y = para(doc, y, "Domeniu interpersonal:"); y = para(doc, y, data.resultsInterpersonal); }
+  }
+
+  if (data.psychologicalProfile) {
+    y = section(doc, y, "6. Profil psihologic");
+    y = para(doc, y, data.psychologicalProfile);
+  }
+
+  if (data.conclusions || data.diagnosticFormulation) {
+    y = section(doc, y, "7. Concluzii și diagnostic");
+    if (data.conclusions) y = para(doc, y, data.conclusions);
+    if (data.diagnosticFormulation) { y = para(doc, y, "Formulare diagnostică:"); y = para(doc, y, data.diagnosticFormulation); }
+  }
+
+  if (data.recommendations || data.followUp) {
+    y = section(doc, y, "8. Recomandări");
+    if (data.recommendations) y = para(doc, y, data.recommendations);
+    if (data.followUp) { y = para(doc, y, "Plan de urmărire:"); y = para(doc, y, data.followUp); }
+  }
+
+  signatureBlock(doc, y + 10, "Psiholog / Psihoterapeut", "Semnătură și parafă", "(semnătură)");
+  footer(doc);
+  pageHeaderRenderer = null;
+
+  return {
+    blob: doc.output("blob"),
+    fileName: normalizePdfFileName(`raport-psihologic-${safeValue(data.clientName, "client")}-${safeValue(data.reportNumber, "draft")}`),
+  };
+}

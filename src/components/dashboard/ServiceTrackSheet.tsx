@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   ChevronRight,
+  FileText,
   Loader2,
   Users,
   XCircle,
@@ -24,11 +25,13 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { DocumentChecklistSheet } from "@/components/clients/DocumentChecklistSheet";
 import {
   isRiskLevel,
   RISK_LEVEL_BADGE_VARIANTS,
   RISK_LEVEL_LABELS,
   SERVICE_TYPE_LABELS,
+  type ServiceType,
 } from "@/lib/clients/service-track";
 import type { DashboardServiceTrackStat } from "@/lib/dashboard/queries";
 import { cn } from "@/lib/utils";
@@ -63,9 +66,16 @@ interface ServiceTrackSheetProps {
   onClose: () => void;
 }
 
+interface DocSheetState {
+  clientId: string;
+  clientName: string;
+  serviceType: ServiceType;
+}
+
 export function ServiceTrackSheet({ track, onClose }: ServiceTrackSheetProps) {
   const [clients, setClients] = useState<TrackClient[]>([]);
   const [loading, setLoading] = useState(false);
+  const [docSheet, setDocSheet] = useState<DocSheetState | null>(null);
 
   const open = track !== null;
 
@@ -101,6 +111,7 @@ export function ServiceTrackSheet({ track, onClose }: ServiceTrackSheetProps) {
   );
 
   return (
+    <>
     <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
       <SheetContent>
         <SheetClose />
@@ -155,7 +166,18 @@ export function ServiceTrackSheet({ track, onClose }: ServiceTrackSheetProps) {
           ) : (
             <ul className="space-y-2">
               {clients.map((client) => (
-                <ClientRow key={client.id} client={client} />
+                <ClientRow
+                  key={client.id}
+                  client={client}
+                  trackServiceType={track?.serviceType ?? "UNDECIDED"}
+                  onOpenDocs={(c) =>
+                    setDocSheet({
+                      clientId: c.id,
+                      clientName: c.fullName,
+                      serviceType: track?.serviceType ?? "UNDECIDED",
+                    })
+                  }
+                />
               ))}
             </ul>
           )}
@@ -178,21 +200,39 @@ export function ServiceTrackSheet({ track, onClose }: ServiceTrackSheetProps) {
         </SheetFooter>
       </SheetContent>
     </Sheet>
+
+    <DocumentChecklistSheet
+      open={docSheet !== null}
+      onClose={() => setDocSheet(null)}
+      clientId={docSheet?.clientId ?? null}
+      clientName={docSheet?.clientName ?? ""}
+      serviceType={docSheet?.serviceType ?? null}
+    />
+    </>
   );
 }
 
-function ClientRow({ client }: { client: TrackClient }) {
+function ClientRow({
+  client,
+  trackServiceType,
+  onOpenDocs,
+}: {
+  client: TrackClient;
+  trackServiceType: ServiceType;
+  onOpenDocs: (client: TrackClient) => void;
+}) {
   const isHighRisk = client.riskLevel === "HIGH" || client.riskLevel === "CRISIS";
+  const hasMissingDocs = !client.gdprSigned || !client.hasContract || !client.onboardingComplete;
   const lifecycleLabel =
     LIFECYCLE_LABELS[client.lifecycleStatus ?? ""] ?? client.lifecycleStatus ?? "—";
   const lifecycleVariant =
     LIFECYCLE_VARIANTS[client.lifecycleStatus ?? ""] ?? "outline";
 
   return (
-    <li>
+    <li className="flex items-stretch gap-2">
       <Link
         href={`/dashboard/clients/${client.id}`}
-        className="group flex items-start gap-3 rounded-2xl border border-border/60 bg-card p-4 transition-colors hover:bg-muted/30"
+        className="group flex min-w-0 flex-1 items-start gap-3 rounded-2xl border border-border/60 bg-card p-4 transition-colors hover:bg-muted/30"
       >
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-muted text-xs font-black text-muted-foreground">
           {client.fullName.charAt(0).toUpperCase()}
@@ -236,6 +276,26 @@ function ClientRow({ client }: { client: TrackClient }) {
           </div>
         </div>
       </Link>
+
+      {/* Document checklist button */}
+      <button
+        type="button"
+        onClick={() => onOpenDocs(client)}
+        title="Documente client"
+        className={cn(
+          "flex w-10 shrink-0 flex-col items-center justify-center gap-1 rounded-2xl border transition-colors",
+          hasMissingDocs
+            ? "border-destructive/20 bg-destructive/5 text-destructive hover:bg-destructive/10"
+            : "border-border/60 bg-card text-muted-foreground hover:bg-muted/30 hover:text-primary",
+        )}
+      >
+        <FileText className="h-4 w-4" />
+        {hasMissingDocs ? (
+          <span className="text-[9px] font-black leading-none">
+            {[!client.gdprSigned, !client.hasContract, !client.onboardingComplete].filter(Boolean).length}
+          </span>
+        ) : null}
+      </button>
     </li>
   );
 }

@@ -27,7 +27,7 @@ const COMMON_REQUIREMENTS: DocumentRequirement[] = [
     category: "consent",
     checkPresent: (client) => client.gdpr_consent_signed === true,
     actionLabel: "Marchează semnat",
-    actionHref: (id) => `/dashboard/clients/${id}/edit`,
+    actionHref: (id) => `/dashboard/clients/${id}/edit#gdpr`,
   },
   {
     key: "onboarding",
@@ -46,7 +46,7 @@ const COMMON_REQUIREMENTS: DocumentRequirement[] = [
     checkPresent: (client) =>
       client.contract_url !== null || client.terms_consent_signed_at !== null,
     actionLabel: "Generează contract",
-    actionHref: (id) => `/dashboard/clients/${id}`,
+    actionHref: (id) => `/dashboard/documents?clientId=${id}`,
   },
   {
     key: "informed_consent",
@@ -55,7 +55,7 @@ const COMMON_REQUIREMENTS: DocumentRequirement[] = [
     category: "consent",
     checkPresent: (client) => client.terms_consent_signed_at !== null,
     actionLabel: "Adaugă consimțământ",
-    actionHref: (id) => `/dashboard/clients/${id}/edit`,
+    actionHref: (id) => `/dashboard/clients/${id}/onboarding`,
   },
 ];
 

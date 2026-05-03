@@ -486,4 +486,111 @@ Panel lateral care slide-in din dreapta. Folosit pentru detalii contextuale făr
 
 ### Utilizare curentă
 
-`ServiceTrackSheet` — deschis la click pe card în `ServiceTracksOverview`, încarcă lazy clienții din acel track via server action `getTrackClients(serviceType)`.
+- `ServiceTrackSheet` — deschis la click pe card în `ServiceTracksOverview`, încarcă lazy clienții din acel track via server action `getTrackClients(serviceType)`.
+- `DocumentChecklistSheet` — deschis la click pe butonul FileText din `ClientRow` în `ServiceTrackSheet`; sheet nested cu checklist documente per client.
+
+---
+
+## Skeleton
+
+**Fișier:** [src/components/ui/skeleton.tsx](../src/components/ui/skeleton.tsx)
+
+Bloc shimmer pentru loading states. `animate-pulse rounded-xl bg-muted/70`.
+
+```tsx
+<Skeleton className="h-9 w-72" />         // text placeholder
+<Skeleton className="h-44 rounded-[1.75rem]" /> // card placeholder
+```
+
+Folosit în `loading.tsx` files (dashboard, clienți) pentru feedback instant la navigare.
+
+---
+
+## NavigationProgress
+
+**Fișier:** [src/components/app/navigation-progress.tsx](../src/components/app/navigation-progress.tsx)
+
+Bară subțire `2px` la `top-0 fixed z-[9999]` cu culoarea `primary`. Activată automat la click pe orice `<a>` intern; se completează când `usePathname` se schimbă.
+
+```tsx
+// Plasată în layout.tsx, înainte de orice conținut
+<NavigationProgress />
+```
+
+Nu are props — funcționează prin event listener global pe `click`.
+
+---
+
+## PageTransition
+
+**Fișier:** [src/components/app/page-transition.tsx](../src/components/app/page-transition.tsx)
+
+Wrapper `key={pathname}` care forțează React să creeze un DOM nou la fiecare navigare, garantând că animația CSS se activează.
+
+```tsx
+// În layout.tsx, în jurul {children}
+<PageTransition>{children}</PageTransition>
+// → animate-in fade-in slide-in-from-bottom-2 duration-200 ease-out
+```
+
+---
+
+## DocumentChecklistCard
+
+**Fișier:** [src/components/clients/DocumentChecklistCard.tsx](../src/components/clients/DocumentChecklistCard.tsx)
+
+Card checklist documente per client, grupate pe secțiuni. Reutilizează logica din `src/lib/clients/document-requirements.ts`.
+
+### Secțiuni afișate
+
+| Secțiune | Categorii sursă |
+|----------|-----------------|
+| CONSIMȚĂMINTE | `consent` |
+| CONTRACTE | `contract` |
+| DOCUMENTE CLINICE | `clinical`, `assessment`, `safety` |
+| RAPOARTE | `report` |
+
+### Item row
+
+| Stare | Icon | Aspect |
+|-------|------|--------|
+| Completat | `CheckCircle2` | verde `text-emerald-500` |
+| Lipsă + obligatoriu | `AlertCircle` | roșu `text-destructive` + badge OBLIGATORIU |
+| Lipsă + recomandat | `Circle` | gri `text-muted-foreground/30` |
+
+Fiecare item lipsă are un CTA link (`text-primary`) spre acțiunea relevantă.
+
+### Header
+
+- Icon `FileText` în `bg-primary/10`
+- Titlu: "Documente {ServiceTypeLabel}"
+- Subtitle: "X/Y obligatorii · X/Y recomandate"
+- Badge dreapta: `X LIPSĂ` (destructive) / `X recomandate` (warning) / `Complet` (success)
+
+### Props
+
+| Prop | Tip | Descriere |
+|------|-----|-----------|
+| `checklist` | `ClientDocumentChecklist` | Date computate via `getClientDocumentChecklist()` |
+| `clientId` | `string` | Pentru construirea href-urilor CTA |
+| `className` | `string?` | Clasă opțională |
+
+---
+
+## DocumentChecklistSheet
+
+**Fișier:** [src/components/clients/DocumentChecklistSheet.tsx](../src/components/clients/DocumentChecklistSheet.tsx)
+
+Sheet wrapper cu lazy fetch pentru `DocumentChecklistCard`. Deschis din `ServiceTrackSheet` via butonul `FileText` de pe fiecare `ClientRow`.
+
+```tsx
+<DocumentChecklistSheet
+  open={open}
+  onClose={() => setDocSheet(null)}
+  clientId={clientId}
+  clientName="Ion Popescu"
+  serviceType="CBT"
+/>
+```
+
+**Pattern fetch:** `useEffect` pe `{ open, clientId, serviceType }` → `getClientDocumentChecklist(clientId, serviceType)` → spinner → `DocumentChecklistCard` sau fallback eroare.

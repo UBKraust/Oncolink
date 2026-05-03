@@ -26,9 +26,250 @@ Aceasta regula ramane activa pe tot parcursul proiectului.
 - **Dashboard & Compliance reorganizate** (task-uri #28–29) — centru unificat notificări + tabs pe compliance + tabs în dashboard secțiunea secundară
 - **Audit & fix nav + dashboard shell** (task #30) — labels redenumite, AI mutat, sidebar footer eliminat, SetupBanner semantic, ActionCard trailing icon corectat
 - **ServiceTracksOverview — card sheet overlay** (task #31) — click pe card deschide Sheet lateral cu clienți activi, status, indicatori lipsă, lazy fetch
-- Urmează: P3 — AI prompts contextuale, generare rapoarte per track, rafinare overlay contract și audit transversal UI
+- **Fluid UI — tranziții și loading states** (task #32) — NavigationProgress bar, PageTransition, loading.tsx skeletons (dashboard + clienți), animații mobile menu/search/toast
+- **DocumentChecklistCard + Sheet** (task #33) — checklist documente per client/track, overlay lazily fetched, integrat în ServiceTrackSheet cu buton docs pe fiecare ClientRow
+- **Pagina documente extinsă** (task #34) — 5 carduri info (STANDARD/MINOR/B2B/CAS/GDPR), selector tip contract inline în DocumentList, `defaultClientId` highlight+scroll, `loading.tsx` skeleton
+- Urmează: **P3 — Fișe Clinice Editabile + Editor Rapoarte** (task #35) — migrare DB `clinical_forms` + `therapy_reports`, fișe noi per track, editor raport psihologic, pagina `/dashboard/forms`
 
 ## Ce s-a facut
+
+### 35. P3 — Fișe Clinice Editabile + Editor Rapoarte _(PLANIFICAT)_
+
+**Obiectiv:** Terapeutul să poată completa și edita in-app toate documentele clinice pentru fiecare tip de serviciu — nu doar să le genereze ca PDF.
+
+---
+
+#### A. Migrare DB — `clinical_forms` + `therapy_reports`
+
+**`clinical_forms`** — tabelă generică pentru toate fișele structurate per client:
+```sql
+CREATE TABLE public.clinical_forms (
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  client_id   uuid NOT NULL REFERENCES public.clients(id) ON DELETE CASCADE,
+  therapist_id uuid NOT NULL REFERENCES auth.users(id),
+  form_type   text NOT NULL,  -- 'ANAMNESIS' | 'CLINICAL_INTERVIEW' | 'RISK_ASSESSMENT'
+                               -- 'DBT_COMMITMENT' | 'COUNSELING_PLAN' | 'RECOMMENDATIONS'
+                               -- 'CBT_PROGRESS' | 'COUNSELING_PROGRESS'
+  title       text,
+  content     jsonb NOT NULL DEFAULT '{}',
+  status      text NOT NULL DEFAULT 'DRAFT',  -- 'DRAFT' | 'COMPLETE'
+  created_at  timestamptz DEFAULT now(),
+  updated_at  timestamptz DEFAULT now()
+);
+-- RLS: therapist_id = auth.uid()
+-- Index: (client_id, form_type), (therapist_id, created_at DESC)
+```
+
+**`therapy_reports`** — rapoarte psihologice formale (export PDF):
+```sql
+CREATE TABLE public.therapy_reports (
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  client_id     uuid NOT NULL REFERENCES public.clients(id) ON DELETE CASCADE,
+  therapist_id  uuid NOT NULL REFERENCES auth.users(id),
+  report_type   text NOT NULL,  -- 'ADULT' | 'MINOR' | 'B2B_WELLBEING'
+  report_number text,
+  title         text,
+  content       jsonb NOT NULL DEFAULT '{}',  -- secțiunile raportului
+  status        text NOT NULL DEFAULT 'DRAFT', -- 'DRAFT' | 'FINAL'
+  created_at    timestamptz DEFAULT now(),
+  updated_at    timestamptz DEFAULT now()
+);
+```
+
+---
+
+#### B. Fișe noi per track (componente în `ClientDashboardUI`)
+
+Pattern: același contract vizual ca `SafetyPlanCard` / `CbtCaseFormulationCard` — view mode + edit mode inline, salvare via Server Action, `useTransition` + toast + `router.refresh()`.
+
+**CLINICAL_PSYCHOLOGY**
+- **`AnamnesisCard`** (`src/components/clients/AnamnesisCard.tsx`)
+  - Câmpuri: motiv prezentare, istoricul problemei, antecedente personale, antecedente familiale, istoricul medical, status mental (observații), alte observații
+  - `form_type: 'ANAMNESIS'`
+- **`ClinicalInterviewCard`** (`src/components/clients/ClinicalInterviewCard.tsx`)
+  - Câmpuri: simptome actuale, funcționare curentă (muncă/relații/cotidian), factori precipitanți, resurse și puncte forte, obiective client
+  - `form_type: 'CLINICAL_INTERVIEW'`
+
+**DBT** (+ CLINICAL_PSYCHOLOGY când risk_level HIGH/CRISIS)
+- **`RiskAssessmentCard`** (`src/components/clients/RiskAssessmentCard.tsx`)
+  - Câmpuri: nivel risc (leagă `risk_level` existent), ideație suicidară (da/nu + detalii), tentative anterioare, factori de risc, factori protectivi, plan management risc
+  - `form_type: 'RISK_ASSESSMENT'`
+- **`DbtCommitmentCard`** (`src/components/clients/DbtCommitmentCard.tsx`)
+  - Câmpuri: angajamente client (lista), obiective terapeutice DBT, comportamente țintă principale, acordul client
+  - `form_type: 'DBT_COMMITMENT'`
+
+**COUNSELING**
+- **`CounselingPlanCard`** (`src/components/clients/CounselingPlanCard.tsx`)
+  - Câmpuri: obiectivul principal, abordarea terapeutică, durata estimată (nr. ședințe), indicatori de progres
+  - `form_type: 'COUNSELING_PLAN'`
+- **`RecommendationsCard`** (`src/components/clients/RecommendationsCard.tsx`)
+  - Câmpuri: recomandări principale (lista), resurse recomandate, plan de urmărire, observații
+  - `form_type: 'RECOMMENDATIONS'`
+
+**CBT** (upgrade din array simplu)
+- **`TreatmentGoalsCard`** (`src/components/clients/TreatmentGoalsCard.tsx`) — înlocuiește editorul inline din `ClinicalContextCard`
+  - Câmpuri: obiective SMART (lista cu descriere + target + progres %), prioritate, status per obiectiv
+
+---
+
+#### C. Editor Raport Psihologic
+
+**Rută:** `/dashboard/forms/report/new?clientId=X&reportType=ADULT` și `/dashboard/forms/report/[id]`
+
+**Structură (8 secțiuni conform `07_raport_psihologic_adult.md`):**
+1. Date identificare (auto-filled din `therapist_settings` + `clients`)
+2. Scopul raportului (textarea + `requester_name`)
+3. Metode de evaluare (checkboxes: instrumente din `client_assessments` + evaluare clinică liberă)
+4. Rezultate și interpretare (textarea per instrument selectat + interpretare generală)
+5. Observații clinice (textarea structurat)
+6. Concluzii (textarea)
+7. Recomandări (lista)
+8. Limitele raportului (textarea)
+
+**Funcționalități:**
+- Auto-save draft la blur cu debounce 2s
+- Export PDF via jsPDF (pattern existent din `templates.ts`, secțiune nouă `generatePsychologicalReport`)
+- Status badge: DRAFT / FINAL (FINAL blochează editarea)
+- Număr raport auto-generat la finalizare (`RPT-{year}-{clientId.slice(0,6)}`)
+
+---
+
+#### D. Pagina `/dashboard/forms`
+
+**Rută:** `src/app/dashboard/forms/page.tsx`
+
+**Layout:**
+```
+PageHeader: "Fișe & Rapoarte Clinice"
+SetupBanner (dacă Supabase neconfigurath)
+
+SectionCard cu 3 tab-uri:
+├── "Fișe Clinice"  — tabel: client | tip fișă | track | data | status | acțiuni
+├── "Rapoarte"      — tabel: client | tip raport | nr. | data | status | Export PDF
+└── "Prestabilite"  — template-uri fișe (global, fără client) — TODO viitor
+```
+
+**Filtre (native select):** per client, per tip serviciu (ALL/CBT/DBT/etc.), per tip fișă, per status
+
+**CTA-uri:**
+- "Raport nou" → `/dashboard/forms/report/new`
+- Per rând tabel: "Editează" → pagina editor, "Export PDF" (rapoarte finalizate)
+
+**Server Actions (`src/app/dashboard/forms/forms-actions.ts`):**
+- `listClinicalForms(filters?)` — toate fișele terapeutului
+- `getClinicalForm(id)` — o singură fișă
+- `upsertClinicalForm(data)` — create/update
+- `listTherapyReports(filters?)` — toate rapoartele
+- `getTherapyReport(id)` — un raport
+- `upsertTherapyReport(data)` — create/update
+
+---
+
+#### E. Navigație
+
+**`src/components/dashboard/nav-groups.ts`** — adaugă în grupul "Clinic & Documente":
+```
+{ label: "Fișe & Rapoarte", href: "/dashboard/forms", icon: ClipboardList }
+```
+
+---
+
+#### F. Loading states
+
+- `src/app/dashboard/forms/loading.tsx` — skeleton: PageHeader + 3 tabs + tabel 6 rânduri
+- `src/app/dashboard/forms/report/[id]/loading.tsx` — skeleton: 8 secțiuni editor
+
+---
+
+#### G. Integrare cu DocumentChecklistCard
+
+- Link-urile din `document-requirements.ts` pentru "Generează raport" → `/dashboard/forms/report/new?clientId={id}&reportType=ADULT`
+- Link-urile pentru fișe lipsă → `/dashboard/clients/{id}#anamnesis` sau `/dashboard/forms/new?clientId={id}&formType=ANAMNESIS`
+
+---
+
+#### Ordine implementare
+
+1. Migrare DB (A)
+2. Server Actions + queries (D)
+3. Fișe clinice per track (B) — integrate în `ClientDashboardUI`
+4. Pagina `/dashboard/forms` (D) + navigație (E) + loading (F)
+5. Editor raport psihologic (C)
+6. Integrare DocumentChecklist (G)
+7. Update `document-requirements.ts` cu actionHref-uri noi
+
+---
+
+### 34. Pagina documente extinsă — toate tipurile de contract
+
+**Feature:** Pagina `/dashboard/documents` a fost extinsă cu suport pentru toate cele 4 tipuri de contracte.
+
+**Modificări:**
+- **`src/app/dashboard/documents/page.tsx`** — 5 carduri info în grid responsive (Contract Individual, Contract Minor, Contract B2B, Consimțământ CAS, Anexă GDPR); titluri și descrieri complete per tip; fiecare card cu icon distinctiv (FileText / Baby / Building2 / Heart / ShieldCheck)
+- **`src/components/documents/document-list.tsx`** — selector nativ "Tip contract" în header card (STANDARD / MINOR / B2B / CAS); icon dinamic în butonul "Contract" reflectă tipul selectat; descriere scurtă sub selector; prop `defaultClientId` cu highlight vizual (ring + bg-primary/5) și `scrollIntoView` la mount
+
+`tsc --noEmit` ✅
+
+Fișiere principale:
+- [src/app/dashboard/documents/page.tsx](src/app/dashboard/documents/page.tsx) _(modificat)_
+- [src/components/documents/document-list.tsx](src/components/documents/document-list.tsx) _(modificat)_
+
+---
+
+### 33. DocumentChecklistCard + Sheet overlay (card → overlay per client)
+
+**Feature nou:** Din `ServiceTrackSheet`, fiecare `ClientRow` are un buton `FileText` (roșu dacă are documente lipsă, cu count). Click → `DocumentChecklistSheet` (al doilea Sheet) se deschide cu checklist-ul complet al documentelor pentru acel client.
+
+**Componente noi:**
+- **`src/app/dashboard/clients/document-checklist-action.ts`** — Server action `getClientDocumentChecklist(clientId, serviceType)`: face fetch paralel (client + `patient_documents` + `client_assessments`) și rulează `checkDocumentRequirements()` din `document-requirements.ts`; returnează `{ results, stats, clientName, serviceType }`
+- **`src/components/clients/DocumentChecklistCard.tsx`** — Card standalone: header cu icon + "Documente {ServiceType}" + "X/Y obligatorii · X/Y recomandate" + badge "X LIPSĂ/Complet"; secțiuni CONSIMȚĂMINTE / CONTRACTE / DOCUMENTE CLINICE / RAPOARTE; fiecare item: icon status (CheckCircle2 verde / AlertCircle roșu / Circle gri) + label + badge OBLIGATORIU + CTA link
+- **`src/components/clients/DocumentChecklistSheet.tsx`** — Sheet wrapper cu lazy fetch (useEffect cu cancelled flag); afișează spinner → `DocumentChecklistCard` → fallback eroare
+
+**Modificări:**
+- **`src/components/dashboard/ServiceTrackSheet.tsx`** — `ClientRow` primește `trackServiceType` + `onOpenDocs` callback; adaugă buton `FileText` (roșu cu count dacă lipsă, neutru dacă ok); stare `docSheet: { clientId, clientName, serviceType } | null`; randează `<DocumentChecklistSheet>` în parallel cu Sheet-ul track-ului
+
+**Reutilizare:** Zero duplicare — toată logica de cerințe documente vine din `src/lib/clients/document-requirements.ts` existent (COMMON_REQUIREMENTS + CBT/DBT/CLINICAL_PSYCHOLOGY/COUNSELING specifice)
+
+`tsc --noEmit` ✅
+
+Fișiere principale:
+- [src/app/dashboard/clients/document-checklist-action.ts](src/app/dashboard/clients/document-checklist-action.ts) _(nou)_
+- [src/components/clients/DocumentChecklistCard.tsx](src/components/clients/DocumentChecklistCard.tsx) _(nou)_
+- [src/components/clients/DocumentChecklistSheet.tsx](src/components/clients/DocumentChecklistSheet.tsx) _(nou)_
+- [src/components/dashboard/ServiceTrackSheet.tsx](src/components/dashboard/ServiceTrackSheet.tsx) _(modificat)_
+
+---
+
+### 32. Fluid UI — tranziții, loading states, animații
+
+**Problema:** La navigare între pagini — ecran gol câteva secunde, fără feedback vizual că ceva se încarcă.
+
+**Componente noi:**
+- **`src/components/ui/skeleton.tsx`** — `Skeleton`: div cu `animate-pulse rounded-xl bg-muted/70`, reutilizabil în orice loading state
+- **`src/components/app/navigation-progress.tsx`** — `NavigationProgress`: bară de 2px la `top-0 fixed z-[9999]` cu culoare `primary`; pornește animat easing spre 85% la click pe orice `<a>` intern; se completează la 100% când `usePathname` se schimbă; dispare cu fade după 400ms
+- **`src/components/app/page-transition.tsx`** — `PageTransition`: wrapper `key={pathname}` → forțează DOM nou la fiecare navigare → CSS animation `animate-in fade-in slide-in-from-bottom-2 duration-200` se activează garantat
+
+**Loading skeletons:**
+- **`src/app/dashboard/loading.tsx`** — skeleton complet: PageHeader, TodayCommandCenter, 2-col alerts, ServiceTracksOverview (5 sub-carduri), 4 StatCards, Appointments+Assessment, Secondary tabs
+- **`src/app/dashboard/clients/loading.tsx`** — skeleton: PageHeader, 4 MetricCards, search bar, tabel cu 8 rânduri (avatar + text + badges)
+
+**Animații overlay/toast:**
+- **`src/components/dashboard/topbar.tsx`** — Mobile menu: mereu în DOM, `transition-opacity duration-200` + `translate-y` pe panel; Search dropdown: `animate-in fade-in slide-in-from-top-2 duration-150`
+- **`src/components/ui/toast.tsx`** — Toast-urile marchează `exiting: true` înainte de remove → `animate-out fade-out slide-out-to-right-6 duration-300`; click pe toast → dismiss manual
+
+**Layout:**
+- **`src/app/dashboard/layout.tsx`** — include `<NavigationProgress />` + `<PageTransition>{children}</PageTransition>`
+
+`tsc --noEmit` ✅
+
+Fișiere principale:
+- [src/components/ui/skeleton.tsx](src/components/ui/skeleton.tsx) _(nou)_
+- [src/components/app/navigation-progress.tsx](src/components/app/navigation-progress.tsx) _(nou)_
+- [src/components/app/page-transition.tsx](src/components/app/page-transition.tsx) _(nou)_
+- [src/app/dashboard/loading.tsx](src/app/dashboard/loading.tsx) _(nou)_
+- [src/app/dashboard/clients/loading.tsx](src/app/dashboard/clients/loading.tsx) _(nou)_
+
+---
 
 ### 31. ServiceTracksOverview — card sheet overlay (lazy fetch)
 
@@ -647,6 +888,48 @@ Fisiere principale:
 - repo-ul este intr-o stare buna pentru un pass final de testare manuala si polish
 
 ## Ce urmeaza — TODO
+
+### 🔴 P3 — Fișe Clinice + Editor Rapoarte (task #35)
+
+#### Pas 1 — Migrare DB
+- [ ] Crează `supabase/migrations/20260503120000_p3_clinical_forms.sql` cu tabelele `clinical_forms` + `therapy_reports` (schema completă în task #35 de mai sus)
+- [ ] RLS per `therapist_id = auth.uid()` pe ambele tabele
+- [ ] Indexuri: `(client_id, form_type)`, `(therapist_id, created_at DESC)` pe `clinical_forms`; `(client_id, report_type)` pe `therapy_reports`
+- [ ] `supabase db push` + `supabase gen types` → actualizare `src/lib/supabase/types.ts`
+
+#### Pas 2 — Server Actions
+- [ ] `src/app/dashboard/forms/forms-actions.ts` — `listClinicalForms`, `getClinicalForm`, `upsertClinicalForm`, `deleteClinicalForm`, `listTherapyReports`, `getTherapyReport`, `upsertTherapyReport`
+- [ ] Queries în `src/lib/clients/queries.ts` — `getAnamnesisForm`, `getRiskAssessmentForm`, `getCounselingPlan` (lazy fallback dacă migrarea nu e aplicată)
+
+#### Pas 3 — Fișe clinice noi (componente)
+- [ ] `AnamnesisCard.tsx` (CLINICAL_PSYCHOLOGY) — 7 câmpuri textarea
+- [ ] `ClinicalInterviewCard.tsx` (CLINICAL_PSYCHOLOGY) — 5 câmpuri textarea
+- [ ] `RiskAssessmentCard.tsx` (DBT + CLINICAL_PSYCHOLOGY HIGH/CRISIS) — leagă `risk_level` existent
+- [ ] `DbtCommitmentCard.tsx` (DBT) — angajamente + obiective
+- [ ] `CounselingPlanCard.tsx` (COUNSELING) — obiectiv + abordare + durată
+- [ ] `RecommendationsCard.tsx` (COUNSELING) — recomandări + plan urmărire
+- [ ] Integrare în `ClientDashboardUI.tsx` condițional per `service_type`
+- [ ] Integrare în `page.tsx` (fetch paralel condițional)
+
+#### Pas 4 — Pagina `/dashboard/forms`
+- [ ] `src/app/dashboard/forms/page.tsx` — PageHeader + 3 tabs (Fișe Clinice / Rapoarte / Prestabilite)
+- [ ] `src/app/dashboard/forms/loading.tsx` — skeleton complet
+- [ ] Tabel fișe: client, tip, track, dată, status, acțiuni (editează / șterge)
+- [ ] Tabel rapoarte: client, tip, nr. raport, dată, status, Export PDF
+- [ ] Filtre native select: client, tip serviciu, tip fișă, status
+- [ ] Update `src/components/dashboard/nav-groups.ts` — adaugă "Fișe & Rapoarte" cu icon `ClipboardList`
+
+#### Pas 5 — Editor Raport Psihologic
+- [ ] `src/app/dashboard/forms/report/[id]/page.tsx` — editor cu 8 secțiuni
+- [ ] `src/app/dashboard/forms/report/new/page.tsx` — `searchParams`: `clientId`, `reportType`
+- [ ] `src/app/dashboard/forms/report/[id]/loading.tsx` — skeleton editor
+- [ ] `generatePsychologicalReport()` în `src/lib/pdf/templates.ts` — export PDF secțional
+
+#### Pas 6 — Integrare DocumentChecklist
+- [ ] Update `document-requirements.ts` — actionHref-uri pentru "Generează raport" → `/dashboard/forms/report/new?clientId={id}`
+- [ ] actionHref pentru fișe lipsă (anamneză, interviu clinic etc.) → `/dashboard/clients/{id}#anamnesis`
+
+---
 
 ### 🔴 Blocker: Aplicare migrare in baza reala
 

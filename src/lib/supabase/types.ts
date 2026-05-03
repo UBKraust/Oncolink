@@ -202,6 +202,81 @@ export type Database = {
         };
         Relationships: [];
       };
+      clinical_forms: {
+        Row: {
+          id: string;
+          client_id: string;
+          therapist_id: string;
+          form_type: string;
+          title: string | null;
+          content: Json;
+          status: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          client_id: string;
+          therapist_id: string;
+          form_type: string;
+          title?: string | null;
+          content?: Json;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          client_id?: string;
+          therapist_id?: string;
+          form_type?: string;
+          title?: string | null;
+          content?: Json;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      therapy_reports: {
+        Row: {
+          id: string;
+          client_id: string;
+          therapist_id: string;
+          report_type: string;
+          report_number: string | null;
+          title: string | null;
+          content: Json;
+          status: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          client_id: string;
+          therapist_id: string;
+          report_type?: string;
+          report_number?: string | null;
+          title?: string | null;
+          content?: Json;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          client_id?: string;
+          therapist_id?: string;
+          report_type?: string;
+          report_number?: string | null;
+          title?: string | null;
+          content?: Json;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       cbt_case_formulations: {
         Row: {
           automatic_thoughts: string | null;

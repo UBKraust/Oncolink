@@ -269,10 +269,15 @@ ServiceTracksOverview (5 carduri clickabile):
   │ Psih.  │ │        │ │        │ │Psih.   │ │        │
   │ N caz. │ │ N caz. │ │ N caz. │ │ N caz. │ │ N caz. │
   └────────┘ └────────┘ └────────┘ └────────┘ └────────┘
-  → Click pe card → ServiceTrackSheet [OVERLAY lateral]
+  → Click pe card → ServiceTrackSheet [OVERLAY lateral — Sheet 1]
        • Lista clienți activi din track
-       • Lifecycle badge + risc badge + indicatori GDPR/Contract/Onboarding
+       • ClientRow: avatar + lifecycle badge + risc badge + StatusPill (GDPR/Contract/Onboarding)
+       • ClientRow dreapta: buton FileText (roșu cu count dacă lipsă doc., neutru dacă complet)
        • [Toți clienții [Track]] [Client nou]
+       → Click buton FileText → DocumentChecklistSheet [OVERLAY lateral — Sheet 2]
+            • Header: clientName + "Documente {ServiceType}"
+            • DocumentChecklistCard: secțiuni CONSIMȚĂMINTE / CONTRACTE / DOCUMENTE CLINICE / RAPOARTE
+            • Fiecare item: icon status + label + badge OBLIGATORIU (dacă e cazul) + CTA link
 
 Grid 4 StatCard-uri:
   • Ședințe Azi | Revizuiri Minori | Mix Pacienți | Locații Active
@@ -296,7 +301,14 @@ DashboardSecondaryTabs (3 tab-uri, defaultValue="financiar"):
     + ResearchReadinessPanel
 ```
 
-**Overlay-uri:** `ServiceTrackSheet` (Sheet lateral, lazy fetch)
+**Overlay-uri:**
+- `ServiceTrackSheet` — Sheet 1: clienți per track, lazy fetch via `getTrackClients(serviceType)`
+- `DocumentChecklistSheet` — Sheet 2: checklist documente per client, lazy fetch via `getClientDocumentChecklist(clientId, serviceType)`; deschis din `ClientRow.buton FileText`
+
+**Loading state:** `loading.tsx` — skeleton complet (PageHeader + TodayCommandCenter + alerts + ServiceTracksOverview + StatCards + Appointments + tabs); apare instant la navigare în loc de ecran gol
+
+**Tranziții:** `NavigationProgress` (bară primary top) + `PageTransition` (fade-in slide-up 200ms la fiecare navigare)
+
 **Query params:** —
 
 ---
@@ -450,6 +462,7 @@ ClientsClient (client component):
   [→ Fișă]
 ```
 
+**Loading state:** `loading.tsx` — skeleton: PageHeader + 4 MetricCards + search bar + tabel cu 8 rânduri (avatar + text + 2 badges)
 **Overlay-uri:** niciunul — navigare la fișă
 **Query params:** —
 

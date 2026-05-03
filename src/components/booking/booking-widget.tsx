@@ -88,9 +88,9 @@ export function BookingWidget({ therapistSlug }: { therapistSlug?: string | null
 
   if (step === "done") {
     return (
-      <Card>
+      <Card className="border-border/70 bg-card/95 shadow-lg shadow-black/5">
         <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
             <CalendarCheck className="h-7 w-7" />
           </div>
           <h2 className="text-lg font-semibold">Programare înregistrată!</h2>
@@ -112,7 +112,7 @@ export function BookingWidget({ therapistSlug }: { therapistSlug?: string | null
 
   if (step === "details" && selectedSlot) {
     return (
-      <Card>
+      <Card className="border-border/70 bg-card/95 shadow-lg shadow-black/5">
         <CardHeader>
           <CardTitle>Datele tale</CardTitle>
           <CardDescription>
@@ -178,7 +178,7 @@ export function BookingWidget({ therapistSlug }: { therapistSlug?: string | null
 
   // Step: slot selection
   return (
-    <Card>
+    <Card className="border-border/70 bg-card/95 shadow-lg shadow-black/5">
       <CardHeader>
         <CardTitle>Alege un interval</CardTitle>
         <CardDescription>
@@ -239,7 +239,7 @@ function SlotGrid({
   }
 
   return (
-    <div className="space-y-4 max-h-80 overflow-y-auto pr-1">
+    <div className="max-h-80 space-y-4 overflow-y-auto pr-1">
       {Array.from(byDay.entries()).map(([dateKey, daySlots]) => (
         <div key={dateKey}>
           <p className="mb-2 text-xs font-semibold capitalize text-muted-foreground">

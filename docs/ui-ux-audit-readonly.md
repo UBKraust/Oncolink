@@ -575,3 +575,20 @@ Ordinea logică de intervenție, după refactorul dashboard-ului: overlay standa
 - Efect:
   - onboarding-ul public păstrează încrederea și claritatea, dar transmite mai puțină tensiune vizuală
   - paginile de billing și review sunt mai apropiate de un ERP clinic și mai departe de un dashboard financiar de startup
+
+### Update 2026-05-03 C
+
+- Cleanup-ul semantic a fost extins și în restul suprafețelor publice vizibile:
+  - `legal/declaration`
+  - `confirm-result`
+  - `login`
+  - `booking-widget`
+  - `BookingForm`
+- Ajustări aplicate:
+  - accentele foarte întunecate sau `rose/slate` ca fundal principal au fost înlocuite cu suprafețe mai calme
+  - CTA-urile importante au rămas clare, dar mai puțin agresive
+  - mesajele juridice și de warning au păstrat greutatea semantică fără să domine vizual întreaga pagină
+  - cardurile de booking și login folosesc acum mai clar aceeași familie de `card`, `border`, `muted`, `primary`
+- Rezultat:
+  - experiența publică este mai coerentă cu zona clinică internă
+  - produsul pare mai unitar între dashboard, onboarding și booking

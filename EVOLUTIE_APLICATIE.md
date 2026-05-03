@@ -738,3 +738,19 @@ Fișiere principale:
   - info
 
 `npm run lint` ✅ | `npm run build` ✅
+
+### 15. Cleanup semantic și în suprafețele publice rămase
+
+- Am continuat uniformizarea vizuală în:
+  - [src/app/legal/declaration/page.tsx](/Users/sch_work/Documents/Oncolink/src/app/legal/declaration/page.tsx)
+  - [src/app/confirm-result/page.tsx](/Users/sch_work/Documents/Oncolink/src/app/confirm-result/page.tsx)
+  - [src/app/login/page.tsx](/Users/sch_work/Documents/Oncolink/src/app/login/page.tsx)
+  - [src/components/booking/booking-widget.tsx](/Users/sch_work/Documents/Oncolink/src/components/booking/booking-widget.tsx)
+  - [src/components/booking/BookingForm.tsx](/Users/sch_work/Documents/Oncolink/src/components/booking/BookingForm.tsx)
+- Am redus contrastele prea dure și fundalurile legacy, păstrând:
+  - warning juridic clar
+  - confirmări de succes clare
+  - formular de login și booking mai apropiate de același design system
+- Cu acest pas, zona publică a produsului este mai bine aliniată la tonul clinic-operațional introdus în dashboard.
+
+`npm run lint` ✅ | `npm run build` ✅

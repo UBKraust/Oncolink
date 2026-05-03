@@ -29,9 +29,9 @@ export default async function LoginPage({
   const errorText = error ? (errorMessages[error] ?? decodeURIComponent(error)) : null;
 
   return (
-    <main className="min-h-svh bg-[radial-gradient(circle_at_top,_rgba(14,116,144,0.08),_transparent_30%),linear-gradient(180deg,_rgba(248,250,252,0.95),_rgba(241,245,249,0.7))] p-6">
+    <main className="min-h-svh bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.04),_transparent_30%),linear-gradient(180deg,_rgba(250,250,249,0.98),_rgba(245,245,244,0.92))] p-6">
       <div className="mx-auto flex min-h-[calc(100svh-3rem)] max-w-5xl items-center justify-center">
-      <Card className="w-full max-w-md rounded-[2rem] border-border/60 shadow-xl shadow-slate-200/50">
+      <Card className="w-full max-w-md rounded-[2rem] border-border/60 bg-card/95 shadow-xl shadow-black/5 backdrop-blur">
         <CardHeader>
           <CardTitle className="text-2xl font-black tracking-tight text-primary">Ce`ai Pățit?</CardTitle>
           <CardDescription>
@@ -46,7 +46,7 @@ export default async function LoginPage({
             </div>
           ) : null}
           {errorText ? (
-            <div className="mb-4 rounded-md border border-rose-300 bg-rose-50 p-3 text-xs text-rose-900 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">
+            <div className="mb-4 rounded-md border border-destructive/20 bg-destructive/5 p-3 text-xs text-destructive">
               {errorText}
             </div>
           ) : null}

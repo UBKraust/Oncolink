@@ -97,12 +97,12 @@ export function BookingForm({ onSuccess, therapistSlug }: BookingFormProps) {
 
   if (success) {
     return (
-      <div className="rounded-lg border border-emerald-300 bg-emerald-50 p-6 text-center dark:border-emerald-800 dark:bg-emerald-950/30">
+      <div className="rounded-lg border border-emerald-200/70 bg-emerald-50/70 p-6 text-center dark:border-emerald-900/40 dark:bg-emerald-950/20">
         <CalendarCheck className="mx-auto mb-3 h-10 w-10 text-emerald-600" />
-        <h3 className="text-lg font-semibold text-emerald-800 dark:text-emerald-300">
+        <h3 className="text-lg font-semibold text-foreground">
           Programare confirmată!
         </h3>
-        <p className="mt-1 text-sm text-emerald-700 dark:text-emerald-400">
+        <p className="mt-1 text-sm text-muted-foreground">
           Veți primi un email de confirmare în curând.
         </p>
         <Button
@@ -120,9 +120,9 @@ export function BookingForm({ onSuccess, therapistSlug }: BookingFormProps) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
       {serverError && (
-        <div className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
+        <div className="flex items-start gap-3 rounded-lg border border-amber-200/70 bg-amber-50/70 p-4 dark:border-amber-900/40 dark:bg-amber-950/20">
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
-          <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+          <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
             {serverError}
           </p>
         </div>

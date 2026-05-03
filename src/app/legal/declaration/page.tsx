@@ -14,19 +14,19 @@ export default function DeclarationPage() {
       icon={ShieldCheck}
       title="Declarație pe proprie răspundere"
       subtitle="Document legal · validare date minor"
-      accentClassName="bg-rose-900 text-white print:bg-white print:text-black print:border-b print:border-slate-200"
+      accentClassName="bg-foreground text-background print:bg-white print:text-black print:border-b print:border-border"
     >
           <div className="prose prose-slate max-w-none print:max-w-none">
-            <div className="mb-8 flex items-center gap-3 rounded-2xl border border-rose-100 bg-rose-50 p-6 print:border-slate-200 print:bg-slate-50">
-              <Scale className="h-6 w-6 text-rose-600 shrink-0" />
-              <p className="text-sm font-bold text-rose-900 m-0 print:text-slate-900">
+            <div className="mb-8 flex items-center gap-3 rounded-2xl border border-destructive/20 bg-destructive/5 p-6 print:border-border print:bg-muted/40">
+              <Scale className="h-6 w-6 shrink-0 text-destructive" />
+              <p className="m-0 text-sm font-bold text-foreground print:text-foreground">
                 Atenție: Acest document are valoare juridică conform legislației române în vigoare.
               </p>
             </div>
 
             <div className="space-y-8 py-4">
               <div className="relative">
-                <div className="absolute -left-4 top-0 bottom-0 w-1 bg-rose-600 rounded-full opacity-20 print:hidden" />
+                <div className="absolute -left-4 top-0 bottom-0 w-1 rounded-full bg-primary/30 print:hidden" />
                 <p className="text-xl font-medium italic leading-relaxed text-foreground">
                   &ldquo;Prin prezenta declar că datele furnizate cu privire la identitatea minorului și regimul său juridic sunt conforme cu realitatea. Înțeleg că furnizarea de informații false despre custodia copilului poate atrage răspunderea civilă sau penală conform Codului Civil Român.&rdquo;
                 </p>
@@ -34,7 +34,7 @@ export default function DeclarationPage() {
 
               <section className="mt-12 space-y-4">
                 <h3 className="flex items-center gap-2 text-lg font-black text-foreground">
-                  <FileText className="h-5 w-5 text-rose-600" /> Context Juridic
+                  <FileText className="h-5 w-5 text-primary" /> Context Juridic
                 </h3>
                 <p className="leading-relaxed text-muted-foreground">
                   Această declarație este necesară pentru a asigura conformitatea actului terapeutic cu reglementările privind protecția copilului și exercitarea autorității părintești. În cazul părinților divorțați, această declarație confirmă existența acordului ambilor părinți sau a unei sentințe judecătorești definitive care permite desfășurarea terapiei.
@@ -55,7 +55,7 @@ export default function DeclarationPage() {
               </div>
               
               <div className="text-right print:hidden">
-                <Button onClick={() => window.print()} className="gap-2 bg-slate-900 hover:bg-slate-800 rounded-xl px-6 py-6 font-bold shadow-xl shadow-slate-200">
+                <Button onClick={() => window.print()} className="gap-2 rounded-xl px-6 py-6 font-bold shadow-xl shadow-primary/15">
                   <Printer className="h-4 w-4" /> Printează Documentul
                 </Button>
               </div>

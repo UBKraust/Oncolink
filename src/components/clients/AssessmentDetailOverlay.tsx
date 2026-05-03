@@ -1,6 +1,4 @@
 "use client";
-
-import { useRef } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
@@ -10,18 +8,18 @@ import {
   FileText,
   Mail,
   TrendingUp,
-  X,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import type { ClientAssessment } from "./types";
-import { useOverlayA11y } from "@/components/ui/use-overlay-a11y";
+import { SectionDetailOverlay } from "./SectionDetailOverlay";
 
 const SEVERITY_CONFIG = {
-  minimal: { label: "Minimal", bar: "bg-emerald-500", text: "text-emerald-700", bg: "bg-emerald-50 dark:bg-emerald-950/30", border: "border-emerald-200 dark:border-emerald-800" },
-  mild: { label: "Ușor", bar: "bg-yellow-400", text: "text-yellow-700", bg: "bg-yellow-50 dark:bg-yellow-950/30", border: "border-yellow-200 dark:border-yellow-800" },
-  moderate: { label: "Moderat", bar: "bg-orange-500", text: "text-orange-700", bg: "bg-orange-50 dark:bg-orange-950/30", border: "border-orange-200 dark:border-orange-800" },
-  severe: { label: "Sever", bar: "bg-red-500", text: "text-red-700", bg: "bg-red-50 dark:bg-red-950/30", border: "border-red-200 dark:border-red-800" },
+  minimal: { label: "Minimal", bar: "bg-emerald-500", text: "text-emerald-700 dark:text-emerald-300", bg: "bg-emerald-50/70 dark:bg-emerald-950/20", border: "border-emerald-200/70 dark:border-emerald-900/40" },
+  mild: { label: "Ușor", bar: "bg-amber-400", text: "text-amber-700 dark:text-amber-300", bg: "bg-amber-50/70 dark:bg-amber-950/20", border: "border-amber-200/70 dark:border-amber-900/40" },
+  moderate: { label: "Moderat", bar: "bg-amber-500", text: "text-amber-800 dark:text-amber-200", bg: "bg-amber-50/90 dark:bg-amber-950/20", border: "border-amber-300/70 dark:border-amber-900/40" },
+  severe: { label: "Sever", bar: "bg-destructive", text: "text-destructive", bg: "bg-destructive/5", border: "border-destructive/20" },
 };
 
 const TYPE_LABEL: Record<string, string> = {
@@ -46,8 +44,6 @@ export function AssessmentDetailOverlay({
   closeUrl,
 }: Props) {
   const router = useRouter();
-  const panelRef = useRef<HTMLDivElement>(null);
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
   const scoring = assessment.scoring_data;
   const severityRaw =
     typeof scoring.severity === "string" ? scoring.severity.toLowerCase() : undefined;
@@ -72,56 +68,41 @@ export function AssessmentDetailOverlay({
     router.push(closeUrl);
   }
 
-  useOverlayA11y({
-    open: true,
-    onClose: handleClose,
-    containerRef: panelRef,
-    initialFocusRef: closeButtonRef,
-  });
-
   return (
-    <>
-      {/* Backdrop */}
-      <button
-        type="button"
-        className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px]"
-        onClick={handleClose}
-        aria-label="Închide"
-      />
-
-      {/* Drawer panel */}
-      <div
-        ref={panelRef}
-        className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col bg-background shadow-2xl"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="assessment-overlay-title"
-        tabIndex={-1}
-      >
-        {/* Header */}
-        <div className="flex items-start justify-between border-b px-5 py-4">
+    <SectionDetailOverlay
+      isOpen
+      onClose={handleClose}
+      title="Detalii evaluare"
+      subtitle={`${clientName} · ${format(new Date(assessment.created_at), "d MMMM yyyy, HH:mm", { locale: ro })}`}
+      icon={Brain}
+      size="sm"
+      footer={
+        assessment.sent_to_parent_at ? (
+          <div className="flex items-center gap-2 rounded-xl border border-emerald-200/70 bg-emerald-50/60 px-3 py-2 text-sm font-medium text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-300">
+            <CheckCircle2 className="h-4 w-4" />
+            Trimis părintelui pe{" "}
+            {format(new Date(assessment.sent_to_parent_at), "d MMM yyyy", { locale: ro })}
+          </div>
+        ) : isMinor && sendReportToParent ? (
+          <Button variant="outline" className="w-full justify-start rounded-xl border-border/70 bg-muted/30 text-foreground hover:bg-muted">
+            <Mail className="h-4 w-4" />
+            Generează email pentru părinte
+          </Button>
+        ) : (
+          <span className="flex items-center gap-2 text-sm text-muted-foreground">
+            <FileText className="h-4 w-4" />
+            Document intern — nu se trimite
+          </span>
+        )
+      }
+    >
+      <div className="space-y-5">
           <div className="space-y-1">
             <Badge variant="secondary" className="text-[10px] uppercase tracking-wide">
               {TYPE_LABEL[assessment.assessment_type] ?? assessment.assessment_type.replace(/_/g, " ")}
             </Badge>
-            <p className="text-xs text-muted-foreground">
-              {format(new Date(assessment.created_at), "d MMMM yyyy, HH:mm", { locale: ro })}
-            </p>
-            <p id="assessment-overlay-title" className="text-sm font-medium">{clientName}</p>
           </div>
-          <button
-            ref={closeButtonRef}
-            type="button"
-            className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-            onClick={handleClose}
-            aria-label="Închide evaluarea"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
 
-        {/* Body */}
-        <div className="flex-1 space-y-5 overflow-y-auto px-5 py-5">
           {/* Test type badge */}
           {testType && (
             <div className="flex items-center gap-2 text-sm">
@@ -144,7 +125,7 @@ export function AssessmentDetailOverlay({
                 )}
               </div>
               {scoreValue !== null && (
-                <div className="h-2 w-full rounded-full bg-black/10">
+                <div className="h-2 w-full rounded-full bg-muted">
                   <div
                     className={`h-2 rounded-full transition-all ${severityCfg.bar}`}
                     style={{ width: `${Math.min((scoreValue / 27) * 100, 100)}%` }}
@@ -186,7 +167,7 @@ export function AssessmentDetailOverlay({
                 { label: "Anxietate de trăsătură", value: traitAnxiety, max: 80 },
               ].map(({ label, value, max }) => {
                 const pct = Math.min((value / max) * 100, 100);
-                const barColor = value < 40 ? "bg-emerald-500" : value < 55 ? "bg-yellow-400" : "bg-red-500";
+                const barColor = value < 40 ? "bg-emerald-500" : value < 55 ? "bg-amber-400" : "bg-destructive";
                 return (
                   <div key={label} className="space-y-1">
                     <div className="flex justify-between text-xs">
@@ -214,29 +195,7 @@ export function AssessmentDetailOverlay({
               </div>
             </div>
           )}
-        </div>
-
-        {/* Footer */}
-        <div className="border-t px-5 py-4">
-          {assessment.sent_to_parent_at ? (
-            <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50/60 px-3 py-2 text-sm font-medium text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-300">
-              <CheckCircle2 className="h-4 w-4" />
-              Trimis părintelui pe{" "}
-              {format(new Date(assessment.sent_to_parent_at), "d MMM yyyy", { locale: ro })}
-            </div>
-          ) : isMinor && sendReportToParent ? (
-            <button className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50/70 px-3 py-2 text-sm font-medium text-amber-700 transition-colors hover:bg-amber-100 dark:border-amber-900 dark:bg-amber-950/20 dark:text-amber-200">
-              <Mail className="h-4 w-4" />
-              Generează email pentru părinte
-            </button>
-          ) : (
-            <span className="flex items-center gap-2 text-sm text-muted-foreground">
-              <FileText className="h-4 w-4" />
-              Document intern — nu se trimite
-            </span>
-          )}
-        </div>
       </div>
-    </>
+    </SectionDetailOverlay>
   );
 }

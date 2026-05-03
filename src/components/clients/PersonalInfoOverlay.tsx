@@ -1,6 +1,4 @@
 "use client";
-
-import React from "react";
 import {
   User, Mail, Phone, MapPin, Building, Baby, CreditCard,
   Share2, AlertTriangle, RefreshCw, BarChart2,
@@ -78,7 +76,7 @@ export function PersonalInfoOverlay({ isOpen, onClose, client, anonymized }: Per
         {/* ── Identificare ─────────────────────────────────────────────── */}
         <section className="space-y-3">
           <SectionTitle>Identificare</SectionTitle>
-          <div className="rounded-2xl bg-slate-50 border border-slate-100 p-4 space-y-3">
+          <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 space-y-3">
             {isMinor ? (
               <>
                 <Row label="CNP minor" value={client.minor_cnp} mono />
@@ -157,9 +155,9 @@ export function PersonalInfoOverlay({ isOpen, onClose, client, anonymized }: Per
             />
           </div>
           {client.send_report_to_parent && (
-            <div className="flex items-center gap-2 rounded-xl bg-indigo-50 border border-indigo-100 px-4 py-2.5">
-              <Send className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
-              <span className="text-xs font-bold text-indigo-700">Rapoartele se trimit și părintelui</span>
+            <div className="flex items-center gap-2 rounded-xl border border-sky-200 bg-sky-50/60 px-4 py-2.5 dark:border-sky-900 dark:bg-sky-950/20">
+              <Send className="h-3.5 w-3.5 text-sky-600 shrink-0 dark:text-sky-300" />
+              <span className="text-xs font-bold text-sky-800 dark:text-sky-200">Rapoartele se trimit și părintelui</span>
             </div>
           )}
         </section>
@@ -167,7 +165,7 @@ export function PersonalInfoOverlay({ isOpen, onClose, client, anonymized }: Per
         {/* ── Facturare ────────────────────────────────────────────────── */}
         <section className="space-y-3">
           <SectionTitle>Facturare</SectionTitle>
-          <div className="rounded-2xl bg-slate-50 border border-slate-100 p-4 space-y-3">
+          <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 space-y-3">
             <Row
               label="Tip facturare"
               value={
@@ -226,7 +224,7 @@ export function PersonalInfoOverlay({ isOpen, onClose, client, anonymized }: Per
         {client.referral_source && (
           <section className="space-y-3">
             <SectionTitle>Sursă Trimitere</SectionTitle>
-            <div className="rounded-2xl bg-slate-50 border border-slate-100 p-4 space-y-3">
+            <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 space-y-3">
               <Row
                 label="Cum a ajuns la cabinet"
                 value={REFERRAL_LABELS[client.referral_source] ?? client.referral_source}
@@ -325,12 +323,12 @@ function Row({
 }) {
   const content = (
     <div className="flex items-center justify-between gap-4">
-      <span className="flex items-center gap-1.5 text-xs font-bold text-slate-500 uppercase tracking-tight shrink-0">
+      <span className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground uppercase tracking-tight shrink-0">
         {Icon && <Icon className="h-3 w-3" />}
         {label}
       </span>
       <span className={cn(
-        "text-sm font-bold text-slate-800 text-right",
+        "text-sm font-bold text-foreground text-right",
         mono && "font-mono",
         href && "text-primary hover:underline"
       )}>
@@ -352,13 +350,13 @@ function InfoBox({ icon: Icon, label, value, href }: {
   href?: string;
 }) {
   const inner = (
-    <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-primary/20 transition-all group">
-      <div className="h-10 w-10 flex items-center justify-center rounded-xl bg-white border border-slate-100 text-slate-400 group-hover:text-primary transition-colors shadow-sm shrink-0">
+    <div className="flex items-center gap-4 rounded-2xl border border-border/60 bg-muted/20 p-4 transition-all group hover:border-primary/20 hover:bg-muted/30">
+      <div className="h-10 w-10 flex items-center justify-center rounded-xl bg-background border border-border/60 text-muted-foreground group-hover:text-primary transition-colors shadow-sm shrink-0">
         <Icon className="h-4 w-4" />
       </div>
       <div>
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{label}</p>
-        <p className="text-sm font-bold text-slate-800">{value ?? "—"}</p>
+        <p className="mb-1 text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">{label}</p>
+        <p className="text-sm font-bold text-foreground">{value ?? "—"}</p>
       </div>
     </div>
   );
@@ -369,11 +367,11 @@ function InfoBox({ icon: Icon, label, value, href }: {
 
 function StatCard({ icon: Icon, label, value }: { icon: IconComponent; label: string; value: string }) {
   return (
-    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
-      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-2">{label}</p>
+    <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 space-y-1">
+      <p className="mb-2 text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">{label}</p>
       <div className="flex items-center gap-2">
         <Icon className="h-4 w-4 text-primary" />
-        <span className="text-sm font-bold text-slate-800">{value}</span>
+        <span className="text-sm font-bold text-foreground">{value}</span>
       </div>
     </div>
   );

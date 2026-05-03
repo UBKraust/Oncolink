@@ -28,11 +28,11 @@ const TOTAL_HOURS = HOUR_END - HOUR_START;
 const SLOT_HEIGHT_PX = 64; // px per hour
 
 const LOCATION_COLOR: Record<string, string> = {
-  CABINET: "bg-blue-50/80 border-blue-200 text-blue-900 border-l-blue-600 shadow-sm backdrop-blur-[2px]",
-  CLINICA: "bg-indigo-50/80 border-indigo-200 text-indigo-900 border-l-indigo-600 shadow-sm backdrop-blur-[2px]",
-  PRIVAT: "bg-slate-50/80 border-slate-200 text-slate-900 border-l-slate-500 shadow-sm opacity-80",
-  POLICLINIC: "bg-violet-50/80 border-violet-200 text-violet-900 border-l-violet-600 shadow-sm",
-  ONLINE: "bg-emerald-50/80 border-emerald-200 text-emerald-900 border-l-emerald-600 shadow-sm backdrop-blur-[2px]",
+  CABINET: "bg-primary/5 border-primary/20 text-foreground border-l-primary shadow-sm backdrop-blur-[2px]",
+  CLINICA: "bg-secondary border-border text-foreground border-l-primary/70 shadow-sm backdrop-blur-[2px]",
+  PRIVAT: "bg-muted/40 border-border text-foreground border-l-muted-foreground/40 shadow-sm opacity-80",
+  POLICLINIC: "bg-accent/50 border-border text-foreground border-l-accent-foreground/30 shadow-sm",
+  ONLINE: "bg-emerald-50/70 border-emerald-200/70 text-foreground border-l-emerald-500 shadow-sm backdrop-blur-[2px]",
 };
 
 export function WeekView({ appointments, initialDate }: WeekViewProps) {
@@ -91,9 +91,9 @@ export function WeekView({ appointments, initialDate }: WeekViewProps) {
           </Button>
         </div>
         <div className="ml-auto flex items-center gap-3 text-xs text-muted-foreground">
-          <Dot className="bg-blue-400" label="Cabinet" />
-          <Dot className="bg-violet-400" label="Policlinică" />
-          <Dot className="bg-emerald-400" label="Online" />
+          <Dot className="bg-primary" label="Cabinet" />
+          <Dot className="bg-accent-foreground/40" label="Policlinică" />
+          <Dot className="bg-emerald-500" label="Online" />
         </div>
       </div>
 
@@ -229,7 +229,7 @@ export function WeekView({ appointments, initialDate }: WeekViewProps) {
 
       {/* Appointment Detail Modal/Popover */}
       {selectedAppt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-[1px] p-4" onClick={() => setSelectedAppt(null)}>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-foreground/20 p-4 backdrop-blur-[1px]" onClick={() => setSelectedAppt(null)}>
           <Card 
             className="w-full max-w-sm rounded-[1.75rem] border-border/60 shadow-2xl animate-in fade-in zoom-in duration-200"
             onClick={(e) => e.stopPropagation()}
@@ -281,12 +281,12 @@ export function WeekView({ appointments, initialDate }: WeekViewProps) {
               </div>
 
               {selectedAppt.personal_notes && (
-                <div className="space-y-1.5 rounded-2xl border border-amber-100 bg-amber-50/50 p-3">
-                  <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-amber-900/60">
+                <div className="space-y-1.5 rounded-2xl border border-border/70 bg-muted/30 p-3">
+                  <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground">
                     <Notebook className="h-3 w-3" />
                     Note Personale (Private)
                   </div>
-                  <p className="text-sm text-amber-900 leading-relaxed italic">
+                  <p className="text-sm leading-relaxed italic text-foreground">
                     &ldquo;{selectedAppt.personal_notes}&rdquo;
                   </p>
                 </div>
@@ -324,8 +324,8 @@ function CurrentTimeBar() {
       className="pointer-events-none absolute inset-x-0 z-10 flex items-center"
       style={{ top }}
     >
-      <div className="h-2 w-2 rounded-full bg-red-500" />
-      <div className="h-px flex-1 bg-red-400" />
+      <div className="h-2 w-2 rounded-full bg-primary" />
+      <div className="h-px flex-1 bg-primary/70" />
     </div>
   );
 }

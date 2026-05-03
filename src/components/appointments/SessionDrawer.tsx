@@ -144,7 +144,7 @@ export function SessionDrawer({
       {/* Backdrop */}
       <button
         type="button"
-        className="fixed inset-0 z-40 bg-black/40"
+        className="fixed inset-0 z-40 bg-foreground/20 backdrop-blur-sm"
         onClick={handleClose}
         aria-label="Închide"
       />
@@ -152,16 +152,16 @@ export function SessionDrawer({
       {/* Panel */}
       <div
         ref={panelRef}
-        className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col bg-background shadow-2xl"
+        className="fixed inset-y-0 right-0 z-[60] flex w-full max-w-md flex-col bg-card shadow-2xl"
         role="dialog"
         aria-modal="true"
         aria-labelledby="session-drawer-title"
         tabIndex={-1}
       >
         {/* Header */}
-        <div className="flex items-start justify-between border-b p-4">
+        <div className="flex items-start justify-between border-b border-border/70 bg-muted/20 p-5">
           <div className="min-w-0 flex-1">
-            <h2 id="session-drawer-title" className="truncate text-base font-semibold">
+            <h2 id="session-drawer-title" className="truncate text-lg font-black tracking-tight">
               {appointment.is_external_duty
                 ? "Gardă externă"
                 : (appointment.client?.full_name ?? "—")}
@@ -191,7 +191,7 @@ export function SessionDrawer({
           <button
             ref={closeButtonRef}
             type="button"
-            className="ml-3 rounded-sm p-1 text-muted-foreground hover:text-foreground"
+            className="ml-3 rounded-full p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
             onClick={handleClose}
             aria-label="Închide panoul sesiunii"
           >
@@ -200,7 +200,7 @@ export function SessionDrawer({
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b">
+        <div className="flex border-b border-border/70 bg-background">
           {(["details", "note", "invoice", "config"] as Tab[]).map((tab) => (
             <button
               key={tab}
@@ -225,7 +225,7 @@ export function SessionDrawer({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-5">
           {/* ── DETALII ── */}
           {activeTab === "details" && (
             <div className="space-y-4">
@@ -590,7 +590,7 @@ export function SessionDrawer({
         </div>
 
         {/* Footer */}
-        <div className="border-t p-3">
+        <div className="border-t border-border/70 bg-background p-4">
           <Link
             href={`/dashboard/appointments/${appointment.id}`}
             className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"

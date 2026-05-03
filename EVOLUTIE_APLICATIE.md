@@ -66,6 +66,16 @@ Aceasta regula ramane activa pe tot parcursul proiectului.
 - addendum nou în `docs/ui-ux-audit-readonly.md` pentru extensiile din programări și client page
 - `docs/client-service-flows.md` actualizat din plan static în status de implementare incrementală
 - `fluxuri/01_lifecycle_client.md` și `docs/dashboard-v2-plan.md` trebuie citite acum în cheia implementării reale, nu a planului inițial
+- standardizare incrementală de overlay / quick actions:
+  - `QuickActionsWheel` cu ton mai calm și layering mai sigur
+  - `SectionDetailOverlay` și `ClientDetailOverlay` trecute pe `z-[60]`
+  - backdrop unificat pentru mobile nav și overlay-uri laterale
+  - `SectionDetailOverlay` extins cu API explicit de dimensiune (`size`)
+  - `FinancialDetailOverlay` și `PersonalInfoOverlay` migrate mai aproape de design system-ul comun
+  - `MedicalDetailOverlay` și `CrisisNotesDetailOverlay` aliniate pe același contract vizual
+  - `ClientDetailOverlay` simplificat incremental pentru a reduce diferența față de restul familiei de overlay-uri
+  - `AssessmentDetailOverlay` migrat pe `SectionDetailOverlay`
+  - `SessionDrawer` aliniat vizual la același contract lateral, fără să i se schimbe comportamentul operațional
 
 `npm run lint` ✅ | `npm run build` ✅
 
@@ -681,3 +691,27 @@ Fișiere principale:
 - [src/components/dashboard/financial-summary.tsx](/Users/sch_work/Documents/Oncolink/src/components/dashboard/financial-summary.tsx)
 - [src/components/dashboard/vault-status-widget.tsx](/Users/sch_work/Documents/Oncolink/src/components/dashboard/vault-status-widget.tsx)
 - [src/components/app/page-shell.tsx](/Users/sch_work/Documents/Oncolink/src/components/app/page-shell.tsx)
+
+### 13. Cleanup transversal pentru culori hardcodate în UI
+
+- Am redus hardcodările de culoare din componente vechi și am mutat baza vizuală pe tokenurile sistemului:
+  - `bg-card`
+  - `bg-background`
+  - `bg-muted`
+  - `border-border`
+  - `text-foreground`
+  - `text-muted-foreground`
+  - `destructive` doar pentru stări critice
+- Am curățat în special zonele care încă păstrau ton vizual prea puternic sau prea “legacy”:
+  - `WeeklyCalendar`
+  - `week-view`
+  - `client-form`
+  - `AssessmentDetailOverlay`
+  - `SafetyPlanCard`
+  - `ContractGeneratorModal`
+- Am păstrat culori contextuale doar unde ajută orientarea:
+  - risc / siguranță
+  - tipuri de locație în calendar
+  - stări de succes sau warning
+
+`npm run lint` ✅ | `npm run build` ✅

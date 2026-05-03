@@ -1,6 +1,4 @@
 "use client";
-
-import React from "react";
 import { AlertCircle, History, Plus, ShieldAlert, Trash2, Clock } from "lucide-react";
 import { SectionDetailOverlay } from "./SectionDetailOverlay";
 import { Button } from "@/components/ui/button";
@@ -26,13 +24,13 @@ export function CrisisNotesDetailOverlay({ isOpen, onClose, notes, clientName }:
     >
       <div className="space-y-8">
         {/* Info Banner */}
-        <div className="flex items-start gap-4 rounded-[1.75rem] border border-rose-200 bg-rose-50/70 p-5 dark:border-rose-900 dark:bg-rose-950/20">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-200">
+        <div className="flex items-start gap-4 rounded-2xl border border-destructive/20 bg-destructive/5 p-5">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
             <AlertCircle className="h-6 w-6" />
           </div>
           <div className="space-y-1">
-             <p className="text-xs font-black uppercase tracking-tight text-rose-900 dark:text-rose-100">Monitorizare Intensă Activă</p>
-             <p className="text-[10px] font-bold leading-relaxed italic text-rose-700 dark:text-rose-200">
+             <p className="text-xs font-black uppercase tracking-tight text-destructive">Monitorizare Intensă Activă</p>
+             <p className="text-[10px] font-bold leading-relaxed italic text-destructive/80">
                Notele de criză sunt documentate pentru gestionarea situațiilor de risc ridicat. Acestea nu sunt incluse în raportările standard către terți.
              </p>
           </div>
@@ -51,7 +49,7 @@ export function CrisisNotesDetailOverlay({ isOpen, onClose, notes, clientName }:
 
           <div className="space-y-5 pb-10">
             {notes.length === 0 ? (
-               <div className="rounded-[1.75rem] border-2 border-dashed border-border/60 bg-muted/20 p-12 text-center">
+               <div className="rounded-2xl border-2 border-dashed border-border/60 bg-muted/20 p-12 text-center">
                 <ShieldAlert className="mx-auto mb-3 h-10 w-10 text-muted-foreground/40" />
                 <p className="text-sm font-bold italic text-muted-foreground">Nicio notă de criză înregistrată.</p>
               </div>
@@ -69,12 +67,12 @@ export function CrisisNotesDetailOverlay({ isOpen, onClose, notes, clientName }:
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>
-                  <div className="rounded-[1.5rem] border border-border/60 bg-card p-5 text-sm font-medium leading-relaxed text-foreground shadow-sm">
+                  <div className="rounded-2xl border border-border/60 bg-card p-5 text-sm font-medium leading-relaxed text-foreground shadow-sm">
                     {note.content ?? note.summary ?? "Fără conținut disponibil."}
                   </div>
                   {note.severity && (
                     <div className="flex gap-2">
-                       <div className="rounded-full bg-rose-500 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-white">
+                       <div className="rounded-full bg-destructive px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-destructive-foreground">
                           Risc: {note.severity}
                        </div>
                     </div>

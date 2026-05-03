@@ -208,12 +208,12 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
 
   return (
     <div className={cn(
-      "fixed inset-0 z-60 flex justify-end transition-opacity duration-300",
+      "fixed inset-0 z-[60] flex justify-end transition-opacity duration-300",
       "opacity-100"
     )} role="dialog" aria-modal="true" aria-labelledby="client-overlay-title">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" 
+        className="absolute inset-0 bg-foreground/20 backdrop-blur-sm" 
         onClick={onClose}
       />
 
@@ -227,8 +227,8 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
         tabIndex={-1}
       >
         {/* Header */}
-        <div className="shrink-0 border-b border-border/70 bg-muted/30">
-           <div className="flex min-h-40 flex-col justify-end gap-4 p-8">
+        <div className="shrink-0 border-b border-border/70 bg-muted/20">
+           <div className="flex flex-col gap-4 p-6">
               <button
                 ref={closeButtonRef}
                 type="button"
@@ -240,11 +240,11 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
               </button>
 
               <div className="flex items-center gap-6">
-                 <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-primary/10 text-2xl font-black text-primary shadow-sm">
+                 <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-xl font-black text-primary shadow-sm">
                     {initialsFromName(client.full_name)}
                  </div>
                  <div className="space-y-1">
-                    <h2 id="client-overlay-title" className="text-2xl font-black tracking-tight leading-none text-foreground">
+                    <h2 id="client-overlay-title" className="text-xl font-black tracking-tight leading-none text-foreground">
                       {client.full_name ?? "Client"}
                     </h2>
                     <div className="flex items-center gap-2">
@@ -269,8 +269,8 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
         </div>
 
         {/* Action Bar */}
-         <div className="flex shrink-0 items-center gap-2 border-b border-border/70 bg-muted/30 p-4">
-            <Button variant="outline" size="sm" className="gap-2 rounded-xl flex-1 border-slate-200" disabled={anonymized || !client.phone} asChild={!anonymized && !!client.phone}>
+         <div className="flex shrink-0 items-center gap-2 border-b border-border/70 bg-background p-4">
+            <Button variant="outline" size="sm" className="gap-2 rounded-xl flex-1 border-border/60" disabled={anonymized || !client.phone} asChild={!anonymized && !!client.phone}>
                {anonymized || !client.phone ? (
                  <>
                    <Phone className="h-4 w-4" /> Telefon
@@ -281,7 +281,7 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
                  </a>
                )}
             </Button>
-           <Button variant="outline" size="sm" className="gap-2 rounded-xl flex-1 border-slate-200" disabled={anonymized || !client.email} asChild={!anonymized && !!client.email}>
+           <Button variant="outline" size="sm" className="gap-2 rounded-xl flex-1 border-border/60" disabled={anonymized || !client.email} asChild={!anonymized && !!client.email}>
                {anonymized || !client.email ? (
                  <>
                    <Mail className="h-4 w-4" /> Email
@@ -300,7 +300,7 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
          </div>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-auto p-8 space-y-8 custom-scrollbar">
+        <div className="flex-1 overflow-auto p-6 space-y-6 custom-scrollbar">
            {/* Section: Anonymization Grace Period Alert */}
            {showScheduledAlert && !anonymized && (
              <div className="animate-in fade-in slide-in-from-top-4 space-y-4 rounded-[1.75rem] border border-destructive/20 bg-destructive/5 p-5 duration-500">
@@ -384,7 +384,7 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-slate-400 hover:text-primary"
+                      className="h-8 w-8 text-muted-foreground hover:text-primary"
                       disabled={anonymized || !client.phone}
                       aria-label="Apelează clientul"
                       asChild={!anonymized && !!client.phone}
@@ -471,7 +471,7 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
                  {client.is_minor && (
                     <div className="flex items-center justify-between rounded-2xl border border-sky-200 bg-sky-50/60 p-4 dark:border-sky-900 dark:bg-sky-950/30">
                        <div className="flex items-center gap-3">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sky-600 text-white shadow-sm">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sky-600 text-white shadow-sm">
                              <FileText className="h-5 w-5" />
                           </div>
                           <div>
@@ -533,7 +533,7 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
         </div>
 
         {/* Sticky Footer Actions */}
-        <div className="flex shrink-0 items-center justify-between gap-4 border-t border-border/70 bg-muted/30 p-6">
+        <div className="flex shrink-0 items-center justify-between gap-4 border-t border-border/70 bg-background p-6">
            {!anonymized && !showScheduledAlert ? (
              <AlertDialog>
                <AlertDialogTrigger>
@@ -569,7 +569,7 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
                </AlertDialogContent>
              </AlertDialog>
            ) : (
-             <Button variant="outline" className="flex-1 rounded-2xl border-slate-200 text-slate-400 font-bold italic" disabled>
+             <Button variant="outline" className="flex-1 rounded-2xl border-border/60 text-muted-foreground font-bold italic" disabled>
                 {anonymized ? "Pacient Anonimizat" : "Anonimizare în curs..."}
              </Button>
            )}

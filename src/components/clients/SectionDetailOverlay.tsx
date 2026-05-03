@@ -13,8 +13,15 @@ interface SectionDetailOverlayProps {
   icon: React.ComponentType<{ className?: string }>;
   children: React.ReactNode;
   footer?: React.ReactNode;
+  size?: "sm" | "md" | "lg";
   maxWidth?: string;
 }
+
+const SIZE_CLASS: Record<NonNullable<SectionDetailOverlayProps["size"]>, string> = {
+  sm: "max-w-lg",
+  md: "max-w-xl",
+  lg: "max-w-2xl",
+};
 
 export function SectionDetailOverlay({
   isOpen,
@@ -24,7 +31,8 @@ export function SectionDetailOverlay({
   icon: Icon,
   children,
   footer,
-  maxWidth = "max-w-xl",
+  size = "md",
+  maxWidth,
 }: SectionDetailOverlayProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -40,12 +48,12 @@ export function SectionDetailOverlay({
 
   return (
     <div className={cn(
-      "fixed inset-0 z-60 flex justify-end transition-opacity duration-300",
+      "fixed inset-0 z-[60] flex justify-end transition-opacity duration-300",
       "opacity-100"
     )}>
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" 
+        className="absolute inset-0 bg-foreground/20 backdrop-blur-sm" 
         onClick={onClose}
       />
 
@@ -54,7 +62,7 @@ export function SectionDetailOverlay({
         ref={panelRef}
         className={cn(
         "relative h-full w-full bg-card shadow-2xl transition-transform duration-500 ease-out flex flex-col",
-        maxWidth,
+        maxWidth || SIZE_CLASS[size],
         "translate-x-0"
         )}
         role="dialog"

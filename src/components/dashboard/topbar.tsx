@@ -97,7 +97,7 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
         <div className="fixed inset-0 z-50 md:hidden">
           <button
             type="button"
-            className="absolute inset-0 bg-slate-950/30 backdrop-blur-sm"
+            className="absolute inset-0 bg-foreground/20 backdrop-blur-sm"
             onClick={() => setMobileMenuOpen(false)}
             aria-label="Închide meniul"
           />

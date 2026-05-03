@@ -1,6 +1,4 @@
 "use client";
-
-import React from "react";
 import { FileText, Pill, ShieldCheck, Download, Plus } from "lucide-react";
 import { SectionDetailOverlay } from "./SectionDetailOverlay";
 import { Badge } from "@/components/ui/badge";
@@ -31,7 +29,7 @@ export function MedicalDetailOverlay({
       title="Dosar Medical & Arhivă"
       subtitle={`Pacient: ${clientName}`}
       icon={FileText}
-      maxWidth="max-w-2xl"
+      size="lg"
     >
       <div className="space-y-10">
         {/* Medications Section */}
@@ -47,12 +45,12 @@ export function MedicalDetailOverlay({
           
           <div className="grid gap-3">
             {medications.length === 0 ? (
-              <div className="rounded-[1.75rem] border-2 border-dashed border-border/60 p-8 text-center text-xs font-medium italic text-muted-foreground">
+              <div className="rounded-2xl border-2 border-dashed border-border/60 p-8 text-center text-xs font-medium italic text-muted-foreground">
                 Niciun medicament înregistrat.
               </div>
             ) : (
               medications.map((m, idx) => (
-                <div key={idx} className="flex items-start justify-between rounded-[1.75rem] border border-border/60 bg-card p-5 shadow-sm transition-all hover:border-primary/20 hover:bg-muted/20">
+                <div key={idx} className="flex items-start justify-between rounded-2xl border border-border/60 bg-card p-5 shadow-sm transition-all hover:border-primary/20 hover:bg-muted/20">
                   <div className="flex items-start gap-4">
                     <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-border/60 bg-muted/20 text-primary shadow-sm">
                       <Pill className="h-5 w-5" />
@@ -96,12 +94,12 @@ export function MedicalDetailOverlay({
 
           <div className="grid gap-2">
             {documents.length === 0 ? (
-               <div className="rounded-[1.75rem] border-2 border-dashed border-border/60 p-8 text-center text-xs font-medium italic text-muted-foreground">
+               <div className="rounded-2xl border-2 border-dashed border-border/60 p-8 text-center text-xs font-medium italic text-muted-foreground">
                 Arhiva este goală.
               </div>
             ) : (
               documents.map((doc, idx) => (
-                <div key={idx} className="group flex items-center justify-between rounded-[1.25rem] border border-border/60 bg-card p-3 pl-4 transition-all hover:border-primary/20 hover:bg-muted/20 hover:shadow-sm">
+                <div key={idx} className="group flex items-center justify-between rounded-xl border border-border/60 bg-card p-3 pl-4 transition-all hover:border-primary/20 hover:bg-muted/20 hover:shadow-sm">
                   <div className="flex items-center gap-4">
                     <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-muted/20 text-muted-foreground transition-colors group-hover:text-primary">
                       <FileText className="h-4 w-4" />
@@ -124,14 +122,14 @@ export function MedicalDetailOverlay({
               ))
             )}
             
-            <Button variant="outline" className="mt-4 h-12 w-full rounded-[1.5rem] border-2 border-dashed border-border/60 text-[11px] font-black uppercase tracking-widest text-muted-foreground transition-all hover:border-primary/30 hover:bg-muted/20">
+            <Button variant="outline" className="mt-4 h-12 w-full rounded-2xl border-2 border-dashed border-border/60 text-[11px] font-black uppercase tracking-widest text-muted-foreground transition-all hover:border-primary/30 hover:bg-muted/20">
               <Plus className="h-4 w-4 mr-2" /> Încarcă document nou
             </Button>
           </div>
         </section>
 
         {/* Informative Alert */}
-        <section className="space-y-3 rounded-[2rem] border border-border/60 bg-muted/20 p-6 shadow-sm">
+        <section className="space-y-3 rounded-2xl border border-border/60 bg-muted/20 p-6 shadow-sm">
           <div className="flex items-start gap-4">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary">
                <ShieldCheck className="h-5 w-5" />

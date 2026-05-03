@@ -78,17 +78,17 @@ export function SafetyPlanCard({ clientId, plan }: SafetyPlanCardProps) {
     (plan?.professional_contacts?.length ?? 0) > 0;
 
   return (
-    <section className="rounded-[1.75rem] border border-rose-200 bg-rose-50/40 dark:border-rose-900/40 dark:bg-rose-950/10 shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-rose-200/60 dark:border-rose-900/30">
+    <section className="overflow-hidden rounded-[1.75rem] border border-border/70 bg-card shadow-sm">
+      <div className="flex items-center justify-between border-b border-border/70 bg-muted/20 px-5 pb-4 pt-5">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-[0.75rem] bg-rose-100 dark:bg-rose-900/30">
-            <ShieldAlert className="h-4 w-4 text-rose-600" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-[0.75rem] bg-destructive/10 text-destructive">
+            <ShieldAlert className="h-4 w-4" />
           </div>
           <div>
-            <p className="text-sm font-semibold leading-tight text-rose-900 dark:text-rose-200">
+            <p className="text-sm font-semibold leading-tight text-foreground">
               Plan de siguranță
             </p>
-            <p className="text-[11px] text-rose-600/80">
+            <p className="text-[11px] text-muted-foreground">
               {hasData ? "Completat · verifică periodic" : "Necompletat — obligatoriu DBT"}
             </p>
           </div>
@@ -99,7 +99,7 @@ export function SafetyPlanCard({ clientId, plan }: SafetyPlanCardProps) {
               variant="ghost"
               size="sm"
               onClick={() => setEditing(true)}
-              className="h-8 w-8 p-0 rounded-xl text-rose-600 hover:bg-rose-100"
+              className="h-8 w-8 rounded-xl p-0 text-muted-foreground hover:bg-muted hover:text-foreground"
               aria-label="Editează plan de siguranță"
             >
               <Pencil className="h-3.5 w-3.5" />
@@ -120,7 +120,7 @@ export function SafetyPlanCard({ clientId, plan }: SafetyPlanCardProps) {
                 size="sm"
                 onClick={handleSave}
                 disabled={isPending}
-                className="h-8 w-8 p-0 rounded-xl bg-rose-600 hover:bg-rose-700 text-white"
+                className="h-8 w-8 rounded-xl bg-primary p-0 text-primary-foreground hover:bg-primary/90"
                 aria-label="Salvează"
               >
                 <Check className="h-3.5 w-3.5" />
@@ -130,7 +130,7 @@ export function SafetyPlanCard({ clientId, plan }: SafetyPlanCardProps) {
         </div>
       </div>
 
-      <div className="divide-y divide-rose-100 dark:divide-rose-900/20 px-5">
+      <div className="divide-y divide-border/70 px-5">
         <PlanSection
           label="Semne de avertizare"
           value={warningSigns}
@@ -169,7 +169,7 @@ export function SafetyPlanCard({ clientId, plan }: SafetyPlanCardProps) {
 
         {/* Contacte de suport */}
         <div className="py-4 space-y-2">
-          <Label className="text-[10px] font-black uppercase tracking-[0.18em] text-rose-700 dark:text-rose-400">
+          <Label className="text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground">
             Contacte de suport (persoane de încredere)
           </Label>
           {editing ? (
@@ -222,7 +222,7 @@ export function SafetyPlanCard({ clientId, plan }: SafetyPlanCardProps) {
                 variant="ghost"
                 size="sm"
                 onClick={() => setSupportContacts([...supportContacts, { name: "", phone: "" }])}
-                className="h-8 gap-1.5 text-xs text-rose-600 hover:text-rose-700 px-2"
+                className="h-8 gap-1.5 px-2 text-xs text-primary hover:text-primary"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Adaugă contact
@@ -232,7 +232,7 @@ export function SafetyPlanCard({ clientId, plan }: SafetyPlanCardProps) {
             <ul className="space-y-1.5">
               {supportContacts.map((c, i) => (
                 <li key={i} className="flex items-center gap-2 text-sm">
-                  <Phone className="h-3.5 w-3.5 text-rose-500 shrink-0" />
+                  <Phone className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                   <span className="font-medium">{c.name}</span>
                   {c.relation && <span className="text-muted-foreground text-xs">({c.relation})</span>}
                   <span className="text-muted-foreground ml-auto">{c.phone}</span>
@@ -246,7 +246,7 @@ export function SafetyPlanCard({ clientId, plan }: SafetyPlanCardProps) {
 
         {/* Contacte profesionale */}
         <div className="py-4 space-y-2">
-          <Label className="text-[10px] font-black uppercase tracking-[0.18em] text-rose-700 dark:text-rose-400">
+          <Label className="text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground">
             Contacte profesionale (terapeut, linie de criză)
           </Label>
           {editing ? (
@@ -289,7 +289,7 @@ export function SafetyPlanCard({ clientId, plan }: SafetyPlanCardProps) {
                 variant="ghost"
                 size="sm"
                 onClick={() => setProfContacts([...profContacts, { name: "", phone: "" }])}
-                className="h-8 gap-1.5 text-xs text-rose-600 hover:text-rose-700 px-2"
+                className="h-8 gap-1.5 px-2 text-xs text-primary hover:text-primary"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Adaugă contact profesional
@@ -299,7 +299,7 @@ export function SafetyPlanCard({ clientId, plan }: SafetyPlanCardProps) {
             <ul className="space-y-1.5">
               {profContacts.map((c, i) => (
                 <li key={i} className="flex items-center gap-2 text-sm">
-                  <Phone className="h-3.5 w-3.5 text-rose-500 shrink-0" />
+                  <Phone className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                   <span className="font-medium">{c.name}</span>
                   <span className="text-muted-foreground ml-auto">{c.phone}</span>
                 </li>
@@ -312,12 +312,12 @@ export function SafetyPlanCard({ clientId, plan }: SafetyPlanCardProps) {
 
         {!hasData && !editing && (
           <div className="py-6 text-center">
-            <p className="text-sm text-rose-600">Planul de siguranță nu a fost completat.</p>
+            <p className="text-sm text-muted-foreground">Planul de siguranță nu a fost completat.</p>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setEditing(true)}
-              className="mt-2 text-rose-600 hover:text-rose-700"
+              className="mt-2 text-primary hover:text-primary"
             >
               Completează acum
             </Button>
@@ -343,7 +343,7 @@ function PlanSection({
 }) {
   return (
     <div className="py-4 space-y-1.5">
-      <Label className="text-[10px] font-black uppercase tracking-[0.18em] text-rose-700 dark:text-rose-400">
+      <Label className="text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground">
         {label}
       </Label>
       {editing ? (

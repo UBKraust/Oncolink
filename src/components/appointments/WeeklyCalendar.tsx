@@ -56,14 +56,14 @@ export function WeeklyCalendar({ appointments, onSelectEvent, onNewEvent }: Week
   };
 
   return (
-    <div className="flex flex-col h-[800px] bg-white rounded-[2rem] border border-slate-100 shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-500">
+    <div className="flex h-[800px] flex-col overflow-hidden rounded-[2rem] border border-border/70 bg-card shadow-xl animate-in fade-in zoom-in-95 duration-500">
       {/* ── Toolbar ────────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-6 py-4 border-b bg-slate-50/50 backdrop-blur-md">
+      <div className="flex items-center justify-between border-b border-border/70 bg-muted/20 px-6 py-4 backdrop-blur-md">
         <div className="flex items-center gap-4">
-          <h2 className="text-lg font-black text-slate-900 uppercase tracking-tight">
+          <h2 className="text-lg font-black uppercase tracking-tight text-foreground">
             {format(currentWeekStart, "MMMM yyyy", { locale: ro })}
           </h2>
-          <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
+          <div className="flex items-center gap-1 rounded-xl border border-border/70 bg-background p-1 shadow-sm">
             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => navigateWeek(-1)}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -83,18 +83,18 @@ export function WeeklyCalendar({ appointments, onSelectEvent, onNewEvent }: Week
       {/* ── Calendar Body ─────────────────────────────────────────────────── */}
       <div className="flex flex-1 flex-col overflow-hidden relative">
         {/* Header (Days) */}
-        <div className="flex border-b bg-slate-50/30">
+        <div className="flex border-b border-border/70 bg-muted/10">
           <div className="w-16 shrink-0 border-r" /> {/* Hour label gutter */}
           {days.map((day) => {
             const isToday = isSameDay(day, new Date());
             return (
               <div key={day.toISOString()} className="flex-1 py-4 text-center border-r last:border-r-0">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                <p className="mb-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                   {format(day, "EEE", { locale: ro })}
                 </p>
                 <div className={cn(
                   "inline-flex h-10 w-10 items-center justify-center rounded-2xl text-lg font-black transition-all",
-                  isToday ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-slate-900"
+                  isToday ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "text-foreground"
                 )}>
                   {format(day, "d")}
                 </div>
@@ -107,10 +107,10 @@ export function WeeklyCalendar({ appointments, onSelectEvent, onNewEvent }: Week
         <div ref={scrollRef} className="flex-1 overflow-y-auto custom-scrollbar relative">
           <div className="flex min-h-[1920px]"> {/* 24 * 80px */}
             {/* Hour Labels */}
-            <div className="w-16 shrink-0 border-r bg-slate-50/20">
+            <div className="w-16 shrink-0 border-r border-border/70 bg-muted/10">
               {HOURS.map((h) => (
                 <div key={h} className="h-20 pr-2 pt-1 text-right">
-                  <span className="text-[10px] font-bold text-slate-400 tabular-nums">
+                  <span className="text-[10px] font-bold tabular-nums text-muted-foreground">
                     {h.toString().padStart(2, "0")}:00
                   </span>
                 </div>
@@ -125,7 +125,7 @@ export function WeeklyCalendar({ appointments, onSelectEvent, onNewEvent }: Week
                   {HOURS.map((h) => (
                     <div 
                       key={`grid-${h}`} 
-                      className="h-20 border-b last:border-b-0 cursor-pointer hover:bg-slate-50/50 transition-colors"
+                      className="h-20 cursor-pointer border-b border-border/60 transition-colors hover:bg-muted/30 last:border-b-0"
                       onClick={() => handleSlotClick(day, h)}
                     />
                   ))}
@@ -146,8 +146,8 @@ export function WeeklyCalendar({ appointments, onSelectEvent, onNewEvent }: Week
                       className="absolute left-0 right-0 z-20 pointer-events-none"
                       style={{ top: `${(now.getHours() * 60 + now.getMinutes()) * (HOUR_HEIGHT / 60)}px` }}
                     >
-                      <div className="absolute -left-1 -top-1.5 h-3 w-3 rounded-full bg-rose-500 shadow-sm" />
-                      <div className="h-0.5 bg-rose-500 w-full" />
+                      <div className="absolute -left-1 -top-1.5 h-3 w-3 rounded-full bg-primary shadow-sm" />
+                      <div className="h-0.5 w-full bg-primary" />
                     </div>
                   )}
                 </div>

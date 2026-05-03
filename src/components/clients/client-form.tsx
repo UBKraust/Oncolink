@@ -92,7 +92,7 @@ export function ClientForm({ action, defaults = {}, submitLabel, cancelHref }: C
           <div
             id="client-form-error"
             role="alert"
-            className="rounded-md border border-rose-300 bg-rose-50 p-3 text-sm text-rose-900 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200"
+            className="rounded-md border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive"
           >
             {state.error}
           </div>
@@ -163,7 +163,7 @@ export function ClientForm({ action, defaults = {}, submitLabel, cancelHref }: C
             defaultValue={defaults.address ?? ""}
           />
           {state.fieldErrors.address ? (
-            <p className="text-xs text-rose-600">{state.fieldErrors.address}</p>
+            <p className="text-xs text-destructive">{state.fieldErrors.address}</p>
           ) : null}
         </div>
 
@@ -208,7 +208,7 @@ export function ClientForm({ action, defaults = {}, submitLabel, cancelHref }: C
             <option value="MIXED">Mixt / de stabilit</option>
           </select>
           {state.fieldErrors.service_type ? (
-            <p className="text-xs text-rose-600">{state.fieldErrors.service_type}</p>
+            <p className="text-xs text-destructive">{state.fieldErrors.service_type}</p>
           ) : null}
         </div>
 
@@ -295,7 +295,7 @@ export function ClientForm({ action, defaults = {}, submitLabel, cancelHref }: C
                       }
                     />
                     {state.fieldErrors.parent_address ? (
-                      <p id="parent_address-error" className="text-xs text-rose-600">{state.fieldErrors.parent_address}</p>
+                      <p id="parent_address-error" className="text-xs text-destructive">{state.fieldErrors.parent_address}</p>
                     ) : null}
                   </div>
                 </div>
@@ -341,7 +341,7 @@ export function ClientForm({ action, defaults = {}, submitLabel, cancelHref }: C
                       }
                     />
                     {state.fieldErrors.company_address ? (
-                      <p id="company_address-error" className="text-xs text-rose-600">{state.fieldErrors.company_address}</p>
+                      <p id="company_address-error" className="text-xs text-destructive">{state.fieldErrors.company_address}</p>
                     ) : null}
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">
@@ -475,7 +475,7 @@ export function ClientForm({ action, defaults = {}, submitLabel, cancelHref }: C
       <AlertDialog open={showSuccess} onOpenChange={setDismissedSuccess}>
         <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
-            <div className="mx-auto w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-500 mb-4 animate-in zoom-in-50 duration-500">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary animate-in zoom-in-50 duration-500">
               <CheckCircle2 className="h-10 w-10" />
             </div>
             <AlertDialogTitle className="text-center text-2xl font-black">Client salvat!</AlertDialogTitle>
@@ -485,18 +485,18 @@ export function ClientForm({ action, defaults = {}, submitLabel, cancelHref }: C
           </AlertDialogHeader>
 
           <div className="p-6 pt-0 space-y-4">
-            <div className="rounded-2xl border bg-slate-50 p-4 space-y-3">
-              <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">Verificări & Status</h4>
+            <div className="space-y-3 rounded-2xl border border-border/70 bg-muted/30 p-4">
+              <h4 className="text-xs font-black uppercase tracking-widest text-muted-foreground">Verificări & Status</h4>
               
               <div className="flex items-center gap-3 text-sm">
                 <FileCheck className="h-4 w-4 text-emerald-500" />
-                <span className="text-slate-700">Date de identificare salvate</span>
+                <span className="text-foreground">Date de identificare salvate</span>
               </div>
 
               {!defaults.gdpr_consent_signed && (
                 <div className="flex items-center gap-3 text-sm">
                   <ShieldAlert className="h-4 w-4 text-amber-500" />
-                  <span className="text-slate-700">Lipsă semnătură GDPR</span>
+                  <span className="text-foreground">Lipsă semnătură GDPR</span>
                 </div>
               )}
             </div>
@@ -504,7 +504,7 @@ export function ClientForm({ action, defaults = {}, submitLabel, cancelHref }: C
             <div className="space-y-2">
               <Button 
                 variant="outline" 
-                className="w-full justify-start h-12 px-4 rounded-xl gap-3 border-slate-200 hover:bg-primary/5 hover:border-primary/30 transition-all"
+                className="h-12 w-full justify-start gap-3 rounded-xl border-border/70 px-4 transition-all hover:border-primary/30 hover:bg-primary/5"
                 onClick={copyOnboardingLink}
               >
                 <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
@@ -568,7 +568,7 @@ function Field({ label, name, type = "text", required, defaultValue, placeholder
     <div className="space-y-1.5">
       <Label htmlFor={name}>
         {label}
-        {required ? <span className="ml-0.5 text-rose-600">*</span> : null}
+        {required ? <span className="ml-0.5 text-destructive">*</span> : null}
       </Label>
       <Input
         id={name}
@@ -581,7 +581,7 @@ function Field({ label, name, type = "text", required, defaultValue, placeholder
         aria-describedby={descriptionId}
       />
       {error ? (
-        <p id={`${name}-error`} className="text-xs text-rose-600">{error}</p>
+        <p id={`${name}-error`} className="text-xs text-destructive">{error}</p>
       ) : hint ? (
         <p id={`${name}-hint`} className="text-xs text-muted-foreground">{hint}</p>
       ) : null}

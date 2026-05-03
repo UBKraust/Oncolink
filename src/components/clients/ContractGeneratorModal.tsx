@@ -33,7 +33,7 @@ export function ContractGeneratorModal({ isOpen, onClose, client }: ContractGene
     )}>
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" 
+        className="absolute inset-0 bg-foreground/20 backdrop-blur-sm" 
         onClick={onClose}
       />
 
@@ -41,7 +41,7 @@ export function ContractGeneratorModal({ isOpen, onClose, client }: ContractGene
       <div
         ref={dialogRef}
         className={cn(
-        "relative w-full max-w-2xl bg-white rounded-[2.5rem] shadow-2xl transition-all duration-300 overflow-hidden",
+        "relative w-full max-w-2xl overflow-hidden rounded-[2.5rem] border border-border/70 bg-card shadow-2xl transition-all duration-300",
         isOpen ? "scale-100 translate-y-0 opacity-100" : "scale-95 translate-y-4 opacity-0"
         )}
         role="dialog"
@@ -55,7 +55,7 @@ export function ContractGeneratorModal({ isOpen, onClose, client }: ContractGene
             ref={closeButtonRef}
             type="button"
             onClick={onClose}
-            className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors"
+            className="rounded-full bg-muted p-2 text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground"
             aria-label="Închide generatorul de contract"
           >
             <X className="h-5 w-5" />

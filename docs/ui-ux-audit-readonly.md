@@ -64,6 +64,41 @@ Acest document rămâne util ca audit structural, dar observațiile despre dashb
 - fișa clientului este mai utilă, dar rămâne una dintre cele mai dense suprafețe din produs
 - overlay-urile și layering-ul global au încă nevoie de standardizare transversală
 
+### Corecții aplicate după audit
+
+- `QuickActionsWheel` a fost domolit vizual:
+  - culori mai neutre
+  - etichetă localizată în română
+  - backdrop mai discret
+- overlay-urile laterale principale folosesc acum un nivel explicit `z-[60]`
+- backdrop-ul pentru mobile nav și overlay-uri laterale folosește aceeași familie vizuală, mai aproape de tokenurile de sistem
+- `SectionDetailOverlay` a devenit și mai clar drept contract comun pentru overlay-urile laterale simple
+- `FinancialDetailOverlay` și `PersonalInfoOverlay` au fost migrate incremental spre:
+  - `border-border/60`
+  - `bg-muted/20`
+  - `text-foreground`
+  - `text-muted-foreground`
+- `MedicalDetailOverlay` și `CrisisNotesDetailOverlay` sunt acum aliniate mai clar la același limbaj vizual lateral
+- `ClientDetailOverlay` a fost simplificat incremental:
+  - header mai puțin dramatic
+  - spacing mai calm
+  - action bar și footer mai apropiate de celelalte overlay-uri
+- `AssessmentDetailOverlay` folosește acum același shell lateral comun (`SectionDetailOverlay`)
+- `SessionDrawer` nu a fost mutat pe shell-ul comun, dar este acum aliniat mai bine la același contract de backdrop, layering și header/footer
+
+### Contractul actual de overlay lateral
+
+- shell comun: `SectionDetailOverlay`
+- layering: `z-[60]`
+- backdrop: `bg-foreground/20 backdrop-blur-sm`
+- structură:
+  - header
+  - content scrollabil
+  - footer opțional
+- dimensiune:
+  - `size="sm" | "md" | "lg"`
+  - compatibilitate păstrată și pentru `maxWidth`
+
 ---
 
 ## 1. Executive Summary
@@ -503,3 +538,21 @@ Produsul transmite substanță și direcție clară. Nu arată ca un prototip fr
 **Nu este nevoie de redesign total. Este nevoie de disciplină de sistem.**
 
 Ordinea logică de intervenție, după refactorul dashboard-ului: overlay standardization → z-index cleanup → QuickActions calm → client dashboard restructure → semantic colors migration.
+
+### Update 2026-05-03
+
+- Am început migrarea practică a culorilor hardcodate din componente vechi spre tokenuri și suprafețe mai calme.
+- Zone curățate în acest pas:
+  - `WeeklyCalendar`
+  - `week-view`
+  - `client-form`
+  - `AssessmentDetailOverlay`
+  - `SafetyPlanCard`
+  - `ContractGeneratorModal`
+- Direcția urmată:
+  - mai puțin `slate/rose/blue` folosit ca bază structurală
+  - mai mult `bg-card`, `bg-background`, `bg-muted`, `border-border`, `text-foreground`
+  - `destructive` păstrat pentru risc real, nu ca accent implicit
+  - culorile contextuale au rămas doar unde ajută orientarea clinică sau operațională
+- Rezultat:
+  - UI-ul rămâne diferențiat semantic, dar e mai puțin anxios și mai coerent cu dashboard-ul clinic nou.

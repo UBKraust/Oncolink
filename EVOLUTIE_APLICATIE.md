@@ -1175,3 +1175,86 @@ Fișiere principale:
 - [src/lib/pdf/templates.ts](src/lib/pdf/templates.ts)
 - [src/lib/clients/document-requirements.ts](src/lib/clients/document-requirements.ts)
 - [src/components/dashboard/nav-groups.ts](src/components/dashboard/nav-groups.ts)
+
+### 36. Document de referință UI/UX + Refactoring dashboard principal
+
+Am creat documentul master de referință al arhitecturii UI/UX și am refactorizat pagina principală de dashboard.
+
+**MASTER_UI_UX.md:**
+- Document complet de referință (stack, structură fișiere, design tokens OKLCH, convenții componente, pattern-uri de pagini, fluxuri principale, rute)
+- Servește ca sursă unică de adevăr pentru orice decizie de UI/UX viitoare
+
+**Dashboard page.tsx refactoring:**
+- Eliminat `DashboardTodayStats` ca componentă separată — logica integrată direct în page.tsx cu `StatCard`-uri individuale (Clienți activi, Programări azi, Sold lunar, Alertă dosare)
+- Adăugat CTA-uri rapide inline în `PageHeader`: Client nou, Pacient minor, Programare
+- Badge "Sistem online și securizat" cu `ShieldCheck`
+- Alerts + DocumentTasks afișate mereu (nu condițional pe `alertsCount > 0`)
+- `ResearchReadinessPanel` reintegrată în layout
+
+**UI docs actualizate:**
+- `ui-ux/02_componente_ui.md`, `03_layout_si_shell.md`, `04_navigatie.md`, `08_rute_si_pagini.md`, `README.md`
+
+`tsc --noEmit` ✅
+
+Fișiere principale:
+- [MASTER_UI_UX.md](MASTER_UI_UX.md)
+- [src/app/dashboard/page.tsx](src/app/dashboard/page.tsx)
+- [src/components/dashboard/DashboardTodayStats.tsx](src/components/dashboard/DashboardTodayStats.tsx) _(șters)_
+
+### 37. UX fluid — navigare, tranziții, toast îmbunătățit, skeleton-uri
+
+Am adăugat strat de feedback vizual fluid pentru navigare și tranziții de pagini.
+
+**NavigationProgress:**
+- `src/components/app/navigation-progress.tsx` — bară de progres fixată sus (2px, culoarea `--primary`), cu animație asimptotică spre 85% în timp ce pagina se încarcă, completare instantă la schimbarea pathname-ului, glow cu `color-mix`
+- Integrat în `src/app/dashboard/layout.tsx` la nivelul root
+
+**PageTransition:**
+- `src/components/app/page-transition.tsx` — wrap `key={pathname}` cu `animate-in fade-in slide-in-from-bottom-2 duration-200`
+- Forțează re-montare DOM pe orice navigare → animația de intrare se declanșează garantat
+
+**Toast îmbunătățit:**
+- `src/components/ui/toast.tsx` — sistem complet rescris cu animații de exit (300ms fade-out înainte de ștergere din DOM), dismiss manual pe click, auto-dismiss diferențiat (3s success / 5s error), tip `info`
+
+**Skeleton-uri noi:**
+- `src/app/dashboard/loading.tsx` — skeleton complet al dashboard-ului (PageHeader, TodayCommandCenter, stat cards, grid alerts, appointments)
+- `src/app/dashboard/clients/loading.tsx` — skeleton pentru lista de clienți
+- `src/components/ui/skeleton.tsx` — adăugat variantă pulsing
+
+**Topbar:**
+- `src/components/dashboard/topbar.tsx` — ajustări vizuale și responsive
+
+`tsc --noEmit` ✅
+
+Fișiere principale:
+- [src/components/app/navigation-progress.tsx](src/components/app/navigation-progress.tsx)
+- [src/components/app/page-transition.tsx](src/components/app/page-transition.tsx)
+- [src/app/dashboard/layout.tsx](src/app/dashboard/layout.tsx)
+- [src/components/ui/toast.tsx](src/components/ui/toast.tsx)
+- [src/app/dashboard/loading.tsx](src/app/dashboard/loading.tsx)
+- [src/app/dashboard/clients/loading.tsx](src/app/dashboard/clients/loading.tsx)
+
+### 38. Document checklist inline per client + integrare ServiceTrackSheet
+
+Am construit sistemul de checklist documente accesibil direct din overview-ul track-urilor de servicii.
+
+**DocumentChecklistCard:**
+- `src/components/clients/DocumentChecklistCard.tsx` — card vizual cu 5 secțiuni grupate (`CONSIMȚĂMINTE`, `CONTRACTE`, `DOCUMENTE CLINICE`, `SIGURANȚĂ`, `RAPOARTE`), fiecare item cu icon `CheckCircle2` / `AlertCircle` / `Circle` și link direct la acțiunea corespunzătoare
+- Badge de completare (obligatoriu/recomandat), progres vizual per secțiune
+
+**DocumentChecklistSheet:**
+- `src/components/clients/DocumentChecklistSheet.tsx` — Sheet lateral care încarcă async checklist-ul unui client (`getClientDocumentChecklist`) și afișează `DocumentChecklistCard`
+
+**Server Action:**
+- `src/app/dashboard/clients/document-checklist-action.ts` — `getClientDocumentChecklist(clientId, serviceType)` — fetch paralel client + documente + evaluări, mapare pe `checkDocumentRequirements`, returnează stats complete
+
+**ServiceTrackSheet actualizat:**
+- `src/components/dashboard/ServiceTrackSheet.tsx` — buton "Documente" pe fiecare `ClientRow` care deschide `DocumentChecklistSheet` cu clientul selectat
+
+`tsc --noEmit` ✅
+
+Fișiere principale:
+- [src/components/clients/DocumentChecklistCard.tsx](src/components/clients/DocumentChecklistCard.tsx)
+- [src/components/clients/DocumentChecklistSheet.tsx](src/components/clients/DocumentChecklistSheet.tsx)
+- [src/app/dashboard/clients/document-checklist-action.ts](src/app/dashboard/clients/document-checklist-action.ts)
+- [src/components/dashboard/ServiceTrackSheet.tsx](src/components/dashboard/ServiceTrackSheet.tsx)

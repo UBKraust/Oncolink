@@ -156,18 +156,18 @@ Scrie direct rezumatul, fără titlu.`;
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <KpiCard icon={Clock} label="Ore lucrate" value={`${data.totalHours}h`}
-              sub={`${data.totalSessions} ședințe`} accent="violet"
+              sub={`${data.totalSessions} ședințe`} accent="neutral"
               hint={data.totalHours > 80 ? "⚠ Risc burnout — peste 80h/lună" : undefined} />
             <KpiCard icon={Users} label="Clienți unici" value={String(data.uniqueClients)}
-              sub={`~${data.avgSessionsPerClient} șed/client`} accent="blue" />
+              sub={`~${data.avgSessionsPerClient} șed/client`} accent="info" />
             <KpiCard icon={UserX} label="Rată anulări" value={`${data.noShowRate}%`}
               sub={`${data.cancelledSessions} anulate`}
-              accent={data.noShowRate > 30 ? "rose" : data.noShowRate > 15 ? "amber" : "emerald"}
+              accent={data.noShowRate > 30 ? "danger" : data.noShowRate > 15 ? "warning" : "success"}
               hint={data.noShowRate > 30 ? "⚠ Rată mare — consideră politică de anulare" : undefined} />
             <KpiCard icon={Banknote} label="Venit mediu/șed." value={`${fmt(data.avgRevenuePerSession)} RON`}
-              sub="per ședință" accent="teal" />
+              sub="per ședință" accent="info" />
             <KpiCard icon={TrendingUp} label="Profit Net" value={`${fmt(data.netProfit)} RON`}
-              sub="Venit efectiv - Cheltuieli" accent="emerald"
+              sub="Venit efectiv - Cheltuieli" accent="success"
               hint={data.netProfit < 0 ? "⚠ Profit negativ luna aceasta" : undefined} />
           </div>
 
@@ -200,7 +200,7 @@ Scrie direct rezumatul, fără titlu.`;
                   <span>Rată încasare</span><span className="font-semibold">{collectionRate}%</span>
                 </div>
                 <div className="h-2.5 rounded-full bg-muted overflow-hidden">
-                  <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-700"
+                  <div className="h-full rounded-full bg-primary transition-all duration-700"
                     style={{ width: `${collectionRate}%` }} />
                 </div>
               </div>
@@ -244,11 +244,11 @@ Scrie direct rezumatul, fără titlu.`;
                   <div key={alert.id}
                     className={cn("flex items-center gap-3 rounded-2xl border px-3 py-3",
                       alert.severity === "CRITICAL"
-                        ? "border-rose-200 bg-rose-50/60 dark:bg-rose-950/20"
+                        ? "border-destructive/20 bg-destructive/5"
                         : "border-amber-200 bg-amber-50/60 dark:bg-amber-950/20"
                     )}>
                     {alert.severity === "CRITICAL"
-                      ? <ShieldX className="h-4 w-4 text-rose-600 shrink-0" />
+                      ? <ShieldX className="h-4 w-4 text-destructive shrink-0" />
                       : <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />}
                     <p className="text-sm flex-1">
                       <strong>{alert.count}</strong> {alert.message}
@@ -323,15 +323,14 @@ Scrie direct rezumatul, fără titlu.`;
 function KpiCard({ icon, label, value, sub, accent, hint }: {
   icon: typeof Clock; label: string; value: string;
   sub?: string; hint?: string;
-  accent: "violet"|"blue"|"emerald"|"amber"|"rose"|"teal";
+  accent: "neutral"|"info"|"success"|"warning"|"danger";
 }) {
   const styles = {
-    violet:  "bg-muted text-foreground",
-    blue:    "bg-sky-100 text-sky-900 dark:bg-sky-950 dark:text-sky-100",
-    emerald: "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100",
-    amber:   "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-100",
-    rose:    "bg-destructive/15 text-destructive",
-    teal:    "bg-primary/10 text-primary",
+    neutral: "bg-muted text-foreground",
+    info: "bg-primary/10 text-primary",
+    success: "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100",
+    warning: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-100",
+    danger: "bg-destructive/15 text-destructive",
   };
   return (
     <MetricCard

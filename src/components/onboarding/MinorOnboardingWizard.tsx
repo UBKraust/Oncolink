@@ -166,8 +166,8 @@ export function MinorOnboardingWizard({
 
   if (isSuccess) {
     return (
-      <div className="flex flex-col items-center justify-center space-y-6 text-center animate-in fade-in duration-1000">
-        <div className="flex h-24 w-24 items-center justify-center rounded-[1.75rem] bg-emerald-100 text-emerald-600 shadow-inner dark:bg-emerald-950 dark:text-emerald-200">
+        <div className="flex flex-col items-center justify-center space-y-6 text-center animate-in fade-in duration-1000">
+        <div className="flex h-24 w-24 items-center justify-center rounded-[1.75rem] bg-primary/10 text-primary shadow-inner">
           <Check className="h-12 w-12" />
         </div>
         <div className="space-y-2">
@@ -191,14 +191,14 @@ export function MinorOnboardingWizard({
       {/* Header & Progress */}
       <div className="space-y-5 rounded-[2rem] border border-border/60 bg-card px-6 py-6 shadow-sm">
         <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-black tracking-tight text-slate-900">
+          <h1 className="text-3xl font-black tracking-tight text-foreground">
             {clientName ? `Înregistrare minor — ${clientName}` : "Înregistrare Minor"}
           </h1>
-          <p className="text-sm text-slate-500 font-medium">Pasul {step} din 5: Acte legale și reprezentare</p>
+          <p className="text-sm font-medium text-muted-foreground">Pasul {step} din 5: Acte legale și reprezentare</p>
         </div>
         <div className="space-y-3">
           <Progress value={progress} className="h-1.5" />
-          <div className="grid grid-cols-5 gap-1 text-[9px] uppercase font-black tracking-wider text-slate-400 text-center">
+          <div className="grid grid-cols-5 gap-1 text-center text-[9px] font-black uppercase tracking-wider text-muted-foreground">
             <span className={cn(step >= 1 && "text-primary")}>Părinte</span>
             <span className={cn(step >= 2 && "text-primary")}>Minor</span>
             <span className={cn(step >= 3 && "text-primary")}>Custodie</span>
@@ -211,7 +211,7 @@ export function MinorOnboardingWizard({
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
         <input type="text" tabIndex={-1} autoComplete="off" className="hidden" {...register("website")} />
         {flowError ? (
-          <div className="flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50/80 px-4 py-3 text-sm text-rose-800 dark:border-rose-900 dark:bg-rose-950/20 dark:text-rose-200">
+          <div className="flex items-start gap-3 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
             <span className="font-medium">{flowError}</span>
           </div>
@@ -219,7 +219,7 @@ export function MinorOnboardingWizard({
         {/* Step 1: Parent Info */}
         {step === 1 && (
           <div className="space-y-6 rounded-[1.75rem] border border-border/60 bg-card p-6 shadow-sm animate-in slide-in-from-right-4 duration-300">
-            <div className="flex gap-3 rounded-xl border border-sky-200 bg-sky-50/70 p-4 text-sm text-sky-800 dark:border-sky-900 dark:bg-sky-950/20 dark:text-sky-200">
+            <div className="flex gap-3 rounded-xl border border-border/70 bg-muted/30 p-4 text-sm text-foreground">
               <Info className="h-5 w-5 shrink-0" />
               <p>Acest formular trebuie completat de părintele sau reprezentantul legal al minorului.</p>
             </div>
@@ -227,29 +227,29 @@ export function MinorOnboardingWizard({
               <div className="space-y-2">
                 <Label htmlFor="parent_1_name">Nume Complet Părinte (Reprezentant Legal)</Label>
                 <Input id="parent_1_name" placeholder="Popescu Ion" {...register("parent_1_name")} />
-                {errors.parent_1_name && <p className="text-xs text-rose-500 font-medium">{errors.parent_1_name.message}</p>}
+                {errors.parent_1_name && <p className="text-xs font-medium text-destructive">{errors.parent_1_name.message}</p>}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="parent_1_phone">Telefon</Label>
                   <Input id="parent_1_phone" placeholder="07xx xxx xxx" {...register("parent_1_phone")} />
-                  {errors.parent_1_phone && <p className="text-xs text-rose-500 font-medium">{errors.parent_1_phone.message}</p>}
+                  {errors.parent_1_phone && <p className="text-xs font-medium text-destructive">{errors.parent_1_phone.message}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="parent_1_email">Email</Label>
                   <Input id="parent_1_email" placeholder="email@exemplu.ro" {...register("parent_1_email")} />
-                  {errors.parent_1_email && <p className="text-xs text-rose-500 font-medium">{errors.parent_1_email.message}</p>}
+                  {errors.parent_1_email && <p className="text-xs font-medium text-destructive">{errors.parent_1_email.message}</p>}
                 </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="cnp_cif">CNP Părinte (pentru facturare conform ANAF)</Label>
                 <Input id="cnp_cif" placeholder="188xxxxxxxxxx" {...register("cnp_cif")} />
-                {errors.cnp_cif && <p className="text-xs text-rose-500 font-medium">{errors.cnp_cif.message}</p>}
+                {errors.cnp_cif && <p className="text-xs font-medium text-destructive">{errors.cnp_cif.message}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="address">Adresa completă de facturare</Label>
                 <Textarea id="address" placeholder="Strada, Nr, Bloc, Oraș..." {...register("address")} />
-                {errors.address && <p className="text-xs text-rose-500 font-medium">{errors.address.message}</p>}
+                {errors.address && <p className="text-xs font-medium text-destructive">{errors.address.message}</p>}
               </div>
             </div>
           </div>
@@ -262,12 +262,12 @@ export function MinorOnboardingWizard({
               <div className="space-y-2">
                 <Label htmlFor="full_name">Nume Complet Minor (Pacient)</Label>
                 <Input id="full_name" placeholder="Nume Prenume Copil" {...register("full_name")} />
-                {errors.full_name && <p className="text-xs text-rose-500 font-medium">{errors.full_name.message}</p>}
+                {errors.full_name && <p className="text-xs font-medium text-destructive">{errors.full_name.message}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="minor_cnp">CNP Minor (pentru fișa medicală)</Label>
                 <Input id="minor_cnp" placeholder="5xxxxxxxxxxxx" {...register("minor_cnp")} />
-                {errors.minor_cnp && <p className="text-xs text-rose-500 font-medium">{errors.minor_cnp.message}</p>}
+                {errors.minor_cnp && <p className="text-xs font-medium text-destructive">{errors.minor_cnp.message}</p>}
               </div>
             </div>
           </div>
@@ -276,7 +276,7 @@ export function MinorOnboardingWizard({
         {/* Step 3: Legal Situation (The "Bomb" Step) */}
         {step === 3 && (
           <div className="space-y-6 rounded-[1.75rem] border border-border/60 bg-card p-6 shadow-sm animate-in slide-in-from-right-4 duration-300">
-            <div className="flex gap-3 rounded-xl border border-amber-200 bg-amber-50/80 p-4 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/20 dark:text-amber-200">
+            <div className="flex gap-3 rounded-xl border border-amber-200/70 bg-amber-50/70 p-4 text-sm text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-200">
               <AlertTriangle className="h-5 w-5 shrink-0 text-amber-600" />
               <div>
                 <p className="font-bold">Atenție la regimul juridic!</p>
@@ -296,13 +296,13 @@ export function MinorOnboardingWizard({
                   <option value="DIVORTATI_CUSTODIE_COMUNA">Divorțați — Custodie Comună</option>
                   <option value="DIVORTATI_CUSTODIE_EXCLUSIVA">Divorțați — Custodie Exclusivă</option>
                 </Select>
-                {errors.parents_marital_status && <p className="text-xs text-rose-500 font-medium">{errors.parents_marital_status.message}</p>}
+                {errors.parents_marital_status && <p className="text-xs font-medium text-destructive">{errors.parents_marital_status.message}</p>}
               </div>
 
               {(maritalStatus === "DIVORTATI_CUSTODIE_COMUNA" || maritalStatus === "DIVORTATI_CUSTODIE_EXCLUSIVA") && (
-                <div className="animate-in zoom-in-95 space-y-4 rounded-xl border border-rose-200 bg-rose-50/50 p-6 duration-500 dark:border-rose-900 dark:bg-rose-950/20">
-                  <p className="text-sm font-bold text-rose-900 dark:text-rose-100">Încărcare document obligatoriu:</p>
-                  <p className="text-xs text-rose-700 dark:text-rose-200">
+                <div className="animate-in zoom-in-95 space-y-4 rounded-xl border border-destructive/20 bg-destructive/5 p-6 duration-500">
+                  <p className="text-sm font-bold text-foreground">Încărcare document obligatoriu:</p>
+                  <p className="text-xs text-muted-foreground">
                     {maritalStatus === "DIVORTATI_CUSTODIE_COMUNA" 
                       ? "Vă rugăm încărcați Acordul scris al celuilalt părinte (poză sau PDF)." 
                       : "Vă rugăm încărcați Sentința Judecătorească definitivă de custodie exclusivă."}
@@ -314,15 +314,15 @@ export function MinorOnboardingWizard({
                       onChange={handleFileChange}
                       accept=".pdf,image/*"
                     />
-                    <div className="flex flex-col items-center justify-center border-2 border-dashed border-rose-200 rounded-xl p-8 transition-colors group-hover:border-rose-400 group-hover:bg-rose-50">
+                    <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border p-8 transition-colors group-hover:border-primary/40 group-hover:bg-muted/30">
                       {file ? (
                         <div className="flex items-center gap-2 font-bold text-emerald-600 dark:text-emerald-300">
                           <Check className="h-5 w-5" /> {file.name.substring(0, 20)}...
                         </div>
                       ) : (
                         <>
-                          <Upload className="h-10 w-10 text-rose-300 mb-2" />
-                          <span className="text-xs font-bold text-rose-400">Click sau Trage fișierul aici</span>
+                          <Upload className="mb-2 h-10 w-10 text-muted-foreground" />
+                          <span className="text-xs font-bold text-muted-foreground">Click sau Trage fișierul aici</span>
                         </>
                       )}
                     </div>
@@ -357,7 +357,7 @@ export function MinorOnboardingWizard({
                    <option value="SOCIAL_MEDIA">Instagram / Facebook</option>
                    <option value="ALTUL">Altă sursă</option>
                 </Select>
-                {errors.referral_source && <p className="text-xs text-rose-500 font-medium">{errors.referral_source.message}</p>}
+                {errors.referral_source && <p className="text-xs font-medium text-destructive">{errors.referral_source.message}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="referred_by_name">Cine v-a recomandat? (opțional)</Label>
@@ -370,32 +370,32 @@ export function MinorOnboardingWizard({
         {/* Step 5: Consents & Liability */}
         {step === 5 && (
           <div className="space-y-6 rounded-[1.75rem] border border-border/60 bg-card p-6 shadow-sm animate-in slide-in-from-right-4 duration-300">
-             <div className="space-y-4 rounded-[1.75rem] border border-rose-200 bg-rose-50/80 p-6 dark:border-rose-900 dark:bg-rose-950/20">
+             <div className="space-y-4 rounded-[1.75rem] border border-destructive/20 bg-destructive/5 p-6">
                 <div className="flex items-start gap-4">
-                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-rose-600">
+                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-destructive">
                       <ShieldCheck className="h-5 w-5 text-white" />
                    </div>
                    <div className="space-y-2">
-                      <p className="text-sm font-black uppercase tracking-tight text-rose-900 dark:text-rose-100">Declarație pe proprie răspundere</p>
-                      <p className="text-[11px] font-medium leading-relaxed text-rose-800 dark:text-rose-200">
+                      <p className="text-sm font-black uppercase tracking-tight text-foreground">Declarație pe proprie răspundere</p>
+                      <p className="text-[11px] font-medium leading-relaxed text-muted-foreground">
                         Prin prezenta declar că datele furnizate cu privire la identitatea minorului și regimul său juridic sunt conforme cu realitatea. Înțeleg că furnizarea de informații false despre custodia copilului poate atrage răspunderea civilă sau penală conform Codului Civil Român.
                       </p>
-                      <Link href="/legal/declaration" target="_blank" className="text-[10px] text-rose-600 font-bold underline flex items-center gap-1 hover:text-rose-700">
+                      <Link href="/legal/declaration" target="_blank" className="flex items-center gap-1 text-[10px] font-bold text-destructive underline hover:text-destructive">
                         <FileText className="h-3 w-3" /> Vezi textul legal complet și printează
                       </Link>
                    </div>
                 </div>
                 
-                <div className="flex items-center space-x-3 rounded-xl border border-rose-200 bg-background p-3 dark:border-rose-900">
+                <div className="flex items-center space-x-3 rounded-xl border border-destructive/20 bg-background p-3">
                   <Checkbox 
                     id="legal_liability_consent" 
                     onChange={(e) => setValue("legal_liability_consent", (e.target as HTMLInputElement).checked)}
                   />
-                  <label htmlFor="legal_liability_consent" className="text-xs font-black text-rose-950 cursor-pointer">
+                  <label htmlFor="legal_liability_consent" className="cursor-pointer text-xs font-black text-foreground">
                     Îmi asum întreaga responsabilitate legală pentru datele furnizate.
                   </label>
                 </div>
-                {errors.legal_liability_consent && <p className="text-xs text-rose-600 font-bold">{errors.legal_liability_consent.message}</p>}
+                {errors.legal_liability_consent && <p className="text-xs font-bold text-destructive">{errors.legal_liability_consent.message}</p>}
              </div>
 
              <div className="space-y-4 rounded-[1.75rem] border border-border/60 bg-muted/20 p-6">
@@ -409,7 +409,7 @@ export function MinorOnboardingWizard({
                     <p className="text-[10px] text-muted-foreground">Sunt de acord cu prelucrarea datelor medicale pentru mine și minor conform legii.</p>
                   </div>
                 </div>
-                {errors.gdpr_consent && <p className="text-xs text-rose-500 font-medium">{errors.gdpr_consent.message}</p>}
+                {errors.gdpr_consent && <p className="text-xs font-medium text-destructive">{errors.gdpr_consent.message}</p>}
              </div>
           </div>
         )}
@@ -428,7 +428,7 @@ export function MinorOnboardingWizard({
           </Button>
 
           {step < 5 ? (
-            <Button type="button" onClick={nextStep} className="font-bold px-8 py-6 rounded-xl shadow-xl shadow-primary/20">
+            <Button type="button" onClick={nextStep} className="rounded-xl px-8 py-6 font-bold shadow-xl shadow-primary/20">
               Următorul Pas
               <ChevronRight className="ml-2 h-4 w-4" />
             </Button>
@@ -436,7 +436,7 @@ export function MinorOnboardingWizard({
             <Button 
               type="submit" 
               disabled={isSubmitting} 
-              className="bg-emerald-600 hover:bg-emerald-700 font-black px-10 py-6 rounded-xl shadow-xl shadow-emerald-200"
+              className="rounded-xl px-10 py-6 font-black shadow-xl shadow-primary/20"
             >
               {isSubmitting ? "Se trimite..." : "Confirm Înscrierea Minorului"}
               <UserPlus className="ml-2 h-4 w-4" />

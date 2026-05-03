@@ -160,14 +160,14 @@ export function ClientOnboardingWizard({ token, clientName }: ClientOnboardingWi
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
         <input type="text" tabIndex={-1} autoComplete="off" className="hidden" {...register("website")} />
         {flowError ? (
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-900">
+          <div className="rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm font-medium text-destructive">
             {flowError}
           </div>
         ) : null}
         {/* Step 1: Billing */}
         {step === 1 && (
           <div className="space-y-6 rounded-[1.75rem] border border-border/60 bg-card p-6 shadow-sm animate-in slide-in-from-right-4 duration-300">
-            <div className="flex items-center gap-2 rounded-2xl bg-amber-50 p-3 text-xs text-amber-800 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-100 dark:border-amber-900">
+            <div className="flex items-center gap-2 rounded-2xl border border-border/70 bg-muted/30 p-3 text-xs text-foreground">
               <Info className="h-4 w-4" />
               Datele sunt necesare conform legislației ANAF pentru emiterea facturii ședinței.
             </div>
@@ -175,7 +175,7 @@ export function ClientOnboardingWizard({ token, clientName }: ClientOnboardingWi
               <div className="space-y-2">
                 <Label htmlFor="cnp_cif">CNP sau CIF (pentru companii)</Label>
                 <Input id="cnp_cif" placeholder="Introdu CNP-ul tău" {...register("cnp_cif")} />
-                {errors.cnp_cif && <p className="text-xs text-rose-500 font-medium">{errors.cnp_cif.message}</p>}
+                {errors.cnp_cif && <p className="text-xs font-medium text-destructive">{errors.cnp_cif.message}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="address">Adresa completă</Label>
@@ -184,7 +184,7 @@ export function ClientOnboardingWizard({ token, clientName }: ClientOnboardingWi
                   placeholder="Strada, Număr, Bloc, Oraș, Județ" 
                   {...register("address")} 
                 />
-                {errors.address && <p className="text-xs text-rose-500 font-medium">{errors.address.message}</p>}
+                {errors.address && <p className="text-xs font-medium text-destructive">{errors.address.message}</p>}
               </div>
             </div>
           </div>
@@ -193,7 +193,7 @@ export function ClientOnboardingWizard({ token, clientName }: ClientOnboardingWi
         {/* Step 2: Emergency Contact */}
         {step === 2 && (
           <div className="space-y-6 rounded-[1.75rem] border border-border/60 bg-card p-6 shadow-sm animate-in slide-in-from-right-4 duration-300">
-            <div className="flex items-center gap-2 rounded-2xl bg-emerald-50 p-3 text-xs text-emerald-800 dark:bg-emerald-950/20 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900">
+            <div className="flex items-center gap-2 rounded-2xl border border-emerald-200/70 bg-emerald-50/60 p-3 text-xs text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-300">
               <ShieldCheck className="h-4 w-4" />
               Acest contact va fi apelat doar în situații de urgență medicală sau risc iminent.
             </div>
@@ -201,18 +201,18 @@ export function ClientOnboardingWizard({ token, clientName }: ClientOnboardingWi
               <div className="space-y-2">
                 <Label htmlFor="emergency_contact_name">Nume Persoană de Contact</Label>
                 <Input id="emergency_contact_name" placeholder="Numele persoanei apropiate" {...register("emergency_contact_name")} />
-                {errors.emergency_contact_name && <p className="text-xs text-rose-500 font-medium">{errors.emergency_contact_name.message}</p>}
+                {errors.emergency_contact_name && <p className="text-xs font-medium text-destructive">{errors.emergency_contact_name.message}</p>}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="emergency_contact_phone">Telefon</Label>
                   <Input id="emergency_contact_phone" placeholder="07xx xxx xxx" {...register("emergency_contact_phone")} />
-                  {errors.emergency_contact_phone && <p className="text-xs text-rose-500 font-medium">{errors.emergency_contact_phone.message}</p>}
+                  {errors.emergency_contact_phone && <p className="text-xs font-medium text-destructive">{errors.emergency_contact_phone.message}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="emergency_contact_relation">Relația</Label>
                   <Input id="emergency_contact_relation" placeholder="ex: Soț, Mamă, Prieten" {...register("emergency_contact_relation")} />
-                  {errors.emergency_contact_relation && <p className="text-xs text-rose-500 font-medium">{errors.emergency_contact_relation.message}</p>}
+                  {errors.emergency_contact_relation && <p className="text-xs font-medium text-destructive">{errors.emergency_contact_relation.message}</p>}
                 </div>
               </div>
             </div>
@@ -236,7 +236,7 @@ export function ClientOnboardingWizard({ token, clientName }: ClientOnboardingWi
                 <option value="SOCIAL_MEDIA">Facebook / Instagram / TikTok</option>
                 <option value="ALTUL">Altă Sursă</option>
               </Select>
-              {errors.referral_source && <p className="text-xs text-rose-500 font-medium">{errors.referral_source.message}</p>}
+              {errors.referral_source && <p className="text-xs font-medium text-destructive">{errors.referral_source.message}</p>}
             </div>
 
             {(referralSource === "MEDIC" || referralSource === "FOST_PACIENT") && (
@@ -269,7 +269,7 @@ export function ClientOnboardingWizard({ token, clientName }: ClientOnboardingWi
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     Sunt de acord cu prelucrarea datelor mele personale și a informațiilor necesare pentru înrolare și desfășurarea serviciilor terapeutice în platforma Ce`ai Pățit?.
                   </p>
-                  {errors.gdpr_consent && <p className="text-xs text-rose-500 font-medium mt-1">{errors.gdpr_consent.message}</p>}
+                  {errors.gdpr_consent && <p className="mt-1 text-xs font-medium text-destructive">{errors.gdpr_consent.message}</p>}
                 </div>
               </div>
 
@@ -285,7 +285,7 @@ export function ClientOnboardingWizard({ token, clientName }: ClientOnboardingWi
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     Am citit și sunt de acord cu politica de confidențialitate și termenii de prestări servicii psihologice.
                   </p>
-                  {errors.terms_consent && <p className="text-xs text-rose-500 font-medium mt-1">{errors.terms_consent.message}</p>}
+                  {errors.terms_consent && <p className="mt-1 text-xs font-medium text-destructive">{errors.terms_consent.message}</p>}
                 </div>
               </div>
             </div>
@@ -314,7 +314,7 @@ export function ClientOnboardingWizard({ token, clientName }: ClientOnboardingWi
             <Button 
               type="submit" 
               disabled={isSubmitting} 
-              className="bg-emerald-600 hover:bg-emerald-700 font-bold shadow-lg shadow-emerald-200"
+              className="font-bold shadow-lg shadow-primary/20"
             >
               {isSubmitting ? "Se trimite..." : "Finalizează Aplicarea"}
               <UserPlus className="ml-2 h-4 w-4" />

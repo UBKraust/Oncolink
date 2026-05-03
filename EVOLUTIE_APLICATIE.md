@@ -715,3 +715,26 @@ Fișiere principale:
   - stări de succes sau warning
 
 `npm run lint` ✅ | `npm run build` ✅
+
+### 14. Extindere cleanup semantic în onboarding public și raportare
+
+- Am continuat migrarea vizuală și în zonele publice, unde onboarding-ul adult și minor foloseau încă multe accente `rose/amber/slate` ca bază structurală.
+- Am mutat shell-urile și cardurile principale pe un limbaj mai calm:
+  - `bg-card`
+  - `border-border`
+  - `bg-muted`
+  - `destructive` doar pentru erori reale
+- Am actualizat wizard-urile de onboarding astfel încât:
+  - erorile să fie coerente semantic
+  - warning-urile juridice să rămână clare, dar mai puțin agresive
+  - CTA-urile finale să fie aliniate cu tonul produsului
+- Am făcut și cleanup în:
+  - [src/app/dashboard/billing/page.tsx](/Users/sch_work/Documents/Oncolink/src/app/dashboard/billing/page.tsx)
+  - [src/app/dashboard/review/review-client.tsx](/Users/sch_work/Documents/Oncolink/src/app/dashboard/review/review-client.tsx)
+- În aceste pagini am redus gradienturile și accentele “startup”, păstrând diferențierea semantică pentru:
+  - succes
+  - warning
+  - danger
+  - info
+
+`npm run lint` ✅ | `npm run build` ✅

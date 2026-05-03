@@ -256,7 +256,7 @@ export default function BillingPage() {
               </div>
               <div className="h-2.5 rounded-full bg-muted overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-700"
+                  className="h-full rounded-full bg-primary transition-all duration-700"
                   style={{ width: `${collectionRate}%` }}
                 />
               </div>
@@ -431,7 +431,7 @@ function StatCard({ label, value, icon, accent }: {
 }) {
   const accents = {
     neutral: "bg-muted text-foreground",
-    info: "bg-sky-100 text-sky-900 dark:bg-sky-950 dark:text-sky-100",
+    info: "bg-primary/10 text-primary",
     success: "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100",
     warning: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-100",
     danger: "bg-destructive/15 text-destructive",
@@ -459,8 +459,8 @@ function ForecastBar({ label, amount, sessions, maxAmount, type }: {
           className={cn(
             "h-full rounded transition-all duration-700",
             type === "actual"
-              ? "bg-gradient-to-r from-teal-500 to-emerald-400"
-              : "bg-gradient-to-r from-violet-400 to-purple-400 opacity-70"
+              ? "bg-primary"
+              : "bg-muted-foreground/50 opacity-70"
           )}
           style={{ width: `${pct}%` }}
         />

@@ -25,8 +25,8 @@ export default async function OnboardingPage({
   if (error || !client) {
     return (
       <PublicPageShell className="flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-background rounded-3xl border border-rose-100 shadow-2xl p-8 text-center space-y-4">
-          <div className="mx-auto w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center text-rose-500">
+        <div className="max-w-md w-full rounded-3xl border border-border/70 bg-card p-8 text-center shadow-2xl space-y-4">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 text-destructive">
             <Activity className="h-8 w-8" />
           </div>
           <h1 className="text-xl font-black">
@@ -45,8 +45,8 @@ export default async function OnboardingPage({
   return (
     <PublicPageShell className="selection:bg-primary/10">
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-3xl opacity-30 animate-pulse" />
-        <div className="absolute top-[20%] -right-[5%] w-[30%] h-[30%] bg-emerald-500/5 rounded-full blur-3xl opacity-20" />
+        <div className="absolute -top-[10%] -left-[10%] h-[40%] w-[40%] rounded-full bg-primary/5 blur-3xl opacity-30" />
+        <div className="absolute top-[20%] -right-[5%] h-[30%] w-[30%] rounded-full bg-muted blur-3xl opacity-30" />
       </div>
 
       <div className="relative z-10 mx-auto max-w-4xl px-4 py-12 md:py-24">
@@ -60,7 +60,7 @@ export default async function OnboardingPage({
           </div>
         </div>
 
-        <div className="mx-auto max-w-2xl bg-white/70 backdrop-blur-xl rounded-[2.5rem] border border-white shadow-2xl shadow-slate-200/50 p-6 md:p-12 overflow-hidden animate-in zoom-in-95 duration-700">
+        <div className="mx-auto max-w-2xl overflow-hidden rounded-[2.5rem] border border-border/70 bg-card/95 p-6 shadow-2xl backdrop-blur-xl animate-in zoom-in-95 duration-700 md:p-12">
           <ClientOnboardingWizard token={token} clientName={client.full_name || "Client"} />
         </div>
 

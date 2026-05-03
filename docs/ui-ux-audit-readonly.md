@@ -556,3 +556,22 @@ Ordinea logică de intervenție, după refactorul dashboard-ului: overlay standa
   - culorile contextuale au rămas doar unde ajută orientarea clinică sau operațională
 - Rezultat:
   - UI-ul rămâne diferențiat semantic, dar e mai puțin anxios și mai coerent cu dashboard-ul clinic nou.
+
+### Update 2026-05-03 B
+
+- Cleanup-ul semantic a fost extins și în zonele publice și în paginile vechi de raportare.
+- Zone atinse în acest pas:
+  - `onboarding/page`
+  - `onboarding/minor/page`
+  - `ClientOnboardingWizard`
+  - `MinorOnboardingWizard`
+  - `dashboard/billing`
+  - `dashboard/review`
+- Ajustări făcute:
+  - cardurile publice au trecut pe `bg-card` și `border-border`, în loc de alb + `slate/rose` ca bază
+  - stările de eroare folosesc consecvent `destructive`
+  - warning-urile au rămas `amber` doar unde au sens juridic sau operațional
+  - barele și KPI-urile de billing/review folosesc accente mai puțin flashy, cu mai puține gradienturi decorative
+- Efect:
+  - onboarding-ul public păstrează încrederea și claritatea, dar transmite mai puțină tensiune vizuală
+  - paginile de billing și review sunt mai apropiate de un ERP clinic și mai departe de un dashboard financiar de startup

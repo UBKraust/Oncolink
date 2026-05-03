@@ -25,8 +25,8 @@ export default async function MinorOnboardingPage({
   if (error || !client) {
     return (
       <PublicPageShell className="flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-background rounded-3xl border border-rose-100 shadow-2xl p-8 text-center space-y-4">
-          <div className="mx-auto w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center text-rose-500">
+        <div className="max-w-md w-full rounded-3xl border border-border/70 bg-card p-8 text-center shadow-2xl space-y-4">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 text-destructive">
             <Activity className="h-8 w-8" />
           </div>
           <h1 className="text-xl font-black">
@@ -43,27 +43,27 @@ export default async function MinorOnboardingPage({
   }
 
   return (
-    <PublicPageShell className="selection:bg-rose-100">
+    <PublicPageShell className="selection:bg-primary/10">
       {/* Visual Background Pattern */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none opacity-20">
-         <div className="absolute top-[5%] left-[10%] w-64 h-64 bg-primary/20 rounded-full blur-3xl" />
-         <div className="absolute bottom-[10%] right-[10%] w-96 h-96 bg-amber-200/30 rounded-full blur-3xl text-amber-500" />
+         <div className="absolute top-[5%] left-[10%] h-64 w-64 rounded-full bg-primary/20 blur-3xl" />
+         <div className="absolute bottom-[10%] right-[10%] h-96 w-96 rounded-full bg-muted blur-3xl" />
       </div>
 
       <div className="relative z-10 mx-auto max-w-4xl px-4 py-12 md:py-16">
         {/* Safe Header */}
         <div className="flex flex-col items-center gap-3 mb-10 animate-in fade-in slide-in-from-top-4 duration-1000">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-xl shadow-amber-200/50">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-xl shadow-primary/20">
             <ShieldCheck className="h-7 w-7" />
           </div>
           <div className="text-center">
-            <h2 className="text-2xl font-black tracking-tighter uppercase text-slate-800">Ce`ai Pățit? <span className="text-amber-600">Legal</span></h2>
-            <p className="text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase">Protocol de Siguranță Minori</p>
+            <h2 className="text-2xl font-black tracking-tighter uppercase text-foreground">Ce`ai Pățit? <span className="text-primary">Legal</span></h2>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Protocol de Siguranță Minori</p>
           </div>
         </div>
 
         {/* Wizard Card */}
-        <div className="mx-auto max-w-3xl bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl shadow-slate-200/60 p-6 md:p-14 animate-in zoom-in-95 duration-700">
+        <div className="mx-auto max-w-3xl rounded-[2.5rem] border border-border/70 bg-card p-6 shadow-2xl animate-in zoom-in-95 duration-700 md:p-14">
            <div className="mb-10 flex items-center gap-3 border-b pb-6">
               <Baby className="h-6 w-6 text-primary" />
               <div>
@@ -80,11 +80,11 @@ export default async function MinorOnboardingPage({
 
         {/* Legal Disclaimer Footer */}
         <div className="mt-12 max-w-md mx-auto text-center space-y-4">
-           <p className="text-[10px] text-slate-400 leading-relaxed uppercase tracking-widest font-bold">
+           <p className="text-[10px] font-bold uppercase tracking-widest leading-relaxed text-muted-foreground">
              Fluxuri pentru consimțământ • Date sensibile protejate • Verificare juridică necesară înainte de utilizare clinică
            </p>
-           <div className="h-px w-12 bg-slate-200 mx-auto" />
-           <p className="text-[9px] text-slate-400 italic">
+           <div className="mx-auto h-px w-12 bg-border" />
+           <p className="text-[9px] italic text-muted-foreground">
              Ce`ai Pățit? include instrumente pentru gestionarea documentelor și consimțământului. Configurarea finală trebuie adaptată cadrului juridic aplicabil cabinetului.
            </p>
         </div>

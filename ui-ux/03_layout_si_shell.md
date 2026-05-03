@@ -34,7 +34,7 @@
 ├──────────────┬──────────────────────────────────┤
 │              │                                  │
 │  Sidebar     │   Page Content                   │
-│  (w-64)      │   (p-4 md:p-6)                   │
+│  (w-60)      │   (p-4 md:p-6)                   │
 │  hidden      │                                  │
 │  md:flex     │   max-w-7xl mx-auto              │
 │              │                                  │
@@ -52,33 +52,34 @@
 
 ```tsx
 // hidden pe mobile, visible de la md:
-<div className="hidden w-64 shrink-0 border-r bg-card md:flex md:flex-col">
+<div className="hidden w-60 shrink-0 border-r bg-card md:flex md:flex-col">
   {/* Header brand */}
-  <div className="flex h-16 items-center gap-2 border-b px-6">
-    <div className="h-8 w-8 rounded-lg bg-primary text-primary-foreground font-black italic">
-      C
+  <div className="flex h-16 items-center gap-2.5 border-b px-5">
+    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-foreground text-xs font-black italic">
+      C?
     </div>
-    <div>
-      <div className="text-sm font-black italic tracking-tighter text-primary">Ce'ai Pățit?</div>
-      <div className="text-[11px] text-muted-foreground">ERP Cabinet</div>
+    <div className="flex flex-col leading-tight">
+      <span className="text-sm font-black italic tracking-tighter text-primary">Ce&apos;ai Pățit?</span>
+      <span className="text-[10px] text-muted-foreground">Cabinet psihoterapie</span>
     </div>
   </div>
 
   {/* Nav groups */}
-  <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6 custom-scrollbar">
+  <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5 custom-scrollbar">
     {navGroups.map(group => (
-      <NavGroup key={group.label} group={group} />
+      <NavGroup key={group.title} group={group} />
     ))}
   </nav>
 
-  {/* Footer */}
-  <div className="border-t p-4 bg-muted/20">
-    <a href="/privacy">Confidențialitate</a>
-    <a href="/terms">Termeni</a>
-    <span>v0.1.0</span>
-  </div>
+  {/* Fără footer — linkurile legale și versiunea au fost eliminate */}
 </div>
 ```
+
+**Modificări față de versiunea inițială:**
+- `w-64` → `w-60` (sidebar mai compact)
+- Footer cu „Confidențialitate / Termeni / v0.1.0" — eliminat complet
+- Logo: `h-8 w-8` → `h-7 w-7`; text subtitle `ERP Cabinet` → `Cabinet psihoterapie`
+- Grup headers: `space-y-6` → `space-y-5`; `font-black tracking-widest` → `font-semibold tracking-wider`
 
 ### Nav item states
 
@@ -101,17 +102,18 @@ const active = href === "/dashboard"
 ### Structură desktop
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│  [Burger]  [Search input ___________]  [+Prog] [User] [Out] │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────┐
+│  [Burger]  [Search input ___________]  [VaultInd] [👤] │
+└──────────────────────────────────────────────────────┘
 ```
 
-- **Burger** (mobile only): `h-10 w-10 rounded-xl border`
-- **Search** (desktop only): input cu dropdown autocomplete
-- **VaultIndicator**: badge care arată dacă vault-ul e deblocat
-- **+Programare**: buton cu `CalendarPlus` icon
-- **User email**: `lg:inline hidden`
-- **Logout**: icon button
+- **Burger** (mobile only): `h-9 w-9 rounded-xl border`
+- **Search** (desktop only): `max-w-sm rounded-xl bg-muted/30`, placeholder „Caută în dashboard…"
+- **VaultIndicator**: avertisment documente expirate
+- **User email**: `lg:inline hidden` (text muted)
+- **Logout**: icon button `h-8 w-8`
+
+> Butonul „+Programare nouă" a fost eliminat din topbar (redundant cu CTA din dashboard PageHeader).
 
 ### Mobile menu overlay
 
@@ -242,8 +244,8 @@ Banner de avertizare pentru setări incomplete:
 />
 ```
 
-**Styling:** `rounded-3xl border border-amber-200 bg-amber-50/80 px-5 py-4 text-amber-950`
-**Icon box:** `h-9 w-9 rounded-2xl bg-amber-100 text-amber-700`
+**Styling:** `rounded-3xl border border-border/60 bg-muted/40 px-5 py-4` — culori semantice, fără amber hardcodat
+**Icon box:** `h-9 w-9 rounded-2xl bg-muted text-muted-foreground`
 
 ---
 

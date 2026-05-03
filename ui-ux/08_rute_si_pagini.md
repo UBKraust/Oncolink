@@ -238,40 +238,65 @@ Toate paginile dashboard folosesc `DashboardLayout` (Sidebar + Topbar + `Dashboa
 
 ```
 PageHeader
-  Eyebrow: data curentă (format lung)
+  Eyebrow: data curentă (format lung română)
   Title: "Bună ziua, [Nume Terapeut]"
-  Action: badge "Sistem online și securizat"
+  Description: "Azi ai N ședințe, N dosare incomplete și N acțiuni de rezolvat."
+  Action: badge "Sistem online și securizat" (emerald)
+          [Client nou] [Pacient minor] [Programare]
 
-[Alert minori dacă pendingMinorReviews > 0]
-  → banner amber cu AlertTriangle
+TodayCommandCenter (SectionCard cu 2 tab-uri client):
+  ── Tab: Clinic ──
+    • Card "Următoarea ședință" — client, oră, locație, status badge, CTA Meet
+    • Card "Ritmul zilei" — N ședințe azi
+    • Card "Confirmări" — N confirmate, N neconfirmate, N finalizate
+    • Card "Acțiune rapidă" — text + [Adaugă programare]
 
-Grid 4 StatCard-uri
-  • Total clienți activi    (Users icon)
-  • Programări azi          (CalendarDays icon)
-  • Facturi neîncasate      (CreditCard icon)
-  • Creștere lunară         (TrendingUp icon)
-
-Grid 2 coloane:
-  ┌──────────────────────┐  ┌────────────────────────┐
-  │ SectionCard           │  │ SectionCard             │
-  │ "Programări azi"      │  │ "Programări viitoare"  │
-  │ AppointmentsToday     │  │ UpcomingAppointments    │
-  │ (lista cu ore)        │  │ (lista next N)          │
-  └──────────────────────┘  └────────────────────────┘
+  ── Tab: Financiar ──
+    • 3 mini-carduri: Restante (count + RON) / De emis / De urmărit
+    • [Vezi facturile] [Factură nouă]
+    • Panel "Notificări plăți & facturi" — lista notificări cu badge tone
 
 Grid 2 coloane:
   ┌──────────────────────┐  ┌────────────────────────┐
-  │ FinancialSummary      │  │ CompliancePanel        │
-  │ (grafic / stats)      │  │ (status GDPR)          │
+  │ ClinicalAlertsPanel  │  │ DocumentTasksPanel      │
+  │ (top 5 alerte)       │  │ (top 5 task-uri doc.)   │
+  │ [Vezi toate →]       │  │ [Vezi toate →]          │
   └──────────────────────┘  └────────────────────────┘
 
-SectionCard "Facturi neîncasate"
-  UnpaidInvoices (tabel compact)
+ServiceTracksOverview (5 carduri clickabile):
+  ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐
+  │ Clin.  │ │  CBT   │ │  DBT   │ │Cons.   │ │Undef.  │
+  │ Psih.  │ │        │ │        │ │Psih.   │ │        │
+  │ N caz. │ │ N caz. │ │ N caz. │ │ N caz. │ │ N caz. │
+  └────────┘ └────────┘ └────────┘ └────────┘ └────────┘
+  → Click pe card → ServiceTrackSheet [OVERLAY lateral]
+       • Lista clienți activi din track
+       • Lifecycle badge + risc badge + indicatori GDPR/Contract/Onboarding
+       • [Toți clienții [Track]] [Client nou]
 
-VaultStatusWidget (status seif)
+Grid 4 StatCard-uri:
+  • Ședințe Azi | Revizuiri Minori | Mix Pacienți | Locații Active
+
+Grid 3 coloane:
+  ┌─────────────────────────────┐  ┌───────────────────┐
+  │ AppointmentsToday (2/3)     │  │ AssessmentTasksPanel│
+  │ Lista prog. azi cu context  │  │ (1/3)              │
+  │ clinic (notă, factură, risc)│  │ Top 5 task-uri eval│
+  └─────────────────────────────┘  └───────────────────┘
+
+DashboardSecondaryTabs (3 tab-uri, defaultValue="financiar"):
+  ── Tab: Financiar (Banknote) ──
+    Grid 3 col: FinancialSummary (2/3) + UnpaidInvoices (1/3)
+
+  ── Tab: Programări viitoare (CalendarRange) ──
+    UpcomingAppointments (max 10, sortate cronologic)
+
+  ── Tab: Cabinet (Lock) ──
+    Grid 3 col: VaultStatusWidget (1/3) + CompliancePanel compact (2/3)
+    + ResearchReadinessPanel
 ```
 
-**Overlay-uri:** niciunul direct — `CompliancePanel` poate afișa detalii inline
+**Overlay-uri:** `ServiceTrackSheet` (Sheet lateral, lazy fetch)
 **Query params:** —
 
 ---
@@ -980,24 +1005,40 @@ SectionCard "Ședințe finalizate"
 
 ---
 
-### `/dashboard/compliance` — Conformitate GDPR
+### `/dashboard/compliance` — Centru unificat de conformitate
 
 ```
-PageHeader "Conformitate legală"
+PageHeader "Conformitate & Notificări"
 
 [SetupBanner dacă !configured]
 
-SectionCard "Cadru legal urmărit"
-  Lista legi aplicabile (GDPR, Legea 272, etc.)
+── Summary bar ──
+  Total notificări | Badge critice | Badge avertizări
 
-SectionCard "Panou juridic" (dacă configured)
-  CompliancePanel:
-  • Nr. clienți cu GDPR semnat / fără
-  • Clienți cu date expirate
-  • Anonimizări planificate
-  • [Export raport conformitate]
-  [EmptyState dacă !configured]
+ComplianceTabs (4 tab-uri, pattern slots server→client):
+  ── Tab: Alerte (ShieldAlert) ──
+    ClinicalAlertsPanel (limit 50):
+    • Alerte sortate: critical → warning → info
+    • Fiecare alertă: icon severitate + titlu + descriere + CTA link
+    • Fără buton "Vezi toate" (ești deja pe pagina centrală)
+
+  ── Tab: Documente (FileCheck2) ──
+    DocumentTasksPanel (limit 50):
+    • Task-uri GDPR / onboarding / contract / minor legal / raport
+    • Fiecare task: client name + tip + descriere + CTA link
+
+  ── Tab: Evaluări (ClipboardList) ──
+    AssessmentTasksPanel (limit 50):
+    • Task-uri: raport lunar nesentat, evaluare fără summary,
+      diary card DBT lipsă, fără evaluare inițială, reevaluare necesară
+    • Fiecare task: client name + descriere + CTA
+
+  ── Tab: Juridic (Scale) ──
+    CompliancePanel (per-client, full mode)
+    + Cadru legal static: GDPR / Cod Etică / CNP e-facturare
 ```
+
+**Notă:** `ClinicalAlertsPanel`, `DocumentTasksPanel`, `AssessmentTasksPanel` acceptă `limit` param — dashboard folosește default 5, compliance page 50.
 
 ---
 

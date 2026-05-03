@@ -440,3 +440,50 @@ Calculată în `src/lib/clients/service-track.ts` prin `computeServiceTrackNextA
 // Icon pe fundal colorat (EmptyState)
 <Icon className="h-5 w-5 text-primary" /> // în container bg-primary/10
 ```
+
+---
+
+## Sheet (Slide-over Panel)
+
+**Fișier:** [src/components/ui/sheet.tsx](../src/components/ui/sheet.tsx)
+
+Panel lateral care slide-in din dreapta. Folosit pentru detalii contextuale fără navigare (e.g. clienți per track clinic).
+
+### Structură componente
+
+```tsx
+<Sheet open={open} onOpenChange={setOpen}>
+  <SheetContent>
+    <SheetClose />                    {/* buton X absolut top-right */}
+    <SheetHeader>
+      <SheetTitle>Titlu panel</SheetTitle>
+      <SheetDescription>Subtitlu opțional</SheetDescription>
+    </SheetHeader>
+    <SheetBody className="px-4 py-4"> {/* flex-1 overflow-y-auto */}
+      {/* conținut scrollabil */}
+    </SheetBody>
+    <SheetFooter>                     {/* shrink-0, border-t */}
+      {/* CTA-uri */}
+    </SheetFooter>
+  </SheetContent>
+</Sheet>
+```
+
+### Props `Sheet`
+
+| Prop | Tip | Descriere |
+|---|---|---|
+| `open` | boolean | Stare deschis/închis (controlled) |
+| `onOpenChange` | (open: boolean) => void | Callback schimbare stare |
+| `children` | ReactNode | Conținut (include SheetContent) |
+
+### Comportament
+
+- **Backdrop:** `bg-foreground/20 backdrop-blur-sm` — click închide panel-ul
+- **Panel:** `w-full max-w-md` slide din dreapta, `animate-in slide-in-from-right duration-200`
+- **A11y:** `useOverlayA11y` — focus trap, Escape închide, scroll lock body, focus restore
+- **Close button:** absolut `top-4 right-4`, `h-8 w-8 rounded-xl`
+
+### Utilizare curentă
+
+`ServiceTrackSheet` — deschis la click pe card în `ServiceTracksOverview`, încarcă lazy clienții din acel track via server action `getTrackClients(serviceType)`.

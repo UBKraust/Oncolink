@@ -13,31 +13,41 @@
 ### Grupuri și itemi
 
 ```
-Activitate Zilnică
+Activitate zilnică
   ├── Dashboard             /dashboard
   ├── Programări            /dashboard/appointments
   ├── Calendar              /dashboard/calendar
-  ├── Note Clinice          /dashboard/notes
-  └── Asistent AI           /dashboard/ai
+  ├── Note clinice          /dashboard/notes
+  └── Clienți               /dashboard/clients
 
-Management Clienți
-  ├── Clienți               /dashboard/clients
-  ├── Documente             /dashboard/documents
+Clinic & Documente
   ├── Evaluări              /dashboard/assessments
-  └── Seif Note             /dashboard/vault
+  ├── Documente             /dashboard/documents
+  ├── Seif cabinet          /dashboard/vault
+  └── Catalog teste         /dashboard/tests
 
-Financiar & Administrativ
+Financiar & Admin
   ├── Facturi               /dashboard/invoices
   ├── Cheltuieli            /dashboard/expenses
-  ├── Raportare             /dashboard/billing
-  ├── Sumar Lunar           /dashboard/review
-  └── CAS                   /dashboard/cas
+  ├── Financiar lunar       /dashboard/billing
+  ├── Raport clinic lunar   /dashboard/review
+  └── Modul CAS             /dashboard/cas
 
-Legal & Configurare
-  ├── Registru Activitate   /dashboard/activity
-  ├── Conformitate GDPR     /dashboard/compliance
+Configurare & Legal
+  ├── Registru activitate   /dashboard/activity
+  ├── Conformitate          /dashboard/compliance
+  ├── Asistent AI           /dashboard/ai
   └── Setări                /dashboard/settings
 ```
+
+**Modificări față de structura inițială:**
+- „Asistent AI" mutat din „Activitate zilnică" → „Configurare & Legal" (nu e un tool zilnic operațional)
+- „Clienți" mutat din „Management Clienți" → „Activitate zilnică"
+- „Catalog teste" adăugat în „Clinic & Documente"
+- Grup redenumit: „Management Clienți" → „Clinic & Documente"
+- Grup redenumit: „Financiar & Administrativ" → „Financiar & Admin"
+- Grup redenumit: „Legal & Configurare" → „Configurare & Legal"
+- Labels redenumite: „Raportare Lună" → „Financiar lunar", „Sumar Lunar" → „Raport clinic lunar", „Registru" → „Registru activitate", „Seif Cabinet" → „Seif cabinet"
 
 ### Tipul unui nav item
 
@@ -134,8 +144,8 @@ rounded-3xl border bg-card p-4 shadow-2xl
 
 **Group label în mobile:**
 ```
-text-[10px] font-black uppercase tracking-widest
-text-muted-foreground/60 mb-2 px-2
+text-[10px] font-semibold uppercase tracking-wider
+text-muted-foreground/50 pb-1 px-2
 ```
 
 ---
@@ -155,9 +165,11 @@ Input de căutare în topbar, vizibil de la `md:`.
 ### Styling input
 
 ```
-h-10 w-full rounded-md border border-input bg-background
+h-9 w-full rounded-xl border border-input bg-muted/30
 pl-9 pr-3 text-sm
 placeholder:text-muted-foreground
+focus:bg-background focus:outline-none focus:ring-2 focus:ring-ring
+max-w-sm
 ```
 
 Icon `Search` poziționat stânga la `left-3`.
@@ -165,8 +177,8 @@ Icon `Search` poziționat stânga la `left-3`.
 ### Styling dropdown
 
 ```
-absolute left-0 top-12 z-40
-w-full max-w-md
+absolute left-0 top-11 z-40
+w-full max-w-sm
 rounded-2xl border bg-popover p-2 shadow-2xl
 ```
 
@@ -196,23 +208,6 @@ Pattern folosit în paginile cu context (fișă client, detaliu programare):
 ```
 
 Nu există un component `Breadcrumb` dedicat. Pattern-ul este un buton ghost cu arrow stânga.
-
----
-
-## Quick Actions (Topbar)
-
-Buton fix în topbar pentru acțiunea cea mai frecventă:
-
-```tsx
-<Button size="sm" asChild>
-  <Link href="/dashboard/appointments/new">
-    <CalendarPlus className="h-4 w-4" />
-    <span className="sm:inline hidden">Programare nouă</span>
-  </Link>
-</Button>
-```
-
-Textul e vizibil de la `sm:`, pe mobile apare doar icon.
 
 ---
 

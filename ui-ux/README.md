@@ -13,6 +13,7 @@ Documentație completă pentru sistemul de design, componentele UI și pattern-u
 | [05_formulare.md](05_formulare.md) | Pattern-uri formuri, validare, erori inline, Server Actions |
 | [06_feedback_si_stari.md](06_feedback_si_stari.md) | Toast, EmptyState, loading/pending, erori, SetupBanner |
 | [07_ux_patterns.md](07_ux_patterns.md) | Keyboard nav, focus management, responsive, animații, accesibilitate |
+| [08_rute_si_pagini.md](08_rute_si_pagini.md) | Harta completă rute: fiecare pagină, carduri, overlay-uri, query params |
 
 ## Stack UI
 
@@ -24,6 +25,7 @@ Documentație completă pentru sistemul de design, componentele UI și pattern-u
 - **Animații:** Tailwind `animate-in` / `fade-in` / `slide-in-from-*`
 - **Toast:** implementare custom (fără librărie externă)
 - **Forms:** `useActionState` (Next.js) + Server Actions (fără react-hook-form)
+- **Select:** nativ HTML (nu Radix/shadcn Select)
 
 ## Principii de Design
 

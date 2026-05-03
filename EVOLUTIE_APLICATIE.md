@@ -25,9 +25,32 @@ Aceasta regula ramane activa pe tot parcursul proiectului.
 - **Catalog teste complet** (task #26) — 9 instrumente + 2 formulare interne, metadata completă, pagină cu filtre
 - **Dashboard & Compliance reorganizate** (task-uri #28–29) — centru unificat notificări + tabs pe compliance + tabs în dashboard secțiunea secundară
 - **Audit & fix nav + dashboard shell** (task #30) — labels redenumite, AI mutat, sidebar footer eliminat, SetupBanner semantic, ActionCard trailing icon corectat
+- **ServiceTracksOverview — card sheet overlay** (task #31) — click pe card deschide Sheet lateral cu clienți activi, status, indicatori lipsă, lazy fetch
 - Urmează: P3 — AI prompts contextuale, generare rapoarte per track, rafinare overlay contract și audit transversal UI
 
 ## Ce s-a facut
+
+### 31. ServiceTracksOverview — card sheet overlay (lazy fetch)
+
+**Feature nou:** Click pe oricare card de track clinic deschide un Sheet lateral cu detalii despre clienții activi din acel track.
+
+**Componente noi:**
+- **`src/components/ui/sheet.tsx`** — Sheet UI primitiv construit custom (același pattern ca `AlertDialog`): `Sheet`, `SheetContent` (slide-in-from-right, `animate-in`), `SheetHeader`, `SheetTitle`, `SheetDescription`, `SheetBody`, `SheetFooter`, `SheetClose`; accesibil prin `useOverlayA11y`
+- **`src/app/dashboard/service-track-actions.ts`** — Server action `getTrackClients(serviceType)`: returnează clienții activi pentru un track (exclude INCHEIAT/NECONVERSIE/ANONIMIZAT); pentru `UNDECIDED` filtrează invers (tot ce nu e în cele 4 tipuri clasificate); câmpuri: fullName, lifecycleStatus, serviceTrackStatus, riskLevel, gdprSigned, onboardingComplete, hasContract, isMinor
+- **`src/components/dashboard/ServiceTrackSheet.tsx`** — Client component care consumă server action la deschidere (lazy); afișează: header cu track name + count + alertă dacă există clienți cu probleme; lista clienților cu avatar inițiale, lifecycle badge, risc badge, indicatori lipsă (`StatusPill` — roșu compact pentru GDPR/Contract/Onboarding lipsă); footer cu CTA „Toți clienții [Track]" + „Client nou"
+- **`src/components/dashboard/ServiceTracksOverview.tsx`** rescris ca client component — click pe card → `setSelectedTrack(track)` în loc de navigare; card-ul folosește `<button>` cu hover lift; `ServiceTrackSheet` randează în portal
+
+**Pattern fetch:** useEffect pe schimbare de `track` prop → `getTrackClients()` → skeleton cu `Loader2`; cancelled flag pentru race condition
+
+`npm run build` ✅
+
+Fișiere principale:
+- [src/components/ui/sheet.tsx](src/components/ui/sheet.tsx) _(nou)_
+- [src/app/dashboard/service-track-actions.ts](src/app/dashboard/service-track-actions.ts) _(nou)_
+- [src/components/dashboard/ServiceTrackSheet.tsx](src/components/dashboard/ServiceTrackSheet.tsx) _(nou)_
+- [src/components/dashboard/ServiceTracksOverview.tsx](src/components/dashboard/ServiceTracksOverview.tsx)
+
+---
 
 ### 30. Audit & fix nav + dashboard shell
 

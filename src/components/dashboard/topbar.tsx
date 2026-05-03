@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { CalendarPlus, LogOut, Menu, Search, X } from "lucide-react";
+import { LogOut, Menu, Search, X } from "lucide-react";
 
 import { signOut } from "@/app/login/actions";
 import { dashboardNavGroups } from "@/components/dashboard/nav-groups";
@@ -42,7 +42,6 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
   const filteredNavItems = useMemo(() => {
     const normalized = searchQuery.trim().toLowerCase();
     if (!normalized) return navItems.slice(0, 6);
-
     return navItems
       .filter(
         (item) =>
@@ -58,7 +57,6 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
         setSearchOpen(false);
       }
     }
-
     document.addEventListener("mousedown", handlePointerDown);
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, []);
@@ -72,7 +70,6 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
 
   function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
     const [firstMatch] = filteredNavItems;
     if (firstMatch) {
       router.push(firstMatch.href);
@@ -82,17 +79,19 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
 
   return (
     <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur md:px-6">
+      {/* Mobile menu toggle */}
       <button
         type="button"
-        className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-border bg-background text-foreground md:hidden"
+        className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border border-border bg-background text-foreground md:hidden"
         aria-expanded={mobileMenuOpen}
         aria-controls="mobile-dashboard-nav"
         aria-label={mobileMenuOpen ? "Închide meniul de navigare" : "Deschide meniul de navigare"}
         onClick={() => setMobileMenuOpen((open) => !open)}
       >
-        {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
       </button>
 
+      {/* Mobile nav overlay */}
       {mobileMenuOpen ? (
         <div className="fixed inset-0 z-50 md:hidden">
           <button
@@ -101,7 +100,6 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
             onClick={() => setMobileMenuOpen(false)}
             aria-label="Închide meniul"
           />
-
           <div
             id="mobile-dashboard-nav"
             ref={mobilePanelRef}
@@ -113,7 +111,7 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
           >
             <div className="mb-4 flex items-start justify-between border-b border-border pb-3">
               <div>
-                <p className="text-sm font-black text-primary">Ce`ai Pățit?</p>
+                <p className="text-sm font-black text-primary">Ce&apos;ai Pățit?</p>
                 <p className="text-xs text-muted-foreground">Navigație rapidă în dashboard</p>
               </div>
               <Button
@@ -128,20 +126,18 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
                 <X className="h-4 w-4" />
               </Button>
             </div>
-
             <nav className="space-y-4">
               {dashboardNavGroups.map((group) => (
-                <div key={group.title} className="space-y-2">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">
+                <div key={group.title} className="space-y-1">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50">
                     {group.title}
                   </p>
-                  <div className="grid gap-1.5">
+                  <div className="grid gap-1">
                     {group.items.map(({ href, label, icon: Icon }) => {
                       const active =
                         href === "/dashboard"
                           ? pathname === href
                           : pathname?.startsWith(href);
-
                       return (
                         <Link
                           key={href}
@@ -152,7 +148,7 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
                           )}
                           onClick={() => setMobileMenuOpen(false)}
                         >
-                          <Icon className={cn("h-4 w-4", active ? "text-primary" : "text-muted-foreground")} />
+                          <Icon className={cn("h-4 w-4 shrink-0", active ? "text-primary" : "text-muted-foreground/60")} />
                           {label}
                         </Link>
                       );
@@ -165,13 +161,14 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
         </div>
       ) : null}
 
+      {/* Mobile logo */}
       <div className="min-w-0 md:hidden">
-        <p className="truncate text-sm font-black text-primary">Ce`ai Pățit?</p>
-        <p className="truncate text-[11px] text-muted-foreground">ERP cabinet psihoterapie</p>
+        <p className="truncate text-sm font-black text-primary">Ce&apos;ai Pățit?</p>
       </div>
 
+      {/* Desktop search */}
       <div ref={searchRef} className="relative hidden flex-1 md:block">
-        <form onSubmit={handleSearchSubmit} className="relative max-w-md">
+        <form onSubmit={handleSearchSubmit} className="relative max-w-sm">
           <label htmlFor="dashboard-search" className="sr-only">
             Navigare rapidă în dashboard
           </label>
@@ -180,8 +177,8 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
             id="dashboard-search"
             type="search"
             value={searchQuery}
-            placeholder="Navighează către programări, clienți, facturi…"
-            className="h-10 w-full rounded-md border border-input bg-background pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            placeholder="Caută în dashboard…"
+            className="h-9 w-full rounded-xl border border-input bg-muted/30 pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:bg-background focus:outline-none focus:ring-2 focus:ring-ring"
             onChange={(event) => {
               setSearchQuery(event.target.value);
               setSearchOpen(true);
@@ -191,18 +188,17 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
         </form>
 
         {searchOpen ? (
-          <div className="absolute left-0 top-12 z-40 w-full max-w-md rounded-2xl border bg-popover p-2 shadow-2xl">
-            <p className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">
+          <div className="absolute left-0 top-11 z-40 w-full max-w-sm rounded-2xl border bg-popover p-2 shadow-2xl">
+            <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
               Navigare rapidă
             </p>
             {filteredNavItems.length > 0 ? (
-              <div className="grid gap-1">
+              <div className="grid gap-0.5">
                 {filteredNavItems.map(({ href, label, icon: Icon, groupTitle }) => {
                   const active =
                     href === "/dashboard"
                       ? pathname === href
                       : pathname?.startsWith(href);
-
                   return (
                     <Link
                       key={href}
@@ -216,7 +212,7 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
                         setSearchQuery("");
                       }}
                     >
-                      <Icon className={cn("h-4 w-4", active ? "text-primary" : "text-muted-foreground")} />
+                      <Icon className={cn("h-4 w-4 shrink-0", active ? "text-primary" : "text-muted-foreground/60")} />
                       <div className="min-w-0">
                         <p className="truncate text-sm font-medium">{label}</p>
                         <p className="truncate text-[11px] text-muted-foreground">{groupTitle}</p>
@@ -234,24 +230,17 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
         ) : null}
       </div>
 
-      <div className="ml-auto flex items-center gap-3">
+      {/* Right side actions */}
+      <div className="ml-auto flex items-center gap-2">
         <VaultIndicator demoMode={demoMode} />
 
-        <Button asChild size="sm" className="shrink-0">
-          <Link href="/dashboard/appointments/new">
-            <CalendarPlus className="h-4 w-4" />
-            <span className="hidden sm:inline">Programare nouă</span>
-            <span className="sm:hidden">Nouă</span>
-          </Link>
-        </Button>
-
         {userEmail ? (
-          <div className="flex items-center gap-2 border-l pl-3">
+          <div className="flex items-center gap-2 border-l pl-2">
             <span className="hidden text-xs text-muted-foreground lg:inline">
               {userEmail}
             </span>
             <form action={signOut}>
-              <Button type="submit" size="icon" variant="ghost" aria-label="Delogare">
+              <Button type="submit" size="icon" variant="ghost" className="h-8 w-8" aria-label="Delogare">
                 <LogOut className="h-4 w-4" />
               </Button>
             </form>

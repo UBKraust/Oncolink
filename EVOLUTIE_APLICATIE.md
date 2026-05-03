@@ -23,10 +23,40 @@ Aceasta regula ramane activa pe tot parcursul proiectului.
 - Hardening dashboard / appointments UI (`20260503091500_dashboard_ui_hardening.sql`) — ✅ aplicată în baza reală
 - **P1 complet** (task-uri #17–21) · **P2 complet** (task-uri #22–25) — UI și DB aliniate
 - **Catalog teste complet** (task #26) — 9 instrumente + 2 formulare interne, metadata completă, pagină cu filtre
-- **Dashboard & Compliance reorgnaizate** (task-uri #28–29) — centru unificat notificări + tabs pe compliance + tabs în dashboard secțiunea secundară
+- **Dashboard & Compliance reorganizate** (task-uri #28–29) — centru unificat notificări + tabs pe compliance + tabs în dashboard secțiunea secundară
+- **Audit & fix nav + dashboard shell** (task #30) — labels redenumite, AI mutat, sidebar footer eliminat, SetupBanner semantic, ActionCard trailing icon corectat
 - Urmează: P3 — AI prompts contextuale, generare rapoarte per track, rafinare overlay contract și audit transversal UI
 
 ## Ce s-a facut
+
+### 30. Audit & fix nav + dashboard shell
+
+**Audit identificat:**
+- Labels nav ambigue: „Raportare Lună" / „Sumar Lunar" / „Registru" fără context clar
+- „Asistent AI" plasat greșit în grupul „Activitate Zilnică" (nu e un tool zilnic operațional)
+- Sidebar footer cu „Informații Legale" + versiune — clutter inutil în interfața clinică
+- `SetupBanner` în `page-shell.tsx` cu culori amber hardcodate (`border-amber-200`, `bg-amber-50`, `text-amber-950`)
+- Buton „Programare nouă" în topbar redundant față de butonul din dashboard `PageHeader`
+- `ActionCard` default trailing icon = `AlertTriangle` (icon de avertizare pe card de navigare)
+- Sidebar group headers prea agresive (`font-black uppercase tracking-widest`)
+- Apostrof greșit în logo (`Ce\`ai` cu backtick în loc de `Ce'ai`)
+
+**Fix-uri aplicate:**
+
+- **`nav-groups.ts`** — labels redenumite (`Raportare Lună` → `Financiar lunar`, `Sumar Lunar` → `Raport clinic lunar`, `Registru` → `Registru activitate`, `Seif Cabinet` → `Seif cabinet`); grupuri redenumite (`Management Clienți` → `Clinic & Documente`, `Financiar & Administrativ` → `Financiar & Admin`, `Legal & Configurare` → `Configurare & Legal`); `Asistent AI` mutat din `Activitate zilnică` în `Configurare & Legal`; `Clienți` mutat în `Activitate zilnică`; `Catalog teste` adăugat în `Clinic & Documente`
+- **`sidebar.tsx`** — eliminat footer cu „Informații Legale" (termeni, GDPR, versiune); calmați header-ii de grup (`font-black uppercase tracking-widest` → `font-semibold uppercase tracking-wider`); apostrof corect `Ce'ai` (HTML entity); lățime sidebar redusă `w-64` → `w-60`
+- **`topbar.tsx`** — eliminat butonul „Programare nouă" (redundant cu dashboard PageHeader); apostrof corect în logo și mobile nav; search input mai compact (`max-w-sm`, `rounded-xl`, `bg-muted/30`); placeholder scurtat (`Caută în dashboard…`); header-ii din mobile nav calmaṭi; icon mobile menu mai mic (`h-9 w-9`)
+- **`page-shell.tsx`** — `SetupBanner`: eliminat culori amber hardcodate (`border-amber-200`, `bg-amber-50`, `text-amber-950`), înlocuit cu `border-border/60 bg-muted/40 text-muted-foreground`; `ActionCard`: trailing icon default schimbat din `AlertTriangle` în `ChevronRight`
+
+`npm run lint` ✅ | `npm run build` ✅
+
+Fișiere principale:
+- [src/components/dashboard/nav-groups.ts](src/components/dashboard/nav-groups.ts)
+- [src/components/dashboard/sidebar.tsx](src/components/dashboard/sidebar.tsx)
+- [src/components/dashboard/topbar.tsx](src/components/dashboard/topbar.tsx)
+- [src/components/app/page-shell.tsx](src/components/app/page-shell.tsx)
+
+---
 
 ### 29. Dashboard — secțiunea secundară reorganizată în tabs
 

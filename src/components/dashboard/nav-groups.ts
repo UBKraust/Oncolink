@@ -20,39 +20,39 @@ import {
 
 export const dashboardNavGroups = [
   {
-    title: "Activitate Zilnică",
+    title: "Activitate zilnică",
     items: [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { href: "/dashboard/appointments", label: "Programări", icon: CalendarCheck },
       { href: "/dashboard/calendar", label: "Calendar", icon: CalendarDays },
       { href: "/dashboard/notes", label: "Note clinice", icon: NotebookPen },
-      { href: "/dashboard/ai", label: "Asistent AI", icon: BotMessageSquare },
-    ],
-  },
-  {
-    title: "Management Clienți",
-    items: [
       { href: "/dashboard/clients", label: "Clienți", icon: Users },
-      { href: "/dashboard/documents", label: "Documente", icon: FileText },
-      { href: "/dashboard/assessments", label: "Evaluări", icon: ClipboardList },
-      { href: "/dashboard/vault", label: "Seif Cabinet", icon: Lock },
     ],
   },
   {
-    title: "Financiar & Administrativ",
+    title: "Clinic & Documente",
+    items: [
+      { href: "/dashboard/assessments", label: "Evaluări", icon: ClipboardList },
+      { href: "/dashboard/documents", label: "Documente", icon: FileText },
+      { href: "/dashboard/vault", label: "Seif cabinet", icon: Lock },
+    ],
+  },
+  {
+    title: "Financiar & Admin",
     items: [
       { href: "/dashboard/invoices", label: "Facturi", icon: Receipt },
       { href: "/dashboard/expenses", label: "Cheltuieli", icon: Wallet },
-      { href: "/dashboard/billing", label: "Raportare Lună", icon: BarChart3 },
-      { href: "/dashboard/review", label: "Sumar Lunar", icon: CalendarRange },
+      { href: "/dashboard/billing", label: "Financiar lunar", icon: BarChart3 },
+      { href: "/dashboard/review", label: "Raport clinic lunar", icon: CalendarRange },
       { href: "/dashboard/cas", label: "Modul CAS", icon: Hospital },
     ],
   },
   {
-    title: "Legal & Configurare",
+    title: "Configurare & Legal",
     items: [
-      { href: "/dashboard/activity", label: "Registru", icon: Activity },
+      { href: "/dashboard/activity", label: "Registru activitate", icon: Activity },
       { href: "/dashboard/compliance", label: "Conformitate", icon: Scale },
+      { href: "/dashboard/ai", label: "Asistent AI", icon: BotMessageSquare },
       { href: "/dashboard/settings", label: "Setări", icon: Settings },
     ],
   },

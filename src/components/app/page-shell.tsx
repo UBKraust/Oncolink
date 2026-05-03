@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { AlertTriangle, type LucideIcon } from "lucide-react";
+import { AlertTriangle, ChevronRight, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -61,14 +61,14 @@ export function SetupBanner({
   description: string;
 }) {
   return (
-    <div className="rounded-3xl border border-amber-200 bg-amber-50/80 px-5 py-4 text-amber-950 shadow-sm">
+    <div className="rounded-3xl border border-border/60 bg-muted/40 px-5 py-4 shadow-sm">
       <div className="flex items-start gap-3">
-        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
+        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
           <AlertTriangle className="h-4 w-4" />
         </div>
         <div className="space-y-1">
-          <p className="text-sm font-black">{title}</p>
-          <p className="text-sm text-amber-900/80">{description}</p>
+          <p className="text-sm font-semibold text-foreground">{title}</p>
+          <p className="text-sm text-muted-foreground">{description}</p>
         </div>
       </div>
     </div>
@@ -205,7 +205,7 @@ export function ActionCard({
       {children ? <div className="mt-4 flex-1">{children}</div> : null}
       {footer ? <div className="mt-6 border-t border-border/60 pt-4">{footer}</div> : null}
       <div className="absolute bottom-6 right-6 flex h-8 w-8 items-center justify-center rounded-xl bg-muted text-primary opacity-0 transition-all group-hover:opacity-100">
-        {trailing ?? <AlertTriangle className="h-4 w-4" />}
+        {trailing ?? <ChevronRight className="h-4 w-4" />}
       </div>
     </Link>
   );

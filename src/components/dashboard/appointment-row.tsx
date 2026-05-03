@@ -121,7 +121,7 @@ export function AppointmentRow({
           {showClinicalContext && !isDuty ? (
             <div className="mt-3 flex flex-wrap gap-2">
               <Badge variant={appointment.hasContract ? "success" : "warning"} className="normal-case tracking-normal">
-                {appointment.hasContract ? "Contract ok" : "Contract lipsă"}
+                {appointment.hasContract ? "Contract disponibil" : "Contract lipsă"}
               </Badge>
               <Badge variant={appointment.hasSessionNote ? "success" : "warning"} className="normal-case tracking-normal">
                 {appointment.hasSessionNote ? "Notă existentă" : "Notă lipsă"}
@@ -149,7 +149,7 @@ export function AppointmentRow({
                   variant={appointment.hasDiaryCardThisWeek ? "success" : "warning"}
                   className="normal-case tracking-normal"
                 >
-                  {appointment.hasDiaryCardThisWeek ? "Diary card prezent" : "Diary card lipsă"}
+                  {appointment.hasDiaryCardThisWeek ? "Jurnal DBT prezent" : "Jurnal DBT lipsă"}
                 </Badge>
               ) : null}
             </div>
@@ -176,7 +176,7 @@ export function AppointmentRow({
               ) : null}
               {appointment.serviceType === "DBT" && !appointment.hasDiaryCardThisWeek && appointment.clientId ? (
                 <Link href={`/dashboard/clients/${appointment.clientId}`} className="text-primary hover:underline">
-                  Diary Card
+                  Jurnal DBT
                 </Link>
               ) : null}
             </div>

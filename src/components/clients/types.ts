@@ -184,6 +184,9 @@ export interface ClientAppointment {
   status: string;
   meet_link?: string | null;
   location_tag?: string | null;
+  notes?: Array<{ id: string }> | null;
+  invoices?: Array<{ id: string }> | null;
+  hasDiaryCardThisWeek?: boolean | null;
 }
 
 export interface ClientAiContext {

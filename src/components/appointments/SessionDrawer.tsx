@@ -303,7 +303,7 @@ export function SessionDrawer({
                     </Badge>
                     {serviceType === "DBT" ? (
                       <Badge variant={hasDiaryCardThisWeek ? "success" : "warning"}>
-                        {hasDiaryCardThisWeek ? "Diary card prezent" : "Diary card lipsă"}
+                        {hasDiaryCardThisWeek ? "Jurnal DBT prezent" : "Jurnal DBT lipsă"}
                       </Badge>
                     ) : null}
                   </div>
@@ -331,7 +331,7 @@ export function SessionDrawer({
                         href={`/dashboard/clients/${appointment.client.id}`}
                         className="text-primary hover:underline"
                       >
-                        {hasDiaryCardThisWeek ? "Vezi diary cards" : "Adaugă diary card"}
+                        {hasDiaryCardThisWeek ? "Vezi jurnalele DBT" : "Adaugă jurnal DBT"}
                       </Link>
                     ) : null}
                     <Link

@@ -1,6 +1,6 @@
 # Client Service Flows — Plan și Arhitectură
 
-Generat: 2026-05-02 · Status: plan, fără implementare
+Generat: 2026-05-02 · Actualizat: 2026-05-03 · Status: implementare incrementală activă
 
 ---
 
@@ -45,6 +45,38 @@ Scopul dashboard-ului nu este să înlocuiască fișa clientului, ci să răspun
 2. Ce cazuri sunt blocate?
 3. Ce documente lipsesc?
 4. Ce evaluări sau rapoarte trebuie urmărite?
+
+## Cum se vede asta în programări și fișa clientului
+
+Service tracks nu mai sunt vizibile doar agregat în dashboard. Ele influențează acum și contextul operațional din:
+
+- `AppointmentsToday`
+- `SessionDrawer`
+- pagina completă a programării
+- fișa clientului
+
+### Programări
+
+În lista programărilor de azi și în detaliul unei ședințe apar acum, dacă datele există:
+
+- tipul de serviciu
+- nivelul de risc
+- stare contract
+- stare notă
+- stare factură
+- jurnal DBT pentru săptămâna curentă
+
+### Fișa clientului
+
+Fișa clientului are un panou nou de `Pregătire sesiune`, care sintetizează:
+
+- următoarea ședință
+- ultima ședință finalizată
+- dacă ultima ședință are notă
+- dacă ultima ședință are factură
+- ce lipsește înainte de următoarea sesiune
+
+Scopul acestui panou este să reducă salturile între module exact înaintea unei intervenții clinice.
 
 ---
 

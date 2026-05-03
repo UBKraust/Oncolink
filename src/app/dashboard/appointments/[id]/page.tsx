@@ -200,7 +200,7 @@ export default async function AppointmentDetailPage({
                   </Badge>
                   {serviceType === "DBT" ? (
                     <Badge variant={appointment.hasDiaryCardThisWeek ? "success" : "warning"}>
-                      {appointment.hasDiaryCardThisWeek ? "Diary card prezent" : "Diary card lipsă"}
+                      {appointment.hasDiaryCardThisWeek ? "Jurnal DBT prezent" : "Jurnal DBT lipsă"}
                     </Badge>
                   ) : null}
                 </div>
@@ -231,7 +231,7 @@ export default async function AppointmentDetailPage({
                   )}
                   <Button asChild variant="outline" size="sm">
                     <Link href={`/dashboard/clients/${appointment.client.id}`}>
-                      {serviceType === "DBT" ? "Vezi client și diary card" : "Vezi fișa clientului"}
+                      {serviceType === "DBT" ? "Vezi client și jurnal DBT" : "Vezi fișa clientului"}
                     </Link>
                   </Button>
                 </div>

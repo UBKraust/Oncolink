@@ -36,15 +36,24 @@ Refactorul principal pentru `/dashboard` a fost implementat incremental în acee
 ### Implementat cu fallback safe
 
 - `ServiceTracksOverview` folosește `clients.service_type` când există și degradează la gol / fallback calm dacă nu există date utile
-- `AssessmentTasksPanel` folosește tabela `assessments` existentă, fără scoring complex și fără dependență de `client_assessments`
+- `AssessmentTasksPanel` folosește tabela `assessments` existentă, iar unde există se leagă și de `client_assessments`, fără scoring complex în acest task
 - `ResearchReadinessPanel` nu face integrare nouă cu Ollama și nu încearcă să implementeze Research Hub
 
 ### Rămas pentru fazele următoare
 
-- `TodayCommandCenter` cu note clinice lipsă reale și context de sesiune mai bogat
-- alerte DBT / CBT bazate pe tabelele P2 (`dbt_diary_cards`, `safety_plans`, `homework_items`)
-- task-uri T0 / T1 / T2 bazate pe `client_assessments`
+- rafinarea indicatorilor operaționali din `TodayCommandCenter` pe bază de date mai bogată
+- task-uri T0 / T1 / T2 mai stricte bazate pe `client_assessments`
 - research readiness cu coverage real și status local Ollama
+
+### Extins după implementarea inițială
+
+- `TodayCommandCenter` are și tab `Financiar`
+- `AppointmentsToday` afișează context clinic per programare
+- `SessionDrawer` și pagina completă a programării afișează context clinic
+- fișa clientului are panou `Pregătire sesiune`
+- DB-ul a primit hardening incremental pentru aceste suprafețe:
+  - constrângeri pe `service_type` și `risk_level`
+  - indexuri pentru `appointments`, `notes`, `invoices`
 
 ---
 

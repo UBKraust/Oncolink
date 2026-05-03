@@ -17,14 +17,68 @@ Aceasta regula ramane activa pe tot parcursul proiectului.
 
 - `npm run lint`: ✅ verde
 - `npm run build`: ✅ verde
-- Migrarea lifecycle (`20260429223610_client_lifecycle_status.sql`) — **neaplicată în baza reală**
-- Migrarea P0 service_type (`20260502_service_type_and_clinical_fields.sql`) — **neaplicată în baza reală**
-- Migrarea P2 (`20260502120000_p2_clinical_tools.sql`) — **neaplicată în baza reală** — aplică toate 3 împreună
-- **P1 complet** (task-uri #17–21) · **P2 complet** (task-uri #22–25) — UI implementat, necesită migrări aplicate
+- Migrarea lifecycle (`20260429223610_client_lifecycle_status.sql`) — ✅ aplicată în baza reală
+- Migrarea P0 service/service-track (`20260502110000_service_type_and_clinical_fields.sql`) — ✅ aplicată în baza reală
+- Migrarea P2 (`20260502120000_p2_clinical_tools.sql`) — ✅ aplicată în baza reală
+- Hardening dashboard / appointments UI (`20260503091500_dashboard_ui_hardening.sql`) — ✅ aplicată în baza reală
+- **P1 complet** (task-uri #17–21) · **P2 complet** (task-uri #22–25) — UI și DB aliniate
 - **Catalog teste complet** (task #26) — 9 instrumente + 2 formulare interne, metadata completă, pagină cu filtre
-- Urmează: P3 — AI prompts contextuale, generare rapoarte per track
+- Urmează: P3 — AI prompts contextuale, generare rapoarte per track, rafinare overlay contract și audit transversal UI
 
 ## Ce s-a facut
+
+### 27. Dashboard / Programări / Fișa clientului — context clinic operațional + hardening DB + audit UI
+
+**Dashboard / programări:**
+- `AppointmentsToday` și `AppointmentRow` au fost extinse cu context clinic pe programare:
+  - `service_type`
+  - risc clinic
+  - stare contract
+  - stare notă
+  - stare factură
+  - jurnal DBT săptămânal
+- `TodayCommandCenter` include și tab financiar; denumirile noi au fost armonizate în română
+- `SessionDrawer` și pagina completă a programării afișează acum un bloc compact `Context clinic`
+
+**Fișa clientului:**
+- `ClientDashboardUI` are un panou nou `Pregătire sesiune`
+- panoul sintetizează:
+  - următoarea ședință
+  - ultima ședință finalizată
+  - stare notă / factură
+  - checklist pentru următoarea sesiune
+  - ultima factură relevantă
+
+**DB / hardening:**
+- migrare nouă: [supabase/migrations/20260503091500_dashboard_ui_hardening.sql](supabase/migrations/20260503091500_dashboard_ui_hardening.sql)
+- normalizare valori pentru `clients.service_type` și `clients.risk_level`
+- constrângeri:
+  - `clients_service_type_valid`
+  - `clients_risk_level_valid`
+- indexuri noi:
+  - `clients_risk_level_idx`
+  - `appointments_client_date_desc_idx`
+  - `notes_appointment_idx`
+  - `invoices_appointment_idx`
+- `npx supabase db push` rulat cu succes și verificat remote
+
+**Audit UI / documentație:**
+- addendum nou în `docs/ui-ux-audit-readonly.md` pentru extensiile din programări și client page
+- `docs/client-service-flows.md` actualizat din plan static în status de implementare incrementală
+- `fluxuri/01_lifecycle_client.md` și `docs/dashboard-v2-plan.md` trebuie citite acum în cheia implementării reale, nu a planului inițial
+
+`npm run lint` ✅ | `npm run build` ✅
+
+Fișiere principale:
+- [src/components/dashboard/appointment-row.tsx](src/components/dashboard/appointment-row.tsx)
+- [src/components/dashboard/TodayCommandCenter.tsx](src/components/dashboard/TodayCommandCenter.tsx)
+- [src/components/appointments/SessionDrawer.tsx](src/components/appointments/SessionDrawer.tsx)
+- [src/app/dashboard/appointments/[id]/page.tsx](src/app/dashboard/appointments/[id]/page.tsx)
+- [src/components/clients/ClientDashboardUI.tsx](src/components/clients/ClientDashboardUI.tsx)
+- [src/lib/appointments/queries.ts](src/lib/appointments/queries.ts)
+- [supabase/migrations/20260503091500_dashboard_ui_hardening.sql](supabase/migrations/20260503091500_dashboard_ui_hardening.sql)
+
+---
 
 ### 26. Catalog teste psihologice — metadata, instrumente noi, formulare interne, pagină redesenată
 

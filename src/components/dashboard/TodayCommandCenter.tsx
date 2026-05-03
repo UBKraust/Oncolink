@@ -68,7 +68,7 @@ export function TodayCommandCenter({
 
   return (
     <SectionCard
-      title="Today Command Center"
+      title="Panoul Zilei"
       description="Un rezumat clinic și operațional pentru începutul zilei."
       icon={CalendarDays}
     >

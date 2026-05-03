@@ -22,8 +22,10 @@ Lifecycle-ul nu mai este relevant doar în registrul de clienți și în fișa c
 - [src/components/clients/ClientsClient.tsx](../src/components/clients/ClientsClient.tsx) — registru cu filtrare
 - [src/components/clients/ClientDashboardUI.tsx](../src/components/clients/ClientDashboardUI.tsx) — fișa client cu acțiuni lifecycle + ServiceTrackCard + "Istoric lifecycle"
 - [src/app/dashboard/clients/[id]/page.tsx](../src/app/dashboard/clients/[id]/page.tsx) — fetch paralel `getClientStatusHistory`
+- [src/lib/appointments/queries.ts](../src/lib/appointments/queries.ts) — programări îmbogățite cu context clinic și jurnal DBT
 - [supabase/migrations/20260429223610_client_lifecycle_status.sql](../supabase/migrations/20260429223610_client_lifecycle_status.sql) — schema `client_status_history` (✅ aplicată)
-- [supabase/migrations/20260502110000_service_type_and_clinical_fields.sql](../supabase/migrations/20260502110000_service_type_and_clinical_fields.sql) — câmpuri service_type + clinice pe `clients` (🟠 pendingă)
+- [supabase/migrations/20260502110000_service_type_and_clinical_fields.sql](../supabase/migrations/20260502110000_service_type_and_clinical_fields.sql) — câmpuri service_type + clinice pe `clients` (✅ aplicată)
+- [supabase/migrations/20260503091500_dashboard_ui_hardening.sql](../supabase/migrations/20260503091500_dashboard_ui_hardening.sql) — constrângeri și indexuri pentru UI-ul operațional nou (✅ aplicată)
 
 ## Diagrama Stărilor
 
@@ -119,18 +121,18 @@ lifecycle-sync.ts
 - Acțiuni din dashboard (terapeut autentificat) → înregistrează numele terapeutului
 - Acțiuni de sistem/public (service role, fără sesiune) → `changed_by_name` absent → UI nu afișează nimic
 
-## Service Type — Tip Serviciu Principal (P0)
+## Service Type — Tip Serviciu Principal
 
 Pe lângă lifecycle, fiecare client are un **tip de serviciu** (`service_type`) care descrie natura relației terapeutice:
 
 | Valoare | Descriere |
 |---------|-----------|
 | `UNDECIDED` | Nedecis (default la creare) |
-| `INDIVIDUAL` | Terapie individuală adult |
-| `MINOR_CLIENT` | Client minor (cu tutore) |
-| `B2B_COMPANY` | Contract cu companie |
-| `TRAINING_GROUP` | Grup de formare / training |
-| `SUPERVISION` | Supervizare profesională |
+| `CLINICAL_PSYCHOLOGY` | Psihologie clinică |
+| `CBT` | Psihoterapie cognitiv-comportamentală |
+| `DBT` | Psihoterapie dialectic-comportamentală |
+| `COUNSELING` | Consiliere psihologică |
+| `MIXED` | Caz mixt / de clarificat |
 
 ### ServiceTrackCard
 
@@ -139,7 +141,7 @@ Componentă `src/components/clients/ServiceTrackCard.tsx` afișată deasupra gri
 - Status track opțional (`service_track_status`)
 - **Next best action** calculat din `computeServiceTrackNextAction(serviceType, lifecycleStatus)` — mesaj contextual diferit per combinație
 
-### Câmpuri clinice asociate (schema DB — migrare pendingă)
+### Câmpuri clinice asociate (schema DB — aplicată)
 
 Adăugate pe tabela `clients` prin migrarea `20260502110000_service_type_and_clinical_fields.sql`:
 - `service_type` (text, default `UNDECIDED`)
@@ -152,6 +154,24 @@ Adăugate pe tabela `clients` prin migrarea `20260502110000_service_type_and_cli
 - `research_consent` (boolean, default false)
 
 Index creat: `(therapist_id, service_type)` pentru filtrare eficientă per tip.
+
+## Cum influențează lifecycle-ul suprafețele noi
+
+Lifecycle-ul și service track-ul nu mai sunt vizibile doar ca badge-uri sau istoric. Ele influențează direct:
+
+- `AppointmentRow` în dashboard
+- `SessionDrawer`
+- pagina completă a programării
+- panoul `Pregătire sesiune` din fișa clientului
+
+Astfel, înainte de o ședință, terapeutul poate vedea mai ușor:
+
+- dacă există o programare viitoare
+- dacă ultima ședință are notă
+- dacă ultima ședință are factură
+- dacă lipsesc documente obligatorii
+- dacă DBT are jurnalul săptămânii
+- dacă evaluarea de risc este completată
 
 ---
 

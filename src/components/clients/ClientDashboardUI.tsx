@@ -43,6 +43,9 @@ import { DbtDiaryCardsPanel } from "@/components/clients/DbtDiaryCardsPanel";
 import {
   SERVICE_TYPE_LABELS,
   SERVICE_TYPE_BADGE_VARIANTS,
+  RISK_LEVEL_LABELS,
+  RISK_LEVEL_BADGE_VARIANTS,
+  isRiskLevel,
   isServiceType,
 } from "@/lib/clients/service-track";
 import type {
@@ -148,6 +151,32 @@ export function ClientDashboardUI({
     .filter((a) => isPast(new Date(a.appointment_date)))
     .sort((a, b) => new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime())
     .slice(0, 4);
+  const nextAppointment = upcomingAppointments[0] ?? null;
+  const lastCompletedAppointment = [...appointments]
+    .filter((a) => a.status === "FINALIZAT")
+    .sort((a, b) => new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime())[0] ?? null;
+  const latestInvoice = [...payments]
+    .sort((a, b) => new Date(b.issued_at ?? 0).getTime() - new Date(a.issued_at ?? 0).getTime())[0] ?? null;
+  const serviceType = isServiceType(client.service_type) ? client.service_type : "UNDECIDED";
+  const riskLevel = client.risk_level;
+  const riskLabel = riskLevel && isRiskLevel(riskLevel) ? RISK_LEVEL_LABELS[riskLevel] : null;
+  const riskVariant =
+    riskLevel && isRiskLevel(riskLevel) ? RISK_LEVEL_BADGE_VARIANTS[riskLevel] : null;
+  const nextSessionChecklist = [
+    !client.gdpr_consent_signed ? "Consimțământ GDPR lipsă" : null,
+    !lifecycle.isOnboardingComplete ? "Onboarding incomplet" : null,
+    !client.contract_url && !client.terms_consent_signed_at ? "Contract / termeni lipsă" : null,
+    serviceType === "DBT" && !nextAppointment?.hasDiaryCardThisWeek ? "Jurnal DBT lipsă pentru săptămâna curentă" : null,
+    (serviceType === "DBT" || serviceType === "CLINICAL_PSYCHOLOGY") && !client.risk_level
+      ? "Evaluare de risc necompletată"
+      : null,
+    lastCompletedAppointment && !(lastCompletedAppointment.notes?.length)
+      ? "Ultima ședință finalizată nu are notă"
+      : null,
+    lastCompletedAppointment && !(lastCompletedAppointment.invoices?.length)
+      ? "Ultima ședință finalizată nu are factură"
+      : null,
+  ].filter((item): item is string => Boolean(item));
 
   const sessionFreqLabel = SESSION_FREQ_LABELS[client.session_frequency ?? ""] ?? null;
   const isB2B = client.billing_type === "B2B_COMPANY";
@@ -403,6 +432,161 @@ export function ClientDashboardUI({
 
       {!anonymized && (
         <ClinicalContextCard client={client} />
+      )}
+
+      {!anonymized && (
+        <section className="rounded-[1.75rem] border border-border/60 bg-card p-5 shadow-sm">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div className="space-y-4 lg:max-w-md">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground">
+                  Pregătire Sesiune
+                </p>
+                <h3 className="mt-2 text-base font-semibold text-foreground">
+                  Ce urmează pentru acest client
+                </h3>
+              </div>
+
+              {nextAppointment ? (
+                <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="info" className="normal-case tracking-normal">
+                      Următoarea ședință
+                    </Badge>
+                    {riskLabel && riskVariant ? (
+                      <Badge
+                        variant={riskVariant}
+                        className="normal-case tracking-normal"
+                      >
+                        <ShieldAlert className="mr-1 h-3 w-3" />
+                        {riskLabel}
+                      </Badge>
+                    ) : null}
+                  </div>
+                  <p className="mt-3 text-base font-semibold text-foreground">
+                    {format(new Date(nextAppointment.appointment_date), "EEEE, d MMM yyyy · HH:mm", { locale: ro })}
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {nextAppointment.duration_minutes} minute
+                    {nextAppointment.meet_link ? " · online" : nextAppointment.location_tag ? ` · ${nextAppointment.location_tag}` : ""}
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Button asChild size="sm" className="rounded-xl">
+                      <Link href={`/dashboard/appointments/${nextAppointment.id}`}>
+                        Deschide programarea
+                      </Link>
+                    </Button>
+                    <Button asChild variant="outline" size="sm" className="rounded-xl">
+                      <Link href={`/dashboard/appointments/${nextAppointment.id}/edit`}>
+                        Editează
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <EmptyState
+                  title="Nicio ședință programată"
+                  description="Clientul nu are încă o programare viitoare. Poți crea rapid una nouă din această zonă."
+                  icon={Calendar}
+                  action={{ label: "Adaugă programare", href: `/dashboard/appointments/new?clientId=${client.id}` }}
+                />
+              )}
+            </div>
+
+            <div className="grid flex-1 gap-4 lg:grid-cols-2">
+              <div className="rounded-2xl border border-border/60 p-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
+                  Ultima Ședință
+                </p>
+                {lastCompletedAppointment ? (
+                  <div className="mt-3 space-y-3">
+                    <p className="text-sm font-semibold text-foreground">
+                      {format(new Date(lastCompletedAppointment.appointment_date), "d MMM yyyy · HH:mm", { locale: ro })}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <Badge
+                        variant={lastCompletedAppointment.notes?.length ? "success" : "warning"}
+                        className="normal-case tracking-normal"
+                      >
+                        {lastCompletedAppointment.notes?.length ? "Notă existentă" : "Notă lipsă"}
+                      </Badge>
+                      <Badge
+                        variant={lastCompletedAppointment.invoices?.length ? "info" : "outline"}
+                        className="normal-case tracking-normal"
+                      >
+                        {lastCompletedAppointment.invoices?.length ? "Factură emisă" : "Fără factură"}
+                      </Badge>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button asChild variant="outline" size="sm" className="rounded-xl">
+                        <Link href={`/dashboard/notes/${lastCompletedAppointment.id}`}>
+                          {lastCompletedAppointment.notes?.length ? "Vezi nota" : "Adaugă notă"}
+                        </Link>
+                      </Button>
+                      <Button asChild variant="outline" size="sm" className="rounded-xl">
+                        <Link
+                          href={
+                            lastCompletedAppointment.invoices?.length
+                              ? `/dashboard/appointments/${lastCompletedAppointment.id}`
+                              : `/dashboard/invoices/new?appointmentId=${lastCompletedAppointment.id}`
+                          }
+                        >
+                          {lastCompletedAppointment.invoices?.length ? "Vezi programarea" : "Emite factură"}
+                        </Link>
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    Nu există încă o ședință finalizată pentru acest client.
+                  </p>
+                )}
+              </div>
+
+              <div className="rounded-2xl border border-border/60 p-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
+                  Checklist Următoare Ședință
+                </p>
+                {nextSessionChecklist.length > 0 ? (
+                  <ul className="mt-3 space-y-2 text-sm text-foreground">
+                    {nextSessionChecklist.slice(0, 5).map((item) => (
+                      <li key={item} className="flex gap-2">
+                        <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="mt-3 flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>Fișa pare pregătită pentru următoarea sesiune.</span>
+                  </div>
+                )}
+                {latestInvoice ? (
+                  <div className="mt-4 border-t border-border/60 pt-4">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
+                      Ultima Factură
+                    </p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <Badge
+                        variant={
+                          latestInvoice.status === "PLĂTITĂ"
+                            ? "success"
+                            : latestInvoice.status === "RESTANTĂ"
+                              ? "destructive"
+                              : "secondary"
+                        }
+                        className="normal-case tracking-normal"
+                      >
+                        {latestInvoice.smartbill_series}/{latestInvoice.smartbill_number} · {latestInvoice.status}
+                      </Badge>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        </section>
       )}
 
       {/* P2: CBT tools */}

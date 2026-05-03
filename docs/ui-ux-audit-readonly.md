@@ -34,6 +34,36 @@
 
 Acest document rămâne util ca audit structural, dar observațiile despre dashboard trebuie citite acum în cheia: **parțial rezolvate în `/dashboard`, încă deschise în alte suprafețe**.
 
+## 0.1 Addendum — 2026-05-03
+
+În ziua următoare refactorului dashboard-ului, contextul clinic-operațional a fost extins și în suprafețele de lucru directe:
+
+- `AppointmentsToday` afișează acum context per programare:
+  - tip serviciu
+  - risc
+  - contract
+  - notă
+  - factură
+  - jurnal DBT
+- `SessionDrawer` și pagina completă a programării afișează un bloc compact `Context clinic`
+- fișa clientului are acum un panou `Pregătire sesiune` cu:
+  - următoarea ședință
+  - ultima ședință finalizată
+  - stare notă / factură
+  - checklist pentru sesiunea următoare
+
+### Impact UX
+
+- terapeutul nu mai trebuie să sară între dashboard, programări și fișa clientului pentru a afla ce lipsește înainte de o ședință
+- contextul clinic a devenit mai apropiat de punctul de acțiune
+- flow-ul zilnic este mai coerent: dashboard → programare → fișă client
+
+### Ce rămâne de urmărit
+
+- există încă un drift terminologic local între termeni românești și termeni clinici păstrați în engleză
+- fișa clientului este mai utilă, dar rămâne una dintre cele mai dense suprafețe din produs
+- overlay-urile și layering-ul global au încă nevoie de standardizare transversală
+
 ---
 
 ## 1. Executive Summary

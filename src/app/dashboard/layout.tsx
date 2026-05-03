@@ -5,6 +5,8 @@ import { DashboardTopbar } from "@/components/dashboard/topbar";
 import { NotesVaultProvider } from "@/components/notes/notes-context";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { NavigationProgress } from "@/components/app/navigation-progress";
+import { PageTransition } from "@/components/app/page-transition";
 
 import { QuickActionsWheel } from "@/components/dashboard/QuickActionsWheel";
 
@@ -25,11 +27,14 @@ export default async function DashboardLayout({
 
   return (
     <NotesVaultProvider>
+      <NavigationProgress />
       <div className="flex min-h-svh bg-muted/30">
         <DashboardSidebar />
         <div className="flex min-w-0 flex-1 flex-col">
           <DashboardTopbar userEmail={userEmail} demoMode={!configured} />
-          <div className="flex-1 overflow-auto p-4 md:p-6">{children}</div>
+          <div className="flex-1 overflow-auto p-4 md:p-6">
+            <PageTransition>{children}</PageTransition>
+          </div>
         </div>
       </div>
       <QuickActionsWheel />

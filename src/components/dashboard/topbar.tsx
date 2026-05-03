@@ -92,23 +92,31 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
       </button>
 
       {/* Mobile nav overlay */}
-      {mobileMenuOpen ? (
-        <div className="fixed inset-0 z-50 md:hidden">
-          <button
-            type="button"
-            className="absolute inset-0 bg-foreground/20 backdrop-blur-sm"
-            onClick={() => setMobileMenuOpen(false)}
-            aria-label="Închide meniul"
-          />
-          <div
-            id="mobile-dashboard-nav"
-            ref={mobilePanelRef}
-            className="absolute left-4 right-4 top-20 max-h-[calc(100svh-6rem)] overflow-y-auto rounded-3xl border bg-card p-4 shadow-2xl"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Navigație dashboard"
-            tabIndex={-1}
-          >
+      <div
+        className={cn(
+          "fixed inset-0 z-50 md:hidden transition-opacity duration-200",
+          mobileMenuOpen ? "opacity-100" : "opacity-0 pointer-events-none",
+        )}
+      >
+        <button
+          type="button"
+          className="absolute inset-0 bg-foreground/20 backdrop-blur-sm"
+          onClick={() => setMobileMenuOpen(false)}
+          aria-label="Închide meniul"
+          tabIndex={mobileMenuOpen ? 0 : -1}
+        />
+        <div
+          id="mobile-dashboard-nav"
+          ref={mobilePanelRef}
+          className={cn(
+            "absolute left-4 right-4 top-20 max-h-[calc(100svh-6rem)] overflow-y-auto rounded-3xl border bg-card p-4 shadow-2xl transition-all duration-200",
+            mobileMenuOpen ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2",
+          )}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Navigație dashboard"
+          tabIndex={-1}
+        >
             <div className="mb-4 flex items-start justify-between border-b border-border pb-3">
               <div>
                 <p className="text-sm font-black text-primary">Ce&apos;ai Pățit?</p>
@@ -157,11 +165,11 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
                 </div>
               ))}
             </nav>
-          </div>
         </div>
-      ) : null}
+      </div>
 
       {/* Mobile logo */}
+
       <div className="min-w-0 md:hidden">
         <p className="truncate text-sm font-black text-primary">Ce&apos;ai Pățit?</p>
       </div>
@@ -188,7 +196,7 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
         </form>
 
         {searchOpen ? (
-          <div className="absolute left-0 top-11 z-40 w-full max-w-sm rounded-2xl border bg-popover p-2 shadow-2xl">
+          <div className="absolute left-0 top-11 z-40 w-full max-w-sm rounded-2xl border bg-popover p-2 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-150">
             <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
               Navigare rapidă
             </p>

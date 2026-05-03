@@ -22,7 +22,7 @@ export interface ClinicalFormRow {
   therapist_id: string;
   form_type: ClinicalFormType;
   title: string | null;
-  content: Record<string, unknown>;
+  content: unknown;
   status: FormStatus;
   created_at: string;
   updated_at: string;
@@ -35,7 +35,7 @@ export interface TherapyReportRow {
   report_type: ReportType;
   report_number: string | null;
   title: string | null;
-  content: Record<string, unknown>;
+  content: unknown;
   status: ReportStatus;
   created_at: string;
   updated_at: string;
@@ -107,7 +107,7 @@ export async function upsertClinicalForm(data: {
   clientId: string;
   formType: ClinicalFormType;
   title?: string;
-  content: Record<string, unknown>;
+  content: unknown;
   status?: FormStatus;
 }): Promise<{ id: string } | { error: string }> {
   const supabase = await createClient();
@@ -193,7 +193,7 @@ export async function upsertTherapyReport(data: {
   reportType?: ReportType;
   reportNumber?: string;
   title?: string;
-  content: Record<string, unknown>;
+  content: unknown;
   status?: ReportStatus;
 }): Promise<{ id: string } | { error: string }> {
   const supabase = await createClient();

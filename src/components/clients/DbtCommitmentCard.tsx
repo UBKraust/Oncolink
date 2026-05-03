@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Check, HandshakeIcon, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Check, Handshake, Pencil, Plus, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -101,7 +101,7 @@ export function DbtCommitmentCard({ clientId, form }: DbtCommitmentCardProps) {
       <div className="flex items-start justify-between gap-4 px-6 py-5">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-            <HandshakeIcon className="h-5 w-5" />
+            <Handshake className="h-5 w-5" />
           </div>
           <div>
             <p className="text-sm font-black tracking-tight">Angajament terapeutic DBT</p>

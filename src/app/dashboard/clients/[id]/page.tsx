@@ -8,6 +8,7 @@ import {
   getDbtDiaryCards,
   getSafetyPlan,
 } from "@/lib/clients/queries";
+import { getLatestClinicalForm } from "@/app/dashboard/forms/forms-actions";
 import { listAppointments } from "@/lib/appointments/queries";
 import { ClientDashboardUI } from "@/components/clients/ClientDashboardUI";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -72,11 +73,32 @@ export default async function ClientDetailPage({
   const isDbt = serviceType === "DBT";
   const needsSafetyPlan = isDbt || serviceType === "CLINICAL_PSYCHOLOGY";
 
-  const [homeworkItems, cbtFormulation, dbtDiaryCards, safetyPlan] = await Promise.all([
+  const isClinical = serviceType === "CLINICAL_PSYCHOLOGY";
+  const isCounseling = serviceType === "COUNSELING";
+  const null_ = Promise.resolve(null);
+
+  const [
+    homeworkItems,
+    cbtFormulation,
+    dbtDiaryCards,
+    safetyPlan,
+    anamnesisForm,
+    clinicalInterviewForm,
+    riskAssessmentForm,
+    dbtCommitmentForm,
+    counselingPlanForm,
+    recommendationsForm,
+  ] = await Promise.all([
     isCbt && !anonymized ? getHomeworkItems(id) : Promise.resolve([] as HomeworkItem[]),
     isCbt && !anonymized ? getCbtCaseFormulation(id) : Promise.resolve(null as CbtCaseFormulation | null),
     isDbt && !anonymized ? getDbtDiaryCards(id) : Promise.resolve([] as DbtDiaryCard[]),
     needsSafetyPlan && !anonymized ? getSafetyPlan(id) : Promise.resolve(null as SafetyPlan | null),
+    isClinical && !anonymized ? getLatestClinicalForm(id, "ANAMNESIS") : null_,
+    isClinical && !anonymized ? getLatestClinicalForm(id, "CLINICAL_INTERVIEW") : null_,
+    (isClinical || isDbt) && !anonymized ? getLatestClinicalForm(id, "RISK_ASSESSMENT") : null_,
+    isDbt && !anonymized ? getLatestClinicalForm(id, "DBT_COMMITMENT") : null_,
+    isCounseling && !anonymized ? getLatestClinicalForm(id, "COUNSELING_PLAN") : null_,
+    isCounseling && !anonymized ? getLatestClinicalForm(id, "RECOMMENDATIONS") : null_,
   ]);
 
   const assessments = (assessmentsData || []) as ClientAssessment[];
@@ -163,6 +185,12 @@ export default async function ClientDetailPage({
       cbtFormulation={cbtFormulation}
       dbtDiaryCards={dbtDiaryCards}
       safetyPlan={safetyPlan}
+      anamnesisForm={anamnesisForm}
+      clinicalInterviewForm={clinicalInterviewForm}
+      riskAssessmentForm={riskAssessmentForm}
+      dbtCommitmentForm={dbtCommitmentForm}
+      counselingPlanForm={counselingPlanForm}
+      recommendationsForm={recommendationsForm}
     />
   );
 }

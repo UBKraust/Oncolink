@@ -40,6 +40,13 @@ import { HomeworkCard } from "@/components/clients/HomeworkCard";
 import { SafetyPlanCard } from "@/components/clients/SafetyPlanCard";
 import { CbtCaseFormulationCard } from "@/components/clients/CbtCaseFormulationCard";
 import { DbtDiaryCardsPanel } from "@/components/clients/DbtDiaryCardsPanel";
+import { AnamnesisCard } from "@/components/clients/AnamnesisCard";
+import { ClinicalInterviewCard } from "@/components/clients/ClinicalInterviewCard";
+import { RiskAssessmentCard } from "@/components/clients/RiskAssessmentCard";
+import { DbtCommitmentCard } from "@/components/clients/DbtCommitmentCard";
+import { CounselingPlanCard } from "@/components/clients/CounselingPlanCard";
+import { RecommendationsCard } from "@/components/clients/RecommendationsCard";
+import type { ClinicalFormRow } from "@/app/dashboard/forms/forms-actions";
 import {
   SERVICE_TYPE_LABELS,
   SERVICE_TYPE_BADGE_VARIANTS,
@@ -84,6 +91,13 @@ interface ClientDashboardUIProps {
   cbtFormulation: CbtCaseFormulation | null;
   dbtDiaryCards: DbtDiaryCard[];
   safetyPlan: SafetyPlan | null;
+  // P3 clinical forms
+  anamnesisForm: ClinicalFormRow | null;
+  clinicalInterviewForm: ClinicalFormRow | null;
+  riskAssessmentForm: ClinicalFormRow | null;
+  dbtCommitmentForm: ClinicalFormRow | null;
+  counselingPlanForm: ClinicalFormRow | null;
+  recommendationsForm: ClinicalFormRow | null;
 }
 
 const SESSION_FREQ_LABELS: Record<string, string> = {
@@ -122,6 +136,12 @@ export function ClientDashboardUI({
   cbtFormulation,
   dbtDiaryCards,
   safetyPlan,
+  anamnesisForm,
+  clinicalInterviewForm,
+  riskAssessmentForm,
+  dbtCommitmentForm,
+  counselingPlanForm,
+  recommendationsForm,
 }: ClientDashboardUIProps) {
   type ClientWorkspaceView = "overview" | "clinic" | "appointments" | "lifecycle";
   const router = useRouter();
@@ -608,6 +628,31 @@ export function ClientDashboardUI({
       {/* P2: plan de siguranță pentru Psihologie clinică (risc) */}
       {!anonymized && client.service_type === "CLINICAL_PSYCHOLOGY" && (
         <SafetyPlanCard clientId={client.id} plan={safetyPlan} />
+      )}
+
+      {/* P3: fișe clinice CLINICAL_PSYCHOLOGY */}
+      {!anonymized && client.service_type === "CLINICAL_PSYCHOLOGY" && (
+        <>
+          <AnamnesisCard clientId={client.id} form={anamnesisForm} />
+          <ClinicalInterviewCard clientId={client.id} form={clinicalInterviewForm} />
+          <RiskAssessmentCard clientId={client.id} form={riskAssessmentForm} currentRiskLevel={client.risk_level as import("@/lib/clients/service-track").RiskLevel | null} />
+        </>
+      )}
+
+      {/* P3: fișe clinice DBT */}
+      {!anonymized && client.service_type === "DBT" && (
+        <>
+          <RiskAssessmentCard clientId={client.id} form={riskAssessmentForm} currentRiskLevel={client.risk_level as import("@/lib/clients/service-track").RiskLevel | null} />
+          <DbtCommitmentCard clientId={client.id} form={dbtCommitmentForm} />
+        </>
+      )}
+
+      {/* P3: fișe clinice COUNSELING */}
+      {!anonymized && client.service_type === "COUNSELING" && (
+        <>
+          <CounselingPlanCard clientId={client.id} form={counselingPlanForm} />
+          <RecommendationsCard clientId={client.id} form={recommendationsForm} />
+        </>
       )}
 
       <div className="grid gap-4 lg:grid-cols-3">

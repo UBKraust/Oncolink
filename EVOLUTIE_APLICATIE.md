@@ -23,9 +23,51 @@ Aceasta regula ramane activa pe tot parcursul proiectului.
 - Hardening dashboard / appointments UI (`20260503091500_dashboard_ui_hardening.sql`) — ✅ aplicată în baza reală
 - **P1 complet** (task-uri #17–21) · **P2 complet** (task-uri #22–25) — UI și DB aliniate
 - **Catalog teste complet** (task #26) — 9 instrumente + 2 formulare interne, metadata completă, pagină cu filtre
+- **Dashboard & Compliance reorgnaizate** (task-uri #28–29) — centru unificat notificări + tabs pe compliance + tabs în dashboard secțiunea secundară
 - Urmează: P3 — AI prompts contextuale, generare rapoarte per track, rafinare overlay contract și audit transversal UI
 
 ## Ce s-a facut
+
+### 29. Dashboard — secțiunea secundară reorganizată în tabs
+
+- Cele 3 rânduri de la baza dashboard-ului (Financiar / Programări viitoare / Cabinet) au fost înlocuite cu un `DashboardSecondaryTabs` — componenta client cu 3 tab-uri, folosind același pattern slots ca și `ComplianceTabs` de pe pagina de conformitate
+- **Tab Financiar**: `FinancialSummary` + `UnpaidInvoices` side-by-side; badge galben cu numărul de facturi restante
+- **Tab Programări viitoare**: `UpcomingAppointments`; badge secondary cu numărul de programări
+- **Tab Cabinet**: `VaultStatusWidget` + `CompliancePanel compact` + `ResearchReadinessPanel`; badge roșu dacă există alerte seif
+- `FinancialSummary` rescris: eliminat bara de progres roșie agresivă, eliminat culorile hardcodate `emerald/rose` ca bază, adăugat link „Raport financiar complet", structură cu borduri interne în loc de carduri nested
+- `VaultStatusWidget` curățat: eliminat `rose-*/emerald-*` hardcodat, trecut pe `destructive`, `muted`, `border-border/60`, convertit din `Card` custom pe `SectionCard`
+
+`npm run lint` ✅ | `npm run build` ✅
+
+Fișiere principale:
+- [src/components/dashboard/DashboardSecondaryTabs.tsx](src/components/dashboard/DashboardSecondaryTabs.tsx)
+- [src/components/dashboard/financial-summary.tsx](src/components/dashboard/financial-summary.tsx)
+- [src/components/dashboard/vault-status-widget.tsx](src/components/dashboard/vault-status-widget.tsx)
+- [src/app/dashboard/page.tsx](src/app/dashboard/page.tsx)
+
+---
+
+### 28. Dashboard/Compliance — centru unificat de notificări cu tabs
+
+- `getDashboardClinicalAlerts`, `getDashboardDocumentTasks`, `getDashboardAssessmentTasks` primesc acum un parametru opțional `limit` (default 5 pentru dashboard, 50 pentru pagina de compliance)
+- `ClinicalAlertsPanel` primește prop opțional `hideSeeAll` — ascunde butonul „Vezi toate → compliance" când componenta e deja pe pagina de conformitate
+- `/dashboard/compliance` reconstruit ca centru unificat cu 4 tab-uri (pattern slots — `ComplianceTabs` client component, conținut server prerendat):
+  - **Tab Alerte** — `ClinicalAlertsPanel` cu toate alertele (fără limita de 5), badge cu nr. critice
+  - **Tab Documente** — `DocumentTasksPanel` cu toate task-urile onboarding/GDPR/contracte
+  - **Tab Evaluări** — `AssessmentTasksPanel` cu toate task-urile de evaluări și rapoarte
+  - **Tab Juridic** — `CompliancePanel` per-client + cadrul legal static
+  - Summary bar deasupra tab-urilor cu totalul notificărilor și badge-uri globale
+- Butonul „Vezi toate" din `ClinicalAlertsPanel` pe dashboard duce acum la o pagină care chiar afișează totul, fără limitele de 5
+
+`npm run lint` ✅ | `npm run build` ✅
+
+Fișiere principale:
+- [src/lib/dashboard/queries.ts](src/lib/dashboard/queries.ts)
+- [src/components/dashboard/ClinicalAlertsPanel.tsx](src/components/dashboard/ClinicalAlertsPanel.tsx)
+- [src/app/dashboard/compliance/ComplianceTabs.tsx](src/app/dashboard/compliance/ComplianceTabs.tsx)
+- [src/app/dashboard/compliance/page.tsx](src/app/dashboard/compliance/page.tsx)
+
+---
 
 ### 27. Dashboard / Programări / Fișa clientului — context clinic operațional + hardening DB + audit UI
 

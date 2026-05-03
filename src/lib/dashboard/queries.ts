@@ -684,7 +684,7 @@ export async function getUpcomingAppointments() {
   }
 }
 
-export async function getDashboardClinicalAlerts(): Promise<DashboardAlert[]> {
+export async function getDashboardClinicalAlerts(limit = 5): Promise<DashboardAlert[]> {
   if (!isSupabaseConfigured()) {
     return [];
   }
@@ -866,13 +866,13 @@ export async function getDashboardClinicalAlerts(): Promise<DashboardAlert[]> {
         const severityScore = { critical: 0, warning: 1, info: 2 };
         return severityScore[a.severity] - severityScore[b.severity];
       })
-      .slice(0, 5);
+      .slice(0, limit);
   } catch {
     return [];
   }
 }
 
-export async function getDashboardDocumentTasks(): Promise<DashboardTask[]> {
+export async function getDashboardDocumentTasks(limit = 5): Promise<DashboardTask[]> {
   if (!isSupabaseConfigured()) {
     return [];
   }
@@ -975,7 +975,7 @@ export async function getDashboardDocumentTasks(): Promise<DashboardTask[]> {
     }
 
     const priorityScore = { high: 0, medium: 1, low: 2 };
-    return tasks.sort((a, b) => priorityScore[a.priority] - priorityScore[b.priority]).slice(0, 5);
+    return tasks.sort((a, b) => priorityScore[a.priority] - priorityScore[b.priority]).slice(0, limit);
   } catch {
     return [];
   }
@@ -1130,7 +1130,7 @@ export async function getDashboardServiceTrackStats(): Promise<DashboardServiceT
   }
 }
 
-export async function getDashboardAssessmentTasks(): Promise<DashboardAssessmentTask[]> {
+export async function getDashboardAssessmentTasks(limit = 5): Promise<DashboardAssessmentTask[]> {
   if (!isSupabaseConfigured()) {
     return [];
   }
@@ -1272,7 +1272,7 @@ export async function getDashboardAssessmentTasks(): Promise<DashboardAssessment
     }
 
     const priorityScore = { high: 0, medium: 1, low: 2 };
-    return tasks.sort((a, b) => priorityScore[a.priority] - priorityScore[b.priority]).slice(0, 5);
+    return tasks.sort((a, b) => priorityScore[a.priority] - priorityScore[b.priority]).slice(0, limit);
   } catch {
     return [];
   }

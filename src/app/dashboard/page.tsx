@@ -16,6 +16,7 @@ import { UpcomingAppointments } from "@/components/dashboard/upcoming-appointmen
 import { CompliancePanel } from "@/components/compliance/CompliancePanel";
 import { FinancialSummary } from "@/components/dashboard/financial-summary";
 import { VaultStatusWidget } from "@/components/dashboard/vault-status-widget";
+import { DashboardSecondaryTabs } from "@/components/dashboard/DashboardSecondaryTabs";
 import { RealtimeDashboard } from "@/components/dashboard/realtime-dashboard";
 import { Button } from "@/components/ui/button";
 import { DashboardPage as DashboardShell, PageHeader } from "@/components/app/page-shell";
@@ -149,35 +150,44 @@ export default async function DashboardPage() {
         <AssessmentTasksPanel tasks={assessmentTasks} />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <FinancialSummary
-            gross={stats.totalRevenue}
-            expenses={stats.expensesMonth}
-            net={stats.netProfitMonth}
-          />
-        </div>
-        <UnpaidInvoices invoices={unpaidInvoices} />
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-5">
-        <div className="lg:col-span-3">
-          <UpcomingAppointments appointments={upcomingAppointments} />
-        </div>
-        <div className="lg:col-span-2">
-          <CompliancePanel compact initialData={complianceData} />
-        </div>
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-3">
-        <VaultStatusWidget
-          alerts={stats.vaultAlertsCount}
-          totalDocs={stats.vaultTotalDocs}
-        />
-        <div className="lg:col-span-2">
-          <ResearchReadinessPanel readiness={researchReadiness} />
-        </div>
-      </div>
+      <DashboardSecondaryTabs
+        counts={{
+          unpaidInvoices: unpaidInvoices.length,
+          upcomingAppointments: upcomingAppointments.length,
+          vaultAlerts: stats.vaultAlertsCount,
+        }}
+        financialTab={
+          <div className="grid gap-4 pt-4 lg:grid-cols-3">
+            <div className="lg:col-span-2">
+              <FinancialSummary
+                gross={stats.totalRevenue}
+                expenses={stats.expensesMonth}
+                net={stats.netProfitMonth}
+              />
+            </div>
+            <UnpaidInvoices invoices={unpaidInvoices} />
+          </div>
+        }
+        upcomingTab={
+          <div className="pt-4">
+            <UpcomingAppointments appointments={upcomingAppointments} />
+          </div>
+        }
+        cabinetTab={
+          <div className="space-y-4 pt-4">
+            <div className="grid gap-4 lg:grid-cols-3">
+              <VaultStatusWidget
+                alerts={stats.vaultAlertsCount}
+                totalDocs={stats.vaultTotalDocs}
+              />
+              <div className="lg:col-span-2">
+                <CompliancePanel compact initialData={complianceData} />
+              </div>
+            </div>
+            <ResearchReadinessPanel readiness={researchReadiness} />
+          </div>
+        }
+      />
 
     </DashboardShell>
   );

@@ -26,7 +26,13 @@ const typeLabel = {
   SYSTEM: "Sistem",
 } as const;
 
-export function ClinicalAlertsPanel({ alerts }: { alerts: DashboardAlert[] }) {
+export function ClinicalAlertsPanel({
+  alerts,
+  hideSeeAll = false,
+}: {
+  alerts: DashboardAlert[];
+  hideSeeAll?: boolean;
+}) {
   return (
     <SectionCard
       title="Clinical & Legal Alerts"
@@ -65,12 +71,14 @@ export function ClinicalAlertsPanel({ alerts }: { alerts: DashboardAlert[] }) {
             </div>
           ))}
 
-          <Button asChild variant="outline" className="w-full">
-            <Link href="/dashboard/compliance">
-              <BellRing className="h-4 w-4" />
-              Vezi toate
-            </Link>
-          </Button>
+          {!hideSeeAll && (
+            <Button asChild variant="outline" className="w-full">
+              <Link href="/dashboard/compliance">
+                <BellRing className="h-4 w-4" />
+                Vezi toate
+              </Link>
+            </Button>
+          )}
         </div>
       )}
     </SectionCard>

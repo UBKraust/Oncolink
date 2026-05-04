@@ -4,6 +4,7 @@ import {
   syncClientLifecycleStatus,
 } from "@/lib/clients/lifecycle-sync";
 import { createSupabaseServiceClient } from "@/lib/supabase/service";
+import { logAuditEventAs } from "@/lib/audit/log";
 
 function toBase64Url(bytes: Uint8Array): string {
   let binary = "";
@@ -106,6 +107,19 @@ export async function createOnboardingAccessToken(params: {
     .maybeSingle();
 
   const onboardingPath = client?.is_minor ? "/onboarding/minor" : "/onboarding";
+
+  void logAuditEventAs(params.therapistId, {
+    action: 'ONBOARDING_LINK_CREATED',
+    category: 'CONSENT',
+    entityType: 'onboarding_link',
+    clientId: params.clientId,
+    severity: 'WARNING',
+    metadata: {
+      expires_at: expiresAt,
+      is_minor: client?.is_minor ?? false,
+      created_by: params.createdBy ?? null,
+    },
+  })
 
   return {
     token: rawToken,

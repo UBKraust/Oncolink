@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { logAuditEvent } from "@/lib/audit/log";
 
 export async function signInWithPassword(formData: FormData) {
   if (!isSupabaseConfigured()) {
@@ -23,6 +24,13 @@ export async function signInWithPassword(formData: FormData) {
   if (error) {
     redirect(`/login?error=${encodeURIComponent(error.message)}`);
   }
+
+  await logAuditEvent({
+    action: 'LOGIN_SUCCESS',
+    category: 'AUTH',
+    severity: 'INFO',
+    metadata: { email_domain: email.split('@')[1] ?? '' },
+  })
 
   redirect("/dashboard");
 }

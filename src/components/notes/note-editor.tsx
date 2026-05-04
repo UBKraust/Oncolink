@@ -25,7 +25,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { saveEncryptedNote } from "@/app/dashboard/notes/actions";
+import { saveEncryptedNote, logAiSummaryAudit } from "@/app/dashboard/notes/actions";
 import { decryptNote, encryptNote } from "@/lib/crypto/notes";
 import { buildPrompt, runOllama, type AiAction } from "@/lib/ollama/client";
 
@@ -119,11 +119,13 @@ export function NoteEditor({
       setAiError(null);
       setAiOutput("");
       try {
+        const model = process.env.NEXT_PUBLIC_OLLAMA_MODEL ?? "gemma2:9b-instruct";
         const full = await runOllama(buildPrompt(action, plaintext), {
           signal: controller.signal,
           onChunk: (partial) => setAiOutput(partial),
         });
         setAiOutput(full);
+        void logAiSummaryAudit(appointmentId, action, model);
       } catch (e) {
         if ((e as Error).name !== "AbortError") {
           setAiError((e as Error).message);

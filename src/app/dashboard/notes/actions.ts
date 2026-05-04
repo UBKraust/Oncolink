@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { logAuditEvent } from "@/lib/audit/log";
 
 export interface SaveNoteResult {
   ok: boolean;
@@ -41,6 +42,14 @@ export async function saveEncryptedNote(
       .update({ encrypted_content: ciphertext, updated_at: now })
       .eq("id", existing.id);
     if (error) return { ok: false, error: error.message };
+    void logAuditEvent({
+      action: 'NOTE_UPDATED',
+      category: 'NOTE',
+      entityType: 'note',
+      entityId: existing.id,
+      severity: 'WARNING',
+      metadata: { appointment_id: appointmentId, encrypted: true },
+    })
   } else {
     const { error } = await supabase.from("notes").insert({
       appointment_id: appointmentId,
@@ -49,10 +58,36 @@ export async function saveEncryptedNote(
       updated_at: now,
     });
     if (error) return { ok: false, error: error.message };
+    void logAuditEvent({
+      action: 'NOTE_CREATED',
+      category: 'NOTE',
+      entityType: 'note',
+      severity: 'WARNING',
+      metadata: { appointment_id: appointmentId, encrypted: true },
+    })
   }
 
   revalidatePath(`/dashboard/notes`);
   revalidatePath(`/dashboard/notes/${appointmentId}`);
   revalidatePath(`/dashboard/appointments/${appointmentId}`);
   return { ok: true, error: null };
+}
+
+export async function logAiSummaryAudit(
+  appointmentId: string,
+  action: string,
+  model: string,
+): Promise<void> {
+  await logAuditEvent({
+    action: 'AI_SUMMARY_GENERATED',
+    category: 'AI',
+    entityType: 'note',
+    severity: 'WARNING',
+    metadata: {
+      appointment_id: appointmentId,
+      ai_action: action,
+      model,
+      local: true,
+    },
+  })
 }

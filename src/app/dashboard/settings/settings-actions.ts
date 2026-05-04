@@ -3,6 +3,7 @@
 import { createSupabaseServerClient as createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createHash } from "crypto";
+import { logAuditEvent } from "@/lib/audit/log";
 import { EMPTY_REMOTE_SETTINGS } from "./settings-defaults";
 
 export interface WorkDaySchedule {
@@ -203,6 +204,17 @@ export async function updateProfileSettings(data: {
   const { error } = await upsertTherapistSettingsRow(supabase, user.id, data);
 
   if (error) return { success: false, error: mapTherapistSettingsSchemaError(error.message) };
+
+  void logAuditEvent({
+    action: 'BILLING_SETTINGS_UPDATED',
+    category: 'SETTINGS',
+    severity: 'CRITICAL',
+    metadata: {
+      section: 'profile',
+      fields: ['full_name', 'cif', 'iban', 'practice_name', 'practice_address'],
+    },
+  })
+
   return { success: true };
 }
 
@@ -222,6 +234,14 @@ export async function updatePricingSettings(data: {
   const { error } = await upsertTherapistSettingsRow(supabase, user.id, data);
 
   if (error) return { success: false, error: mapTherapistSettingsSchemaError(error.message) };
+
+  void logAuditEvent({
+    action: 'SETTINGS_UPDATED',
+    category: 'SETTINGS',
+    severity: 'INFO',
+    metadata: { section: 'pricing' },
+  })
+
   return { success: true };
 }
 
@@ -239,6 +259,14 @@ export async function updateScheduleSettings(
   const { error } = await upsertTherapistSettingsRow(supabase, user.id, { work_schedule });
 
   if (error) return { success: false, error: mapTherapistSettingsSchemaError(error.message) };
+
+  void logAuditEvent({
+    action: 'SETTINGS_UPDATED',
+    category: 'SETTINGS',
+    severity: 'INFO',
+    metadata: { section: 'schedule' },
+  })
+
   return { success: true };
 }
 
@@ -269,6 +297,17 @@ export async function updateIntegrationsSettings(data: {
   const { error } = await upsertTherapistSettingsRow(supabase, user.id, patch);
 
   if (error) return { success: false, error: mapTherapistSettingsSchemaError(error.message) };
+
+  void logAuditEvent({
+    action: 'BILLING_SETTINGS_UPDATED',
+    category: 'SETTINGS',
+    severity: 'CRITICAL',
+    metadata: {
+      section: 'integrations',
+      fields_updated: Object.keys(patch).filter((k) => k !== 'updated_at'),
+    },
+  })
+
   return { success: true };
 }
 
@@ -288,6 +327,14 @@ export async function updateCasSettings(data: {
   const { error } = await upsertTherapistSettingsRow(supabase, user.id, data);
 
   if (error) return { success: false, error: mapTherapistSettingsSchemaError(error.message) };
+
+  void logAuditEvent({
+    action: 'SETTINGS_UPDATED',
+    category: 'SETTINGS',
+    severity: 'WARNING',
+    metadata: { section: 'cas' },
+  })
+
   return { success: true };
 }
 
@@ -336,5 +383,13 @@ export async function updatePinSettings(
   });
 
   if (error) return { success: false, error: mapTherapistSettingsSchemaError(error.message) };
+
+  void logAuditEvent({
+    action: 'PASSWORD_CHANGED',
+    category: 'SECURITY',
+    severity: 'CRITICAL',
+    metadata: { section: 'clinical_notes_pin' },
+  })
+
   return { success: true };
 }

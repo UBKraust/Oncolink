@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { logAuditEvent } from "@/lib/audit/log";
 import { isRiskLevel, type RiskLevel } from "@/lib/clients/service-track";
 
 export type ClinicalFormType =
@@ -346,5 +347,16 @@ export async function finalizeTherapyReport(
   if (report?.client_id) {
     revalidateClinicalPaths(report.client_id, id);
   }
+
+  void logAuditEvent({
+    action: 'REPORT_FINALIZED',
+    category: 'REPORT',
+    entityType: 'report',
+    entityId: id,
+    clientId: report?.client_id ?? undefined,
+    severity: 'WARNING',
+    metadata: { report_number: reportNumber },
+  })
+
   return {};
 }

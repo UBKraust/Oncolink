@@ -26,6 +26,7 @@ import type { ClientLifecycleStatus } from "@/lib/clients/lifecycle";
 import { upsertClientByIdentifiers } from "@/lib/clients/upsert";
 import { createSignedObjectUrl } from "@/lib/storage/private-urls";
 import type { TemplateType } from "@/lib/contracts/types";
+import { logAuditEvent } from "@/lib/audit/log";
 
 type ClientUpsertDb = Parameters<typeof upsertClientByIdentifiers>[0];
 
@@ -233,6 +234,23 @@ export async function createClient(
     }
   })();
 
+  void logAuditEvent({
+    action: clientResult.created ? 'CLIENT_CREATED' : 'CLIENT_UPDATED',
+    category: 'CLIENT',
+    entityType: 'client',
+    entityId: clientResult.id,
+    clientId: clientResult.id,
+    severity: 'INFO',
+    metadata: {
+      full_name: payload.full_name,
+      location: payload.location,
+      service_type: payload.service_type,
+      is_minor: payload.is_minor,
+      source: 'createClient',
+      was_created: clientResult.created,
+    },
+  })
+
   revalidatePath("/dashboard/clients");
   return { success: true, clientId: clientResult.id, error: null, fieldErrors: {} };
 }
@@ -299,6 +317,22 @@ export async function updateClient(
     metadata: { source: "updateClient" },
     reason: "Profil client actualizat",
   });
+
+  void logAuditEvent({
+    action: 'CLIENT_UPDATED',
+    category: 'CLIENT',
+    entityType: 'client',
+    entityId: id,
+    clientId: id,
+    severity: 'INFO',
+    metadata: {
+      full_name: payload.full_name,
+      location: payload.location,
+      service_type: payload.service_type,
+      is_minor: payload.is_minor,
+      source: 'updateClient',
+    },
+  })
 
   revalidatePath(`/dashboard/clients/${id}`);
   revalidatePath("/dashboard/clients");
@@ -583,6 +617,16 @@ export async function anonymizeClient(id: string, formData: FormData) {
     reason: "Client anonimizat",
   });
 
+  await logAuditEvent({
+    action: 'CLIENT_ANONYMIZED',
+    category: 'DELETE',
+    entityType: 'client',
+    entityId: id,
+    clientId: id,
+    severity: 'CRITICAL',
+    metadata: { source: 'anonymizeClient' },
+  })
+
   revalidatePath("/dashboard/clients");
   revalidatePath(`/dashboard/clients/${id}`);
   redirect(`/dashboard/clients/${id}?anonymized=1`);
@@ -646,7 +690,23 @@ export async function uploadClientDocument(clientId: string, folderId: string, f
     if (docError) {
       return { error: docError.message };
     }
-    
+
+    void logAuditEvent({
+      action: 'DOCUMENT_UPLOADED',
+      category: 'DOCUMENT',
+      entityType: 'document',
+      clientId,
+      severity: 'WARNING',
+      metadata: {
+        file_name: file.name,
+        file_size_kb: Math.round(file.size / 1024),
+        mime_type: file.type,
+        document_type: 'ALTELE',
+        stored_in_drive: !!driveFileId,
+        stored_in_storage: true,
+      },
+    })
+
     revalidatePath(`/dashboard/clients/${clientId}`);
     return { success: true, webViewLink: webViewLink ?? signedStorageUrl };
   } catch (err) {
@@ -859,6 +919,21 @@ export async function issueGeneratedContractNumber(
 
   revalidatePath("/dashboard/clients");
   revalidatePath(`/dashboard/clients/${clientId}`);
+
+  void logAuditEvent({
+    action: 'CONTRACT_ISSUED',
+    category: 'CONTRACT',
+    entityType: 'contract',
+    entityId: data.id,
+    clientId,
+    severity: 'WARNING',
+    metadata: {
+      contract_number: data.contract_number,
+      contract_year: data.contract_year,
+      sequence_number: data.sequence_number,
+      template_type: data.template_type,
+    },
+  })
 
   return {
     id: data.id,

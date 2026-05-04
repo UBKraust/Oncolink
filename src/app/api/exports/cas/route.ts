@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { logAuditEvent } from "@/lib/audit/log";
 
 export const runtime = "edge";
 
@@ -109,6 +110,13 @@ export async function GET(req: NextRequest) {
   );
 
   const csv = "\uFEFF" + csvLines.join("\r\n"); // BOM for Excel UTF-8
+
+  void logAuditEvent({
+    action: 'CLIENT_EXPORTED',
+    category: 'EXPORT',
+    severity: 'CRITICAL',
+    metadata: { format: 'csv', export_type: 'CAS_SIUI', month, rows: sessions.length },
+  })
 
   const filename = `raport_CAS_${month}.csv`;
 

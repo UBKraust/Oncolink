@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { initialsFromName } from "@/lib/clients/validation";
+import { logAuditEvent } from "@/lib/audit/log";
 
 /**
  * GET /api/activity/export?from=YYYY-MM-DD&to=YYYY-MM-DD&format=csv
@@ -49,6 +50,13 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   if (fmt === "json") {
     return NextResponse.json({ rows });
   }
+
+  void logAuditEvent({
+    action: 'CLIENT_EXPORTED',
+    category: 'EXPORT',
+    severity: 'CRITICAL',
+    metadata: { format: fmt, rows: rows.length, from: from ?? null, to: to ?? null },
+  })
 
   // CSV
   const header = "Data,Initiale client,Tip serviciu,Durata (min),Locatie\n";

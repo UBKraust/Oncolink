@@ -7,6 +7,7 @@ import { uploadFileToDriveFolder } from "@/lib/google/drive";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSignedObjectUrl } from "@/lib/storage/private-urls";
+import { logAuditEvent } from "@/lib/audit/log";
 
 export const runtime = "edge";
 
@@ -118,6 +119,23 @@ export async function POST(req: NextRequest) {
         .single();
 
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+      void logAuditEvent({
+        action: 'DOCUMENT_UPLOADED',
+        category: 'DOCUMENT',
+        entityType: 'document',
+        entityId: data.id,
+        clientId,
+        severity: 'WARNING',
+        metadata: {
+          file_name: file.name,
+          file_size_kb: Math.round(file.size / 1024),
+          mime_type: file.type,
+          document_type: documentType,
+          stored_in_drive: !!driveFileId,
+          stored_in_storage: !!storagePath,
+        },
+      })
 
       return NextResponse.json({
         success: true,

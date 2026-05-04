@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSignedObjectUrl } from "@/lib/storage/private-urls";
+import { logAuditEvent } from "@/lib/audit/log";
 
 export type VaultCategory =
   | "DIPLOME"
@@ -163,6 +164,15 @@ export async function deleteVaultDocument(
       .remove([doc.file_path])
       .catch(() => {});
   }
+
+  void logAuditEvent({
+    action: 'DOCUMENT_DELETED',
+    category: 'DELETE',
+    entityType: 'document',
+    entityId: id,
+    severity: 'CRITICAL',
+    metadata: { bucket: 'therapist-vault', file_path: doc?.file_path ?? null },
+  })
 
   revalidatePath("/dashboard/vault");
   return { ok: true };

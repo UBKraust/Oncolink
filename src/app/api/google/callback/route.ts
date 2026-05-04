@@ -3,6 +3,7 @@ export const runtime = "edge";
 import { NextRequest, NextResponse } from "next/server";
 import { exchangeCode } from "@/lib/google/client";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { logAuditEvent } from "@/lib/audit/log";
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   const { searchParams } = new URL(req.url);
@@ -32,6 +33,13 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       } as never,
       { onConflict: "therapist_id" },
     );
+
+    void logAuditEvent({
+      action: 'GOOGLE_CONNECTED',
+      category: 'SECURITY',
+      severity: 'WARNING',
+      metadata: { token_expires_at: expiresAt.toISOString() },
+    })
   } catch {
     return NextResponse.redirect(
       new URL("/dashboard/settings?google=error", req.url),

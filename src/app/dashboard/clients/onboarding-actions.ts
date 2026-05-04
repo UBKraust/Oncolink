@@ -11,6 +11,7 @@ import {
   createOnboardingAccessToken,
   getOnboardingTokenPayload,
 } from "@/lib/security/public-links";
+import { logAuditEvent } from "@/lib/audit/log";
 import {
   type SupabaseServerDb,
   syncClientLifecycleStatus,
@@ -275,6 +276,19 @@ export async function submitClientOnboarding(data: OnboardingData) {
     metadata: { source: "submitClientOnboarding" },
     reason: "Onboarding client finalizat",
   });
+
+  void logAuditEvent({
+    action: 'CONSENT_ACCEPTED',
+    category: 'CONSENT',
+    entityType: 'consent',
+    clientId,
+    severity: 'WARNING',
+    metadata: {
+      gdpr_consent_signed: data.gdpr_consent_signed,
+      terms_consent_signed: data.terms_consent_signed,
+      source: 'dashboard',
+    },
+  })
 
   revalidatePath(`/dashboard/clients/${clientId}`);
   return { success: true };

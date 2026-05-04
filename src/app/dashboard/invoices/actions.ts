@@ -10,6 +10,7 @@ import {
   isSmartBillConfigured,
 } from "@/lib/smartbill/client";
 import type { InvoiceFormState } from "@/lib/invoices/form-state";
+import { logAuditEvent } from "@/lib/audit/log";
 
 /**
  * Creates an invoice via SmartBill for the given appointment.
@@ -120,6 +121,21 @@ export async function createInvoice(
     .single();
 
   if (dbError) return { ok: false, error: dbError.message };
+
+  void logAuditEvent({
+    action: 'INVOICE_CREATED',
+    category: 'INVOICE',
+    entityType: 'invoice',
+    entityId: inserted.id,
+    clientId: client.id,
+    severity: 'INFO',
+    metadata: {
+      smartbill_id: smartbillId,
+      amount,
+      appointment_id: appointmentId,
+      is_draft: isDraft,
+    },
+  })
 
   revalidatePath("/dashboard/invoices");
   revalidatePath(`/dashboard/appointments/${appointmentId}`);

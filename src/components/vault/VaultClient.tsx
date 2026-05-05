@@ -387,7 +387,7 @@ export function VaultClient({ initialDocs }: VaultClientProps) {
                                 className="h-8 w-8 text-muted-foreground hover:text-primary"
                                 asChild
                               >
-                                <a href={doc.file_url} target="_blank" rel="noopener noreferrer" aria-label={`Deschide documentul ${doc.name} într-un tab nou`}>
+                                <a href={doc.download_url ?? doc.file_url} target="_blank" rel="noopener noreferrer" aria-label={`Deschide documentul ${doc.name} într-un tab nou`}>
                                   <Upload className="h-4 w-4 rotate-180" />
                                 </a>
                               </Button>
@@ -588,7 +588,7 @@ export function VaultClient({ initialDocs }: VaultClientProps) {
               </div>
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm" asChild>
-                  <a href={previewDoc.file_url} target="_blank" rel="noopener noreferrer">
+                  <a href={previewDoc.download_url ?? previewDoc.file_url} target="_blank" rel="noopener noreferrer">
                     Descarcă
                   </a>
                 </Button>

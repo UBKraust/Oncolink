@@ -34,11 +34,15 @@ function sanitizeSnapshot(
   return sanitizeMetadata(snapshot)
 }
 
-function buildRow(therapistId: string, actorId: string, input: AuditEventInput) {
+function buildRow(
+  therapistId: string | null,
+  actorId: string | null,
+  input: AuditEventInput
+) {
   return {
     therapist_id: therapistId,
     actor_user_id: actorId,
-    actor_role: 'THERAPIST',
+    actor_role: input.actorRole ?? 'THERAPIST',
     action: input.action,
     category: input.category,
     entity_type: input.entityType ?? null,
@@ -49,15 +53,27 @@ function buildRow(therapistId: string, actorId: string, input: AuditEventInput) 
     metadata: sanitizeMetadata(input.metadata ?? {}),
     before_snapshot: sanitizeSnapshot(input.beforeSnapshot) ?? null,
     after_snapshot: sanitizeSnapshot(input.afterSnapshot) ?? null,
+    ip_address: input.ipAddress ?? null,
+    user_agent: input.userAgent ?? null,
   }
 }
 
 // Variantă pentru contexte fără sesiune auth (service role, onboarding tokens etc.)
 export async function logAuditEventAs(therapistId: string, input: AuditEventInput): Promise<void> {
+  return logAuditEventForActor({ therapistId, actorUserId: therapistId, input })
+}
+
+export async function logAuditEventForActor(params: {
+  therapistId: string | null
+  actorUserId?: string | null
+  input: AuditEventInput
+}): Promise<void> {
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const admin = createSupabaseServiceClient() as any
-    const { error } = await admin.from('audit_logs').insert(buildRow(therapistId, therapistId, input))
+    const { error } = await admin
+      .from('audit_logs')
+      .insert(buildRow(params.therapistId, params.actorUserId ?? null, params.input))
     if (error) {
       console.error('[audit] Insert failed:', error.message)
     }

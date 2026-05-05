@@ -31,4 +31,6 @@ export const EMPTY_REMOTE_SETTINGS: TherapistSettings = {
   cas_contract_number: null,
   cas_county: null,
   has_pin: false,
+  google_connected: false,
+  google_token_expires_at: null,
 };

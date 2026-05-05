@@ -632,6 +632,175 @@ export async function anonymizeClient(id: string, formData: FormData) {
   redirect(`/dashboard/clients/${id}?anonymized=1`);
 }
 
+export async function revokeClientConsent(clientId: string) {
+  const supabase = await createSupabaseServerClient();
+  const now = new Date().toISOString();
+
+  const { data: client, error: clientError } = await supabase
+    .from("clients")
+    .select("id, gdpr_consent_signed, terms_consent_signed_at, legal_liability_consent_signed_at")
+    .eq("id", clientId)
+    .maybeSingle();
+
+  if (clientError || !client) {
+    return { success: false, error: clientError?.message ?? "Client inexistent." };
+  }
+
+  const { error: updateError } = await supabase
+    .from("clients")
+    .update({
+      gdpr_consent_signed: false,
+      terms_consent_signed_at: null,
+      legal_liability_consent_signed_at: null,
+      research_consent: false,
+    })
+    .eq("id", clientId);
+
+  if (updateError) {
+    return { success: false, error: updateError.message };
+  }
+
+  const { data: revokedTokens, error: tokenError } = await supabase
+    .from("onboarding_tokens")
+    .update({ revoked_at: now })
+    .eq("client_id", clientId)
+    .is("used_at", null)
+    .is("revoked_at", null)
+    .select("id");
+
+  if (tokenError) {
+    return { success: false, error: tokenError.message };
+  }
+
+  await syncClientLifecycleStatus(supabase, clientId, {
+    force: true,
+    metadata: { source: "revokeClientConsent" },
+    reason: "Consimțăminte revocate manual",
+  });
+
+  void logAuditEvent({
+    action: "CONSENT_REVOKED",
+    category: "CONSENT",
+    entityType: "consent",
+    clientId,
+    severity: "CRITICAL",
+    metadata: {
+      gdpr_was_signed: Boolean(client.gdpr_consent_signed),
+      terms_was_signed: Boolean(client.terms_consent_signed_at),
+      legal_liability_was_signed: Boolean(client.legal_liability_consent_signed_at),
+      revoked_onboarding_tokens: revokedTokens?.length ?? 0,
+    },
+  });
+
+  revalidatePath("/dashboard/clients");
+  revalidatePath(`/dashboard/clients/${clientId}`);
+  return { success: true };
+}
+
+export async function hardDeleteClient(id: string, formData: FormData) {
+  const confirmation = String(formData.get("confirmation") ?? "");
+  if (confirmation !== "ȘTERGE DEFINITIV") {
+    redirect(`/dashboard/clients/${id}/delete?error=confirmation`);
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data: client, error: clientError } = await supabase
+    .from("clients")
+    .select("id, full_name")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (clientError || !client) {
+    redirect(`/dashboard/clients/${id}/delete?error=${encodeURIComponent(clientError?.message ?? "Client inexistent.")}`);
+  }
+
+  const { data: appointments, error: appointmentError } = await supabase
+    .from("appointments")
+    .select("id, status")
+    .eq("client_id", id);
+
+  if (appointmentError) {
+    redirect(`/dashboard/clients/${id}/delete?error=${encodeURIComponent(appointmentError.message)}`);
+  }
+
+  const appointmentIds = (appointments ?? []).map((appointment) => appointment.id);
+  const finalizedAppointmentCount = (appointments ?? []).filter(
+    (appointment) => appointment.status === "FINALIZAT",
+  ).length;
+
+  let invoiceCount = 0;
+  if (appointmentIds.length > 0) {
+    const invoiceResult = await supabase
+      .from("invoices")
+      .select("id", { count: "exact", head: true })
+      .in("appointment_id", appointmentIds);
+    if (invoiceResult.error) {
+      redirect(`/dashboard/clients/${id}/delete?error=${encodeURIComponent(invoiceResult.error.message)}`);
+    }
+    invoiceCount = invoiceResult.count ?? 0;
+  }
+
+  const generatedContractsResult = await supabase
+    .from("generated_contracts")
+    .select("id", { count: "exact", head: true })
+    .eq("client_id", id);
+
+  if (generatedContractsResult.error) {
+    redirect(`/dashboard/clients/${id}/delete?error=${encodeURIComponent(generatedContractsResult.error.message)}`);
+  }
+
+  if (finalizedAppointmentCount > 0 || invoiceCount > 0 || (generatedContractsResult.count ?? 0) > 0) {
+    redirect(`/dashboard/clients/${id}/delete?error=blocked`);
+  }
+
+  const [{ data: patientDocuments }, { data: referralDocuments }] = await Promise.all([
+    supabase
+      .from("patient_documents")
+      .select("storage_path")
+      .eq("client_id", id),
+    supabase
+      .from("referral_documents")
+      .select("storage_path")
+      .eq("client_id", id),
+  ]);
+
+  const storagePaths = [...(patientDocuments ?? []), ...(referralDocuments ?? [])]
+    .flatMap((row) => (typeof row.storage_path === "string" && row.storage_path ? [row.storage_path] : []));
+
+  if (storagePaths.length > 0) {
+    await supabase.storage.from("patient-documents").remove(storagePaths);
+  }
+
+  await logAuditEvent({
+    action: "CLIENT_DELETED",
+    category: "DELETE",
+    entityType: "client",
+    entityId: id,
+    clientId: id,
+    severity: "CRITICAL",
+    metadata: {
+      full_name: client.full_name,
+      appointment_count: appointments?.length ?? 0,
+      finalized_appointment_count: finalizedAppointmentCount,
+      invoice_count: invoiceCount,
+      generated_contract_count: generatedContractsResult.count ?? 0,
+      removed_storage_objects: storagePaths.length,
+    },
+  });
+
+  const { error: deleteError } = await supabase
+    .from("clients")
+    .delete()
+    .eq("id", id);
+
+  if (deleteError) {
+    redirect(`/dashboard/clients/${id}/delete?error=${encodeURIComponent(deleteError.message)}`);
+  }
+
+  revalidatePath("/dashboard/clients");
+  redirect("/dashboard/clients?deleted=1");
+}
+
 export async function uploadClientDocument(clientId: string, folderId: string, formData: FormData) {
   const file = formData.get("file") as File;
   if (!file) return { error: "Niciun fișier selectat." };

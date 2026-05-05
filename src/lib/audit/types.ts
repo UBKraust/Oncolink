@@ -107,4 +107,7 @@ export interface AuditEventInput {
   metadata?: Record<string, unknown>
   beforeSnapshot?: Record<string, unknown>
   afterSnapshot?: Record<string, unknown>
+  actorRole?: 'THERAPIST' | 'ANONYMOUS' | 'SYSTEM'
+  ipAddress?: string | null
+  userAgent?: string | null
 }

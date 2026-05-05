@@ -117,7 +117,7 @@ export function ClientDriveDocuments({
                   </div>
                 </div>
                 <Button variant="ghost" size="icon" asChild className="shrink-0 h-8 w-8">
-                  <a href={doc.drive_link ?? doc.document_url ?? "#"} target="_blank" rel="noopener noreferrer">
+                  <a href={doc.download_url ?? doc.drive_link ?? doc.document_url ?? "#"} target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="h-4 w-4 text-muted-foreground" />
                   </a>
                 </Button>

@@ -47,6 +47,8 @@ export interface TherapistSettings {
   cas_contract_number: string | null;
   cas_county: string | null;
   has_pin: boolean;
+  google_connected: boolean;
+  google_token_expires_at: string | null;
 }
 
 const DEFAULT_SCHEDULE: WorkSchedule = {
@@ -89,6 +91,8 @@ function mergeWithDefaultSettings(
     cas_contract_number: partial?.cas_contract_number ?? base.cas_contract_number,
     cas_county: partial?.cas_county ?? base.cas_county,
     has_pin: partial?.has_pin ?? base.has_pin,
+    google_connected: partial?.google_connected ?? base.google_connected,
+    google_token_expires_at: partial?.google_token_expires_at ?? base.google_token_expires_at,
   };
 }
 
@@ -179,6 +183,8 @@ export async function getTherapistSettings(): Promise<TherapistSettings> {
     cas_contract_number: data.cas_contract_number ?? null,
     cas_county: data.cas_county ?? null,
     has_pin: Boolean(data.clinical_notes_pin_hash),
+    google_connected: Boolean(data.google_refresh_token),
+    google_token_expires_at: data.google_token_expires_at ?? null,
   }, EMPTY_REMOTE_SETTINGS);
 }
 
@@ -390,6 +396,33 @@ export async function updatePinSettings(
     severity: 'CRITICAL',
     metadata: { section: 'clinical_notes_pin' },
   })
+
+  return { success: true };
+}
+
+export async function disconnectGoogleIntegration(): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) {
+    return { success: false, error: "Supabase nu este configurat. Integrarea Google nu poate fi actualizată încă." };
+  }
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Unauthorized" };
+
+  const { error } = await upsertTherapistSettingsRow(supabase, user.id, {
+    google_access_token: null,
+    google_refresh_token: null,
+    google_token_expires_at: null,
+  });
+
+  if (error) return { success: false, error: mapTherapistSettingsSchemaError(error.message) };
+
+  void logAuditEvent({
+    action: "GOOGLE_DISCONNECTED",
+    category: "SECURITY",
+    severity: "WARNING",
+    metadata: { provider: "google" },
+  });
 
   return { success: true };
 }

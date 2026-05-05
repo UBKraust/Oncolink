@@ -23,6 +23,7 @@ import {
   updateIntegrationsSettings,
   updateCasSettings,
   updatePinSettings,
+  disconnectGoogleIntegration,
 } from "@/app/dashboard/settings/settings-actions";
 import { SetupBanner } from "@/components/app/page-shell";
 
@@ -381,6 +382,7 @@ function ScheduleTab({ s }: { s: TherapistSettings }) {
 
 function IntegrationsTab({ s }: { s: TherapistSettings }) {
   const [isPending, start] = useTransition();
+  const [isDisconnectingGoogle, startGoogleDisconnect] = useTransition();
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -414,6 +416,7 @@ function IntegrationsTab({ s }: { s: TherapistSettings }) {
 
   const smartbillConnected = Boolean(s.smartbill_username);
   const twilioConnected = Boolean(s.twilio_account_sid);
+  const googleConnected = s.google_connected;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -431,9 +434,46 @@ function IntegrationsTab({ s }: { s: TherapistSettings }) {
           </div>
         </CardHeader>
         <CardContent className="pt-6">
-          <Button asChild variant="outline" className="w-full sm:w-auto">
-            <a href="/api/google/auth">Conectează Cont Google</a>
-          </Button>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-1">
+              <Badge variant={googleConnected ? "success" : "secondary"} className="shrink-0">
+                {googleConnected ? "Conectat" : "Neconfigurat"}
+              </Badge>
+              {s.google_token_expires_at ? (
+                <p className="text-xs text-muted-foreground">
+                  Token valabil până la {new Date(s.google_token_expires_at).toLocaleString("ro-RO")}
+                </p>
+              ) : null}
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button asChild variant="outline" className="w-full sm:w-auto">
+                <a href="/api/google/auth">Conectează Cont Google</a>
+              </Button>
+              {googleConnected ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full sm:w-auto"
+                  disabled={isDisconnectingGoogle}
+                  onClick={() => {
+                    setSaved(false);
+                    setError(null);
+                    startGoogleDisconnect(async () => {
+                      const res = await disconnectGoogleIntegration();
+                      if (res.success) {
+                        setSaved(true);
+                        window.location.reload();
+                        return;
+                      }
+                      setError(res.error ?? "Nu am putut deconecta Google.");
+                    });
+                  }}
+                >
+                  {isDisconnectingGoogle ? "Se deconectează…" : "Deconectează Google"}
+                </Button>
+              ) : null}
+            </div>
+          </div>
         </CardContent>
       </Card>
 

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { 
   X, 
@@ -18,7 +19,8 @@ import {
   History,
   TrendingUp,
   Baby,
-  Building
+  Building,
+  Trash2,
 } from "lucide-react";
 import { ContractGenerator } from "./ContractGenerator";
 import { format } from "date-fns";
@@ -34,7 +36,8 @@ import {
   cancelAnonymization, 
   sendOnboardingNotification, 
   getClientOverview,
-  sendOnboardingEmail 
+  sendOnboardingEmail,
+  revokeClientConsent,
 } from "@/app/dashboard/clients/actions";
 import { toast } from "@/components/ui/toast";
 import { useOverlayA11y } from "@/components/ui/use-overlay-a11y";
@@ -56,10 +59,12 @@ interface ClientDetailOverlayProps {
 }
 
 export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProps) {
+  const router = useRouter();
   const panelRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const [isPending, setIsPending] = useState(false);
   const [isNotifying, setIsNotifying] = useState(false);
+  const [isRevokingConsent, setIsRevokingConsent] = useState(false);
   const [overrideScheduledState, setOverrideScheduledState] = useState<{
     clientId: string | null;
     value: Date | null;
@@ -203,6 +208,23 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
       toast.error("Eroare neașteptată la trimitere.");
     } finally {
       setIsNotifying(false);
+    }
+  }
+
+  async function handleRevokeConsent() {
+    setIsRevokingConsent(true);
+    try {
+      const result = await revokeClientConsent(currentClient.id);
+      if (!result.success) {
+        toast.error(result.error ?? "Nu am putut revoca consimțământul.");
+        return;
+      }
+      toast.success("Consimțământul a fost revocat și token-urile active au fost invalidate.");
+      router.refresh();
+    } catch {
+      toast.error("Eroare neașteptată la revocarea consimțământului.");
+    } finally {
+      setIsRevokingConsent(false);
     }
   }
 
@@ -526,48 +548,87 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
                           <p className="text-xs font-black text-sky-700 dark:text-sky-200">Următoarea Programare</p>
                           <p className="text-[11px] text-muted-foreground">{format(new Date(overview.nextAppointment.date), "dd MMM yyyy • HH:mm", { locale: ro })}</p>
                        </div>
-                    </div>
-                  )}
-               </div>
-            </div>
-        </div>
+                      </div>
+                    )}
+                 </div>
+                 {(client.gdpr_consent_signed || client.terms_consent_signed_at || client.legal_liability_consent_signed_at) && (
+                   <AlertDialog>
+                     <AlertDialogTrigger>
+                       <Button
+                         size="sm"
+                         variant="outline"
+                         className="w-full rounded-xl border-destructive/20 text-destructive hover:bg-destructive/5 hover:text-destructive"
+                         disabled={isRevokingConsent}
+                       >
+                         <ShieldAlert className="mr-2 h-4 w-4" />
+                         {isRevokingConsent ? "Se revocă..." : "Revocă consimțământul"}
+                       </Button>
+                     </AlertDialogTrigger>
+                     <AlertDialogContent className="rounded-[2rem]">
+                       <AlertDialogHeader>
+                         <AlertDialogTitle>Revoci consimțământul acestui client?</AlertDialogTitle>
+                         <AlertDialogDescription>
+                           Vom marca GDPR-ul și consimțămintele legale ca revocate, iar link-urile active de onboarding vor fi invalidate.
+                         </AlertDialogDescription>
+                       </AlertDialogHeader>
+                       <AlertDialogFooter>
+                         <AlertDialogCancel>Păstrează</AlertDialogCancel>
+                         <AlertDialogAction
+                           onClick={handleRevokeConsent}
+                           className="bg-destructive hover:bg-destructive/90"
+                         >
+                           Revocă acum
+                         </AlertDialogAction>
+                       </AlertDialogFooter>
+                     </AlertDialogContent>
+                   </AlertDialog>
+                 )}
+              </div>
+           </div>
 
         {/* Sticky Footer Actions */}
         <div className="flex shrink-0 items-center justify-between gap-4 border-t border-border/70 bg-background p-6">
            {!anonymized && !showScheduledAlert ? (
-             <AlertDialog>
-               <AlertDialogTrigger>
-                 <Button variant="outline" className="flex-1 rounded-2xl border-destructive/20 font-bold text-destructive hover:bg-destructive/5 hover:text-destructive">
-                    <ShieldAlert className="h-4 w-4 mr-2" /> Anonimizare
-                 </Button>
-               </AlertDialogTrigger>
-               <AlertDialogContent className="rounded-[2.5rem] border-none shadow-2xl p-8 max-w-md">
-                 <AlertDialogHeader className="space-y-4">
-                   <div className="mx-auto mb-2 flex h-16 w-16 items-center justify-center rounded-3xl bg-destructive/10 text-destructive">
-                      <ShieldAlert className="h-10 w-10" />
-                   </div>
-                   <AlertDialogTitle className="text-center text-2xl font-black leading-tight text-foreground">
-                     Siguranța Datelor:<br/>Ești sigur?
-                   </AlertDialogTitle>
-                   <AlertDialogDescription className="text-center font-medium leading-relaxed text-muted-foreground">
-                     Prin anonimizare, vom șterge definitiv Numele, Email-ul, Telefonul și Adresa pacientului. 
-                     <br/><br/>
-                     <span className="font-black text-foreground">Vei avea 15 zile la dispoziție pentru a anula procesul dacă te răzgândești.</span>
-                   </AlertDialogDescription>
-                 </AlertDialogHeader>
-                 <AlertDialogFooter className="flex-col sm:flex-col gap-3 mt-8">
-                   <AlertDialogAction 
-                     onClick={handleSchedule}
-                     className="h-12 w-full rounded-2xl bg-destructive font-black text-destructive-foreground shadow-sm hover:bg-destructive/90"
-                   >
-                     DA, PROGRAMEAZĂ ANONIMIZAREA
-                   </AlertDialogAction>
-                   <AlertDialogCancel className="h-12 w-full rounded-2xl border-none font-bold hover:bg-muted">
-                     RENUNȚĂ
-                   </AlertDialogCancel>
-                 </AlertDialogFooter>
-               </AlertDialogContent>
-             </AlertDialog>
+             <div className="flex flex-1 gap-3">
+               <AlertDialog>
+                 <AlertDialogTrigger>
+                   <Button variant="outline" className="flex-1 rounded-2xl border-destructive/20 font-bold text-destructive hover:bg-destructive/5 hover:text-destructive">
+                      <ShieldAlert className="h-4 w-4 mr-2" /> Anonimizare
+                   </Button>
+                 </AlertDialogTrigger>
+                 <AlertDialogContent className="rounded-[2.5rem] border-none shadow-2xl p-8 max-w-md">
+                   <AlertDialogHeader className="space-y-4">
+                     <div className="mx-auto mb-2 flex h-16 w-16 items-center justify-center rounded-3xl bg-destructive/10 text-destructive">
+                        <ShieldAlert className="h-10 w-10" />
+                     </div>
+                     <AlertDialogTitle className="text-center text-2xl font-black leading-tight text-foreground">
+                       Siguranța Datelor:<br/>Ești sigur?
+                     </AlertDialogTitle>
+                     <AlertDialogDescription className="text-center font-medium leading-relaxed text-muted-foreground">
+                       Prin anonimizare, vom șterge definitiv Numele, Email-ul, Telefonul și Adresa pacientului. 
+                       <br/><br/>
+                       <span className="font-black text-foreground">Vei avea 15 zile la dispoziție pentru a anula procesul dacă te răzgândești.</span>
+                     </AlertDialogDescription>
+                   </AlertDialogHeader>
+                   <AlertDialogFooter className="flex-col sm:flex-col gap-3 mt-8">
+                     <AlertDialogAction 
+                       onClick={handleSchedule}
+                       className="h-12 w-full rounded-2xl bg-destructive font-black text-destructive-foreground shadow-sm hover:bg-destructive/90"
+                     >
+                       DA, PROGRAMEAZĂ ANONIMIZAREA
+                     </AlertDialogAction>
+                     <AlertDialogCancel className="h-12 w-full rounded-2xl border-none font-bold hover:bg-muted">
+                       RENUNȚĂ
+                     </AlertDialogCancel>
+                   </AlertDialogFooter>
+                 </AlertDialogContent>
+               </AlertDialog>
+               <Button variant="ghost" className="rounded-2xl text-destructive hover:bg-destructive/5 hover:text-destructive" asChild>
+                 <Link href={`/dashboard/clients/${client.id}/delete`}>
+                   <Trash2 className="h-4 w-4 mr-2" /> Ștergere
+                 </Link>
+               </Button>
+             </div>
            ) : (
              <Button variant="outline" className="flex-1 rounded-2xl border-border/60 text-muted-foreground font-bold italic" disabled>
                 {anonymized ? "Pacient Anonimizat" : "Anonimizare în curs..."}

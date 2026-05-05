@@ -21,6 +21,7 @@ export interface VaultDoc {
   name: string;
   category: VaultCategory;
   file_url: string;
+  download_url?: string | null;
   file_path: string | null;
   expiry_date: string | null;
   uploaded_at: string;
@@ -53,6 +54,7 @@ export async function listVaultDocuments(): Promise<VaultDoc[]> {
   return Promise.all(
     docs.map(async (doc) => ({
       ...doc,
+      download_url: `/api/documents/vault/${doc.id}/download`,
       file_url:
         (await createSignedObjectUrl(
           supabase,

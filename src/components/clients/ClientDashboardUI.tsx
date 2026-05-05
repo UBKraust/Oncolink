@@ -60,6 +60,7 @@ import {
 } from "@/lib/clients/service-track";
 import type {
   ClientAiContext,
+  ClientAccessHistoryItem,
   ClientAppointment,
   ClientAssessment,
   ClientDocument,
@@ -84,6 +85,7 @@ interface ClientDashboardUIProps {
   crisisNotes: CrisisNoteItem[];
   appointments: ClientAppointment[];
   lifecycleHistory: ClientStatusHistoryItem[];
+  accessHistory: ClientAccessHistoryItem[];
   anonymized: boolean;
   justAnonymized: boolean;
   sectionParam: string | undefined;
@@ -133,6 +135,7 @@ export function ClientDashboardUI({
   crisisNotes,
   appointments,
   lifecycleHistory,
+  accessHistory,
   anonymized,
   justAnonymized,
   sectionParam,
@@ -1004,51 +1007,105 @@ export function ClientDashboardUI({
       ) : null}
 
       {activeView === "lifecycle" ? (
-        <SectionCard
-          title="Istoric lifecycle"
-          description="Ultimele schimbări de status pentru această fișă, utile pentru context administrativ și continuitate."
-          icon={Clock}
-        >
-          <div className="p-6">
-            {lifecycleHistory.length > 0 ? (
-              <div className="space-y-3">
-                {lifecycleHistory.map((entry) => (
-                  <div
-                    key={entry.id}
-                    className="flex flex-col gap-2 rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 md:flex-row md:items-center md:justify-between"
-                  >
-                    <div className="space-y-1">
-                      <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-foreground">
-                        <span>{STATUS_LABELS[entry.from_status ?? ""] ?? "Inițial"}</span>
-                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                        <span>{STATUS_LABELS[entry.to_status] ?? entry.to_status}</span>
+        <div className="grid gap-6 xl:grid-cols-2">
+          <SectionCard
+            title="Istoric lifecycle"
+            description="Ultimele schimbări de status pentru această fișă, utile pentru context administrativ și continuitate."
+            icon={Clock}
+          >
+            <div className="p-6">
+              {lifecycleHistory.length > 0 ? (
+                <div className="space-y-3">
+                  {lifecycleHistory.map((entry) => (
+                    <div
+                      key={entry.id}
+                      className="flex flex-col gap-2 rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 md:flex-row md:items-center md:justify-between"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-foreground">
+                          <span>{STATUS_LABELS[entry.from_status ?? ""] ?? "Inițial"}</span>
+                          <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                          <span>{STATUS_LABELS[entry.to_status] ?? entry.to_status}</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {entry.reason ?? "Fără motiv explicit"}
+                        </p>
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {entry.reason ?? "Fără motiv explicit"}
+                      <div className="flex flex-col items-end gap-0.5 text-right">
+                        <span className="text-xs font-medium text-muted-foreground">
+                          {format(new Date(entry.changed_at), "d MMM yyyy, HH:mm", { locale: ro })}
+                        </span>
+                        {entry.changed_by_name && (
+                          <span className="text-xs text-muted-foreground/70">
+                            de {entry.changed_by_name}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState
+                  title="Istoricul nu este disponibil încă"
+                  description="După aplicarea migrării și primele tranziții reale, aici vor apărea schimbările de status ale clientului."
+                  icon={Clock}
+                />
+              )}
+            </div>
+          </SectionCard>
+
+          <SectionCard
+            title="Istoric acces"
+            description="Ultimele accesări și exporturi sensibile legate de această fișă."
+            icon={ShieldAlert}
+          >
+            <div className="p-6">
+              {accessHistory.length > 0 ? (
+                <div className="space-y-3">
+                  {accessHistory.map((entry) => (
+                    <div
+                      key={entry.id}
+                      className="rounded-2xl border border-border/60 bg-muted/20 px-4 py-3"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge variant="outline" className="text-[10px] uppercase">
+                            {entry.category}
+                          </Badge>
+                          <Badge
+                            variant={
+                              entry.severity === "CRITICAL"
+                                ? "destructive"
+                                : entry.severity === "WARNING"
+                                  ? "warning"
+                                  : "secondary"
+                            }
+                            className="text-[10px]"
+                          >
+                            {entry.severity}
+                          </Badge>
+                        </div>
+                        <span className="text-xs font-medium text-muted-foreground">
+                          {format(new Date(entry.created_at), "d MMM yyyy, HH:mm", { locale: ro })}
+                        </span>
+                      </div>
+                      <p className="mt-2 font-mono text-xs text-foreground">{entry.action}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Actor: {entry.actor_role ?? "—"} · Status: {entry.status}
                       </p>
                     </div>
-                    <div className="flex flex-col items-end gap-0.5 text-right">
-                      <span className="text-xs font-medium text-muted-foreground">
-                        {format(new Date(entry.changed_at), "d MMM yyyy, HH:mm", { locale: ro })}
-                      </span>
-                      {entry.changed_by_name && (
-                        <span className="text-xs text-muted-foreground/70">
-                          de {entry.changed_by_name}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <EmptyState
-                title="Istoricul nu este disponibil încă"
-                description="După aplicarea migrării și primele tranziții reale, aici vor apărea schimbările de status ale clientului."
-                icon={Clock}
-              />
-            )}
-          </div>
-        </SectionCard>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState
+                  title="Niciun eveniment de acces încă"
+                  description="Vizualizările, download-urile și alte acțiuni sensibile vor apărea aici."
+                  icon={ShieldAlert}
+                />
+              )}
+            </div>
+          </SectionCard>
+        </div>
       ) : null}
 
       {/* ── Overlays ──────────────────────────────────────────────────────── */}

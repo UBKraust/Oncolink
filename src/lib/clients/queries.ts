@@ -7,6 +7,7 @@ import type {
   CbtCaseFormulation,
   DbtDiaryCard,
   SafetyPlan,
+  ClientAccessHistoryItem,
 } from "@/components/clients/types";
 
 export type ClientRow = Database["public"]["Tables"]["clients"]["Row"];
@@ -72,6 +73,102 @@ export async function getClientStatusHistory(
   }
 
   return data ?? [];
+}
+
+export async function getClientAccessHistory(
+  clientId: string,
+): Promise<ClientAccessHistoryItem[]> {
+  if (!isSupabaseConfigured()) return [];
+
+  const supabase = await createSupabaseServerClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
+    .from("audit_logs")
+    .select("id, action, category, severity, status, actor_role, metadata, created_at")
+    .eq("client_id", clientId)
+    .order("created_at", { ascending: false })
+    .limit(12);
+
+  if (error) {
+    if (String(error.message).includes("audit_logs")) return [];
+    throw new Error(error.message);
+  }
+
+  return (data ?? []) as ClientAccessHistoryItem[];
+}
+
+export interface ClientDeletionImpact {
+  canDelete: boolean;
+  appointmentCount: number;
+  finalizedAppointmentCount: number;
+  invoiceCount: number;
+  generatedContractCount: number;
+  blockers: string[];
+}
+
+export async function getClientDeletionImpact(
+  clientId: string,
+): Promise<ClientDeletionImpact> {
+  if (!isSupabaseConfigured()) {
+    return {
+      canDelete: false,
+      appointmentCount: 0,
+      finalizedAppointmentCount: 0,
+      invoiceCount: 0,
+      generatedContractCount: 0,
+      blockers: ["Supabase nu este configurat."],
+    };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data: appointments, error: appointmentError } = await supabase
+    .from("appointments")
+    .select("id, status")
+    .eq("client_id", clientId);
+
+  if (appointmentError) throw new Error(appointmentError.message);
+
+  const appointmentIds = (appointments ?? []).map((appointment) => appointment.id);
+  const finalizedAppointmentCount = (appointments ?? []).filter(
+    (appointment) => appointment.status === "FINALIZAT",
+  ).length;
+
+  let invoiceCount = 0;
+  if (appointmentIds.length > 0) {
+    const { count, error } = await supabase
+      .from("invoices")
+      .select("id", { count: "exact", head: true })
+      .in("appointment_id", appointmentIds);
+    if (error) throw new Error(error.message);
+    invoiceCount = count ?? 0;
+  }
+
+  const { count: generatedContractCount, error: contractError } = await supabase
+    .from("generated_contracts")
+    .select("id", { count: "exact", head: true })
+    .eq("client_id", clientId);
+
+  if (contractError) throw new Error(contractError.message);
+
+  const blockers: string[] = [];
+  if (finalizedAppointmentCount > 0) {
+    blockers.push("Clientul are ședințe finalizate și trebuie păstrat pentru continuitate clinică.");
+  }
+  if (invoiceCount > 0) {
+    blockers.push("Clientul are facturi asociate și nu poate fi șters din motive contabile.");
+  }
+  if ((generatedContractCount ?? 0) > 0) {
+    blockers.push("Clientul are contracte generate oficial și nu poate fi șters definitiv.");
+  }
+
+  return {
+    canDelete: blockers.length === 0,
+    appointmentCount: appointments?.length ?? 0,
+    finalizedAppointmentCount,
+    invoiceCount,
+    generatedContractCount: generatedContractCount ?? 0,
+    blockers,
+  };
 }
 
 function isP2TableMissing(message: string) {

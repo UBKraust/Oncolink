@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { listCrisisNotes } from "@/app/dashboard/clients/crisis-notes-actions";
 import {
   getClient,
+  getClientAccessHistory,
   getClientStatusHistory,
   getHomeworkItems,
   getCbtCaseFormulation,
@@ -59,6 +60,7 @@ export default async function ClientDetailPage({
     { data: medsData },
     crisisNotes,
     statusHistory,
+    accessHistory,
   ] = await Promise.all([
     supabase.from("client_assessments").select("*").eq("client_id", id),
     supabase.from("invoices").select("*").eq("client_id", id),
@@ -66,6 +68,7 @@ export default async function ClientDetailPage({
     supabase.from("patient_medication").select("*").eq("client_id", id),
     anonymized ? Promise.resolve([]) : listCrisisNotes(id),
     getClientStatusHistory(id),
+    getClientAccessHistory(id),
   ]);
 
   // Fetch P2 clinical tools conditionally per service_type
@@ -118,6 +121,7 @@ export default async function ClientDetailPage({
       file_name: doc.file_name ?? "Document",
       document_type: doc.document_type ?? "Fișier",
       created_at: doc.created_at ?? doc.uploaded_at ?? new Date().toISOString(),
+      download_url: `/api/documents/patient/${doc.id}/download`,
       drive_link:
         doc.drive_link ??
         (await createSignedObjectUrl(
@@ -182,6 +186,7 @@ export default async function ClientDetailPage({
       crisisNotes={crisisNotes}
       appointments={appointments}
       lifecycleHistory={lifecycleHistory}
+      accessHistory={accessHistory}
       anonymized={anonymized}
       justAnonymized={justAnonymized === "true"}
       sectionParam={sectionParam}

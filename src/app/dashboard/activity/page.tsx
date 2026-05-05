@@ -127,9 +127,13 @@ export default async function ActivityPage({
   ]);
 
   const hasAuditFilters = !!(category || severity || clientId);
-  const auditFilterParams = new URLSearchParams();
-  if (from) auditFilterParams.set("from", from);
-  if (to) auditFilterParams.set("to", to);
+  const baseDateParams = new URLSearchParams();
+  if (from) baseDateParams.set("from", from);
+  if (to) baseDateParams.set("to", to);
+  const auditExportParams = new URLSearchParams(baseDateParams);
+  if (category) auditExportParams.set("category", category);
+  auditExportParams.set("severity", severity ?? "CRITICAL");
+  if (clientId) auditExportParams.set("clientId", clientId);
 
   return (
     <DashboardPage className="max-w-5xl">
@@ -273,9 +277,14 @@ export default async function ActivityPage({
           {from && <input type="hidden" name="from" value={from} />}
           {to && <input type="hidden" name="to" value={to} />}
           <Button type="submit" variant="outline" size="sm">Filtrează</Button>
+          <Button asChild variant="outline" size="sm">
+            <a href={`/api/activity/export?dataset=audit&format=csv&${auditExportParams.toString()}`} download>
+              Export audit CSV
+            </a>
+          </Button>
           {hasAuditFilters && (
             <a
-              href={`/dashboard/activity?${auditFilterParams.toString()}`}
+              href={`/dashboard/activity?${baseDateParams.toString()}`}
               className="flex h-9 items-center rounded-xl px-3 text-sm font-medium text-muted-foreground hover:text-foreground"
             >
               Resetează

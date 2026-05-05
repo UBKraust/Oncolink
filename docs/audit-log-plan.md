@@ -438,9 +438,9 @@ Secțiune „Istoric acces" cu:
 - [x] `REPORT_FINALIZED` → `forms-actions.ts:finalizeTherapyReport`
 - [x] `AI_SUMMARY_GENERATED` → `logAiSummaryAudit` Server Action în `notes/actions.ts`, apelat din `note-editor.tsx` după runOllama
 - [ ] `NOTE_DECRYPTED` — decriptarea e client-side (PBKDF2/AES-GCM în browser), nu are punct server-side clar
-- [ ] `DOCUMENT_DOWNLOADED` — `createSignedObjectUrl` e utility generic, prea mulți callers; de adăugat per-endpoint la nevoie
-- [ ] `CLIENT_DELETED` — funcție de ștergere completă nu există (doar anonimizare)
-- [ ] `CONSENT_REVOKED` — flux de revocare nu e implementat încă
+- [x] `DOCUMENT_DOWNLOADED` → endpoint-uri explicite `api/documents/patient/[id]/download` și `api/documents/vault/[id]/download`
+- [x] `CLIENT_DELETED` → `clients/actions.ts:hardDeleteClient` + pagină dedicată `clients/[id]/delete` (doar fără facturi / ședințe finalizate / contracte generate)
+- [x] `CONSENT_REVOKED` → `clients/actions.ts:revokeClientConsent` + confirmare din `ClientDetailOverlay`
 
 ### P2 — Audit SaaS avansat ✅ IMPLEMENTAT (2026-05-05)
 
@@ -451,13 +451,13 @@ Secțiune „Istoric acces" cu:
 - [x] `GOOGLE_CONNECTED` → `api/google/callback/route.ts`
 - [x] `CLIENT_EXPORTED` (CRITICAL) → `api/activity/export/route.ts` (registru CPR)
 - [x] `CLIENT_EXPORTED` (CRITICAL) → `api/exports/cas/route.ts` (raport SIUI/CAS)
-- [ ] `LOGIN_FAILED` — skip: fără sesiune auth, `therapist_id NOT NULL` face log imposibil fără lookup email
+- [x] `LOGIN_FAILED` → `login/actions.ts:signInWithPassword` + migrare DB `20260505225226_audit_log_actor_context.sql` (`therapist_id` nullable pentru actor anonim)
 - [ ] `MFA_ENABLED` / `MFA_DISABLED` — MFA nu e implementat în aplicație
 - [ ] `SUPPORT_ACCESS_GRANTED` / `SUPPORT_ACCESS_REVOKED` — feature inexistent
 - [ ] `EFACTURA_SUBMITTED` — integrare ANAF inexistentă
-- [ ] `GOOGLE_DISCONNECTED` — buton de disconnect inexistent în UI
-- [ ] Tab „Istoric acces" în fișa clientului
-- [ ] Export audit log (CSV) cu severitate CRITICAL
+- [x] `GOOGLE_DISCONNECTED` → `settings-actions.ts:disconnectGoogleIntegration` + UI în `SettingsClient.tsx`
+- [x] Tab „Istoric acces" în fișa clientului → query `getClientAccessHistory()` + secțiune în `ClientDashboardUI.tsx`
+- [x] Export audit log (CSV) cu severitate CRITICAL → `api/activity/export?dataset=audit` + buton în `dashboard/activity`
 
 ---
 

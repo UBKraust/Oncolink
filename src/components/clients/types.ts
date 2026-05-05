@@ -86,6 +86,17 @@ export interface ClientStatusHistoryItem {
   changed_by_name: string | null;
 }
 
+export interface ClientAccessHistoryItem {
+  id: string;
+  action: string;
+  category: string;
+  severity: string;
+  status: string;
+  actor_role: string | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+}
+
 export interface ClientPayment {
   id: string;
   amount: number;
@@ -103,6 +114,7 @@ export interface ClientDocument {
   document_type?: string | null;
   document_url?: string | null;
   drive_link?: string | null;
+  download_url?: string | null;
   storage_path?: string | null;
   uploaded_at?: string | null;
   created_at?: string | null;

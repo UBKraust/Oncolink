@@ -36,6 +36,7 @@ export default async function ClientDetailPage({
     anonymized?: string;
     assessment?: string;
     section?: string;
+    view?: string;
   }>;
 }) {
   const { id } = await params;
@@ -43,6 +44,7 @@ export default async function ClientDetailPage({
     anonymized: justAnonymized,
     assessment: assessmentParam,
     section: sectionParam,
+    view: viewParam,
   } = await searchParams;
 
   const client = await getClient(id);
@@ -189,6 +191,7 @@ export default async function ClientDetailPage({
       accessHistory={accessHistory}
       anonymized={anonymized}
       justAnonymized={justAnonymized === "true"}
+      viewParam={viewParam}
       sectionParam={sectionParam}
       assessmentParam={assessmentParam}
       aiClientContext={aiClientContext}

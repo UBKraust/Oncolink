@@ -729,8 +729,8 @@ export async function getDashboardClinicalAlerts(limit = 5): Promise<DashboardAl
         severity: gdprMissing >= 3 ? "critical" : "warning",
         title: "Consimțământ GDPR lipsă",
         description: `${gdprMissing} fișe active au nevoie de confirmarea consimțământului GDPR.`,
-        href: "/dashboard/clients",
-        ctaLabel: "Vezi clienți",
+        href: "/dashboard/clients?filter=gdpr-missing",
+        ctaLabel: "Vezi cohorta",
       });
     }
 
@@ -744,7 +744,7 @@ export async function getDashboardClinicalAlerts(limit = 5): Promise<DashboardAl
         severity: "warning",
         title: "Onboarding incomplet",
         description: `${onboardingIncomplete} clienți au rămas blocați înainte de finalizarea onboardingului.`,
-        href: "/dashboard/clients",
+        href: "/dashboard/clients?filter=onboarding",
         ctaLabel: "Continuă fluxul",
       });
     }
@@ -759,7 +759,7 @@ export async function getDashboardClinicalAlerts(limit = 5): Promise<DashboardAl
         severity: "info",
         title: "Service track neconfigurat",
         description: `${missingServiceType} fișe nu au încă tipul principal de serviciu setat.`,
-        href: "/dashboard/clients",
+        href: "/dashboard/clients?service=UNDECIDED",
         ctaLabel: "Vezi fișe",
       });
     }
@@ -776,7 +776,7 @@ export async function getDashboardClinicalAlerts(limit = 5): Promise<DashboardAl
         severity: "critical",
         title: "Cazuri DBT fără plan de siguranță",
         description: `${dbtHighRiskWithoutPlan} clienți DBT cu risc ridicat nu au încă plan de siguranță salvat.`,
-        href: "/dashboard/clients",
+        href: "/dashboard/clients?service=DBT&filter=high-risk",
         ctaLabel: "Verifică DBT",
       });
     }
@@ -797,7 +797,7 @@ export async function getDashboardClinicalAlerts(limit = 5): Promise<DashboardAl
         severity: "warning",
         title: "Diary card DBT lipsă săptămâna aceasta",
         description: `${dbtDiaryMissing} clienți DBT activi nu au încă diary card în săptămâna curentă.`,
-        href: "/dashboard/clients",
+        href: "/dashboard/clients?service=DBT",
         ctaLabel: "Vezi cazuri DBT",
       });
     }
@@ -814,25 +814,29 @@ export async function getDashboardClinicalAlerts(limit = 5): Promise<DashboardAl
         severity: "info",
         title: "Teme CBT restante",
         description: `${overdueHomework} teme pentru acasă au depășit termenul și merită follow-up.`,
-        href: "/dashboard/clients",
+        href: "/dashboard/clients?service=CBT",
         ctaLabel: "Vezi teme",
       });
     }
 
-    const reportPending = assessments.filter(
+    const pendingReports = assessments.filter(
       (assessment) =>
         assessment.assessment_type === "RAPORT_LUNAR" &&
         !assessment.sent_to_parent_at,
-    ).length;
-    if (reportPending > 0) {
+    );
+    if (pendingReports.length > 0) {
+      const firstPendingReport = pendingReports.find((assessment) => assessment.client_id);
       alerts.push({
         id: "report-pending",
         type: "DOCUMENT",
         severity: "warning",
         title: "Rapoarte către aparținători în așteptare",
-        description: `${reportPending} rapoarte lunare nu au fost marcate ca trimise.`,
-        href: "/dashboard/assessments",
-        ctaLabel: "Vezi evaluări",
+        description: `${pendingReports.length} rapoarte lunare nu au fost marcate ca trimise.`,
+        href:
+          firstPendingReport?.client_id && firstPendingReport.id
+            ? `/dashboard/clients/${firstPendingReport.client_id}?view=clinic&assessment=${firstPendingReport.id}`
+            : "/dashboard/assessments",
+        ctaLabel: firstPendingReport ? "Deschide un raport" : "Vezi evaluări",
       });
     }
 
@@ -964,13 +968,13 @@ export async function getDashboardDocumentTasks(limit = 5): Promise<DashboardTas
             clientId: client.id,
             clientName,
             type: "REPORT",
-            title: `${clientName} — raport nesendat către părinte`,
-            description: "Marchează trimiterea raportului sau revizuiește dacă mai este necesar.",
-            href: "/dashboard/assessments",
-            ctaLabel: "Vezi raport",
-            priority: "medium",
-          });
-        }
+          title: `${clientName} — raport nesendat către părinte`,
+          description: "Marchează trimiterea raportului sau revizuiește dacă mai este necesar.",
+          href: `/dashboard/clients/${client.id}?view=clinic&assessment=${latestPendingReport.id}`,
+          ctaLabel: "Vezi raport",
+          priority: "medium",
+        });
+      }
       }
     }
 
@@ -1170,8 +1174,10 @@ export async function getDashboardAssessmentTasks(limit = 5): Promise<DashboardA
           clientName,
           title: `${clientName} — raport lunar în așteptare`,
           description: "Raportul există, dar nu este încă marcat ca trimis.",
-          href: "/dashboard/assessments",
-          ctaLabel: "Vezi evaluări",
+          href: assessment.client_id
+            ? `/dashboard/clients/${assessment.client_id}?view=clinic&assessment=${assessment.id}`
+            : "/dashboard/assessments",
+          ctaLabel: assessment.client_id ? "Deschide raportul" : "Vezi evaluări",
           priority: "high",
         });
       }
@@ -1187,8 +1193,10 @@ export async function getDashboardAssessmentTasks(limit = 5): Promise<DashboardA
           clientName,
           title: `${clientName} — evaluare fără summary`,
           description: "Adaugă un rezumat clinic scurt pentru continuitatea dosarului.",
-          href: "/dashboard/assessments",
-          ctaLabel: "Completează",
+          href: assessment.client_id
+            ? `/dashboard/clients/${assessment.client_id}?view=clinic&assessment=${assessment.id}`
+            : "/dashboard/assessments",
+          ctaLabel: assessment.client_id ? "Completează din fișă" : "Completează",
           priority: "medium",
         });
       }
@@ -1207,7 +1215,7 @@ export async function getDashboardAssessmentTasks(limit = 5): Promise<DashboardA
           clientName,
           title: `${clientName} — evaluare fără scor calculat`,
           description: `${getTestName(assessment.test)} a fost salvată, dar nu are încă rezultat calculat util în dashboard.`,
-          href: `/dashboard/clients/${assessment.client_id}`,
+          href: `/dashboard/clients/${assessment.client_id}?view=clinic`,
           ctaLabel: "Vezi fișa",
           priority: "medium",
         });
@@ -1229,8 +1237,8 @@ export async function getDashboardAssessmentTasks(limit = 5): Promise<DashboardA
           clientName: uniqueClientName(client.full_name),
           title: `${uniqueClientName(client.full_name)} — diary card lipsă`,
           description: "Săptămâna curentă nu are încă diary card înregistrat pentru cazul DBT.",
-          href: `/dashboard/clients/${client.id}`,
-          ctaLabel: "Completează",
+          href: `/dashboard/clients/${client.id}?view=clinic`,
+          ctaLabel: "Deschide fișa",
           priority: "high",
         });
       }

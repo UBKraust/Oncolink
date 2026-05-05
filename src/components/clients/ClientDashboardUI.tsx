@@ -88,6 +88,7 @@ interface ClientDashboardUIProps {
   accessHistory: ClientAccessHistoryItem[];
   anonymized: boolean;
   justAnonymized: boolean;
+  viewParam: string | undefined;
   sectionParam: string | undefined;
   assessmentParam: string | undefined;
   aiClientContext: ClientAiContext;
@@ -126,6 +127,19 @@ const STATUS_LABELS: Record<string, string> = {
   ANONIMIZAT: "Anonimizat",
 };
 
+type ClientWorkspaceView = "overview" | "clinic" | "appointments" | "lifecycle";
+
+const WORKSPACE_VIEWS: Array<{ id: ClientWorkspaceView; label: string }> = [
+  { id: "overview", label: "Sumar" },
+  { id: "clinic", label: "Clinic" },
+  { id: "appointments", label: "Programări" },
+  { id: "lifecycle", label: "Lifecycle" },
+];
+
+function isClientWorkspaceView(value: string | undefined): value is ClientWorkspaceView {
+  return value === "overview" || value === "clinic" || value === "appointments" || value === "lifecycle";
+}
+
 export function ClientDashboardUI({
   client,
   assessments,
@@ -138,6 +152,7 @@ export function ClientDashboardUI({
   accessHistory,
   anonymized,
   justAnonymized,
+  viewParam,
   sectionParam,
   assessmentParam,
   aiClientContext,
@@ -155,7 +170,6 @@ export function ClientDashboardUI({
   recommendationsForm,
   counselingProgressForm,
 }: ClientDashboardUIProps) {
-  type ClientWorkspaceView = "overview" | "clinic" | "appointments" | "lifecycle";
   const router = useRouter();
   const [isLifecyclePending, startLifecycleTransition] = useTransition();
   const [isContractModalOpen, setIsContractModalOpen] = useState(false);
@@ -163,12 +177,40 @@ export function ClientDashboardUI({
   const id = client.id;
   const isMinor = client.is_minor ?? false;
   const baseUrl = `/dashboard/clients/${id}`;
-  const closeSectionOverlay = () => {
-    router.replace(baseUrl, { scroll: false });
+  const activeView: ClientWorkspaceView = assessmentParam
+    ? "clinic"
+    : sectionParam
+      ? "overview"
+      : isClientWorkspaceView(viewParam)
+        ? viewParam
+        : "overview";
+  const buildClientUrl = ({
+    view = activeView,
+    section,
+    assessment,
+  }: {
+    view?: ClientWorkspaceView;
+    section?: string | null;
+    assessment?: string | null;
+  } = {}) => {
+    const params = new URLSearchParams();
+
+    if (view !== "overview") {
+      params.set("view", view);
+    }
+    if (section) {
+      params.set("section", section);
+    }
+    if (assessment) {
+      params.set("assessment", assessment);
+    }
+
+    const query = params.toString();
+    return query ? `${baseUrl}?${query}` : baseUrl;
   };
-  const [activeView, setActiveView] = useState<ClientWorkspaceView>(() =>
-    assessmentParam ? "clinic" : "overview",
-  );
+  const closeSectionOverlay = () => {
+    router.replace(buildClientUrl({ view: activeView }), { scroll: false });
+  };
   const lifecycle = deriveClientLifecycle(client, appointments);
 
   const selectedAssessment = assessmentParam
@@ -829,30 +871,24 @@ export function ClientDashboardUI({
       )}
 
       <section className="rounded-[1.75rem] border border-border/60 bg-card p-3 shadow-sm">
-        <div className="flex flex-wrap gap-2">
-          {[
-            { id: "overview", label: "Overview" },
-            { id: "clinic", label: "Clinic" },
-            { id: "appointments", label: "Programări" },
-            { id: "lifecycle", label: "Lifecycle" },
-          ].map((view) => {
+          <div className="flex flex-wrap gap-2">
+          {WORKSPACE_VIEWS.map((view) => {
             const active = activeView === view.id;
 
             return (
-              <button
+              <Link
                 key={view.id}
-                type="button"
-                onClick={() => setActiveView(view.id as ClientWorkspaceView)}
+                href={buildClientUrl({ view: view.id })}
                 className={cn(
                   "rounded-2xl px-4 py-2.5 text-sm font-semibold transition-colors",
                   active
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground",
                 )}
-                aria-pressed={active}
+                aria-current={active ? "page" : undefined}
               >
                 {view.label}
-              </button>
+              </Link>
             );
           })}
         </div>
@@ -865,7 +901,7 @@ export function ClientDashboardUI({
               icon={Mail}
               title="Contact & Profil"
               value={anonymized ? "REDACTED" : (client.email ?? "—")}
-              link="?section=contact"
+              link={buildClientUrl({ view: "overview", section: "contact" })}
               badge={client.gdpr_consent_signed ? "GDPR OK" : "GDPR LIPSĂ"}
               badgeVariant={client.gdpr_consent_signed ? "success" : "warning"}
             />
@@ -873,21 +909,21 @@ export function ClientDashboardUI({
               icon={Wallet}
               title="Financiar"
               value={`${aiClientContext.totalAmount} RON`}
-              link="?section=finance"
+              link={buildClientUrl({ view: "overview", section: "finance" })}
               subtitle={`${aiClientContext.totalSessions} ședințe totale`}
             />
             <WidgetCard
               icon={FileText}
               title="Dosar Medical"
               value={`${clientDocs.length + clientMeds.length} Fișiere`}
-              link="?section=medical"
+              link={buildClientUrl({ view: "overview", section: "medical" })}
               subtitle={`${clientMeds.length} medicamente active`}
             />
             <WidgetCard
               icon={ShieldOff}
               title="Monitorizare Risc"
               value={crisisNotes.length > 0 ? `${crisisNotes.length} Note active` : "Fără incidente"}
-              link="?section=crisis"
+              link={buildClientUrl({ view: "overview", section: "crisis" })}
               badge={crisisNotes.length > 0 ? "URGENT" : "STABIL"}
               badgeVariant={crisisNotes.length > 0 ? "destructive" : "outline"}
             />
@@ -997,7 +1033,12 @@ export function ClientDashboardUI({
               ) : (
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                   {assessments.map((acc) => (
-                    <AssessmentCard key={acc.id} acc={acc} clientId={id} isActive={assessmentParam === acc.id} />
+                    <AssessmentCard
+                      key={acc.id}
+                      acc={acc}
+                      href={buildClientUrl({ view: "clinic", assessment: acc.id })}
+                      isActive={assessmentParam === acc.id}
+                    />
                   ))}
                 </div>
               )}
@@ -1140,7 +1181,7 @@ export function ClientDashboardUI({
           clientName={client.full_name ?? "Client"}
           isMinor={isMinor}
           sendReportToParent={client.send_report_to_parent ?? false}
-          closeUrl={baseUrl}
+          closeUrl={buildClientUrl({ view: "clinic" })}
         />
       )}
 
@@ -1239,11 +1280,11 @@ function WidgetCard({
 
 function AssessmentCard({
   acc,
-  clientId,
+  href,
   isActive,
 }: {
   acc: ClientAssessment;
-  clientId: string;
+  href: string;
   isActive: boolean;
 }) {
   const scoringTestType =
@@ -1253,7 +1294,7 @@ function AssessmentCard({
 
   return (
     <ActionCard
-      href={`/dashboard/clients/${clientId}?assessment=${acc.id}`}
+      href={href}
       icon={Brain}
       title={scoringTestType}
       value={acc.assessment_type.replace(/_/g, " ")}

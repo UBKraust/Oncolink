@@ -8,7 +8,7 @@ import {
   UserPlus, 
   Baby, 
   Calendar, 
-  Receipt, 
+  FileText,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -27,6 +27,7 @@ export function QuickActionsWheel() {
   const pathname = usePathname();
 
   const hiddenRoutes = [
+    "/dashboard",
     "/dashboard/clients",
     "/dashboard/appointments",
     "/dashboard/calendar",
@@ -71,12 +72,12 @@ export function QuickActionsWheel() {
       },
     },
     {
-      id: "expense",
-      label: "Cheltuială Nouă",
-      icon: Receipt,
+      id: "invoice",
+      label: "Factură Nouă",
+      icon: FileText,
       color: "text-foreground bg-muted/60 border-border/70",
       action: () => {
-        router.push("/dashboard/expenses");
+        router.push("/dashboard/invoices/new");
         setIsOpen(false);
       },
     },
@@ -119,12 +120,12 @@ export function QuickActionsWheel() {
                   <p className="text-sm font-semibold text-foreground">{act.label}</p>
                   <p className="text-xs text-muted-foreground">
                     {act.id === "minor"
-                      ? "Deschide fluxul pentru reprezentant legal"
+                        ? "Deschide fluxul pentru reprezentant legal"
                       : act.id === "adult"
                         ? "Creează rapid o fișă nouă"
                         : act.id === "app"
                           ? "Programează o nouă ședință"
-                          : "Înregistrează o cheltuială"}
+                          : "Deschide direct emiterea unei facturi"}
                   </p>
                 </div>
               </button>

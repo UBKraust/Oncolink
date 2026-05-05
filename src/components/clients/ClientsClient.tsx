@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -32,7 +33,6 @@ import {
 } from "@/components/ui/table";
 import { initialsFromName } from "@/lib/clients/validation";
 import { cn } from "@/lib/utils";
-import { ClientDetailOverlay } from "./ClientDetailOverlay";
 import { ContractGeneratorModal } from "./ContractGeneratorModal";
 import Link from "next/link";
 import {
@@ -44,7 +44,18 @@ import {
 
 interface ClientsClientProps {
   initialClients: ClientWithLifecycleRow[];
+  initialSearchQuery?: string;
+  initialServiceFilter?: ServiceType | "ALL";
+  initialOperationalFilter?: OperationalClientFilter;
 }
+
+type OperationalClientFilter =
+  | "ALL"
+  | "REVIEW"
+  | "GDPR_MISSING"
+  | "ONBOARDING_INCOMPLETE"
+  | "CONTRACT_MISSING"
+  | "HIGH_RISK";
 
 const SERVICE_TYPE_FILTERS: { value: ServiceType | "ALL"; label: string }[] = [
   { value: "ALL", label: "Toți" },
@@ -55,14 +66,63 @@ const SERVICE_TYPE_FILTERS: { value: ServiceType | "ALL"; label: string }[] = [
   { value: "UNDECIDED", label: "Nedefinit" },
 ];
 
-export function ClientsClient({ initialClients }: ClientsClientProps) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [serviceFilter, setServiceFilter] = useState<ServiceType | "ALL">("ALL");
-  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+const OPERATIONAL_FILTERS: Array<{ value: OperationalClientFilter; label: string }> = [
+  { value: "ALL", label: "Toate cazurile" },
+  { value: "REVIEW", label: "Revizuire legală" },
+  { value: "GDPR_MISSING", label: "GDPR lipsă" },
+  { value: "ONBOARDING_INCOMPLETE", label: "Onboarding incomplet" },
+  { value: "CONTRACT_MISSING", label: "Contract lipsă" },
+  { value: "HIGH_RISK", label: "Risc ridicat" },
+];
+
+function hasContract(client: ClientWithLifecycleRow) {
+  return Boolean(client.contract_url || client.terms_consent_signed_at);
+}
+
+function matchesOperationalFilter(
+  client: ClientWithLifecycleRow,
+  filter: OperationalClientFilter,
+) {
+  if (filter === "ALL") return true;
+
+  switch (filter) {
+    case "REVIEW":
+      return Boolean(client.needs_legal_review);
+    case "GDPR_MISSING":
+      return !client.gdpr_consent_signed;
+    case "ONBOARDING_INCOMPLETE":
+      return !client.onboarding_completed_at;
+    case "CONTRACT_MISSING":
+      return !hasContract(client);
+    case "HIGH_RISK":
+      return client.risk_level === "HIGH" || client.risk_level === "CRISIS";
+    default:
+      return true;
+  }
+}
+
+export function ClientsClient({
+  initialClients,
+  initialSearchQuery = "",
+  initialServiceFilter = "ALL",
+  initialOperationalFilter = "ALL",
+}: ClientsClientProps) {
+  const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
+  const [serviceFilter, setServiceFilter] = useState<ServiceType | "ALL">(initialServiceFilter);
+  const [operationalFilter, setOperationalFilter] =
+    useState<OperationalClientFilter>(initialOperationalFilter);
   const [contractClientId, setContractClientId] = useState<string | null>(null);
 
   const filteredClients = useMemo(() => {
     let clients = initialClients;
+
+    if (operationalFilter !== "ALL") {
+      clients = clients.filter((client) =>
+        matchesOperationalFilter(client, operationalFilter),
+      );
+    }
+
     if (serviceFilter !== "ALL") {
       clients = clients.filter((c) => {
         const st = c.service_type ?? "UNDECIDED";
@@ -77,23 +137,19 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
       c.cnp_cif?.toLowerCase().includes(q) ||
       c.phone?.toLowerCase().includes(q)
     );
-  }, [initialClients, searchQuery, serviceFilter]);
-
-  const selectedClient = useMemo(() => 
-    initialClients.find(c => c.id === selectedClientId) || null
-  , [initialClients, selectedClientId]);
+  }, [initialClients, operationalFilter, searchQuery, serviceFilter]);
 
   const contractClient = useMemo(() => 
     initialClients.find(c => c.id === contractClientId) || null
   , [initialClients, contractClientId]);
 
-  const isFiltered = searchQuery || serviceFilter !== "ALL";
+  const isFiltered = searchQuery || serviceFilter !== "ALL" || operationalFilter !== "ALL";
   const activeFiltersLabel = isFiltered
     ? `${filteredClients.length} rezultat${filteredClients.length === 1 ? "" : "e"}`
     : `${initialClients.length} pacienți în registru`;
 
   function openClient(clientId: string) {
-    setSelectedClientId(clientId);
+    router.push(`/dashboard/clients/${clientId}`);
   }
 
   function handleRowKeyDown(
@@ -152,6 +208,25 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
                 {initialClients.filter((c) => (c.service_type ?? "UNDECIDED") === f.value).length}
               </span>
             )}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <Filter className="h-4 w-4 self-center text-muted-foreground shrink-0" />
+        {OPERATIONAL_FILTERS.map((filterOption) => (
+          <button
+            key={filterOption.value}
+            type="button"
+            onClick={() => setOperationalFilter(filterOption.value)}
+            className={cn(
+              "h-8 rounded-2xl px-3 text-xs font-bold transition-all border",
+              operationalFilter === filterOption.value
+                ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                : "bg-card text-muted-foreground border-border/60 hover:border-primary/40 hover:text-foreground",
+            )}
+          >
+            {filterOption.label}
           </button>
         ))}
       </div>
@@ -247,12 +322,8 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
                       Contract
                     </Button>
                   )}
-                  <Button
-                    type="button"
-                    className="flex-1 rounded-2xl"
-                    onClick={() => openClient(client.id)}
-                  >
-                    Deschide fișa
+                  <Button asChild className="flex-1 rounded-2xl">
+                    <Link href={`/dashboard/clients/${client.id}`}>Deschide fișa</Link>
                   </Button>
                 </div>
               </article>
@@ -411,12 +482,6 @@ export function ClientsClient({ initialClients }: ClientsClientProps) {
           </TableBody>
         </Table>
       </div>
-
-      {/* Detail Overlay */}
-      <ClientDetailOverlay 
-        client={selectedClient} 
-        onClose={() => setSelectedClientId(null)} 
-      />
 
       {/* Contract Modal */}
       <ContractGeneratorModal

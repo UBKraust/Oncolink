@@ -5,10 +5,42 @@ import { ClientsClient } from "@/components/clients/ClientsClient";
 import { Card, CardContent } from "@/components/ui/card";
 import { DashboardPage, EmptyState, MetricCard, PageHeader, SetupBanner } from "@/components/app/page-shell";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import {
+  isServiceType,
+  type ServiceType,
+} from "@/lib/clients/service-track";
 
-export default async function ClientsPage() {
+const OPERATIONAL_FILTER_PARAM_MAP = {
+  review: "REVIEW",
+  "gdpr-missing": "GDPR_MISSING",
+  onboarding: "ONBOARDING_INCOMPLETE",
+  "contract-missing": "CONTRACT_MISSING",
+  "high-risk": "HIGH_RISK",
+} as const;
+
+type ClientsPageSearchParams = {
+  q?: string;
+  service?: string;
+  filter?: string;
+};
+
+export default async function ClientsPage({
+  searchParams,
+}: {
+  searchParams: Promise<ClientsPageSearchParams>;
+}) {
+  const params = await searchParams;
   const configured = isSupabaseConfigured();
   const clients = await listClients();
+  const initialSearchQuery = params.q?.trim() ?? "";
+  const initialServiceFilter: ServiceType | "ALL" =
+    isServiceType(params.service) && params.service !== "MIXED"
+      ? params.service
+      : "ALL";
+  const initialOperationalFilter =
+    params.filter && params.filter in OPERATIONAL_FILTER_PARAM_MAP
+      ? OPERATIONAL_FILTER_PARAM_MAP[params.filter as keyof typeof OPERATIONAL_FILTER_PARAM_MAP]
+      : "ALL";
 
   const lifecycleList = clients.map((client) =>
     deriveClientLifecycle(client, client.appointments ?? []),
@@ -83,7 +115,12 @@ export default async function ClientsPage() {
 
 
       {configured ? (
-        <ClientsClient initialClients={clients} />
+        <ClientsClient
+          initialClients={clients}
+          initialSearchQuery={initialSearchQuery}
+          initialServiceFilter={initialServiceFilter}
+          initialOperationalFilter={initialOperationalFilter}
+        />
       ) : (
         <Card className="rounded-[1.75rem] border-border/60 shadow-sm">
           <CardContent className="p-0">
@@ -97,4 +134,3 @@ export default async function ClientsPage() {
     </DashboardPage>
   );
 }
-

@@ -10,10 +10,11 @@ interface CrisisNotesDetailOverlayProps {
   isOpen: boolean;
   onClose: () => void;
   notes: CrisisNoteItem[];
+  isLoading?: boolean;
   clientName: string;
 }
 
-export function CrisisNotesDetailOverlay({ isOpen, onClose, notes, clientName }: CrisisNotesDetailOverlayProps) {
+export function CrisisNotesDetailOverlay({ isOpen, onClose, notes, isLoading = false, clientName }: CrisisNotesDetailOverlayProps) {
   return (
     <SectionDetailOverlay
       isOpen={isOpen}
@@ -48,7 +49,12 @@ export function CrisisNotesDetailOverlay({ isOpen, onClose, notes, clientName }:
           </div>
 
           <div className="space-y-5 pb-10">
-            {notes.length === 0 ? (
+            {isLoading ? (
+               <div className="rounded-2xl border-2 border-dashed border-border/60 bg-muted/20 p-12 text-center">
+                <ShieldAlert className="mx-auto mb-3 h-10 w-10 text-muted-foreground/40" />
+                <p className="text-sm font-bold italic text-muted-foreground">Se încarcă notele de criză...</p>
+              </div>
+            ) : notes.length === 0 ? (
                <div className="rounded-2xl border-2 border-dashed border-border/60 bg-muted/20 p-12 text-center">
                 <ShieldAlert className="mx-auto mb-3 h-10 w-10 text-muted-foreground/40" />
                 <p className="text-sm font-bold italic text-muted-foreground">Nicio notă de criză înregistrată.</p>

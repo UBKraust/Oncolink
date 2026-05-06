@@ -46,12 +46,18 @@ export default async function ClientDetailPage({
     section: sectionParam,
     view: viewParam,
   } = await searchParams;
+  const shouldPreloadLifecycle = viewParam === "lifecycle";
+  const shouldPreloadClinic = viewParam === "clinic" || Boolean(assessmentParam);
 
   const clientPromise = getClient(id);
   const supabasePromise = createSupabaseServerClient();
   const appointmentsPromise = listAppointments({ clientId: id });
-  const statusHistoryPromise = getClientStatusHistory(id);
-  const accessHistoryPromise = getClientAccessHistory(id);
+  const statusHistoryPromise = shouldPreloadLifecycle
+    ? getClientStatusHistory(id)
+    : Promise.resolve([]);
+  const accessHistoryPromise = shouldPreloadLifecycle
+    ? getClientAccessHistory(id)
+    : Promise.resolve([]);
 
   const client = await clientPromise;
   if (!client) notFound();
@@ -65,17 +71,31 @@ export default async function ClientDetailPage({
     { data: assessmentsData },
     { data: paymentsData },
     { data: docsData },
-    { data: medsData },
-    crisisNotes,
+    { count: medicationCount },
+    { count: crisisNotesCount },
     statusHistory,
     accessHistory,
     appointments,
   ] = await Promise.all([
-    supabase.from("client_assessments").select("*").eq("client_id", id),
+    shouldPreloadClinic
+      ? supabase.from("client_assessments").select("*").eq("client_id", id)
+      : supabase
+          .from("client_assessments")
+          .select("id, assessment_type, created_at, content_summary, scoring_data, sent_to_parent_at")
+          .eq("client_id", id)
+          .order("created_at", { ascending: false })
+          .limit(3),
     supabase.from("invoices").select("*").eq("client_id", id),
-    supabase.from("patient_documents").select("*").eq("client_id", id),
-    supabase.from("patient_medication").select("*").eq("client_id", id),
-    anonymized ? Promise.resolve([]) : listCrisisNotes(id),
+    supabase
+      .from("patient_documents")
+      .select("id, file_name, document_type, storage_path, document_url, drive_link, created_at, uploaded_at")
+      .eq("client_id", id),
+    anonymized
+      ? Promise.resolve({ count: 0 })
+      : supabase.from("patient_medication").select("id", { count: "exact", head: true }).eq("client_id", id),
+    anonymized
+      ? Promise.resolve({ count: 0 })
+      : supabase.from("client_crisis_notes").select("id", { count: "exact", head: true }).eq("client_id", id),
     statusHistoryPromise,
     accessHistoryPromise,
     appointmentsPromise,
@@ -91,6 +111,10 @@ export default async function ClientDetailPage({
   const null_ = Promise.resolve(null);
 
   const [
+    clinicAssessments,
+    clinicDocs,
+    clinicMeds,
+    crisisNotes,
     homeworkItems,
     cbtFormulation,
     dbtDiaryCards,
@@ -105,48 +129,63 @@ export default async function ClientDetailPage({
     recommendationsForm,
     counselingProgressForm,
   ] = await Promise.all([
-    isCbt && !anonymized ? getHomeworkItems(id) : Promise.resolve([] as HomeworkItem[]),
-    isCbt && !anonymized ? getCbtCaseFormulation(id) : Promise.resolve(null as CbtCaseFormulation | null),
-    isDbt && !anonymized ? getDbtDiaryCards(id) : Promise.resolve([] as DbtDiaryCard[]),
-    needsSafetyPlan && !anonymized ? getSafetyPlan(id) : Promise.resolve(null as SafetyPlan | null),
-    isClinical && !anonymized ? getLatestClinicalForm(id, "ANAMNESIS") : null_,
-    isClinical && !anonymized ? getLatestClinicalForm(id, "CLINICAL_INTERVIEW") : null_,
-    (isClinical || isDbt) && !anonymized ? getLatestClinicalForm(id, "RISK_ASSESSMENT") : null_,
-    isDbt && !anonymized ? getLatestClinicalForm(id, "DBT_COMMITMENT") : null_,
-    isDbt && !anonymized ? getLatestClinicalForm(id, "DBT_PROGRESS") : null_,
-    isCbt && !anonymized ? getLatestClinicalForm(id, "CBT_PROGRESS") : null_,
-    isCounseling && !anonymized ? getLatestClinicalForm(id, "COUNSELING_PLAN") : null_,
-    isCounseling && !anonymized ? getLatestClinicalForm(id, "RECOMMENDATIONS") : null_,
-    isCounseling && !anonymized ? getLatestClinicalForm(id, "COUNSELING_PROGRESS") : null_,
+    Promise.resolve((assessmentsData || []) as ClientAssessment[]),
+    Promise.all(
+      ((docsData || []) as ClientDocument[]).map(async (doc) => {
+        if (!shouldPreloadClinic) {
+          return {
+            ...doc,
+            file_name: doc.file_name ?? "Document",
+            document_type: doc.document_type ?? "Fișier",
+            created_at: doc.created_at ?? doc.uploaded_at ?? new Date().toISOString(),
+          };
+        }
+
+        const signedUrl =
+          (await createSignedObjectUrl(
+            supabase,
+            "patient-documents",
+            typeof doc.storage_path === "string" ? doc.storage_path : null,
+          )) ??
+          (typeof doc.document_url === "string" ? doc.document_url : null);
+
+        return {
+          ...doc,
+          file_name: doc.file_name ?? "Document",
+          document_type: doc.document_type ?? "Fișier",
+          created_at: doc.created_at ?? doc.uploaded_at ?? new Date().toISOString(),
+          download_url: `/api/documents/patient/${doc.id}/download`,
+          drive_link: doc.drive_link ?? signedUrl ?? "",
+          document_url: signedUrl,
+        };
+      }),
+    ),
+    shouldPreloadClinic && !anonymized
+      ? supabase.from("patient_medication").select("*").eq("client_id", id).then(({ data }) => (data || []) as ClientMedication[])
+      : Promise.resolve([] as ClientMedication[]),
+    shouldPreloadClinic && !anonymized ? listCrisisNotes(id) : Promise.resolve([]),
+    shouldPreloadClinic && isCbt && !anonymized ? getHomeworkItems(id) : Promise.resolve([] as HomeworkItem[]),
+    shouldPreloadClinic && isCbt && !anonymized ? getCbtCaseFormulation(id) : Promise.resolve(null as CbtCaseFormulation | null),
+    shouldPreloadClinic && isDbt && !anonymized ? getDbtDiaryCards(id) : Promise.resolve([] as DbtDiaryCard[]),
+    shouldPreloadClinic && needsSafetyPlan && !anonymized ? getSafetyPlan(id) : Promise.resolve(null as SafetyPlan | null),
+    shouldPreloadClinic && isClinical && !anonymized ? getLatestClinicalForm(id, "ANAMNESIS") : null_,
+    shouldPreloadClinic && isClinical && !anonymized ? getLatestClinicalForm(id, "CLINICAL_INTERVIEW") : null_,
+    shouldPreloadClinic && (isClinical || isDbt) && !anonymized ? getLatestClinicalForm(id, "RISK_ASSESSMENT") : null_,
+    shouldPreloadClinic && isDbt && !anonymized ? getLatestClinicalForm(id, "DBT_COMMITMENT") : null_,
+    shouldPreloadClinic && isDbt && !anonymized ? getLatestClinicalForm(id, "DBT_PROGRESS") : null_,
+    shouldPreloadClinic && isCbt && !anonymized ? getLatestClinicalForm(id, "CBT_PROGRESS") : null_,
+    shouldPreloadClinic && isCounseling && !anonymized ? getLatestClinicalForm(id, "COUNSELING_PLAN") : null_,
+    shouldPreloadClinic && isCounseling && !anonymized ? getLatestClinicalForm(id, "RECOMMENDATIONS") : null_,
+    shouldPreloadClinic && isCounseling && !anonymized ? getLatestClinicalForm(id, "COUNSELING_PROGRESS") : null_,
   ]);
 
-  const assessments = (assessmentsData || []) as ClientAssessment[];
+  const assessments = clinicAssessments;
   const payments = ((paymentsData || []) as Array<{ amount: number | null } & ClientPayment>).map((payment) => ({
     ...payment,
     amount: Number(payment.amount ?? 0),
   }));
-  const clientDocs = await Promise.all(
-    ((docsData || []) as ClientDocument[]).map(async (doc) => {
-      const signedUrl =
-        (await createSignedObjectUrl(
-          supabase,
-          "patient-documents",
-          typeof doc.storage_path === "string" ? doc.storage_path : null,
-        )) ??
-        (typeof doc.document_url === "string" ? doc.document_url : null);
-
-      return {
-        ...doc,
-        file_name: doc.file_name ?? "Document",
-        document_type: doc.document_type ?? "Fișier",
-        created_at: doc.created_at ?? doc.uploaded_at ?? new Date().toISOString(),
-        download_url: `/api/documents/patient/${doc.id}/download`,
-        drive_link: doc.drive_link ?? signedUrl ?? "",
-        document_url: signedUrl,
-      };
-    }),
-  );
-  const clientMeds = (medsData || []) as ClientMedication[];
+  const clientDocs = clinicDocs;
+  const clientMeds = clinicMeds;
   const isMinor = client.is_minor ?? false;
   const lifecycleHistory = (statusHistory || []).map((item) => {
     const meta =
@@ -189,9 +228,13 @@ export default async function ClientDetailPage({
       clientDocs={clientDocs}
       clientMeds={clientMeds}
       crisisNotes={crisisNotes}
+      medicationCount={medicationCount ?? 0}
+      crisisNotesCount={crisisNotesCount ?? 0}
+      clinicDataPreloaded={shouldPreloadClinic}
       appointments={appointments}
       lifecycleHistory={lifecycleHistory}
       accessHistory={accessHistory}
+      lifecycleDataPreloaded={shouldPreloadLifecycle}
       anonymized={anonymized}
       justAnonymized={justAnonymized === "true"}
       viewParam={viewParam}

@@ -276,6 +276,9 @@ Referințe:
   - cardurile din `Sumar` deschid overlay-uri locale
   - evaluările din `Clinic` deschid local `AssessmentDetailOverlay`
   - `SectionDetailOverlay` are acum animație de intrare / ieșire și backdrop blur progresiv
+  - `Clinic` și `Lifecycle` nu mai sunt plătite integral la primul open al fișei
+  - payload-ul clinic complet este cerut on-demand
+  - cardurile P2/P3 sunt mutate în workspace-ul `Clinic`
 
 ---
 

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { format, isPast, isFuture } from "date-fns";
 import { ro } from "date-fns/locale";
@@ -24,15 +25,6 @@ import {
   transitionClientLifecycle,
 } from "@/app/dashboard/clients/actions";
 
-import { ClientEvolutionChart } from "@/components/clients/ClientEvolutionChart";
-import { ClientDriveDocuments } from "@/components/clients/ClientDriveDocuments";
-import { ClientAiAssistant } from "@/components/clients/ClientAiAssistant";
-import { PersonalInfoOverlay } from "@/components/clients/PersonalInfoOverlay";
-import { FinancialDetailOverlay } from "@/components/clients/FinancialDetailOverlay";
-import { MedicalDetailOverlay } from "@/components/clients/MedicalDetailOverlay";
-import { CrisisNotesDetailOverlay } from "@/components/clients/CrisisNotesDetailOverlay";
-import { AssessmentDetailOverlay } from "@/components/clients/AssessmentDetailOverlay";
-import { ContractGeneratorModal } from "@/components/clients/ContractGeneratorModal";
 import { ServiceTrackCard } from "@/components/clients/ServiceTrackCard";
 import { DocumentRequirementsCard } from "@/components/clients/DocumentRequirementsCard";
 import { ClinicalContextCard } from "@/components/clients/ClinicalContextCard";
@@ -75,6 +67,45 @@ import type {
   DbtDiaryCard,
   SafetyPlan,
 } from "@/components/clients/types";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const ClientEvolutionChart = dynamic(
+  () => import("@/components/clients/ClientEvolutionChart").then((mod) => mod.ClientEvolutionChart),
+  {
+    loading: () => <Skeleton className="h-[18rem] rounded-[2rem]" />,
+  },
+);
+
+const ClientDriveDocuments = dynamic(
+  () => import("@/components/clients/ClientDriveDocuments").then((mod) => mod.ClientDriveDocuments),
+  {
+    loading: () => <Skeleton className="h-[18rem] rounded-[2rem]" />,
+  },
+);
+
+const ClientAiAssistant = dynamic(
+  () => import("@/components/clients/ClientAiAssistant").then((mod) => mod.ClientAiAssistant),
+  { ssr: false },
+);
+
+const PersonalInfoOverlay = dynamic(
+  () => import("@/components/clients/PersonalInfoOverlay").then((mod) => mod.PersonalInfoOverlay),
+);
+const FinancialDetailOverlay = dynamic(
+  () => import("@/components/clients/FinancialDetailOverlay").then((mod) => mod.FinancialDetailOverlay),
+);
+const MedicalDetailOverlay = dynamic(
+  () => import("@/components/clients/MedicalDetailOverlay").then((mod) => mod.MedicalDetailOverlay),
+);
+const CrisisNotesDetailOverlay = dynamic(
+  () => import("@/components/clients/CrisisNotesDetailOverlay").then((mod) => mod.CrisisNotesDetailOverlay),
+);
+const AssessmentDetailOverlay = dynamic(
+  () => import("@/components/clients/AssessmentDetailOverlay").then((mod) => mod.AssessmentDetailOverlay),
+);
+const ContractGeneratorModal = dynamic(
+  () => import("@/components/clients/ContractGeneratorModal").then((mod) => mod.ContractGeneratorModal),
+);
 
 interface ClientDashboardUIProps {
   client: ClientProfile;
@@ -83,9 +114,13 @@ interface ClientDashboardUIProps {
   clientDocs: ClientDocument[];
   clientMeds: ClientMedication[];
   crisisNotes: CrisisNoteItem[];
+  medicationCount: number;
+  crisisNotesCount: number;
+  clinicDataPreloaded: boolean;
   appointments: ClientAppointment[];
   lifecycleHistory: ClientStatusHistoryItem[];
   accessHistory: ClientAccessHistoryItem[];
+  lifecycleDataPreloaded: boolean;
   anonymized: boolean;
   justAnonymized: boolean;
   viewParam: string | undefined;
@@ -138,6 +173,29 @@ const WORKSPACE_VIEWS: Array<{ id: ClientWorkspaceView; label: string }> = [
   { id: "lifecycle", label: "Lifecycle" },
 ];
 
+function isClientOverviewSection(value: string | null | undefined): value is ClientOverviewSection {
+  return value === "contact" || value === "finance" || value === "medical" || value === "crisis";
+}
+
+function resolveClientUiState(params: URLSearchParams) {
+  const section = params.get("section");
+  const assessment = params.get("assessment");
+  const viewValue = params.get("view");
+  const view: ClientWorkspaceView = assessment
+    ? "clinic"
+    : section
+      ? "overview"
+      : isClientWorkspaceView(viewValue ?? undefined)
+        ? (viewValue as ClientWorkspaceView)
+        : "overview";
+
+  return {
+    view,
+    section: isClientOverviewSection(section) ? section : null,
+    assessment: assessment ?? null,
+  };
+}
+
 function isClientWorkspaceView(value: string | undefined): value is ClientWorkspaceView {
   return value === "overview" || value === "clinic" || value === "appointments" || value === "lifecycle";
 }
@@ -149,9 +207,13 @@ export function ClientDashboardUI({
   clientDocs,
   clientMeds,
   crisisNotes,
+  medicationCount,
+  crisisNotesCount,
+  clinicDataPreloaded,
   appointments,
   lifecycleHistory,
   accessHistory,
+  lifecycleDataPreloaded,
   anonymized,
   justAnonymized,
   viewParam,
@@ -176,21 +238,43 @@ export function ClientDashboardUI({
   const [isLifecyclePending, startLifecycleTransition] = useTransition();
   const [isContractModalOpen, setIsContractModalOpen] = useState(false);
   const [isCopyingOnboardingLink, setIsCopyingOnboardingLink] = useState(false);
-  const initialView: ClientWorkspaceView = assessmentParam
-    ? "clinic"
-    : sectionParam
-      ? "overview"
-      : isClientWorkspaceView(viewParam)
-        ? viewParam
-        : "overview";
+  const initialClientUiState = resolveClientUiState(
+    new URLSearchParams({
+      ...(viewParam ? { view: viewParam } : {}),
+      ...(sectionParam ? { section: sectionParam } : {}),
+      ...(assessmentParam ? { assessment: assessmentParam } : {}),
+    }),
+  );
+  const initialView = initialClientUiState.view;
   const [activeView, setActiveView] = useState<ClientWorkspaceView>(initialView);
   const [isTabPending, setIsTabPending] = useState(false);
-  const [activeSection, setActiveSection] = useState<ClientOverviewSection | null>(
-    sectionParam && ["contact", "finance", "medical", "crisis"].includes(sectionParam)
-      ? (sectionParam as ClientOverviewSection)
-      : null,
-  );
-  const [activeAssessmentId, setActiveAssessmentId] = useState<string | null>(assessmentParam ?? null);
+  const [activeSection, setActiveSection] = useState<ClientOverviewSection | null>(initialClientUiState.section);
+  const [activeAssessmentId, setActiveAssessmentId] = useState<string | null>(initialClientUiState.assessment);
+  const [assessmentsState, setAssessmentsState] = useState<ClientAssessment[]>(assessments);
+  const [clientDocsState, setClientDocsState] = useState<ClientDocument[]>(clientDocs);
+  const [clientMedsState, setClientMedsState] = useState<ClientMedication[]>(clientMeds);
+  const [crisisNotesState, setCrisisNotesState] = useState<CrisisNoteItem[]>(crisisNotes);
+  const [medicationCountState, setMedicationCountState] = useState(medicationCount);
+  const [crisisNotesCountState, setCrisisNotesCountState] = useState(crisisNotesCount);
+  const [homeworkItemsState, setHomeworkItemsState] = useState(homeworkItems);
+  const [cbtFormulationState, setCbtFormulationState] = useState(cbtFormulation);
+  const [dbtDiaryCardsState, setDbtDiaryCardsState] = useState(dbtDiaryCards);
+  const [safetyPlanState, setSafetyPlanState] = useState(safetyPlan);
+  const [anamnesisFormState, setAnamnesisFormState] = useState(anamnesisForm);
+  const [clinicalInterviewFormState, setClinicalInterviewFormState] = useState(clinicalInterviewForm);
+  const [riskAssessmentFormState, setRiskAssessmentFormState] = useState(riskAssessmentForm);
+  const [dbtCommitmentFormState, setDbtCommitmentFormState] = useState(dbtCommitmentForm);
+  const [dbtProgressFormState, setDbtProgressFormState] = useState(dbtProgressForm);
+  const [cbtProgressFormState, setCbtProgressFormState] = useState(cbtProgressForm);
+  const [counselingPlanFormState, setCounselingPlanFormState] = useState(counselingPlanForm);
+  const [recommendationsFormState, setRecommendationsFormState] = useState(recommendationsForm);
+  const [counselingProgressFormState, setCounselingProgressFormState] = useState(counselingProgressForm);
+  const [hasLoadedClinicData, setHasLoadedClinicData] = useState(clinicDataPreloaded);
+  const [isClinicDataLoading, setIsClinicDataLoading] = useState(false);
+  const [lifecycleHistoryState, setLifecycleHistoryState] = useState<ClientStatusHistoryItem[]>(lifecycleHistory);
+  const [accessHistoryState, setAccessHistoryState] = useState<ClientAccessHistoryItem[]>(accessHistory);
+  const [hasLoadedLifecycleData, setHasLoadedLifecycleData] = useState(lifecycleDataPreloaded);
+  const [isLifecycleDataLoading, setIsLifecycleDataLoading] = useState(false);
   const id = client.id;
   const isMinor = client.is_minor ?? false;
   const baseUrl = `/dashboard/clients/${id}`;
@@ -219,26 +303,197 @@ export function ClientDashboardUI({
     return query ? `${baseUrl}?${query}` : baseUrl;
   };
   useEffect(() => {
-    setActiveView(initialView);
-  }, [initialView]);
+    setActiveView(initialClientUiState.view);
+    setActiveSection(initialClientUiState.section);
+    setActiveAssessmentId(initialClientUiState.assessment);
+  }, [initialClientUiState.assessment, initialClientUiState.section, initialClientUiState.view]);
 
   useEffect(() => {
-    setActiveSection(
-      sectionParam && ["contact", "finance", "medical", "crisis"].includes(sectionParam)
-        ? (sectionParam as ClientOverviewSection)
-        : null,
-    );
-  }, [sectionParam]);
+    setAssessmentsState(assessments);
+    setClientDocsState(clientDocs);
+    setClientMedsState(clientMeds);
+    setCrisisNotesState(crisisNotes);
+    setMedicationCountState(clientMeds.length > 0 ? clientMeds.length : medicationCount);
+    setCrisisNotesCountState(crisisNotes.length > 0 ? crisisNotes.length : crisisNotesCount);
+    setHomeworkItemsState(homeworkItems);
+    setCbtFormulationState(cbtFormulation);
+    setDbtDiaryCardsState(dbtDiaryCards);
+    setSafetyPlanState(safetyPlan);
+    setAnamnesisFormState(anamnesisForm);
+    setClinicalInterviewFormState(clinicalInterviewForm);
+    setRiskAssessmentFormState(riskAssessmentForm);
+    setDbtCommitmentFormState(dbtCommitmentForm);
+    setDbtProgressFormState(dbtProgressForm);
+    setCbtProgressFormState(cbtProgressForm);
+    setCounselingPlanFormState(counselingPlanForm);
+    setRecommendationsFormState(recommendationsForm);
+    setCounselingProgressFormState(counselingProgressForm);
+    setHasLoadedClinicData(clinicDataPreloaded);
+  }, [
+    assessments,
+    cbtFormulation,
+    cbtProgressForm,
+    clinicDataPreloaded,
+    clientDocs,
+    clientMeds,
+    clinicalInterviewForm,
+    counselingPlanForm,
+    counselingProgressForm,
+    crisisNotes,
+    crisisNotesCount,
+    dbtCommitmentForm,
+    dbtDiaryCards,
+    dbtProgressForm,
+    homeworkItems,
+    medicationCount,
+    recommendationsForm,
+    riskAssessmentForm,
+    safetyPlan,
+    anamnesisForm,
+  ]);
 
   useEffect(() => {
-    setActiveAssessmentId(assessmentParam ?? null);
-  }, [assessmentParam]);
+    setLifecycleHistoryState(lifecycleHistory);
+    setAccessHistoryState(accessHistory);
+    setHasLoadedLifecycleData(lifecycleDataPreloaded);
+  }, [accessHistory, lifecycleDataPreloaded, lifecycleHistory]);
 
   useEffect(() => {
     if (!isTabPending) return;
     const timer = window.setTimeout(() => setIsTabPending(false), 220);
     return () => window.clearTimeout(timer);
   }, [isTabPending]);
+
+  useEffect(() => {
+    const needsClinicData =
+      !anonymized &&
+      (activeView === "clinic" || activeSection === "medical" || activeSection === "crisis" || Boolean(activeAssessmentId));
+    if (!needsClinicData || hasLoadedClinicData || isClinicDataLoading) return;
+
+    let cancelled = false;
+
+    async function loadClinicData() {
+      setIsClinicDataLoading(true);
+      try {
+        const response = await fetch(`/api/clients/${id}/clinical-workspace`, {
+          cache: "no-store",
+        });
+        if (!response.ok) {
+          const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+          throw new Error(payload?.error ?? `HTTP ${response.status}`);
+        }
+        const data = (await response.json()) as {
+          assessments: ClientAssessment[];
+          clientDocs: ClientDocument[];
+          clientMeds: ClientMedication[];
+          crisisNotes: CrisisNoteItem[];
+          homeworkItems: HomeworkItem[];
+          cbtFormulation: CbtCaseFormulation | null;
+          dbtDiaryCards: DbtDiaryCard[];
+          safetyPlan: SafetyPlan | null;
+          anamnesisForm: ClinicalFormRow | null;
+          clinicalInterviewForm: ClinicalFormRow | null;
+          riskAssessmentForm: ClinicalFormRow | null;
+          dbtCommitmentForm: ClinicalFormRow | null;
+          dbtProgressForm: ClinicalFormRow | null;
+          cbtProgressForm: ClinicalFormRow | null;
+          counselingPlanForm: ClinicalFormRow | null;
+          recommendationsForm: ClinicalFormRow | null;
+          counselingProgressForm: ClinicalFormRow | null;
+        };
+
+        if (cancelled) return;
+        setAssessmentsState(data.assessments);
+        setClientDocsState(data.clientDocs);
+        setClientMedsState(data.clientMeds);
+        setCrisisNotesState(data.crisisNotes);
+        setMedicationCountState(data.clientMeds.length);
+        setCrisisNotesCountState(data.crisisNotes.length);
+        setHomeworkItemsState(data.homeworkItems);
+        setCbtFormulationState(data.cbtFormulation);
+        setDbtDiaryCardsState(data.dbtDiaryCards);
+        setSafetyPlanState(data.safetyPlan);
+        setAnamnesisFormState(data.anamnesisForm);
+        setClinicalInterviewFormState(data.clinicalInterviewForm);
+        setRiskAssessmentFormState(data.riskAssessmentForm);
+        setDbtCommitmentFormState(data.dbtCommitmentForm);
+        setDbtProgressFormState(data.dbtProgressForm);
+        setCbtProgressFormState(data.cbtProgressForm);
+        setCounselingPlanFormState(data.counselingPlanForm);
+        setRecommendationsFormState(data.recommendationsForm);
+        setCounselingProgressFormState(data.counselingProgressForm);
+        setHasLoadedClinicData(true);
+      } catch (error) {
+        if (!cancelled) {
+          console.warn("[client-dashboard] clinical workspace fetch failed", error);
+          toast.error("Nu am putut încărca workspace-ul clinic al clientului.");
+        }
+      } finally {
+        if (!cancelled) setIsClinicDataLoading(false);
+      }
+    }
+
+    void loadClinicData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeAssessmentId, activeSection, activeView, anonymized, hasLoadedClinicData, id, isClinicDataLoading]);
+
+  useEffect(() => {
+    if (activeView !== "lifecycle" || hasLoadedLifecycleData || isLifecycleDataLoading) return;
+
+    let cancelled = false;
+
+    async function loadLifecycleData() {
+      setIsLifecycleDataLoading(true);
+      try {
+        const response = await fetch(`/api/clients/${id}/lifecycle-data`, {
+          cache: "no-store",
+        });
+        if (!response.ok) {
+          const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+          throw new Error(payload?.error ?? `HTTP ${response.status}`);
+        }
+        const data = (await response.json()) as {
+          lifecycleHistory: ClientStatusHistoryItem[];
+          accessHistory: ClientAccessHistoryItem[];
+        };
+        if (cancelled) return;
+        setLifecycleHistoryState(data.lifecycleHistory);
+        setAccessHistoryState(data.accessHistory);
+        setHasLoadedLifecycleData(true);
+      } catch (error) {
+        if (!cancelled) {
+          console.warn("[client-dashboard] lifecycle fetch failed", error);
+          toast.error("Nu am putut încărca istoricul lifecycle pentru acest client.");
+        }
+      } finally {
+        if (!cancelled) setIsLifecycleDataLoading(false);
+      }
+    }
+
+    void loadLifecycleData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeView, hasLoadedLifecycleData, id, isLifecycleDataLoading]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    function handlePopState() {
+      const state = resolveClientUiState(new URLSearchParams(window.location.search));
+      setActiveView(state.view);
+      setActiveSection(state.section);
+      setActiveAssessmentId(state.assessment);
+      setIsTabPending(false);
+    }
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   function handleWorkspaceNavigation(view: ClientWorkspaceView) {
     const targetUrl = buildClientUrl({ view });
@@ -251,53 +506,58 @@ export function ClientDashboardUI({
       setActiveAssessmentId(null);
     }
     setIsTabPending(true);
-    window.history.replaceState(window.history.state, "", targetUrl);
+    window.history.pushState(window.history.state, "", targetUrl);
   }
 
-  function replaceBrowserUrl({
+  function updateBrowserUrl({
     view = activeView,
     section,
     assessment,
+    mode = "push",
   }: {
     view?: ClientWorkspaceView;
     section?: ClientOverviewSection | null;
     assessment?: string | null;
+    mode?: "push" | "replace";
   }) {
     if (typeof window === "undefined") return;
-    window.history.replaceState(
-      window.history.state,
-      "",
-      buildClientUrl({ view, section: section ?? null, assessment: assessment ?? null }),
-    );
+    const nextUrl = buildClientUrl({ view, section: section ?? null, assessment: assessment ?? null });
+    const historyMethod = mode === "replace" ? "replaceState" : "pushState";
+    window.history[historyMethod](window.history.state, "", nextUrl);
   }
 
   function openSection(section: ClientOverviewSection) {
     setActiveView("overview");
     setActiveSection(section);
     setActiveAssessmentId(null);
-    replaceBrowserUrl({ view: "overview", section, assessment: null });
+    updateBrowserUrl({ view: "overview", section, assessment: null });
   }
 
   function closeSectionOverlay() {
     setActiveSection(null);
-    replaceBrowserUrl({ view: activeView, section: null, assessment: activeView === "clinic" ? activeAssessmentId : null });
+    updateBrowserUrl({
+      view: activeView,
+      section: null,
+      assessment: activeView === "clinic" ? activeAssessmentId : null,
+      mode: "replace",
+    });
   }
 
   function openAssessment(assessmentId: string) {
     setActiveView("clinic");
     setActiveAssessmentId(assessmentId);
     setActiveSection(null);
-    replaceBrowserUrl({ view: "clinic", assessment: assessmentId, section: null });
+    updateBrowserUrl({ view: "clinic", assessment: assessmentId, section: null });
   }
 
   function closeAssessmentOverlay() {
     setActiveAssessmentId(null);
-    replaceBrowserUrl({ view: "clinic", assessment: null, section: null });
+    updateBrowserUrl({ view: "clinic", assessment: null, section: null, mode: "replace" });
   }
   const lifecycle = deriveClientLifecycle(client, appointments);
 
   const selectedAssessment = activeAssessmentId
-    ? (assessments.find((a) => a.id === activeAssessmentId) ?? null)
+    ? (assessmentsState.find((a) => a.id === activeAssessmentId) ?? null)
     : null;
 
   const upcomingAppointments = appointments
@@ -320,17 +580,17 @@ export function ClientDashboardUI({
   const riskVariant =
     riskLevel && isRiskLevel(riskLevel) ? RISK_LEVEL_BADGE_VARIANTS[riskLevel] : null;
   const completedArtifacts: string[] = [
-    anamnesisForm?.form_type,
-    clinicalInterviewForm?.form_type,
-    riskAssessmentForm?.form_type,
-    dbtCommitmentForm?.form_type,
-    dbtProgressForm?.form_type,
-    cbtProgressForm?.form_type,
-    counselingPlanForm?.form_type,
-    recommendationsForm?.form_type,
-    counselingProgressForm?.form_type,
-    cbtFormulation ? "CBT_CASE_FORMULATION" : null,
-    safetyPlan ? "SAFETY_PLAN" : null,
+    anamnesisFormState?.form_type,
+    clinicalInterviewFormState?.form_type,
+    riskAssessmentFormState?.form_type,
+    dbtCommitmentFormState?.form_type,
+    dbtProgressFormState?.form_type,
+    cbtProgressFormState?.form_type,
+    counselingPlanFormState?.form_type,
+    recommendationsFormState?.form_type,
+    counselingProgressFormState?.form_type,
+    cbtFormulationState ? "CBT_CASE_FORMULATION" : null,
+    safetyPlanState ? "SAFETY_PLAN" : null,
   ].flatMap((value) => (value ? [value] : []));
   const nextSessionChecklist = [
     !client.gdpr_consent_signed ? "Consimțământ GDPR lipsă" : null,
@@ -595,8 +855,8 @@ export function ClientDashboardUI({
       {!anonymized && (
         <DocumentRequirementsCard
           client={client}
-          docs={clientDocs}
-          assessments={assessments}
+          docs={clientDocsState}
+          assessments={assessmentsState}
           completedArtifacts={completedArtifacts}
         />
       )}
@@ -758,55 +1018,6 @@ export function ClientDashboardUI({
             </div>
           </div>
         </section>
-      )}
-
-      {/* P2: CBT tools */}
-      {!anonymized && client.service_type === "CBT" && (
-        <>
-          <HomeworkCard clientId={client.id} items={homeworkItems} />
-          <CbtCaseFormulationCard clientId={client.id} formulation={cbtFormulation} />
-          <CbtProgressCard clientId={client.id} form={cbtProgressForm} />
-        </>
-      )}
-
-      {/* P2: DBT tools */}
-      {!anonymized && client.service_type === "DBT" && (
-        <>
-          <SafetyPlanCard clientId={client.id} plan={safetyPlan} />
-          <DbtDiaryCardsPanel clientId={client.id} cards={dbtDiaryCards} />
-        </>
-      )}
-
-      {/* P2: plan de siguranță pentru Psihologie clinică (risc) */}
-      {!anonymized && client.service_type === "CLINICAL_PSYCHOLOGY" && (
-        <SafetyPlanCard clientId={client.id} plan={safetyPlan} />
-      )}
-
-      {/* P3: fișe clinice CLINICAL_PSYCHOLOGY */}
-      {!anonymized && client.service_type === "CLINICAL_PSYCHOLOGY" && (
-        <>
-          <AnamnesisCard clientId={client.id} form={anamnesisForm} />
-          <ClinicalInterviewCard clientId={client.id} form={clinicalInterviewForm} />
-          <RiskAssessmentCard clientId={client.id} form={riskAssessmentForm} currentRiskLevel={client.risk_level as import("@/lib/clients/service-track").RiskLevel | null} />
-        </>
-      )}
-
-      {/* P3: fișe clinice DBT */}
-      {!anonymized && client.service_type === "DBT" && (
-        <>
-          <RiskAssessmentCard clientId={client.id} form={riskAssessmentForm} currentRiskLevel={client.risk_level as import("@/lib/clients/service-track").RiskLevel | null} />
-          <DbtCommitmentCard clientId={client.id} form={dbtCommitmentForm} />
-          <DbtProgressCard clientId={client.id} form={dbtProgressForm} />
-        </>
-      )}
-
-      {/* P3: fișe clinice COUNSELING */}
-      {!anonymized && client.service_type === "COUNSELING" && (
-        <>
-          <CounselingPlanCard clientId={client.id} form={counselingPlanForm} />
-          <RecommendationsCard clientId={client.id} form={recommendationsForm} />
-          <CounselingProgressCard clientId={client.id} form={counselingProgressForm} />
-        </>
       )}
 
       <div className="grid gap-4 lg:grid-cols-3">
@@ -1068,25 +1279,25 @@ export function ClientDashboardUI({
             <WidgetCard
               icon={FileText}
               title="Dosar Medical"
-              value={`${clientDocs.length + clientMeds.length} Fișiere`}
+              value={`${clientDocsState.length + medicationCountState} Fișiere`}
               link={buildClientUrl({ view: "overview", section: "medical" })}
               onClick={(event) => {
                 event.preventDefault();
                 openSection("medical");
               }}
-              subtitle={`${clientMeds.length} medicamente active`}
+              subtitle={`${medicationCountState} medicamente active`}
             />
             <WidgetCard
               icon={ShieldOff}
               title="Monitorizare Risc"
-              value={crisisNotes.length > 0 ? `${crisisNotes.length} Note active` : "Fără incidente"}
+              value={crisisNotesCountState > 0 ? `${crisisNotesCountState} Note active` : "Fără incidente"}
               link={buildClientUrl({ view: "overview", section: "crisis" })}
               onClick={(event) => {
                 event.preventDefault();
                 openSection("crisis");
               }}
-              badge={crisisNotes.length > 0 ? "URGENT" : "STABIL"}
-              badgeVariant={crisisNotes.length > 0 ? "destructive" : "outline"}
+              badge={crisisNotesCountState > 0 ? "URGENT" : "STABIL"}
+              badgeVariant={crisisNotesCountState > 0 ? "destructive" : "outline"}
             />
           </div>
 
@@ -1162,10 +1373,18 @@ export function ClientDashboardUI({
         <>
           <div className="grid gap-6 lg:grid-cols-3">
             <div className="lg:col-span-2">
-              <ClientEvolutionChart assessments={assessments} />
+              {isClinicDataLoading && !hasLoadedClinicData ? (
+                <Skeleton className="h-[18rem] rounded-[2rem]" />
+              ) : (
+                <ClientEvolutionChart assessments={assessmentsState} />
+              )}
             </div>
             <div className="lg:col-span-1">
-              <ClientDriveDocuments clientId={id} documents={clientDocs.slice(0, 5)} />
+              {isClinicDataLoading && !hasLoadedClinicData ? (
+                <Skeleton className="h-[18rem] rounded-[2rem]" />
+              ) : (
+                <ClientDriveDocuments clientId={id} documents={clientDocsState.slice(0, 5)} />
+              )}
             </div>
           </div>
 
@@ -1185,7 +1404,13 @@ export function ClientDashboardUI({
                 )}
               </div>
 
-              {assessments.length === 0 ? (
+              {isClinicDataLoading && !hasLoadedClinicData ? (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  <Skeleton className="h-40 rounded-[1.75rem]" />
+                  <Skeleton className="h-40 rounded-[1.75rem]" />
+                  <Skeleton className="h-40 rounded-[1.75rem]" />
+                </div>
+              ) : assessmentsState.length === 0 ? (
                 <EmptyState
                   title="Nu există evaluări încă"
                   description="După primele teste administrate, aici vor apărea scorurile și interpretările relevante."
@@ -1193,7 +1418,7 @@ export function ClientDashboardUI({
                 />
               ) : (
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {assessments.map((acc) => (
+                  {assessmentsState.map((acc) => (
                     <AssessmentCard
                       key={acc.id}
                       acc={acc}
@@ -1209,6 +1434,48 @@ export function ClientDashboardUI({
               )}
             </div>
           </SectionCard>
+
+          {!anonymized && isClinicDataLoading && !hasLoadedClinicData ? (
+            <div className="grid gap-6">
+              <Skeleton className="h-56 rounded-[1.75rem]" />
+              <Skeleton className="h-56 rounded-[1.75rem]" />
+            </div>
+          ) : null}
+
+          {!anonymized && client.service_type === "CBT" && hasLoadedClinicData ? (
+            <>
+              <HomeworkCard clientId={client.id} items={homeworkItemsState} />
+              <CbtCaseFormulationCard clientId={client.id} formulation={cbtFormulationState} />
+              <CbtProgressCard clientId={client.id} form={cbtProgressFormState} />
+            </>
+          ) : null}
+
+          {!anonymized && client.service_type === "DBT" && hasLoadedClinicData ? (
+            <>
+              <SafetyPlanCard clientId={client.id} plan={safetyPlanState} />
+              <DbtDiaryCardsPanel clientId={client.id} cards={dbtDiaryCardsState} />
+              <RiskAssessmentCard clientId={client.id} form={riskAssessmentFormState} currentRiskLevel={client.risk_level as import("@/lib/clients/service-track").RiskLevel | null} />
+              <DbtCommitmentCard clientId={client.id} form={dbtCommitmentFormState} />
+              <DbtProgressCard clientId={client.id} form={dbtProgressFormState} />
+            </>
+          ) : null}
+
+          {!anonymized && client.service_type === "CLINICAL_PSYCHOLOGY" && hasLoadedClinicData ? (
+            <>
+              <SafetyPlanCard clientId={client.id} plan={safetyPlanState} />
+              <AnamnesisCard clientId={client.id} form={anamnesisFormState} />
+              <ClinicalInterviewCard clientId={client.id} form={clinicalInterviewFormState} />
+              <RiskAssessmentCard clientId={client.id} form={riskAssessmentFormState} currentRiskLevel={client.risk_level as import("@/lib/clients/service-track").RiskLevel | null} />
+            </>
+          ) : null}
+
+          {!anonymized && client.service_type === "COUNSELING" && hasLoadedClinicData ? (
+            <>
+              <CounselingPlanCard clientId={client.id} form={counselingPlanFormState} />
+              <RecommendationsCard clientId={client.id} form={recommendationsFormState} />
+              <CounselingProgressCard clientId={client.id} form={counselingProgressFormState} />
+            </>
+          ) : null}
         </>
       ) : null}
 
@@ -1220,9 +1487,15 @@ export function ClientDashboardUI({
             icon={Clock}
           >
             <div className="p-6">
-              {lifecycleHistory.length > 0 ? (
+              {isLifecycleDataLoading && !hasLoadedLifecycleData ? (
                 <div className="space-y-3">
-                  {lifecycleHistory.map((entry) => (
+                  <Skeleton className="h-20 rounded-[1.5rem]" />
+                  <Skeleton className="h-20 rounded-[1.5rem]" />
+                  <Skeleton className="h-20 rounded-[1.5rem]" />
+                </div>
+              ) : lifecycleHistoryState.length > 0 ? (
+                <div className="space-y-3">
+                  {lifecycleHistoryState.map((entry) => (
                     <div
                       key={entry.id}
                       className="flex flex-col gap-2 rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 md:flex-row md:items-center md:justify-between"
@@ -1266,9 +1539,15 @@ export function ClientDashboardUI({
             icon={ShieldAlert}
           >
             <div className="p-6">
-              {accessHistory.length > 0 ? (
+              {isLifecycleDataLoading && !hasLoadedLifecycleData ? (
                 <div className="space-y-3">
-                  {accessHistory.map((entry) => (
+                  <Skeleton className="h-24 rounded-[1.5rem]" />
+                  <Skeleton className="h-24 rounded-[1.5rem]" />
+                  <Skeleton className="h-24 rounded-[1.5rem]" />
+                </div>
+              ) : accessHistoryState.length > 0 ? (
+                <div className="space-y-3">
+                  {accessHistoryState.map((entry) => (
                     <div
                       key={entry.id}
                       className="rounded-2xl border border-border/60 bg-muted/20 px-4 py-3"
@@ -1331,14 +1610,16 @@ export function ClientDashboardUI({
       <MedicalDetailOverlay
         isOpen={activeSection === "medical"}
         onClose={closeSectionOverlay}
-        documents={clientDocs}
-        medications={clientMeds}
+        documents={clientDocsState}
+        medications={clientMedsState}
+        isLoading={isClinicDataLoading && !hasLoadedClinicData}
         clientName={client.full_name ?? "Client"}
       />
       <CrisisNotesDetailOverlay
         isOpen={activeSection === "crisis"}
         onClose={closeSectionOverlay}
-        notes={crisisNotes}
+        notes={crisisNotesState}
+        isLoading={isClinicDataLoading && !hasLoadedClinicData}
         clientName={client.full_name ?? "Client"}
       />
       {selectedAssessment && (

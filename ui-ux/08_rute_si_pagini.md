@@ -1159,6 +1159,9 @@ ImportDashboard:
 - query params rămân sincronizați pentru view, secțiune și evaluare
 - `SectionDetailOverlay` și `AssessmentDetailOverlay` se deschid local și folosesc animație de intrare / ieșire
 - overlay-urile păstrează contextul vizual al fișei clientului și reduc senzația de navigare greoaie
+- workspace-ul `Clinic` își încarcă payload-ul complet on-demand prin `/api/clients/[id]/clinical-workspace`
+- workspace-ul `Lifecycle` își încarcă istoricul on-demand prin `/api/clients/[id]/lifecycle-data`
+- cardurile P2/P3 și formularele service-specific sunt randate în interiorul tabului `Clinic`
 
 ---
 

@@ -92,6 +92,10 @@ Aceste workspace-uri:
 - folosesc același limbaj vizual ca dashboard-ul principal
 - schimbă contextul local, fără reîncărcarea întregii pagini
 - păstrează URL-ul sincronizat pentru share și refresh
+- încarcă datele grele gradual:
+  - `Sumar` pornește cu snapshot-uri
+  - `Clinic` cere evaluări, documente, medicație și formulare când este deschis
+  - `Lifecycle` cere istoricul doar la intrarea în tab
 
 De asemenea, overlay-urile secundare pentru:
 

@@ -63,6 +63,8 @@ Refactorul principal pentru `/dashboard` a fost implementat incremental în acee
   - taburi mari în stil dashboard
   - tranziții locale între taburi
   - overlay-uri animate pentru detalii și secțiuni
+  - `Clinic` și `Lifecycle` folosesc încărcare on-demand pentru a reduce latența la primul open
+  - cardurile clinice service-specific sunt tratate ca parte din workspace-ul `Clinic`
 - DB-ul a primit hardening incremental pentru aceste suprafețe:
   - constrângeri pe `service_type` și `risk_level`
   - indexuri pentru `appointments`, `notes`, `invoices`

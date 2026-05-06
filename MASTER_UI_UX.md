@@ -143,6 +143,7 @@ Secțiuni:
   - `Programări`
   - `Lifecycle`
   - schimbarea între taburi nu face reload complet de pagină
+  - `Clinic` și `Lifecycle` încarcă payload-ul complet doar când utilizatorul intră în acel workspace
 - Programări istorice + viitoare
 - Note clinice linkate
 - Evaluări (assessments + structured assessments)
@@ -150,6 +151,7 @@ Secțiuni:
 - Teme (homework items)
 - DBT: diary cards + plan siguranță
 - CBT: formulare de caz
+- Cardurile service-specific P2/P3 sunt afișate în interiorul workspace-ului `Clinic`, nu înaintea taburilor
 - Acțiuni: editare, anonimizare, onboarding
 
 ### `/dashboard/clients/new` și `/dashboard/clients/new-minor`

@@ -12,6 +12,7 @@ interface MedicalDetailOverlayProps {
   onClose: () => void;
   documents: ClientDocument[];
   medications: ClientMedication[];
+  isLoading?: boolean;
   clientName: string;
 }
 
@@ -20,6 +21,7 @@ export function MedicalDetailOverlay({
   onClose, 
   documents, 
   medications, 
+  isLoading = false,
   clientName 
 }: MedicalDetailOverlayProps) {
   return (
@@ -44,7 +46,11 @@ export function MedicalDetailOverlay({
           </div>
           
           <div className="grid gap-3">
-            {medications.length === 0 ? (
+            {isLoading ? (
+              <div className="rounded-2xl border-2 border-dashed border-border/60 p-8 text-center text-xs font-medium italic text-muted-foreground">
+                Se încarcă tratamentul curent...
+              </div>
+            ) : medications.length === 0 ? (
               <div className="rounded-2xl border-2 border-dashed border-border/60 p-8 text-center text-xs font-medium italic text-muted-foreground">
                 Niciun medicament înregistrat.
               </div>
@@ -93,7 +99,11 @@ export function MedicalDetailOverlay({
           </div>
 
           <div className="grid gap-2">
-            {documents.length === 0 ? (
+            {isLoading ? (
+               <div className="rounded-2xl border-2 border-dashed border-border/60 p-8 text-center text-xs font-medium italic text-muted-foreground">
+                Se încarcă arhiva documentelor...
+              </div>
+            ) : documents.length === 0 ? (
                <div className="rounded-2xl border-2 border-dashed border-border/60 p-8 text-center text-xs font-medium italic text-muted-foreground">
                 Arhiva este goală.
               </div>

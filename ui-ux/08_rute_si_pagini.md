@@ -1153,6 +1153,13 @@ ImportDashboard:
 | Mobile Menu Panel | Overlay topbar | Toate paginile dashboard (mobile) |
 | Search Dropdown | Dropdown topbar | Toate paginile dashboard (desktop) |
 
+### Contract UX actualizat pentru fișa clientului
+
+- taburile mari din `/dashboard/clients/[id]` sunt locale și nu declanșează reîncărcare completă de pagină
+- query params rămân sincronizați pentru view, secțiune și evaluare
+- `SectionDetailOverlay` și `AssessmentDetailOverlay` se deschid local și folosesc animație de intrare / ieșire
+- overlay-urile păstrează contextul vizual al fișei clientului și reduc senzația de navigare greoaie
+
 ---
 
 ## PAGINI STATICE

@@ -51,6 +51,18 @@ Refactorul principal pentru `/dashboard` a fost implementat incremental în acee
 - `AppointmentsToday` afișează context clinic per programare
 - `SessionDrawer` și pagina completă a programării afișează context clinic
 - fișa clientului are panou `Pregătire sesiune`
+- dashboard-ul folosește acum workspaces uniforme:
+  - `Azi`
+  - `Flux clinic`
+  - `Operațional`
+- fiecare workspace are:
+  - header contextual
+  - snapshot cards
+  - panouri cu structură comună
+- fișa clientului a fost aliniată vizual la acest model:
+  - taburi mari în stil dashboard
+  - tranziții locale între taburi
+  - overlay-uri animate pentru detalii și secțiuni
 - DB-ul a primit hardening incremental pentru aceste suprafețe:
   - constrângeri pe `service_type` și `risk_level`
   - indexuri pentru `appointments`, `notes`, `invoices`

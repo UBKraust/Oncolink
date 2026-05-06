@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
-import { CalendarDays, FolderKanban, ShieldAlert, ShieldCheck, Wallet } from "lucide-react";
+import { CalendarDays, ClipboardList, FolderKanban, Receipt, ShieldAlert, ShieldCheck, Wallet } from "lucide-react";
 
 import { AppointmentsToday } from "@/components/dashboard/appointments-today";
 import { AssessmentTasksPanel } from "@/components/dashboard/AssessmentTasksPanel";
@@ -190,7 +190,7 @@ export default async function DashboardPage({
             <WorkspaceSummaryCard
               title="Flux clinic"
               value={appointmentsToday.length + serviceTracks.length}
-              subtitle="agenda de azi și service tracks"
+              subtitle="agenda de azi și fluxurile clinice"
               href="/dashboard?workspace=flow"
               icon={FolderKanban}
               active={activeWorkspace === "flow"}
@@ -211,6 +211,41 @@ export default async function DashboardPage({
 
       {activeWorkspace === "focus" ? (
         <section className="space-y-4">
+          <section className="rounded-[2rem] border border-border/60 bg-[linear-gradient(135deg,rgba(14,116,144,0.08),transparent_55%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.92))] p-5 shadow-sm">
+            <div className="grid gap-4 xl:grid-cols-[1.25fr_0.95fr]">
+              <div className="space-y-3">
+                <div className="inline-flex w-fit items-center gap-2 rounded-full border border-border/60 bg-card/80 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-muted-foreground">
+                  <CalendarDays className="h-3.5 w-3.5 text-primary" />
+                  Focusul zilei
+                </div>
+                <div className="space-y-1">
+                  <h2 className="text-2xl font-black tracking-tight text-foreground">
+                    Ce urmează acum și ce poate bloca ziua de lucru
+                  </h2>
+                  <p className="max-w-2xl text-sm text-muted-foreground">
+                    Workspace-ul de focus concentrează următoarea ședință, confirmările și blocajele care trebuie triere imediată.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                <WorkspaceSnapshotCard
+                  label="Ședințe azi"
+                  value={stats.appointmentsToday}
+                  helper={`${appointmentsToday.filter((appointment) => appointment.status === "CONFIRMAT").length} confirmate · ${appointmentsToday.filter((appointment) => appointment.status === "PROGRAMAT").length} neconfirmate`}
+                  icon={CalendarDays}
+                />
+                <WorkspaceSnapshotCard
+                  label="Blocaje active"
+                  value={actionsToResolve}
+                  helper={`${incompleteFiles} dosare incomplete · ${clinicalAlerts.length} alerte clinice`}
+                  icon={ShieldAlert}
+                  tone="warning"
+                />
+              </div>
+            </div>
+          </section>
+
           <TodayCommandCenter
             appointmentsToday={appointmentsToday}
             stats={stats}
@@ -227,6 +262,41 @@ export default async function DashboardPage({
 
       {activeWorkspace === "flow" ? (
         <section className="space-y-4">
+          <section className="rounded-[2rem] border border-border/60 bg-[linear-gradient(135deg,rgba(14,116,144,0.08),transparent_55%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.92))] p-5 shadow-sm">
+            <div className="grid gap-4 xl:grid-cols-[1.25fr_0.95fr]">
+              <div className="space-y-3">
+                <div className="inline-flex w-fit items-center gap-2 rounded-full border border-border/60 bg-card/80 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-muted-foreground">
+                  <FolderKanban className="h-3.5 w-3.5 text-primary" />
+                  Flux clinic
+                </div>
+                <div className="space-y-1">
+                  <h2 className="text-2xl font-black tracking-tight text-foreground">
+                    Programări, fluxuri clinice și evaluări în același ritm de lucru
+                  </h2>
+                  <p className="max-w-2xl text-sm text-muted-foreground">
+                    Workspace-ul clinic leagă agenda zilnică de tipul de caz și de următoarele acțiuni necesare în evaluare.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                <WorkspaceSnapshotCard
+                  label="Cazuri active"
+                  value={serviceTracks.reduce((sum, track) => sum + track.activeClients, 0)}
+                  helper={`${serviceTracks.length} piste clinice urmărite`}
+                  icon={FolderKanban}
+                />
+                <WorkspaceSnapshotCard
+                  label="Evaluări restante"
+                  value={assessmentTasks.length}
+                  helper={`${appointmentsToday.length} programări astăzi · ${assessmentTasks.filter((task) => task.priority === "high").length} prioritare`}
+                  icon={ClipboardList}
+                  tone="warning"
+                />
+              </div>
+            </div>
+          </section>
+
           <ServiceTracksOverview tracks={serviceTracks} />
 
           <div className="grid gap-4 lg:grid-cols-3">
@@ -240,29 +310,59 @@ export default async function DashboardPage({
 
       {activeWorkspace === "ops" ? (
         <section className="space-y-4">
-          <div className="grid gap-4 xl:grid-cols-3">
-            <div className="xl:col-span-2">
+          <section className="rounded-[2rem] border border-border/60 bg-[linear-gradient(135deg,rgba(14,116,144,0.08),transparent_55%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.92))] p-5 shadow-sm">
+            <div className="grid gap-4 xl:grid-cols-[1.25fr_0.95fr]">
+              <div className="space-y-3">
+                <div className="inline-flex w-fit items-center gap-2 rounded-full border border-border/60 bg-card/80 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.18em] text-muted-foreground">
+                  <Wallet className="h-3.5 w-3.5 text-primary" />
+                  Hub operațional
+                </div>
+                <div className="space-y-1">
+                  <h2 className="text-2xl font-black tracking-tight text-foreground">
+                    Facturi, cabinet și mentenanță administrativă într-un singur flux
+                  </h2>
+                  <p className="max-w-2xl text-sm text-muted-foreground">
+                    Zona operațională este grupată clar între recuperarea financiară și menținerea validă a cabinetului, în linie cu auditul dashboardului.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                <WorkspaceSnapshotCard
+                  label="Restanțe active"
+                  value={unpaidInvoices.length}
+                  helper={`${unpaidInvoices.reduce((sum, invoice) => sum + invoice.amount, 0).toFixed(2)} RON de recuperat`}
+                  icon={Receipt}
+                />
+                <WorkspaceSnapshotCard
+                  label="Cabinet & conformitate"
+                  value={stats.vaultAlertsCount + clinicalAlerts.length}
+                  helper={`${stats.vaultAlertsCount} alerte seif · ${clinicalAlerts.length} semnale legale`}
+                  icon={ShieldAlert}
+                  tone="warning"
+                />
+              </div>
+            </div>
+          </section>
+
+          <div className="grid gap-4 xl:grid-cols-[1.25fr_0.95fr]">
+            <div className="space-y-4">
               <FinancialSummary
                 gross={stats.totalRevenue}
                 expenses={stats.expensesMonth}
                 net={stats.netProfitMonth}
               />
+              <UpcomingAppointments appointments={upcomingAppointments} />
             </div>
             <UnpaidInvoices invoices={unpaidInvoices} />
           </div>
 
-          <div className="grid gap-4 xl:grid-cols-3">
-            <div className="xl:col-span-2">
-              <UpcomingAppointments appointments={upcomingAppointments} />
-            </div>
-            <VaultStatusWidget
-              alerts={stats.vaultAlertsCount}
-              totalDocs={stats.vaultTotalDocs}
-            />
-          </div>
-
-          <div className="grid gap-4 xl:grid-cols-3">
-            <div className="xl:col-span-2">
+          <div className="grid gap-4 xl:grid-cols-[1.25fr_0.95fr]">
+            <div className="space-y-4">
+              <VaultStatusWidget
+                alerts={stats.vaultAlertsCount}
+                totalDocs={stats.vaultTotalDocs}
+              />
               <CompliancePanel compact initialData={complianceData} />
             </div>
             <ResearchReadinessPanel readiness={researchReadiness} />
@@ -314,5 +414,37 @@ function WorkspaceSummaryCard({
       <p className="mt-3 text-3xl font-black tracking-tight text-foreground">{value}</p>
       <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
     </Link>
+  );
+}
+
+function WorkspaceSnapshotCard({
+  label,
+  value,
+  helper,
+  icon: Icon,
+  tone = "default",
+}: {
+  label: string;
+  value: number;
+  helper: string;
+  icon: typeof ShieldAlert;
+  tone?: "default" | "warning";
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-[1.5rem] border p-4 shadow-sm",
+        tone === "warning"
+          ? "border-amber-200 bg-amber-50/75 dark:border-amber-900 dark:bg-amber-950/20"
+          : "border-border/60 bg-card/90",
+      )}
+    >
+      <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-muted-foreground">
+        <Icon className={cn("h-3.5 w-3.5", tone === "warning" ? "text-amber-600" : "text-primary")} />
+        {label}
+      </div>
+      <p className="mt-3 text-3xl font-black tracking-tight text-foreground">{value}</p>
+      <p className="mt-1 text-[11px] text-muted-foreground">{helper}</p>
+    </div>
   );
 }

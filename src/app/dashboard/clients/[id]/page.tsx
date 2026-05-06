@@ -47,10 +47,16 @@ export default async function ClientDetailPage({
     view: viewParam,
   } = await searchParams;
 
-  const client = await getClient(id);
+  const clientPromise = getClient(id);
+  const supabasePromise = createSupabaseServerClient();
+  const appointmentsPromise = listAppointments({ clientId: id });
+  const statusHistoryPromise = getClientStatusHistory(id);
+  const accessHistoryPromise = getClientAccessHistory(id);
+
+  const client = await clientPromise;
   if (!client) notFound();
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = await supabasePromise;
   const anonymized = Boolean(client.notes_anonymized_at);
   const serviceType = (client as Record<string, unknown>).service_type as string | null;
 
@@ -63,14 +69,16 @@ export default async function ClientDetailPage({
     crisisNotes,
     statusHistory,
     accessHistory,
+    appointments,
   ] = await Promise.all([
     supabase.from("client_assessments").select("*").eq("client_id", id),
     supabase.from("invoices").select("*").eq("client_id", id),
     supabase.from("patient_documents").select("*").eq("client_id", id),
     supabase.from("patient_medication").select("*").eq("client_id", id),
     anonymized ? Promise.resolve([]) : listCrisisNotes(id),
-    getClientStatusHistory(id),
-    getClientAccessHistory(id),
+    statusHistoryPromise,
+    accessHistoryPromise,
+    appointmentsPromise,
   ]);
 
   // Fetch P2 clinical tools conditionally per service_type
@@ -118,33 +126,28 @@ export default async function ClientDetailPage({
     amount: Number(payment.amount ?? 0),
   }));
   const clientDocs = await Promise.all(
-    ((docsData || []) as ClientDocument[]).map(async (doc) => ({
-      ...doc,
-      file_name: doc.file_name ?? "Document",
-      document_type: doc.document_type ?? "Fișier",
-      created_at: doc.created_at ?? doc.uploaded_at ?? new Date().toISOString(),
-      download_url: `/api/documents/patient/${doc.id}/download`,
-      drive_link:
-        doc.drive_link ??
+    ((docsData || []) as ClientDocument[]).map(async (doc) => {
+      const signedUrl =
         (await createSignedObjectUrl(
           supabase,
           "patient-documents",
           typeof doc.storage_path === "string" ? doc.storage_path : null,
         )) ??
-        (typeof doc.document_url === "string" ? doc.document_url : null) ??
-        "",
-      document_url:
-        (await createSignedObjectUrl(
-          supabase,
-          "patient-documents",
-          typeof doc.storage_path === "string" ? doc.storage_path : null,
-        )) ??
-        (typeof doc.document_url === "string" ? doc.document_url : null),
-    })),
+        (typeof doc.document_url === "string" ? doc.document_url : null);
+
+      return {
+        ...doc,
+        file_name: doc.file_name ?? "Document",
+        document_type: doc.document_type ?? "Fișier",
+        created_at: doc.created_at ?? doc.uploaded_at ?? new Date().toISOString(),
+        download_url: `/api/documents/patient/${doc.id}/download`,
+        drive_link: doc.drive_link ?? signedUrl ?? "",
+        document_url: signedUrl,
+      };
+    }),
   );
   const clientMeds = (medsData || []) as ClientMedication[];
   const isMinor = client.is_minor ?? false;
-  const appointments = await listAppointments({ clientId: id });
   const lifecycleHistory = (statusHistory || []).map((item) => {
     const meta =
       item.metadata != null && typeof item.metadata === "object" && !Array.isArray(item.metadata)

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import React, { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { format, isPast, isFuture } from "date-fns";
@@ -109,6 +109,8 @@ interface ClientDashboardUIProps {
   counselingProgressForm: ClinicalFormRow | null;
 }
 
+type ClientOverviewSection = "contact" | "finance" | "medical" | "crisis";
+
 const SESSION_FREQ_LABELS: Record<string, string> = {
   SAPTAMANAL: "Săptămânal",
   BILUNAR: "Bilunar",
@@ -174,16 +176,24 @@ export function ClientDashboardUI({
   const [isLifecyclePending, startLifecycleTransition] = useTransition();
   const [isContractModalOpen, setIsContractModalOpen] = useState(false);
   const [isCopyingOnboardingLink, setIsCopyingOnboardingLink] = useState(false);
-  const id = client.id;
-  const isMinor = client.is_minor ?? false;
-  const baseUrl = `/dashboard/clients/${id}`;
-  const activeView: ClientWorkspaceView = assessmentParam
+  const initialView: ClientWorkspaceView = assessmentParam
     ? "clinic"
     : sectionParam
       ? "overview"
       : isClientWorkspaceView(viewParam)
         ? viewParam
         : "overview";
+  const [activeView, setActiveView] = useState<ClientWorkspaceView>(initialView);
+  const [isTabPending, setIsTabPending] = useState(false);
+  const [activeSection, setActiveSection] = useState<ClientOverviewSection | null>(
+    sectionParam && ["contact", "finance", "medical", "crisis"].includes(sectionParam)
+      ? (sectionParam as ClientOverviewSection)
+      : null,
+  );
+  const [activeAssessmentId, setActiveAssessmentId] = useState<string | null>(assessmentParam ?? null);
+  const id = client.id;
+  const isMinor = client.is_minor ?? false;
+  const baseUrl = `/dashboard/clients/${id}`;
   const buildClientUrl = ({
     view = activeView,
     section,
@@ -208,13 +218,86 @@ export function ClientDashboardUI({
     const query = params.toString();
     return query ? `${baseUrl}?${query}` : baseUrl;
   };
-  const closeSectionOverlay = () => {
-    router.replace(buildClientUrl({ view: activeView }), { scroll: false });
-  };
+  useEffect(() => {
+    setActiveView(initialView);
+  }, [initialView]);
+
+  useEffect(() => {
+    setActiveSection(
+      sectionParam && ["contact", "finance", "medical", "crisis"].includes(sectionParam)
+        ? (sectionParam as ClientOverviewSection)
+        : null,
+    );
+  }, [sectionParam]);
+
+  useEffect(() => {
+    setActiveAssessmentId(assessmentParam ?? null);
+  }, [assessmentParam]);
+
+  useEffect(() => {
+    if (!isTabPending) return;
+    const timer = window.setTimeout(() => setIsTabPending(false), 220);
+    return () => window.clearTimeout(timer);
+  }, [isTabPending]);
+
+  function handleWorkspaceNavigation(view: ClientWorkspaceView) {
+    const targetUrl = buildClientUrl({ view });
+    if (targetUrl === buildClientUrl({ view: activeView }) || typeof window === "undefined") return;
+    setActiveView(view);
+    if (view !== "overview") {
+      setActiveSection(null);
+    }
+    if (view !== "clinic") {
+      setActiveAssessmentId(null);
+    }
+    setIsTabPending(true);
+    window.history.replaceState(window.history.state, "", targetUrl);
+  }
+
+  function replaceBrowserUrl({
+    view = activeView,
+    section,
+    assessment,
+  }: {
+    view?: ClientWorkspaceView;
+    section?: ClientOverviewSection | null;
+    assessment?: string | null;
+  }) {
+    if (typeof window === "undefined") return;
+    window.history.replaceState(
+      window.history.state,
+      "",
+      buildClientUrl({ view, section: section ?? null, assessment: assessment ?? null }),
+    );
+  }
+
+  function openSection(section: ClientOverviewSection) {
+    setActiveView("overview");
+    setActiveSection(section);
+    setActiveAssessmentId(null);
+    replaceBrowserUrl({ view: "overview", section, assessment: null });
+  }
+
+  function closeSectionOverlay() {
+    setActiveSection(null);
+    replaceBrowserUrl({ view: activeView, section: null, assessment: activeView === "clinic" ? activeAssessmentId : null });
+  }
+
+  function openAssessment(assessmentId: string) {
+    setActiveView("clinic");
+    setActiveAssessmentId(assessmentId);
+    setActiveSection(null);
+    replaceBrowserUrl({ view: "clinic", assessment: assessmentId, section: null });
+  }
+
+  function closeAssessmentOverlay() {
+    setActiveAssessmentId(null);
+    replaceBrowserUrl({ view: "clinic", assessment: null, section: null });
+  }
   const lifecycle = deriveClientLifecycle(client, appointments);
 
-  const selectedAssessment = assessmentParam
-    ? (assessments.find((a) => a.id === assessmentParam) ?? null)
+  const selectedAssessment = activeAssessmentId
+    ? (assessments.find((a) => a.id === activeAssessmentId) ?? null)
     : null;
 
   const upcomingAppointments = appointments
@@ -870,8 +953,38 @@ export function ClientDashboardUI({
         />
       )}
 
-      <section className="rounded-[1.75rem] border border-border/60 bg-card p-3 shadow-sm">
-          <div className="flex flex-wrap gap-2">
+      <section className="rounded-[2rem] border border-border/60 bg-card/95 p-4 shadow-sm backdrop-blur-sm">
+        <div className="grid gap-4 xl:grid-cols-[1.2fr_0.9fr] xl:items-center">
+          <div className="space-y-2">
+            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-muted-foreground">
+              Workspace client
+            </p>
+            <h2 className="text-2xl font-black tracking-tight text-foreground">
+              Navigare clinică și administrativă dintr-un singur loc
+            </h2>
+            <p className="max-w-2xl text-sm text-muted-foreground">
+              Taburile clientului folosesc acum aceeași logică vizuală ca dashboard-ul principal și schimbă contextul fără să rupă ritmul de lucru.
+            </p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+            <ClientWorkspaceStat
+              label="View activ"
+              value={WORKSPACE_VIEWS.find((view) => view.id === activeView)?.label ?? "Sumar"}
+              hint={isTabPending ? "Se pregătește următoarea secțiune" : "Secțiunea curentă a fișei clientului"}
+              tone={isTabPending ? "warning" : "default"}
+            />
+            <ClientWorkspaceStat
+              label="Tranziție"
+              value={isTabPending ? "În curs" : "Stabilă"}
+              hint={isTabPending ? "Păstrăm contextul vizibil până se schimbă pagina" : "Schimbarea de view este pregătită pentru navigare fluidă"}
+              tone={isTabPending ? "warning" : "success"}
+            />
+          </div>
+        </div>
+
+        <div className="mt-4 inline-flex rounded-[1.25rem] border border-border/60 bg-muted/40 p-1">
+          <div className="flex flex-wrap gap-1">
           {WORKSPACE_VIEWS.map((view) => {
             const active = activeView === view.id;
 
@@ -879,11 +992,25 @@ export function ClientDashboardUI({
               <Link
                 key={view.id}
                 href={buildClientUrl({ view: view.id })}
+                onClick={(event) => {
+                  if (
+                    event.metaKey ||
+                    event.ctrlKey ||
+                    event.shiftKey ||
+                    event.altKey ||
+                    event.button !== 0
+                  ) {
+                    return;
+                  }
+                  event.preventDefault();
+                  handleWorkspaceNavigation(view.id);
+                }}
                 className={cn(
-                  "rounded-2xl px-4 py-2.5 text-sm font-semibold transition-colors",
+                  "inline-flex items-center gap-2 rounded-[1rem] px-4 py-2.5 text-sm font-bold transition-all",
                   active
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground",
+                  isTabPending && active && "animate-pulse-subtle",
                 )}
                 aria-current={active ? "page" : undefined}
               >
@@ -891,9 +1018,27 @@ export function ClientDashboardUI({
               </Link>
             );
           })}
+          </div>
+        </div>
+        <div className="mt-3 h-1 overflow-hidden rounded-full bg-muted/50">
+          <div
+            className={cn(
+              "h-full rounded-full bg-primary transition-all duration-300",
+              isTabPending ? "w-2/3 animate-pulse-subtle" : "w-1/3",
+              activeView === "clinic" && !isTabPending && "ml-[33%]",
+              activeView === "appointments" && !isTabPending && "ml-[66%] w-1/3",
+              activeView === "lifecycle" && !isTabPending && "ml-[100%] w-0",
+            )}
+          />
         </div>
       </section>
 
+      <div
+        className={cn(
+          "transition-[opacity,transform,filter] duration-300 ease-out",
+          isTabPending && "pointer-events-none opacity-70 blur-[0.5px]",
+        )}
+      >
       {activeView === "overview" ? (
         <>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -902,6 +1047,10 @@ export function ClientDashboardUI({
               title="Contact & Profil"
               value={anonymized ? "REDACTED" : (client.email ?? "—")}
               link={buildClientUrl({ view: "overview", section: "contact" })}
+              onClick={(event) => {
+                event.preventDefault();
+                openSection("contact");
+              }}
               badge={client.gdpr_consent_signed ? "GDPR OK" : "GDPR LIPSĂ"}
               badgeVariant={client.gdpr_consent_signed ? "success" : "warning"}
             />
@@ -910,6 +1059,10 @@ export function ClientDashboardUI({
               title="Financiar"
               value={`${aiClientContext.totalAmount} RON`}
               link={buildClientUrl({ view: "overview", section: "finance" })}
+              onClick={(event) => {
+                event.preventDefault();
+                openSection("finance");
+              }}
               subtitle={`${aiClientContext.totalSessions} ședințe totale`}
             />
             <WidgetCard
@@ -917,6 +1070,10 @@ export function ClientDashboardUI({
               title="Dosar Medical"
               value={`${clientDocs.length + clientMeds.length} Fișiere`}
               link={buildClientUrl({ view: "overview", section: "medical" })}
+              onClick={(event) => {
+                event.preventDefault();
+                openSection("medical");
+              }}
               subtitle={`${clientMeds.length} medicamente active`}
             />
             <WidgetCard
@@ -924,6 +1081,10 @@ export function ClientDashboardUI({
               title="Monitorizare Risc"
               value={crisisNotes.length > 0 ? `${crisisNotes.length} Note active` : "Fără incidente"}
               link={buildClientUrl({ view: "overview", section: "crisis" })}
+              onClick={(event) => {
+                event.preventDefault();
+                openSection("crisis");
+              }}
               badge={crisisNotes.length > 0 ? "URGENT" : "STABIL"}
               badgeVariant={crisisNotes.length > 0 ? "destructive" : "outline"}
             />
@@ -1037,7 +1198,11 @@ export function ClientDashboardUI({
                       key={acc.id}
                       acc={acc}
                       href={buildClientUrl({ view: "clinic", assessment: acc.id })}
-                      isActive={assessmentParam === acc.id}
+                      isActive={activeAssessmentId === acc.id}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        openAssessment(acc.id);
+                      }}
                     />
                   ))}
                 </div>
@@ -1148,29 +1313,30 @@ export function ClientDashboardUI({
           </SectionCard>
         </div>
       ) : null}
+      </div>
 
       {/* ── Overlays ──────────────────────────────────────────────────────── */}
       <PersonalInfoOverlay
-        isOpen={sectionParam === "contact"}
+        isOpen={activeSection === "contact"}
         onClose={closeSectionOverlay}
         client={client}
         anonymized={anonymized}
       />
       <FinancialDetailOverlay
-        isOpen={sectionParam === "finance"}
+        isOpen={activeSection === "finance"}
         onClose={closeSectionOverlay}
         payments={payments}
         clientName={client.full_name ?? "Client"}
       />
       <MedicalDetailOverlay
-        isOpen={sectionParam === "medical"}
+        isOpen={activeSection === "medical"}
         onClose={closeSectionOverlay}
         documents={clientDocs}
         medications={clientMeds}
         clientName={client.full_name ?? "Client"}
       />
       <CrisisNotesDetailOverlay
-        isOpen={sectionParam === "crisis"}
+        isOpen={activeSection === "crisis"}
         onClose={closeSectionOverlay}
         notes={crisisNotes}
         clientName={client.full_name ?? "Client"}
@@ -1181,7 +1347,7 @@ export function ClientDashboardUI({
           clientName={client.full_name ?? "Client"}
           isMinor={isMinor}
           sendReportToParent={client.send_report_to_parent ?? false}
-          closeUrl={buildClientUrl({ view: "clinic" })}
+          onClose={closeAssessmentOverlay}
         />
       )}
 
@@ -1191,6 +1357,35 @@ export function ClientDashboardUI({
         onClose={() => setIsContractModalOpen(false)}
         client={client}
       />
+    </div>
+  );
+}
+
+function ClientWorkspaceStat({
+  label,
+  value,
+  hint,
+  tone = "default",
+}: {
+  label: string;
+  value: string;
+  hint: string;
+  tone?: "default" | "success" | "warning";
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-[1.5rem] border p-4 shadow-sm",
+        tone === "default" && "border-border/60 bg-card/90",
+        tone === "success" && "border-emerald-200 bg-emerald-50/80 dark:border-emerald-900 dark:bg-emerald-950/20",
+        tone === "warning" && "border-amber-200 bg-amber-50/80 dark:border-amber-900 dark:bg-amber-950/20",
+      )}
+    >
+      <p className="text-[11px] font-black uppercase tracking-[0.18em] text-muted-foreground">
+        {label}
+      </p>
+      <p className="mt-3 text-xl font-black tracking-tight text-foreground">{value}</p>
+      <p className="mt-1 text-[11px] text-muted-foreground">{hint}</p>
     </div>
   );
 }
@@ -1256,6 +1451,7 @@ function WidgetCard({
   subtitle,
   badge,
   badgeVariant = "default",
+  onClick,
 }: WidgetCardProps) {
   return (
     <ActionCard
@@ -1264,6 +1460,7 @@ function WidgetCard({
       title={title}
       value={value}
       subtitle={subtitle}
+      onClick={onClick}
       badge={
         badge ? (
           <Badge variant={badgeVariant} className="text-[9px] font-black tracking-widest">
@@ -1282,10 +1479,12 @@ function AssessmentCard({
   acc,
   href,
   isActive,
+  onClick,
 }: {
   acc: ClientAssessment;
   href: string;
   isActive: boolean;
+  onClick?: React.MouseEventHandler<HTMLAnchorElement>;
 }) {
   const scoringTestType =
     typeof acc.scoring_data.test_type === "string"
@@ -1308,6 +1507,7 @@ function AssessmentCard({
         "min-h-full",
         isActive && "border-primary ring-4 ring-primary/5 shadow-2xl"
       )}
+      onClick={onClick}
       trailing={<ArrowRight className="h-4 w-4" />}
       footer={
         <div className="flex items-center justify-between">

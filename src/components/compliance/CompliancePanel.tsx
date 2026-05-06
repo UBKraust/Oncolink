@@ -149,7 +149,7 @@ export function CompliancePanel({ compact = false, initialData }: Props) {
         ? "border-amber-200 dark:border-amber-900"
         : "border-emerald-200 dark:border-emerald-900"
     )}>
-      <CardHeader className="border-b border-border/60 bg-muted/20 pb-4">
+      <CardHeader className="border-b border-border/60 bg-[linear-gradient(180deg,rgba(248,250,252,0.92),rgba(248,250,252,0.45))] pb-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-3">
             <ScoreRing score={data.overallScore} />
@@ -185,6 +185,21 @@ export function CompliancePanel({ compact = false, initialData }: Props) {
       </CardHeader>
 
       <CardContent className="space-y-2 pt-6">
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-[1.25rem] border border-border/60 bg-card/90 px-4 py-3 shadow-sm">
+            <p className="text-[11px] font-black uppercase tracking-[0.16em] text-muted-foreground">Scor general</p>
+            <p className="mt-2 text-2xl font-black tracking-tight text-foreground">{data.overallScore}</p>
+          </div>
+          <div className="rounded-[1.25rem] border border-border/60 bg-card/90 px-4 py-3 shadow-sm">
+            <p className="text-[11px] font-black uppercase tracking-[0.16em] text-muted-foreground">Clienți verificați</p>
+            <p className="mt-2 text-2xl font-black tracking-tight text-foreground">{data.totalClients}</p>
+          </div>
+          <div className="rounded-[1.25rem] border border-border/60 bg-card/90 px-4 py-3 shadow-sm">
+            <p className="text-[11px] font-black uppercase tracking-[0.16em] text-muted-foreground">Critice</p>
+            <p className="mt-2 text-2xl font-black tracking-tight text-foreground">{data.criticalCount}</p>
+          </div>
+        </div>
+
         {visible.length === 0 && (
           <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50/60 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-300">
             <CheckCircle2 className="h-4 w-4" />

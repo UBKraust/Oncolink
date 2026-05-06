@@ -252,6 +252,10 @@ Referințe:
   - `/dashboard?workspace=flow`
   - `/dashboard?workspace=ops`
 - [x] Cardurile de sumar au devenit și puncte de navigație, nu doar KPI-uri pasive
+- [x] Workspace-urile `Azi`, `Flux clinic` și `Operațional` folosesc acum aceeași compoziție UI
+- [x] Fișa clientului are taburi mari în aceeași familie vizuală cu dashboard-ul
+- [x] Taburile mari din fișa clientului schimbă local contextul și nu mai reîncarcă toată pagina
+- [x] Overlay-urile din fișa clientului sunt locale, cu URL sincronizat și tranziții animate
 
 ## P2 — polish și consolidare
 
@@ -267,6 +271,11 @@ Referințe:
   - motiv
   - impact
   - CTA direct
+- [x] Elimină senzația de reload în fișa clientului:
+  - taburile mari sunt client-side
+  - cardurile din `Sumar` deschid overlay-uri locale
+  - evaluările din `Clinic` deschid local `AssessmentDetailOverlay`
+  - `SectionDetailOverlay` are acum animație de intrare / ieșire și backdrop blur progresiv
 
 ---
 

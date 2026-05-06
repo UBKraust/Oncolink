@@ -165,6 +165,7 @@ export function ActionCard({
   footer,
   trailing,
   className,
+  onClick,
 }: {
   href: string;
   icon: LucideIcon;
@@ -176,10 +177,12 @@ export function ActionCard({
   footer?: ReactNode;
   trailing?: ReactNode;
   className?: string;
+  onClick?: React.MouseEventHandler<HTMLAnchorElement>;
 }) {
   return (
     <Link
       href={href}
+      onClick={onClick}
       className={cn(
         "group relative flex flex-col rounded-[1.75rem] border border-border/60 bg-card p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-md",
         className,

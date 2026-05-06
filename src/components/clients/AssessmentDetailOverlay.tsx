@@ -1,5 +1,4 @@
 "use client";
-import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
 import {
@@ -33,7 +32,7 @@ interface Props {
   clientName: string;
   isMinor: boolean;
   sendReportToParent: boolean;
-  closeUrl: string;
+  onClose: () => void;
 }
 
 export function AssessmentDetailOverlay({
@@ -41,9 +40,8 @@ export function AssessmentDetailOverlay({
   clientName,
   isMinor,
   sendReportToParent,
-  closeUrl,
+  onClose,
 }: Props) {
-  const router = useRouter();
   const scoring = assessment.scoring_data;
   const severityRaw =
     typeof scoring.severity === "string" ? scoring.severity.toLowerCase() : undefined;
@@ -64,14 +62,10 @@ export function AssessmentDetailOverlay({
     ([k]) => k !== "test_type" && k !== "severity"
   );
 
-  function handleClose() {
-    router.push(closeUrl);
-  }
-
   return (
     <SectionDetailOverlay
       isOpen
-      onClose={handleClose}
+      onClose={onClose}
       title="Detalii evaluare"
       subtitle={`${clientName} · ${format(new Date(assessment.created_at), "d MMMM yyyy, HH:mm", { locale: ro })}`}
       icon={Brain}

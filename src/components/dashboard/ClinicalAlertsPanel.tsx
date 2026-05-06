@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BellRing, ChevronRight, ShieldAlert, ShieldCheck } from "lucide-react";
+import { AlertTriangle, BellRing, ChevronRight, ShieldAlert, ShieldCheck } from "lucide-react";
 
 import { EmptyState, SectionCard } from "@/components/app/page-shell";
 import { Badge } from "@/components/ui/badge";
@@ -35,8 +35,8 @@ export function ClinicalAlertsPanel({
 }) {
   return (
     <SectionCard
-      title="Clinical & Legal Alerts"
-      description="Semnale care merită atenție înainte să se transforme în blocaje."
+      title="Alerte clinice și legale"
+      description="Semnalele care merită atenție înainte să se transforme în blocaje operaționale."
       icon={ShieldAlert}
     >
       {alerts.length === 0 ? (
@@ -46,7 +46,31 @@ export function ClinicalAlertsPanel({
           icon={ShieldCheck}
         />
       ) : (
-        <div className="space-y-3 p-4">
+        <div className="border-t border-border/60 bg-[linear-gradient(180deg,rgba(248,250,252,0.92),rgba(248,250,252,0.45))] p-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-[1.5rem] border border-border/60 bg-card/90 p-4 shadow-sm">
+              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-muted-foreground">
+                Total alerte
+              </p>
+              <p className="mt-3 text-3xl font-black tracking-tight text-foreground">{alerts.length}</p>
+              <p className="mt-1 text-[11px] text-muted-foreground">Semnale active în acest moment</p>
+            </div>
+            <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50/80 p-4 shadow-sm dark:border-amber-900 dark:bg-amber-950/20">
+              <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-amber-800 dark:text-amber-100">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                Prioritate mare
+              </div>
+              <p className="mt-3 text-3xl font-black tracking-tight text-foreground">
+                {alerts.filter((alert) => alert.severity === "critical").length}
+              </p>
+              <p className="mt-1 text-[11px] text-muted-foreground">Alerte critice care cer intervenție rapidă</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {alerts.length > 0 ? (
+        <div className="space-y-3 border-t border-border/60 p-4">
           {alerts.map((alert) => (
             <div
               key={alert.id}
@@ -80,7 +104,7 @@ export function ClinicalAlertsPanel({
             </Button>
           )}
         </div>
-      )}
+      ) : null}
     </SectionCard>
   );
 }

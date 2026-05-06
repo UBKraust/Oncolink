@@ -1,20 +1,22 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 export function NavigationProgress() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const routeKey = `${pathname}?${searchParams.toString()}`;
   const [visible, setVisible] = useState(false);
   const [width, setWidth] = useState(0);
-  const pathnameRef = useRef(pathname);
+  const routeKeyRef = useRef(routeKey);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const finishTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Complete progress when navigation finishes (pathname changes)
   useEffect(() => {
-    if (pathnameRef.current === pathname) return;
-    pathnameRef.current = pathname;
+    if (routeKeyRef.current === routeKey) return;
+    routeKeyRef.current = routeKey;
     if (intervalRef.current) clearInterval(intervalRef.current);
     if (finishTimerRef.current) clearTimeout(finishTimerRef.current);
     setWidth(100);
@@ -22,7 +24,7 @@ export function NavigationProgress() {
       setVisible(false);
       setWidth(0);
     }, 400);
-  }, [pathname]);
+  }, [routeKey]);
 
   // Start progress when a nav link is clicked
   useEffect(() => {
@@ -31,7 +33,7 @@ export function NavigationProgress() {
       if (!anchor) return;
       const href = anchor.getAttribute("href");
       if (!href?.startsWith("/")) return;
-      if (href === pathnameRef.current) return;
+      if (href === routeKeyRef.current || href === pathname) return;
       if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
       if (anchor.getAttribute("target") === "_blank") return;
 
@@ -50,7 +52,7 @@ export function NavigationProgress() {
 
     document.addEventListener("click", onAnchorClick);
     return () => document.removeEventListener("click", onAnchorClick);
-  }, []);
+  }, [pathname]);
 
   return (
     <div

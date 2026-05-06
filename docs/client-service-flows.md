@@ -78,6 +78,31 @@ Fișa clientului are un panou nou de `Pregătire sesiune`, care sintetizează:
 
 Scopul acestui panou este să reducă salturile între module exact înaintea unei intervenții clinice.
 
+### Navigare și interacțiune în fișa clientului
+
+Fișa clientului nu mai tratează taburile mari ca navigații grele între pagini.
+
+- `Sumar`
+- `Clinic`
+- `Programări`
+- `Lifecycle`
+
+Aceste workspace-uri:
+
+- folosesc același limbaj vizual ca dashboard-ul principal
+- schimbă contextul local, fără reîncărcarea întregii pagini
+- păstrează URL-ul sincronizat pentru share și refresh
+
+De asemenea, overlay-urile secundare pentru:
+
+- profil & contact
+- financiar
+- dosar medical
+- monitorizare risc
+- detalii evaluare
+
+sunt controlate local și animate, astfel încât terapeutul să nu piardă contextul vizual când intră într-un detaliu și revine.
+
 ## Principii UX pentru terapeut
 
 Ca să ajutăm munca terapeutului și să nu o îngreunăm, fluxurile din produs ar trebui să respecte consecvent câteva reguli:

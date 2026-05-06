@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import {
+  ArrowUpRight,
   CalendarDays,
   CheckCircle2,
   Clock3,
@@ -107,7 +108,7 @@ function TodayClinicalView({
 
   return (
     <div className="grid gap-4 p-4 lg:grid-cols-[1.4fr_1fr]">
-      <div className="rounded-[1.75rem] border border-border/60 bg-muted/20 p-5">
+      <div className="rounded-[1.75rem] border border-border/60 bg-[linear-gradient(135deg,rgba(14,116,144,0.08),transparent_55%),linear-gradient(180deg,rgba(248,250,252,0.95),rgba(248,250,252,0.45))] p-5">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.22em] text-muted-foreground">
@@ -134,6 +135,34 @@ function TodayClinicalView({
           ) : null}
         </div>
 
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <TodayMiniCard
+            icon={Clock3}
+            label="Începe la"
+            value={
+              nextAppointment?.startsAt.toLocaleTimeString("ro-RO", {
+                hour: "2-digit",
+                minute: "2-digit",
+              }) ?? "--:--"
+            }
+            hint={`${nextAppointment?.durationMinutes ?? 0} minute`}
+          />
+          <TodayMiniCard
+            icon={CheckCircle2}
+            label="Confirmări"
+            value={`${confirmedCount}`}
+            hint={`${unconfirmedCount} în așteptare`}
+            tone={unconfirmedCount > 0 ? "warning" : "success"}
+          />
+          <TodayMiniCard
+            icon={FileWarning}
+            label="Blocaje"
+            value={`${actionsToResolve}`}
+            hint={`${incompleteFiles} dosare incomplete`}
+            tone={actionsToResolve > 0 ? "warning" : "default"}
+          />
+        </div>
+
         {nextAppointment ? (
           <div className="mt-5 flex flex-wrap gap-2">
             <Button asChild size="sm">
@@ -153,6 +182,14 @@ function TodayClinicalView({
                 >
                   Intră în sesiune
                 </a>
+              </Button>
+            ) : null}
+            {nextAppointment.clientId ? (
+              <Button asChild variant="ghost" size="sm" className="text-primary">
+                <Link href={`/dashboard/clients/${nextAppointment.clientId}`}>
+                  Fișa clientului
+                  <ArrowUpRight className="h-3.5 w-3.5" />
+                </Link>
               </Button>
             ) : null}
           </div>
@@ -207,6 +244,40 @@ function TodayClinicalView({
           </Button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function TodayMiniCard({
+  icon: Icon,
+  label,
+  value,
+  hint,
+  tone = "default",
+}: {
+  icon: typeof Clock3;
+  label: string;
+  value: string;
+  hint: string;
+  tone?: "default" | "success" | "warning";
+}) {
+  return (
+    <div
+      className={[
+        "rounded-[1.4rem] border p-3 shadow-sm",
+        tone === "default" && "border-border/60 bg-card/90",
+        tone === "success" && "border-emerald-200 bg-emerald-50/80 dark:border-emerald-900 dark:bg-emerald-950/20",
+        tone === "warning" && "border-amber-200 bg-amber-50/80 dark:border-amber-900 dark:bg-amber-950/20",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      <div className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-muted-foreground">
+        <Icon className="h-3.5 w-3.5" />
+        {label}
+      </div>
+      <p className="mt-3 text-xl font-black tracking-tight text-foreground">{value}</p>
+      <p className="mt-1 text-[11px] text-muted-foreground">{hint}</p>
     </div>
   );
 }

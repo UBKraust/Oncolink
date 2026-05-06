@@ -137,6 +137,12 @@ src/
 Secțiuni:
 - Header: nume, lifecycle badge, service type badge, risc
 - **Pregătire sesiune**: context clinic complet (contract, GDPR, risc, track status, next action)
+- Workspace switcher local în stil dashboard:
+  - `Sumar`
+  - `Clinic`
+  - `Programări`
+  - `Lifecycle`
+  - schimbarea între taburi nu face reload complet de pagină
 - Programări istorice + viitoare
 - Note clinice linkate
 - Evaluări (assessments + structured assessments)

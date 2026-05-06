@@ -242,4 +242,5 @@ export interface WidgetCardProps {
   subtitle?: string;
   badge?: string;
   badgeVariant?: "default" | "outline" | "success" | "warning" | "destructive";
+  onClick?: React.MouseEventHandler<HTMLAnchorElement>;
 }

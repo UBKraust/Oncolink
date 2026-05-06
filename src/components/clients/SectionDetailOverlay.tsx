@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useOverlayA11y } from "@/components/ui/use-overlay-a11y";
@@ -36,24 +36,56 @@ export function SectionDetailOverlay({
 }: SectionDetailOverlayProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isPresent, setIsPresent] = useState(isOpen);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+
+    if (isOpen) {
+      setIsPresent(true);
+      const frame = requestAnimationFrame(() => setIsVisible(true));
+      return () => cancelAnimationFrame(frame);
+    }
+
+    setIsVisible(false);
+    closeTimerRef.current = setTimeout(() => {
+      setIsPresent(false);
+      closeTimerRef.current = null;
+    }, 260);
+
+    return () => {
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = null;
+      }
+    };
+  }, [isOpen]);
 
   useOverlayA11y({
-    open: isOpen,
+    open: isPresent,
     onClose,
     containerRef: panelRef,
     initialFocusRef: closeButtonRef,
   });
 
-  if (!isOpen) return null;
+  if (!isPresent) return null;
 
   return (
     <div className={cn(
-      "fixed inset-0 z-[60] flex justify-end transition-opacity duration-300",
-      "opacity-100"
+      "fixed inset-0 z-[60] flex justify-end transition-opacity duration-300 ease-out",
+      isVisible ? "opacity-100" : "opacity-0"
     )}>
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-foreground/20 backdrop-blur-sm" 
+        className={cn(
+          "absolute inset-0 bg-foreground/20 transition-all duration-300 ease-out",
+          isVisible ? "backdrop-blur-sm" : "backdrop-blur-0",
+        )}
         onClick={onClose}
       />
 
@@ -61,9 +93,9 @@ export function SectionDetailOverlay({
       <div
         ref={panelRef}
         className={cn(
-        "relative h-full w-full bg-card shadow-2xl transition-transform duration-500 ease-out flex flex-col",
+        "relative h-full w-full bg-card shadow-2xl transition-[transform,opacity] duration-300 ease-out flex flex-col",
         maxWidth || SIZE_CLASS[size],
-        "translate-x-0"
+        isVisible ? "translate-x-0 opacity-100" : "translate-x-8 opacity-0"
         )}
         role="dialog"
         aria-modal="true"

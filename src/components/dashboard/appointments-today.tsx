@@ -28,6 +28,40 @@ export function AppointmentsToday({ appointments }: { appointments: DashboardApp
           <Plus className="h-3.5 w-3.5" /> Adaugă
         </Link>
       </div>
+      {appointments.length > 0 ? (
+        <div className="border-b border-border/60 bg-[linear-gradient(180deg,rgba(248,250,252,0.92),rgba(248,250,252,0.45))] p-4">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-[1.5rem] border border-border/60 bg-card/90 p-4 shadow-sm">
+              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-muted-foreground">
+                Confirmate
+              </p>
+              <p className="mt-3 text-3xl font-black tracking-tight text-foreground">
+                {appointments.filter((appointment) => appointment.status === "CONFIRMAT").length}
+              </p>
+              <p className="mt-1 text-[11px] text-muted-foreground">Programări deja validate</p>
+            </div>
+            <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50/80 p-4 shadow-sm dark:border-amber-900 dark:bg-amber-950/20">
+              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-amber-800 dark:text-amber-100">
+                Neconfirmate
+              </p>
+              <p className="mt-3 text-3xl font-black tracking-tight text-foreground">
+                {appointments.filter((appointment) => appointment.status === "PROGRAMAT").length}
+              </p>
+              <p className="mt-1 text-[11px] text-muted-foreground">Cer follow-up înainte de sesiune</p>
+            </div>
+            <div className="rounded-[1.5rem] border border-border/60 bg-card/90 p-4 shadow-sm">
+              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-muted-foreground">
+                Gărzi externe
+              </p>
+              <p className="mt-3 text-3xl font-black tracking-tight text-foreground">
+                {appointments.filter((appointment) => appointment.isExternalDuty).length}
+              </p>
+              <p className="mt-1 text-[11px] text-muted-foreground">Intrări care includ context extern</p>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <div className="space-y-2 p-4">
         {appointments.length === 0 ? (
           <EmptyState

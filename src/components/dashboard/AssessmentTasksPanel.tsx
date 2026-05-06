@@ -36,7 +36,29 @@ export function AssessmentTasksPanel({
           icon={ClipboardList}
         />
       ) : (
-        <div className="space-y-3 p-4">
+        <>
+          <div className="border-t border-border/60 bg-[linear-gradient(180deg,rgba(248,250,252,0.92),rgba(248,250,252,0.45))] p-4">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-[1.5rem] border border-border/60 bg-card/90 p-4 shadow-sm">
+                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-muted-foreground">
+                  Taskuri active
+                </p>
+                <p className="mt-3 text-3xl font-black tracking-tight text-foreground">{tasks.length}</p>
+                <p className="mt-1 text-[11px] text-muted-foreground">Evaluări și rapoarte care așteaptă rezolvare</p>
+              </div>
+              <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50/80 p-4 shadow-sm dark:border-amber-900 dark:bg-amber-950/20">
+                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-amber-800 dark:text-amber-100">
+                  Prioritate mare
+                </p>
+                <p className="mt-3 text-3xl font-black tracking-tight text-foreground">
+                  {tasks.filter((task) => task.priority === "high").length}
+                </p>
+                <p className="mt-1 text-[11px] text-muted-foreground">Cazuri care cer triere rapidă</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3 border-t border-border/60 p-4">
           {tasks.map((task) => (
             <div
               key={task.id}
@@ -57,7 +79,8 @@ export function AssessmentTasksPanel({
               ) : null}
             </div>
           ))}
-        </div>
+          </div>
+        </>
       )}
     </SectionCard>
   );

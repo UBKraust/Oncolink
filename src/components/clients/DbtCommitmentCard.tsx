@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { Check, Handshake, Pencil, Plus, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,7 +30,6 @@ interface DbtCommitmentCardProps {
 }
 
 export function DbtCommitmentCard({ clientId, form }: DbtCommitmentCardProps) {
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [editing, setEditing] = useState(!form);
 
@@ -46,12 +44,13 @@ export function DbtCommitmentCard({ clientId, form }: DbtCommitmentCardProps) {
     };
   }
 
+  const [savedForm, setSavedForm] = useState(form);
   const [values, setValues] = useState<CommitmentContent>(() => parse(form));
   const [newCommitment, setNewCommitment] = useState("");
   const [newGoal, setNewGoal] = useState("");
 
   function handleCancel() {
-    setValues(parse(form));
+    setValues(parse(savedForm));
     setNewCommitment("");
     setNewGoal("");
     setEditing(false);
@@ -80,7 +79,7 @@ export function DbtCommitmentCard({ clientId, form }: DbtCommitmentCardProps) {
   function handleSave() {
     startTransition(async () => {
       const result = await upsertClinicalForm({
-        id: form?.id,
+        id: savedForm?.id,
         clientId,
         formType: "DBT_COMMITMENT",
         title: "Angajament terapeutic DBT",
@@ -88,9 +87,10 @@ export function DbtCommitmentCard({ clientId, form }: DbtCommitmentCardProps) {
         status: values.client_commitments.length > 0 || values.therapy_goals.length > 0 ? "COMPLETE" : "DRAFT",
       });
       if ("error" in result) { toast.error(result.error); return; }
+      setSavedForm(result.form);
+      setValues(parse(result.form));
       toast.success("Angajamentul terapeutic a fost salvat.");
       setEditing(false);
-      router.refresh();
     });
   }
 

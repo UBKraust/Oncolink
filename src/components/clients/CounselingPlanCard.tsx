@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { Check, Compass, Pencil, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,7 +32,6 @@ interface CounselingPlanCardProps {
 }
 
 export function CounselingPlanCard({ clientId, form }: CounselingPlanCardProps) {
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [editing, setEditing] = useState(!form);
 
@@ -42,6 +40,7 @@ export function CounselingPlanCard({ clientId, form }: CounselingPlanCardProps) 
     return { ...EMPTY, ...(f.content as Partial<CounselingPlanContent>) };
   }
 
+  const [savedForm, setSavedForm] = useState(form);
   const [values, setValues] = useState<CounselingPlanContent>(() => parse(form));
 
   function set(key: keyof CounselingPlanContent, value: string) {
@@ -49,14 +48,14 @@ export function CounselingPlanCard({ clientId, form }: CounselingPlanCardProps) 
   }
 
   function handleCancel() {
-    setValues(parse(form));
+    setValues(parse(savedForm));
     setEditing(false);
   }
 
   function handleSave() {
     startTransition(async () => {
       const result = await upsertClinicalForm({
-        id: form?.id,
+        id: savedForm?.id,
         clientId,
         formType: "COUNSELING_PLAN",
         title: "Plan de consiliere",
@@ -64,9 +63,10 @@ export function CounselingPlanCard({ clientId, form }: CounselingPlanCardProps) 
         status: values.main_objective.trim() ? "COMPLETE" : "DRAFT",
       });
       if ("error" in result) { toast.error(result.error); return; }
+      setSavedForm(result.form);
+      setValues(parse(result.form));
       toast.success("Planul de consiliere a fost salvat.");
       setEditing(false);
-      router.refresh();
     });
   }
 

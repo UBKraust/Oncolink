@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { Check, ListChecks, Pencil, Plus, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,7 +30,6 @@ interface RecommendationsCardProps {
 }
 
 export function RecommendationsCard({ clientId, form }: RecommendationsCardProps) {
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [editing, setEditing] = useState(!form);
 
@@ -41,11 +39,12 @@ export function RecommendationsCard({ clientId, form }: RecommendationsCardProps
     return { recommendations: c.recommendations ?? [], resources: c.resources ?? "", follow_up_plan: c.follow_up_plan ?? "", observations: c.observations ?? "" };
   }
 
+  const [savedForm, setSavedForm] = useState(form);
   const [values, setValues] = useState<RecommendationsContent>(() => parse(form));
   const [newRec, setNewRec] = useState("");
 
   function handleCancel() {
-    setValues(parse(form));
+    setValues(parse(savedForm));
     setNewRec("");
     setEditing(false);
   }
@@ -63,7 +62,7 @@ export function RecommendationsCard({ clientId, form }: RecommendationsCardProps
   function handleSave() {
     startTransition(async () => {
       const result = await upsertClinicalForm({
-        id: form?.id,
+        id: savedForm?.id,
         clientId,
         formType: "RECOMMENDATIONS",
         title: "Fișă recomandări",
@@ -71,9 +70,10 @@ export function RecommendationsCard({ clientId, form }: RecommendationsCardProps
         status: values.recommendations.length > 0 ? "COMPLETE" : "DRAFT",
       });
       if ("error" in result) { toast.error(result.error); return; }
+      setSavedForm(result.form);
+      setValues(parse(result.form));
       toast.success("Fișa de recomandări a fost salvată.");
       setEditing(false);
-      router.refresh();
     });
   }
 

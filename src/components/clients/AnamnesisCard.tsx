@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { BookOpen, Check, Pencil, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -46,7 +45,6 @@ interface AnamnesisCardProps {
 }
 
 export function AnamnesisCard({ clientId, form }: AnamnesisCardProps) {
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [editing, setEditing] = useState(!form);
 
@@ -56,10 +54,11 @@ export function AnamnesisCard({ clientId, form }: AnamnesisCardProps) {
     return { ...EMPTY, ...c };
   }
 
+  const [savedForm, setSavedForm] = useState(form);
   const [values, setValues] = useState<AnamnesisContent>(() => parse(form));
 
   function handleCancel() {
-    setValues(parse(form));
+    setValues(parse(savedForm));
     setEditing(false);
   }
 
@@ -70,7 +69,7 @@ export function AnamnesisCard({ clientId, form }: AnamnesisCardProps) {
   function handleSave() {
     startTransition(async () => {
       const result = await upsertClinicalForm({
-        id: form?.id,
+        id: savedForm?.id,
         clientId,
         formType: "ANAMNESIS",
         title: "Fișă anamneză",
@@ -81,9 +80,10 @@ export function AnamnesisCard({ clientId, form }: AnamnesisCardProps) {
         toast.error(result.error);
         return;
       }
+      setSavedForm(result.form);
+      setValues(parse(result.form));
       toast.success("Fișa de anamneză a fost salvată.");
       setEditing(false);
-      router.refresh();
     });
   }
 

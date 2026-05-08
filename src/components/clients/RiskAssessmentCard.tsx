@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { AlertTriangle, Check, Pencil, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -52,7 +51,6 @@ interface RiskAssessmentCardProps {
 }
 
 export function RiskAssessmentCard({ clientId, form, currentRiskLevel }: RiskAssessmentCardProps) {
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [editing, setEditing] = useState(!form);
 
@@ -69,6 +67,7 @@ export function RiskAssessmentCard({ clientId, form, currentRiskLevel }: RiskAss
     return { ...EMPTY, ...(f.content as Partial<RiskContent>) };
   }
 
+  const [savedForm, setSavedForm] = useState(form);
   const [values, setValues] = useState<RiskContent>(() => parse(form));
   const [riskLevel, setRiskLevel] = useState<RiskLevel>(
     parseStoredRiskLevel(form) ?? currentRiskLevel ?? "MEDIUM",
@@ -79,15 +78,15 @@ export function RiskAssessmentCard({ clientId, form, currentRiskLevel }: RiskAss
   }
 
   function handleCancel() {
-    setValues(parse(form));
-    setRiskLevel(parseStoredRiskLevel(form) ?? currentRiskLevel ?? "MEDIUM");
+    setValues(parse(savedForm));
+    setRiskLevel(parseStoredRiskLevel(savedForm) ?? currentRiskLevel ?? "MEDIUM");
     setEditing(false);
   }
 
   function handleSave() {
     startTransition(async () => {
       const result = await upsertClinicalForm({
-        id: form?.id,
+        id: savedForm?.id,
         clientId,
         formType: "RISK_ASSESSMENT",
         title: "Evaluare risc",
@@ -95,9 +94,11 @@ export function RiskAssessmentCard({ clientId, form, currentRiskLevel }: RiskAss
         status: "COMPLETE",
       });
       if ("error" in result) { toast.error(result.error); return; }
+      setSavedForm(result.form);
+      setValues(parse(result.form));
+      setRiskLevel(parseStoredRiskLevel(result.form) ?? riskLevel);
       toast.success("Evaluarea de risc a fost salvată.");
       setEditing(false);
-      router.refresh();
     });
   }
 

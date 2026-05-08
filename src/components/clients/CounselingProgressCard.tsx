@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { Compass, Check, Pencil, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -89,7 +88,6 @@ export function CounselingProgressCard({
   clientId,
   form,
 }: CounselingProgressCardProps) {
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [editing, setEditing] = useState(!form);
 
@@ -98,6 +96,7 @@ export function CounselingProgressCard({
     return { ...EMPTY, ...(value.content as Partial<CounselingProgressContent>) };
   }
 
+  const [savedForm, setSavedForm] = useState(form);
   const [values, setValues] = useState<CounselingProgressContent>(() => parse(form));
 
   function set(key: keyof CounselingProgressContent, value: string) {
@@ -105,14 +104,14 @@ export function CounselingProgressCard({
   }
 
   function handleCancel() {
-    setValues(parse(form));
+    setValues(parse(savedForm));
     setEditing(false);
   }
 
   function handleSave() {
     startTransition(async () => {
       const result = await upsertClinicalForm({
-        id: form?.id,
+        id: savedForm?.id,
         clientId,
         formType: "COUNSELING_PROGRESS",
         title: "Raport progres consiliere",
@@ -123,9 +122,10 @@ export function CounselingProgressCard({
         toast.error(result.error);
         return;
       }
+      setSavedForm(result.form);
+      setValues(parse(result.form));
       toast.success("Raportul de progres pentru consiliere a fost salvat.");
       setEditing(false);
-      router.refresh();
     });
   }
 

@@ -1468,7 +1468,11 @@ export function ClientDashboardUI({
                 items={homeworkItemsState}
               />
               <CbtCaseFormulationCard clientId={client.id} formulation={cbtFormulationState} />
-              <CbtProgressCard clientId={client.id} form={cbtProgressFormState} />
+              <CbtProgressCard
+                key={cbtProgressFormState?.updated_at ?? "cbt-progress-empty"}
+                clientId={client.id}
+                form={cbtProgressFormState}
+              />
             </>
           ) : null}
 
@@ -1484,9 +1488,22 @@ export function ClientDashboardUI({
                 clientId={client.id}
                 cards={dbtDiaryCardsState}
               />
-              <RiskAssessmentCard clientId={client.id} form={riskAssessmentFormState} currentRiskLevel={client.risk_level as import("@/lib/clients/service-track").RiskLevel | null} />
-              <DbtCommitmentCard clientId={client.id} form={dbtCommitmentFormState} />
-              <DbtProgressCard clientId={client.id} form={dbtProgressFormState} />
+              <RiskAssessmentCard
+                key={riskAssessmentFormState?.updated_at ?? `risk-empty:${client.risk_level ?? "none"}`}
+                clientId={client.id}
+                form={riskAssessmentFormState}
+                currentRiskLevel={client.risk_level as import("@/lib/clients/service-track").RiskLevel | null}
+              />
+              <DbtCommitmentCard
+                key={dbtCommitmentFormState?.updated_at ?? "dbt-commitment-empty"}
+                clientId={client.id}
+                form={dbtCommitmentFormState}
+              />
+              <DbtProgressCard
+                key={dbtProgressFormState?.updated_at ?? "dbt-progress-empty"}
+                clientId={client.id}
+                form={dbtProgressFormState}
+              />
             </>
           ) : null}
 
@@ -1497,17 +1514,42 @@ export function ClientDashboardUI({
                 clientId={client.id}
                 plan={safetyPlanState}
               />
-              <AnamnesisCard clientId={client.id} form={anamnesisFormState} />
-              <ClinicalInterviewCard clientId={client.id} form={clinicalInterviewFormState} />
-              <RiskAssessmentCard clientId={client.id} form={riskAssessmentFormState} currentRiskLevel={client.risk_level as import("@/lib/clients/service-track").RiskLevel | null} />
+              <AnamnesisCard
+                key={anamnesisFormState?.updated_at ?? "anamnesis-empty"}
+                clientId={client.id}
+                form={anamnesisFormState}
+              />
+              <ClinicalInterviewCard
+                key={clinicalInterviewFormState?.updated_at ?? "clinical-interview-empty"}
+                clientId={client.id}
+                form={clinicalInterviewFormState}
+              />
+              <RiskAssessmentCard
+                key={riskAssessmentFormState?.updated_at ?? `risk-empty:${client.risk_level ?? "none"}`}
+                clientId={client.id}
+                form={riskAssessmentFormState}
+                currentRiskLevel={client.risk_level as import("@/lib/clients/service-track").RiskLevel | null}
+              />
             </>
           ) : null}
 
           {!anonymized && client.service_type === "COUNSELING" && hasLoadedClinicData ? (
             <>
-              <CounselingPlanCard clientId={client.id} form={counselingPlanFormState} />
-              <RecommendationsCard clientId={client.id} form={recommendationsFormState} />
-              <CounselingProgressCard clientId={client.id} form={counselingProgressFormState} />
+              <CounselingPlanCard
+                key={counselingPlanFormState?.updated_at ?? "counseling-plan-empty"}
+                clientId={client.id}
+                form={counselingPlanFormState}
+              />
+              <RecommendationsCard
+                key={recommendationsFormState?.updated_at ?? "recommendations-empty"}
+                clientId={client.id}
+                form={recommendationsFormState}
+              />
+              <CounselingProgressCard
+                key={counselingProgressFormState?.updated_at ?? "counseling-progress-empty"}
+                clientId={client.id}
+                form={counselingProgressFormState}
+              />
             </>
           ) : null}
         </>

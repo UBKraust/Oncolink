@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { Check, ClipboardList, Pencil, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -43,7 +42,6 @@ interface ClinicalInterviewCardProps {
 }
 
 export function ClinicalInterviewCard({ clientId, form }: ClinicalInterviewCardProps) {
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [editing, setEditing] = useState(!form);
 
@@ -52,6 +50,7 @@ export function ClinicalInterviewCard({ clientId, form }: ClinicalInterviewCardP
     return { ...EMPTY, ...(f.content as Partial<InterviewContent>) };
   }
 
+  const [savedForm, setSavedForm] = useState(form);
   const [values, setValues] = useState<InterviewContent>(() => parse(form));
 
   function set(key: keyof InterviewContent, value: string) {
@@ -59,14 +58,14 @@ export function ClinicalInterviewCard({ clientId, form }: ClinicalInterviewCardP
   }
 
   function handleCancel() {
-    setValues(parse(form));
+    setValues(parse(savedForm));
     setEditing(false);
   }
 
   function handleSave() {
     startTransition(async () => {
       const result = await upsertClinicalForm({
-        id: form?.id,
+        id: savedForm?.id,
         clientId,
         formType: "CLINICAL_INTERVIEW",
         title: "Interviu clinic",
@@ -74,9 +73,10 @@ export function ClinicalInterviewCard({ clientId, form }: ClinicalInterviewCardP
         status: Object.values(values).some((v) => v.trim()) ? "COMPLETE" : "DRAFT",
       });
       if ("error" in result) { toast.error(result.error); return; }
+      setSavedForm(result.form);
+      setValues(parse(result.form));
       toast.success("Interviul clinic a fost salvat.");
       setEditing(false);
-      router.refresh();
     });
   }
 

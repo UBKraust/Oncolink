@@ -219,7 +219,7 @@ export async function upsertClinicalForm(data: {
   title?: string;
   content: unknown;
   status?: FormStatus;
-}): Promise<{ id: string } | { error: string }> {
+}): Promise<{ id: string; form: ClinicalFormRow } | { error: string }> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -239,11 +239,13 @@ export async function upsertClinicalForm(data: {
   };
 
   if (data.id) {
-    const { error } = await supabase
+    const { data: updated, error } = await supabase
       .from("clinical_forms")
       .update(payload)
       .eq("id", data.id)
-      .eq("therapist_id", user.id);
+      .eq("therapist_id", user.id)
+      .select("*")
+      .single();
     if (error) return { error: error.message };
     if (Object.keys(clientSyncPayload).length > 0) {
       const { error: clientError } = await supabase
@@ -256,13 +258,13 @@ export async function upsertClinicalForm(data: {
       }
     }
     revalidateClinicalPaths(data.clientId);
-    return { id: data.id };
+    return { id: data.id, form: updated as ClinicalFormRow };
   }
 
   const { data: inserted, error } = await supabase
     .from("clinical_forms")
     .insert({ ...payload, created_at: new Date().toISOString() })
-    .select("id")
+    .select("*")
     .single();
   if (error) return { error: error.message };
   if (Object.keys(clientSyncPayload).length > 0) {
@@ -276,7 +278,7 @@ export async function upsertClinicalForm(data: {
     }
   }
   revalidateClinicalPaths(data.clientId);
-  return { id: inserted.id };
+  return { id: inserted.id, form: inserted as ClinicalFormRow };
 }
 
 export async function deleteClinicalForm(id: string): Promise<{ error?: string }> {

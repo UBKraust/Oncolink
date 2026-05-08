@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { ActivitySquare, Check, Pencil, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -86,7 +85,6 @@ interface DbtProgressCardProps {
 }
 
 export function DbtProgressCard({ clientId, form }: DbtProgressCardProps) {
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [editing, setEditing] = useState(!form);
 
@@ -95,6 +93,7 @@ export function DbtProgressCard({ clientId, form }: DbtProgressCardProps) {
     return { ...EMPTY, ...(value.content as Partial<DbtProgressContent>) };
   }
 
+  const [savedForm, setSavedForm] = useState(form);
   const [values, setValues] = useState<DbtProgressContent>(() => parse(form));
 
   function set(key: keyof DbtProgressContent, value: string) {
@@ -102,14 +101,14 @@ export function DbtProgressCard({ clientId, form }: DbtProgressCardProps) {
   }
 
   function handleCancel() {
-    setValues(parse(form));
+    setValues(parse(savedForm));
     setEditing(false);
   }
 
   function handleSave() {
     startTransition(async () => {
       const result = await upsertClinicalForm({
-        id: form?.id,
+        id: savedForm?.id,
         clientId,
         formType: "DBT_PROGRESS",
         title: "Raport progres DBT",
@@ -120,9 +119,10 @@ export function DbtProgressCard({ clientId, form }: DbtProgressCardProps) {
         toast.error(result.error);
         return;
       }
+      setSavedForm(result.form);
+      setValues(parse(result.form));
       toast.success("Raportul de progres DBT a fost salvat.");
       setEditing(false);
-      router.refresh();
     });
   }
 

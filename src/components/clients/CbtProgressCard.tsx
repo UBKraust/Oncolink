@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { Activity, Check, Pencil, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -86,7 +85,6 @@ interface CbtProgressCardProps {
 }
 
 export function CbtProgressCard({ clientId, form }: CbtProgressCardProps) {
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [editing, setEditing] = useState(!form);
 
@@ -95,6 +93,7 @@ export function CbtProgressCard({ clientId, form }: CbtProgressCardProps) {
     return { ...EMPTY, ...(value.content as Partial<CbtProgressContent>) };
   }
 
+  const [savedForm, setSavedForm] = useState(form);
   const [values, setValues] = useState<CbtProgressContent>(() => parse(form));
 
   function set(key: keyof CbtProgressContent, value: string) {
@@ -102,14 +101,14 @@ export function CbtProgressCard({ clientId, form }: CbtProgressCardProps) {
   }
 
   function handleCancel() {
-    setValues(parse(form));
+    setValues(parse(savedForm));
     setEditing(false);
   }
 
   function handleSave() {
     startTransition(async () => {
       const result = await upsertClinicalForm({
-        id: form?.id,
+        id: savedForm?.id,
         clientId,
         formType: "CBT_PROGRESS",
         title: "Raport progres CBT",
@@ -120,9 +119,10 @@ export function CbtProgressCard({ clientId, form }: CbtProgressCardProps) {
         toast.error(result.error);
         return;
       }
+      setSavedForm(result.form);
+      setValues(parse(result.form));
       toast.success("Raportul de progres CBT a fost salvat.");
       setEditing(false);
-      router.refresh();
     });
   }
 

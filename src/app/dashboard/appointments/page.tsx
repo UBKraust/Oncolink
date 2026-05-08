@@ -2,7 +2,7 @@ import Link from "next/link";
 import { CalendarPlus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { listAppointments } from "@/lib/appointments/queries";
+import { listAppointments, type AppointmentWithClient } from "@/lib/appointments/queries";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { DashboardPage, PageHeader, SetupBanner } from "@/components/app/page-shell";
 import { AppointmentsWorkspace } from "@/components/appointments/AppointmentsWorkspace";
@@ -21,7 +21,7 @@ export default async function AppointmentsPage({
 }) {
   const { status, queue, from, to, session, view } = await searchParams;
   const configured = isSupabaseConfigured();
-  let appointments = [];
+  let appointments: AppointmentWithClient[] = [];
   let loadError: string | null = null;
 
   try {

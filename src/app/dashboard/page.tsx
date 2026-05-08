@@ -20,7 +20,7 @@ import {
   DashboardWorkspaceTabs,
 } from "@/components/dashboard/DashboardWorkspaceTabs";
 import { Button } from "@/components/ui/button";
-import { DashboardPage as DashboardShell, PageHeader } from "@/components/app/page-shell";
+import { DashboardPage as DashboardShell, PageHeader, SetupBanner } from "@/components/app/page-shell";
 import {
   getDashboardStats,
   getAppointmentsToday,
@@ -39,6 +39,16 @@ import { cn } from "@/lib/utils";
 
 type DashboardWorkspace = "focus" | "flow" | "ops";
 
+const EMPTY_COMPLIANCE_DATA = {
+  totalClients: 0,
+  compliantCount: 0,
+  warningCount: 0,
+  criticalCount: 0,
+  overallScore: 100,
+  results: [],
+  lastChecked: new Date(0).toISOString(),
+};
+
 function isDashboardWorkspace(value: string | undefined): value is DashboardWorkspace {
   return value === "focus" || value === "flow" || value === "ops";
 }
@@ -51,6 +61,16 @@ export default async function DashboardPage({
   const today = new Date();
   const params = await searchParams;
   const configured = isSupabaseConfigured();
+  const loadWarnings: string[] = [];
+  const safeLoad = async <T,>(label: string, fallback: T, loader: () => Promise<T>) => {
+    try {
+      return await loader();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "eroare necunoscută";
+      loadWarnings.push(`${label}: ${message}`);
+      return fallback;
+    }
+  };
   const [
     stats,
     appointmentsToday,
@@ -64,17 +84,38 @@ export default async function DashboardPage({
     assessmentTasks,
     researchReadiness,
   ] = await Promise.all([
-    getDashboardStats(),
-    getAppointmentsToday(),
-    getUnpaidInvoices(),
-    getUpcomingAppointments(),
-    runServerComplianceCheck(),
-    getTherapistSettings().catch(() => null),
-    getDashboardClinicalAlerts(),
-    getDashboardDocumentTasks(),
-    getDashboardServiceTrackStats(),
-    getDashboardAssessmentTasks(),
-    getDashboardResearchReadiness(),
+    safeLoad("Statistici dashboard", {
+      totalRevenue: 0,
+      expensesMonth: 0,
+      netProfitMonth: 0,
+      appointmentsToday: 0,
+      totalHours: 0,
+      pendingMinorReviews: 0,
+      privatePatients: 0,
+      clinicPatients: 0,
+      minorPatients: 0,
+      adultPatients: 0,
+      b2bPatients: 0,
+      vaultAlertsCount: 0,
+      vaultTotalDocs: 0,
+    }, getDashboardStats),
+    safeLoad("Programări de azi", [], getAppointmentsToday),
+    safeLoad("Facturi restante", [], getUnpaidInvoices),
+    safeLoad("Programări următoare", [], getUpcomingAppointments),
+    safeLoad("Conformitate", EMPTY_COMPLIANCE_DATA, runServerComplianceCheck),
+    safeLoad("Setări terapeut", null, getTherapistSettings),
+    safeLoad("Alerte clinice", [], getDashboardClinicalAlerts),
+    safeLoad("Taskuri documente", [], getDashboardDocumentTasks),
+    safeLoad("Piste clinice", [], getDashboardServiceTrackStats),
+    safeLoad("Taskuri evaluare", [], getDashboardAssessmentTasks),
+    safeLoad("Research readiness", {
+      serviceTypesConfigured: 0,
+      totalClients: 0,
+      assessmentsCount: 0,
+      clientsWithScores: 0,
+      researchConsents: 0,
+      hasData: false,
+    }, getDashboardResearchReadiness),
   ]);
   const therapistName = settings?.full_name ?? settings?.practice_name ?? "Terapeut";
   const incompleteFiles = documentTasks.filter((task) =>
@@ -90,6 +131,13 @@ export default async function DashboardPage({
   return (
     <DashboardShell>
       {configured ? <RealtimeDashboard /> : null}
+
+      {configured && loadWarnings.length > 0 ? (
+        <SetupBanner
+          title="Unele widget-uri nu au putut fi încărcate"
+          description={`Dashboardul rămâne utilizabil, dar unele panouri afișează momentan valori goale. Detalii: ${loadWarnings.join(" · ")}`}
+        />
+      ) : null}
 
       <PageHeader
         eyebrow={format(today, "EEEE, d MMMM yyyy", { locale: ro })}

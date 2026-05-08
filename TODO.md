@@ -1,6 +1,53 @@
 # TODO — Pași următori de implementat
 
-Generat: 2026-05-02 · Actualizat: 2026-05-02 · Stare baseline: lint ✅ · build ✅ · `npx supabase db push` ✅
+Generat: 2026-05-02 · Actualizat: 2026-05-08
+
+---
+
+## P0 — Stabilitate UI/UX și acțiuni critice
+
+Acest bloc înlocuiește ordinea de lucru imediată după auditul transversal al aplicației.
+
+### În curs acum
+
+- [ ] Dashboard rezilient la erori parțiale de încărcare
+  Context: dacă un singur query Supabase eșuează, nu trebuie să cadă întregul `/dashboard`.
+- [ ] Detaliu programare rezilient la `fetch failed`
+  Context: `/dashboard/appointments/[id]` trebuie să arate banner de eroare și cale de întoarcere, nu runtime crash.
+
+### Următoarele P0
+
+- [ ] Înlocuiește acțiunea bulk SmartBill placeholder cu flux real server-side
+  Context: `alert(...)` în billing induce că emiterea s-a făcut, dar nu execută nimic real.
+- [ ] Separă clar `empty state` de `error state` în zonele `forms`, `clients`, `invoices`
+  Context: listele goale și erorile de infrastructură sunt afișate prea similar.
+- [ ] Elimină fallback-urile care mimează succesul pe `PatientDocuments`
+  Context: uploadul local după eșecul API creează impresia falsă că documentul a fost salvat real.
+
+## P1 — Date reale și coerență operațională
+
+- [ ] Înlocuiește mock data din `ClientFinancialHistory` cu date reale din appointments + invoices + payments
+- [ ] Elimină ultimele ramuri `Mod Demo` din `ClientDetailOverlay`
+- [ ] Adaugă workspace financiar dedicat pentru facturi `PREGĂTITĂ`
+- [ ] Batch select + batch send către SmartBill din `/dashboard/invoices`
+- [ ] Istoric vizibil `PREGĂTITĂ -> EMISĂ -> PLĂTITĂ / ANULATĂ`
+
+## P2 — Readiness clinic și conformitate
+
+- [ ] Blochează administrarea testelor care au itemi placeholder
+- [ ] Afișează explicit când P3/forms nu sunt disponibile sau migrările lipsesc
+- [ ] Marchează modulele cu stare de readiness: `safe`, `partial`, `demo`, `blocked`
+- [ ] Unifică bannerele de setup, warning și error într-un pattern UX comun
+
+## P3 — Extinderea pattern-ului bun din Programări
+
+- [ ] Mută mai multe acțiuni din `Clients` în overlay-uri locale, fără scoatere din context
+- [ ] Aplică același model de lucru local pentru `Facturi`, `Forms`, `Documents`
+- [ ] Reduce zonele unde `router.refresh()` e încă reflexul principal după acțiuni mici
+
+---
+
+Stare baseline istorică: lint ✅ · build ✅ · `npx supabase db push` ✅
 
 ---
 

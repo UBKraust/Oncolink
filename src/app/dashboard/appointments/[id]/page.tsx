@@ -67,11 +67,46 @@ export default async function AppointmentDetailPage({
 }) {
   const { id } = await params;
   const { demo } = await searchParams;
-  const [appointment, existingInvoice] = await Promise.all([
-    getAppointment(id),
-    getInvoiceByAppointment(id),
-  ]);
-  if (!appointment) notFound();
+  let appointment = null;
+  let existingInvoice = null;
+  let loadError: string | null = null;
+
+  try {
+    [appointment, existingInvoice] = await Promise.all([
+      getAppointment(id),
+      getInvoiceByAppointment(id),
+    ]);
+  } catch (error) {
+    loadError =
+      error instanceof Error
+        ? error.message
+        : "Nu am putut încărca programarea în acest moment.";
+  }
+
+  if (!appointment && !loadError) notFound();
+  if (!appointment) {
+    return (
+      <DashboardPage className="max-w-5xl space-y-5">
+        <Link
+          href="/dashboard/appointments"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Înapoi la programări
+        </Link>
+
+        <PageHeader
+          title="Programarea nu poate fi afișată momentan"
+          description="Datele sesiunii nu au putut fi încărcate, dar poți reveni în workspace fără să pierzi contextul."
+        />
+
+        <SetupBanner
+          title="Eroare de încărcare"
+          description={`Nu am putut încărca această programare acum. Reîncearcă în câteva secunde. Detaliu: ${loadError}`}
+        />
+      </DashboardPage>
+    );
+  }
 
   const location = deriveLocation(appointment);
   const LocIcon = locationIcon[location];

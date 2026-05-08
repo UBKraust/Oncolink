@@ -147,6 +147,18 @@ export function ClientsClient({
   const activeFiltersLabel = isFiltered
     ? `${filteredClients.length} rezultat${filteredClients.length === 1 ? "" : "e"}`
     : `${initialClients.length} pacienți în registru`;
+  const emptyStateTitle = isFiltered
+    ? "Nu există pacienți pentru filtrele curente"
+    : "Nu am găsit niciun client cu acest nume.";
+  const emptyStateDescription = isFiltered
+    ? "Ajustează căutarea sau filtrele active pentru a vedea din nou pacienții relevanți."
+    : "Încearcă un alt nume, email, telefon sau CNP/CIF.";
+
+  function clearFilters() {
+    setSearchQuery("");
+    setServiceFilter("ALL");
+    setOperationalFilter("ALL");
+  }
 
   function openClient(clientId: string) {
     router.push(`/dashboard/clients/${clientId}`);
@@ -236,7 +248,13 @@ export function ClientsClient({
           <div className="rounded-[1.75rem] border border-border/60 bg-card px-6 py-12 text-center shadow-sm">
             <div className="flex flex-col items-center gap-3 text-muted-foreground">
               <Users className="h-12 w-12 opacity-20" />
-              <p className="font-medium">Nu am găsit niciun client cu acest nume.</p>
+              <p className="font-medium text-foreground">{emptyStateTitle}</p>
+              <p className="max-w-sm text-sm text-muted-foreground">{emptyStateDescription}</p>
+              {isFiltered ? (
+                <Button type="button" variant="outline" className="mt-2 rounded-2xl" onClick={clearFilters}>
+                  Resetează filtrele
+                </Button>
+              ) : null}
             </div>
           </div>
         ) : (
@@ -346,11 +364,17 @@ export function ClientsClient({
           </TableHeader>
           <TableBody>
             {filteredClients.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="h-64 text-center">
+                <TableRow>
+                  <TableCell colSpan={5} className="h-64 text-center">
                    <div className="flex flex-col items-center gap-3 text-muted-foreground">
                       <Users className="h-12 w-12 opacity-20" />
-                      <p className="font-medium">Nu am găsit niciun client cu acest nume.</p>
+                      <p className="font-medium text-foreground">{emptyStateTitle}</p>
+                      <p className="max-w-sm text-sm text-muted-foreground">{emptyStateDescription}</p>
+                      {isFiltered ? (
+                        <Button type="button" variant="outline" className="mt-2 rounded-2xl" onClick={clearFilters}>
+                          Resetează filtrele
+                        </Button>
+                      ) : null}
                    </div>
                 </TableCell>
               </TableRow>

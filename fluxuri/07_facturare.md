@@ -2,7 +2,11 @@
 
 ## Descriere
 
-Facturarea este gestionată intern cu SmartBill ca sistem extern de emitere. Terapeutul creează facturi din dashboard, acestea sunt trimise către SmartBill prin API, iar raportarea financiară (revenue forecast, cheltuieli, bilanț lunar) este generată intern.
+Facturarea este gestionată intern cu SmartBill ca sistem extern de emitere. În starea actuală, aplicația separă clar trei etape:
+
+1. calculul și închiderea lunii în `/dashboard/billing`;
+2. pregătirea internă a facturilor pentru financiar, cu status local `PREGĂTITĂ`;
+3. trimiterea efectivă în SmartBill din registrul de facturi.
 
 ## Fișiere Cheie
 
@@ -10,9 +14,10 @@ Facturarea este gestionată intern cu SmartBill ca sistem extern de emitere. Ter
 - [src/components/invoices/invoice-form.tsx](../src/components/invoices/invoice-form.tsx) — formular factură
 - [src/components/invoices/invoice-actions.tsx](../src/components/invoices/invoice-actions.tsx) — acțiuni factură
 - [src/app/dashboard/invoices/actions.ts](../src/app/dashboard/invoices/actions.ts) — Server Actions CRUD
+- [src/lib/billing/monthly-summary.ts](../src/lib/billing/monthly-summary.ts) — sursa comună pentru sumarul lunar
 - [src/lib/smartbill/](../src/lib/smartbill/) — client API SmartBill
 - [src/app/api/webhooks/smartbill/route.ts](../src/app/api/webhooks/smartbill/route.ts) — webhook SmartBill
-- [src/app/api/imports/invoices/route.ts](../src/app/api/imports/invoices/route.ts) — import facturi existente
+- [src/app/api/billing/monthly-export/route.ts](../src/app/api/billing/monthly-export/route.ts) — export lunar CSV
 - [src/app/dashboard/billing/page.tsx](../src/app/dashboard/billing/page.tsx) — raport financiar lunar
 - [src/app/dashboard/expenses/](../src/app/dashboard/expenses/) — cheltuieli cabinet
 
@@ -25,51 +30,53 @@ sequenceDiagram
     participant DB as Supabase
     participant SB as SmartBill API
 
-    Note over T,SB: CREARE FACTURĂ MANUALĂ
+    Note over T,SB: CALCUL LUNAR → COADĂ FINANCIARĂ
 
-    T->>UI: /dashboard/invoices/new\nsau Ședință → "Creează factură"
-    UI-->>T: InvoiceForm\n(client pre-completat dacă din ședință)
+    T->>UI: /dashboard/billing
+    UI-->>T: Raport lunar calculat\n(ședințe, ore, sume)
+    T->>UI: "Trimite la financiar"
+    UI->>DB: INSERT invoices\n{appointment_id, amount, status: PREGĂTITĂ}
+    UI-->>T: Coada financiară creată ✅
 
-    T->>UI: Completează:\n• Client\n• Servicii + tarife\n• Data emitere\n• Scadență
+    Note over T,SB: FINANCIAR → EMITERE SMARTBILL
 
-    T->>UI: Submit
-    UI->>DB: INSERT invoices\n{clientId, items, amount, status: Draft}
+    T->>UI: /dashboard/invoices?status=PREGĂTITĂ
+    UI-->>T: Registru facturi pregătite
+    T->>UI: Deschide factură\n→ "Trimite în SmartBill"
+    UI->>SB: POST /invoice (SmartBill API)
+    SB-->>UI: {series, number, paymentLink, pdf}
+    UI->>DB: UPDATE invoices SET\nsmartbill_id, smartbill_series,\nsmartbill_number, status: EMISĂ
 
-    T->>UI: "Emite factură (SmartBill)"
-    UI->>SB: POST /invoices (SmartBill API)
-    SB-->>UI: {invoiceNumber, invoiceId}
-
-    UI->>DB: UPDATE invoices SET\nsmartbill_id, invoice_number,\nstatus: Emisa
-
-    UI-->>T: Factură emisă ✅\n(nr. factură SmartBill)
+    UI-->>T: Factură emisă ✅
 
     Note over T,SB: WEBHOOK CONFIRMARE
 
     SB->>UI: POST /api/webhooks/smartbill\n(confirmare/status update)
     UI->>DB: UPDATE invoices SET status
 
-    Note over T,SB: IMPORT FACTURI EXISTENTE
+    Note over T,SB: FACTURARE MANUALĂ DIRECTĂ
 
-    T->>UI: /dashboard/settings → Import
-    UI->>SB: GET /invoices (SmartBill API)
-    SB-->>UI: lista facturi existente
-    UI->>DB: UPSERT invoices (sync)
-    UI-->>T: Facturi importate ✅
+    T->>UI: /dashboard/invoices/new
+    UI-->>T: InvoiceForm
+    T->>UI: Submit
+    UI->>SB: emitere directă (dacă SmartBill este configurat)
+    UI->>DB: persistă factura local
 ```
 
 ## Stările unei Facturi
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Draft : creare în dashboard
+    [*] --> Pregatita : creată pentru financiar
 
-    Draft --> Emisa : trimitere la SmartBill
+    Pregatita --> Emisa : trimitere la SmartBill
     Emisa --> Platita : confirmare plată
-    Emisa --> Scadenta : depășit termenul
-    Scadenta --> Platita : plată tardivă
-    Emisa --> Stornata : stornare
+    Emisa --> Restanta : follow-up financiar
+    Restanta --> Platita : plată tardivă
+    Emisa --> Anulata : anulare
+    Pregatita --> Anulata : anulare înainte de emitere
     Platita --> [*]
-    Stornata --> [*]
+    Anulata --> [*]
 ```
 
 ## Raportare Financiară
@@ -77,19 +84,19 @@ stateDiagram-v2
 ```mermaid
 flowchart TD
     subgraph BILLING["/dashboard/billing — Raport Lunar"]
-        REV["Revenue\nTotal încasat luna curentă"]
-        EXP["Cheltuieli\nTotal cheltuieli înregistrate"]
-        NET["Net\nVenit net (Revenue - Cheltuieli)"]
-        FORE["Revenue Forecast\n/api/billing/revenue-forecast\n(proiecție bazată pe programări viitoare)"]
-        MONTHLY["/api/analytics/monthly-review\nRaport detaliat per lună"]
+        CALC["Calculează luna\nședințe + ore + sume"]
+        QUEUE["Trimite la financiar\ncreează PREGĂTITĂ"]
+        EXPORT["Export lunar CSV\n/api/billing/monthly-export"]
+        FORE["Revenue Forecast\n/api/billing/revenue-forecast"]
     end
 
-    subgraph REVIEW["/dashboard/review — Review Lunar"]
-        KPI["KPI-uri lunare:\n• Clienți noi\n• Ședințe completate\n• Revenue\n• Rata prezentare"]
-        EXPORT["Export raport PDF\n(src/lib/pdf/)"]
+    subgraph INVOICES["/dashboard/invoices — Coada financiară"]
+        PREP["Filtru PREGĂTITĂ"]
+        SEND["Trimite în SmartBill"]
+        FOLLOW["Urmărește EMISĂ / RESTANTĂ / PLĂTITĂ"]
     end
 
-    BILLING --> REVIEW
+    BILLING --> INVOICES
 ```
 
 ## Management Cheltuieli
@@ -117,16 +124,17 @@ flowchart LR
 erDiagram
     invoices {
         uuid id PK
-        uuid client_id FK
         uuid appointment_id FK
-        text invoice_number
+        text client_name
         text smartbill_id
+        text smartbill_series
+        text smartbill_number
         decimal amount
-        text status "Draft|Emisa|Platita|Scadenta|Stornata"
-        date issue_date
-        date due_date
-        jsonb items
-        timestamp created_at
+        text status "Pregatita|Emisa|Platita|Restanta|Anulata"
+        text payment_link
+        text pdf_url
+        timestamptz issued_at
+        uuid therapist_id
     }
     expenses {
         uuid id PK
@@ -136,9 +144,19 @@ erDiagram
         date expense_date
         text receipt_url
     }
-    clients ||--o{ invoices : "are facturi"
     invoices }o--|| appointments : "asociată ședinței"
 ```
+
+## Contract UX Curent
+
+- `/dashboard/billing` este suprafața de calcul și închidere lunară
+- `Trimite la financiar` nu trimite direct în SmartBill; doar pregătește coada internă
+- `/dashboard/invoices` este spațiul financiar de control operațional
+- `PREGĂTITĂ` înseamnă:
+  - factura există local
+  - este asociată unei programări
+  - poate fi verificată de financiar
+  - abia apoi este emisă în SmartBill
 
 ## SmartBill Integration
 

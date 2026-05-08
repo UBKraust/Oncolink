@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import {
   TrendingUp, Clock, Users, Wallet, AlertCircle,
   CheckCircle2, FileCheck2, RotateCcw, Loader2,
@@ -10,6 +11,8 @@ import { CardContent, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { queueMonthlyInvoices } from "@/app/dashboard/invoices/actions";
+import { toast } from "@/components/ui/toast";
 import {
   DashboardPage,
   EmptyState,
@@ -28,13 +31,15 @@ interface ClientRow {
   totalMinutes: number;
   totalAmount: number;
   collectedAmount: number;
-  invoiceStatus: "ACHITAT" | "PARTIAL" | "NEEMIS";
+  invoiceStatus: "ACHITAT" | "PARTIAL" | "NEEMIS" | "PREGĂTITĂ";
 }
 
 interface MonthlySummary {
   year: number; month: number;
   totalSessions: number; totalHours: number;
   totalAmount: number; collectedAmount: number; uncollectedAmount: number;
+  invoiceCandidatesCount: number;
+  preparedInvoicesCount: number;
   clients: ClientRow[];
   setupRequired?: boolean;
 }
@@ -55,6 +60,7 @@ const MONTHS_RO = [
 const STATUS_CONFIG = {
   ACHITAT: { label: "Achitat", variant: "success" as const },
   PARTIAL: { label: "Parțial", variant: "warning" as const },
+  PREGĂTITĂ: { label: "În coadă financiară", variant: "info" as const },
   NEEMIS:  { label: "De facturat", variant: "info" as const },
 };
 
@@ -66,6 +72,8 @@ const EMPTY_SUMMARY: MonthlySummary = {
   totalAmount: 0,
   collectedAmount: 0,
   uncollectedAmount: 0,
+  invoiceCandidatesCount: 0,
+  preparedInvoicesCount: 0,
   clients: [],
 };
 
@@ -106,6 +114,8 @@ function normalizeMonthlySummary(payload: unknown, fallbackYear: number, fallbac
     totalAmount: asNumber(source.totalAmount),
     collectedAmount: asNumber(source.collectedAmount),
     uncollectedAmount: asNumber(source.uncollectedAmount),
+    invoiceCandidatesCount: asNumber(source.invoiceCandidatesCount),
+    preparedInvoicesCount: asNumber(source.preparedInvoicesCount),
     clients,
     setupRequired: Boolean(source.setupRequired),
   };
@@ -120,6 +130,7 @@ export default function BillingPage() {
   const [data,  setData]  = useState<MonthlySummary | null>(null);
   const [forecast, setForecast] = useState<ForecastPayload | null>(null);
   const [loading, setLoading] = useState(false);
+  const [queuePending, startQueueTransition] = useTransition();
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const loadSummary = useCallback(async () => {
@@ -172,26 +183,40 @@ export default function BillingPage() {
     alert(`[SmartBill] Se vor emite facturi pentru:\n${names}\n\nIntegrarea SmartBill va procesa secvențial.`);
   }
 
-  function exportCsv() {
+  function handleMonthlyExport() {
     if (!data) return;
-    const header = ["Client","Ședinte","Ore","De încasat (RON)","Încasat (RON)","Status"];
-    const rows = (data.clients ?? []).map(c => [
-      c.clientName, c.sessions,
-      (c.totalMinutes / 60).toFixed(1),
-      c.totalAmount, c.collectedAmount,
-      STATUS_CONFIG[c.invoiceStatus].label,
-    ]);
-    const csv = "\uFEFF" + [header, ...rows].map(r => r.map(v => `"${v}"`).join(",")).join("\r\n");
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
-    a.download = `raport_lunar_${year}_${String(month).padStart(2,"0")}.csv`;
-    a.click();
+    window.location.assign(
+      `/api/billing/monthly-export?year=${data.year}&month=${data.month}`,
+    );
+  }
+
+  function handleSendToFinancial() {
+    if (!data) return;
+
+    startQueueTransition(async () => {
+      const result = await queueMonthlyInvoices(data.year, data.month);
+      if (!result.ok) {
+        toast.error(result.error ?? "Nu am putut trimite luna către financiar.");
+        return;
+      }
+
+      toast.success(
+        result.createdCount
+          ? `${result.createdCount} facturi au fost pregătite pentru financiar.`
+          : "Nu au fost găsite programări noi de trimis către financiar.",
+      );
+      await loadSummary();
+    });
   }
 
   const clients = data?.clients ?? [];
   const unpaidClients = clients.filter(c => c.invoiceStatus !== "ACHITAT");
   const collectionRate = data ? Math.round((data.collectedAmount / (data.totalAmount || 1)) * 100) : 0;
   const setupRequired = Boolean(data?.setupRequired || forecast?.setupRequired);
+  const canExportMonthly = Boolean(data && data.totalHours > 0 && !setupRequired);
+  const canSendToFinancial = Boolean(
+    data && data.totalHours > 0 && data.invoiceCandidatesCount > 0 && !setupRequired,
+  );
 
   return (
     <DashboardPage className="max-w-5xl">
@@ -214,11 +239,16 @@ export default function BillingPage() {
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
             Calculează
           </Button>
-          {data && (
-            <Button variant="outline" size="icon" onClick={exportCsv} title="Export CSV" aria-label="Exportă raportul în format CSV">
-              <Download className="h-4 w-4" />
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            onClick={handleMonthlyExport}
+            disabled={!canExportMonthly}
+            className="gap-1.5"
+            title="Exportul lunar devine disponibil după calculul orelor lunii selectate"
+          >
+            <Download className="h-4 w-4" />
+            Export lunar
+          </Button>
         </div>}
       />
 
@@ -240,6 +270,37 @@ export default function BillingPage() {
               accent={collectionRate >= 75 ? "success" : collectionRate >= 40 ? "warning" : "danger"}
             />
           </div>
+
+          <SectionCard
+            title="Închidere lunară"
+            description="După ce orele lunii au fost calculate, poți exporta același set de date într-un raport lunar CSV."
+            icon={Download}
+          >
+            <div className="flex flex-wrap items-center gap-3 px-6 py-5">
+              <Badge variant={canExportMonthly ? "success" : "outline"}>
+                {data.totalHours} ore calculate
+              </Badge>
+              <span className="flex-1 text-sm text-muted-foreground">
+                Raportul include sumarul lunii, detaliul pe clienți și lista ședințelor finalizate pentru {MONTHS_RO[month - 1]} {year}. {data.invoiceCandidatesCount} ședințe sunt încă fără factură, iar {data.preparedInvoicesCount} sunt deja în coada financiară.
+              </span>
+              <Button
+                variant="outline"
+                onClick={handleSendToFinancial}
+                disabled={!canSendToFinancial || queuePending}
+                className="gap-1.5"
+              >
+                {queuePending ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileCheck2 className="h-4 w-4" />}
+                Trimite la financiar
+              </Button>
+              <Button onClick={handleMonthlyExport} disabled={!canExportMonthly} className="gap-1.5">
+                <Download className="h-4 w-4" />
+                Exportă raportul lunii
+              </Button>
+              <Button variant="ghost" asChild>
+                <Link href="/dashboard/invoices?status=PREGĂTITĂ">Vezi coada financiară</Link>
+              </Button>
+            </div>
+          </SectionCard>
 
           {/* Revenue progress */}
           <SectionCard

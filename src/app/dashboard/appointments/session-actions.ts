@@ -20,6 +20,7 @@ export interface StatusUpdateResult {
 export async function updateStatusInline(
   id: string,
   status: AppointmentStatus,
+  personalNotes?: string,
 ): Promise<StatusUpdateResult> {
   if (!isSupabaseConfigured()) {
     return { ok: false, error: "Mod demo." };
@@ -28,7 +29,10 @@ export async function updateStatusInline(
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase
     .from("appointments")
-    .update({ status })
+    .update({
+      status,
+      ...(personalNotes !== undefined ? { personal_notes: personalNotes } : {}),
+    })
     .eq("id", id);
 
   if (error) return { ok: false, error: error.message };
@@ -148,21 +152,30 @@ async function tryAutoInvoice(appointmentId: string): Promise<{
 export async function updateAppointmentFields(
   id: string,
   data: {
+    appointment_date?: string;
+    status?: AppointmentStatus;
     location_tag?: string | null;
     personal_notes?: string | null;
     reminder_minutes?: number | null;
     reminders_enabled?: boolean;
-  }
+  },
 ) {
   if (!isSupabaseConfigured()) {
     // In demo mode, we just return success
     return { ok: true, error: null };
   }
 
+  const payload = {
+    ...data,
+    appointment_date: data.appointment_date
+      ? new Date(data.appointment_date).toISOString()
+      : undefined,
+  };
+
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase
     .from("appointments")
-    .update(data)
+    .update(payload)
     .eq("id", id);
 
   if (error) return { ok: false, error: error.message };

@@ -2,14 +2,14 @@
 
 ## Descriere
 
-Programările sunt nucleul operațional al cabinetului. Pot fi create de terapeut (din dashboard) sau de client (booking public). Sunt sincronizate cu Google Calendar, generează remindere automate prin email, și sunt legate de note clinice și facturi.
+Programările sunt nucleul operațional al cabinetului. Pot fi create de terapeut (din dashboard) sau de client (booking public). Sunt sincronizate cu Google Calendar, generează remindere automate prin email, și sunt legate de note clinice și facturi. În starea actuală, suprafața principală nu mai este doar pagina de detaliu, ci un workspace local cu overlay operațional care permite lucru rapid fără refresh complet de pagină.
 
 ## Fișiere Cheie
 
 - [src/app/dashboard/appointments/](../src/app/dashboard/appointments/) — paginile de programări
 - [src/components/appointments/appointment-form.tsx](../src/components/appointments/appointment-form.tsx) — formular creare/editare
 - [src/components/appointments/SessionDrawer.tsx](../src/components/appointments/SessionDrawer.tsx) — drawer detalii ședință
-- [src/components/appointments/AppointmentsViewManager.tsx](../src/components/appointments/AppointmentsViewManager.tsx) — manager vizualizare
+- [src/components/appointments/AppointmentsWorkspace.tsx](../src/components/appointments/AppointmentsWorkspace.tsx) — workspace local pentru filtre, queue-uri, view și session overlay
 - [src/app/dashboard/appointments/actions.ts](../src/app/dashboard/appointments/actions.ts) — Server Actions CRUD
 - [src/app/dashboard/appointments/session-actions.ts](../src/app/dashboard/appointments/session-actions.ts) — acțiuni ședință
 - [src/app/api/cron/reminders/route.ts](../src/app/api/cron/reminders/route.ts) — remindere automate
@@ -49,10 +49,10 @@ sequenceDiagram
     Note over T,MAIL: ÎN ZIUA ȘEDINȚEI
 
     T->>UI: /dashboard/appointments sau /dashboard/calendar
-    UI-->>T: Vedere zilnică/săptămânală\ncu programările de azi
+    UI-->>T: Workspace local\n(calendar/listă + queue-uri + filtre)
 
     T->>UI: Click programare → SessionDrawer
-    UI-->>T: Detalii + acțiuni:\n• Marchează completă\n• Adaugă notă clinică\n• Creează factură\n• Reprogramează
+    UI-->>T: Detalii + acțiuni:\n• Schimbă status\n• Reprogramează\n• Acțiuni rapide\n• Vezi timeline operațional\n• Creează notă\n• Creează factură
 
     T->>UI: "Marchează ședință completă"
     UI->>DB: UPDATE appointments SET status=Completata
@@ -64,9 +64,39 @@ sequenceDiagram
     T->>UI: /dashboard/notes/[appointmentId]
     UI-->>T: Editor note clinice\n(criptat AES-256)
 
-    T->>UI: /dashboard/invoices/new
-    UI-->>T: Formular factură\npre-completat cu clientul
+    T->>UI: /dashboard/billing\nsau /dashboard/invoices/new
+    UI-->>T: Flux financiar\n(coadă internă sau emitere directă)
 ```
+
+## Contract UX Curent
+
+- `/dashboard/appointments` funcționează ca workspace local:
+  - schimbarea între `calendar` și `listă` nu face refresh
+  - schimbarea între `queue` și `status` nu face refresh
+  - deschiderea programării se face în `SessionDrawer`, nu prin navigare grea
+- URL-ul rămâne sincronizat pentru share/back-forward, dar prin `history.replaceState`
+- Dacă încărcarea Supabase eșuează temporar, pagina nu mai cade; afișează fallback și listă goală
+
+## Queue-uri Operaționale
+
+- `all` — registrul complet
+- `today` — programările din ziua curentă
+- `to-confirm` — programări care trebuie confirmate
+- `needs-note` — ședințe finalizate fără notă
+- `needs-invoice` — ședințe finalizate fără factură
+- `overdue` — programări rămase în urmă față de flux
+- `online` — ședințe cu context remote
+
+## Session Drawer — Rol Actual
+
+- `SessionDrawer` este overlay-ul principal al fluxului de programări
+- oferă:
+  - `next best action`
+  - schimbări de status
+  - `Reconfirmă / Anulează / Marchează lipsă / Mută pe follow-up`
+  - reprogramează inline
+  - timeline operațional derivat din notele interne
+- acțiunile rapide și butoanele clasice de status scriu în același istoric operațional
 
 ## Stările unei Programări
 

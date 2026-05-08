@@ -18,6 +18,13 @@ interface DashboardTopbarProps {
   demoMode: boolean;
 }
 
+const mobileQuickActions = [
+  { href: "/dashboard/clients/new", label: "Client nou" },
+  { href: "/dashboard/clients/new-minor", label: "Pacient minor" },
+  { href: "/dashboard/appointments/new", label: "Programare" },
+  { href: "/dashboard/invoices/new", label: "Factură" },
+] as const;
+
 export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -133,6 +140,85 @@ export function DashboardTopbar({ userEmail, demoMode }: DashboardTopbarProps) {
               >
                 <X className="h-4 w-4" />
               </Button>
+            </div>
+            <div className="mb-4 space-y-3 border-b border-border pb-4">
+              <div className="space-y-2">
+                <label htmlFor="dashboard-search-mobile" className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                  Căutare rapidă
+                </label>
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    id="dashboard-search-mobile"
+                    type="search"
+                    value={searchQuery}
+                    placeholder="Caută pagini din dashboard…"
+                    className="h-11 w-full rounded-xl border border-input bg-muted/30 pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                    onChange={(event) => {
+                      setSearchQuery(event.target.value);
+                      setSearchOpen(true);
+                    }}
+                    onFocus={() => setSearchOpen(true)}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                  Creează rapid
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {mobileQuickActions.map((action) => (
+                    <Link
+                      key={action.href}
+                      href={action.href}
+                      className="rounded-2xl border border-border/60 bg-muted/20 px-3 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-muted/40"
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        setSearchOpen(false);
+                        setSearchQuery("");
+                      }}
+                    >
+                      {action.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+              {searchOpen && filteredNavItems.length > 0 ? (
+                <div className="space-y-1">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                    Rezultate
+                  </p>
+                  <div className="grid gap-1">
+                    {filteredNavItems.map(({ href, label, icon: Icon, groupTitle }) => {
+                      const active =
+                        href === "/dashboard"
+                          ? pathname === href
+                          : pathname?.startsWith(href);
+                      return (
+                        <Link
+                          key={href}
+                          href={href}
+                          className={cn(
+                            interactiveState.navItemBase,
+                            active ? interactiveState.navItemActive : interactiveState.navItemIdle,
+                          )}
+                          onClick={() => {
+                            setMobileMenuOpen(false);
+                            setSearchOpen(false);
+                            setSearchQuery("");
+                          }}
+                        >
+                          <Icon className={cn("h-4 w-4 shrink-0", active ? "text-primary" : "text-muted-foreground/60")} />
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium">{label}</p>
+                            <p className="truncate text-[11px] text-muted-foreground">{groupTitle}</p>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
             </div>
             <nav className="space-y-4">
               {dashboardNavGroups.map((group) => (

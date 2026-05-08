@@ -1,5 +1,7 @@
 # Evolutie Aplicatie
 
+Actualizat: 2026-05-08
+
 Acest fisier este jurnalul unic pentru evolutia aplicatiei, auditul functional, auditul UI/UX, accesibilitate, stabilizare tehnica si orice lot nou de lucru relevant.
 
 ## Regula de lucru
@@ -29,9 +31,66 @@ Aceasta regula ramane activa pe tot parcursul proiectului.
 - **Fluid UI — tranziții și loading states** (task #32) — NavigationProgress bar, PageTransition, loading.tsx skeletons (dashboard + clienți), animații mobile menu/search/toast
 - **DocumentChecklistCard + Sheet** (task #33) — checklist documente per client/track, overlay lazily fetched, integrat în ServiceTrackSheet cu buton docs pe fiecare ClientRow
 - **Pagina documente extinsă** (task #34) — 5 carduri info (STANDARD/MINOR/B2B/CAS/GDPR), selector tip contract inline în DocumentList, `defaultClientId` highlight+scroll, `loading.tsx` skeleton
-- Urmează: **P3 — Fișe Clinice Editabile + Editor Rapoarte** (task #35) — migrare DB `clinical_forms` + `therapy_reports`, fișe noi per track, editor raport psihologic, pagina `/dashboard/forms`
+- **Appointments workspace local + overlay operational** — filtre/queue/view/session fără refresh, URL sync client-side, `SessionDrawer` extins cu next-best-action, reprogramează inline, acțiuni rapide și timeline operațional
+- **Billing lunar unificat** — calcul server-side comun pentru ore, ședințe și sume; exportul lunar folosește aceeași sursă ca UI-ul
+- **Flux financiar intermediar înainte de SmartBill** — status nou `PREGĂTITĂ`, `Trimite la financiar` din raportarea lunară, apoi `Trimite în SmartBill` din registrul de facturi
+- **Appointments resilience** — `/dashboard/appointments` nu mai cade la `fetch failed`; fallback cu banner și workspace încărcat gol
+- Urmează: **Workspace financiar dedicat** — batch send pentru coada `PREGĂTITĂ`, triere rapidă și control mai bun al fluxului financiar
 
 ## Ce s-a facut
+
+### 36. Programări — workspace operațional și overlay complet
+
+- `/dashboard/appointments` a fost mutat într-un `AppointmentsWorkspace` client-side:
+  - view calendar/listă
+  - queue operațional
+  - filtre status
+  - drawer de sesiune
+  - sincronizare URL prin `history.replaceState`
+- Schimbarea de filtre și taburi nu mai produce refresh complet de browser
+- `SessionDrawer` a devenit suprafața principală de lucru:
+  - next-best-action
+  - reprogramează inline
+  - acțiuni rapide `Reconfirmă / Anulează / Marchează lipsă / Mută pe follow-up`
+  - timeline operațional extras din notele interne
+- Schimbările clasice de status și acțiunile rapide alimentează același istoric operațional
+- În caz de eroare Supabase (`fetch failed`), pagina de programări nu mai cade; afișează banner și încarcă workspace-ul cu date goale
+
+**Verificare**
+- `eslint`: ✅
+- `build`: ✅
+
+### 37. Financiar lunar — calcul comun și export real
+
+- A fost extras helperul comun `src/lib/billing/monthly-summary.ts`
+- `/api/billing/monthly-summary` și `/api/billing/monthly-export` folosesc aceeași sursă de adevăr
+- Raportul lunar exportat include:
+  - sumar calculat
+  - detaliu pe clienți
+  - detaliu pe ședințe finalizate
+- UI-ul din `/dashboard/billing` expune acum explicit:
+  - `Calculează`
+  - `Export lunar`
+  - secțiune de `Închidere lunară`
+
+**Verificare**
+- `eslint`: ✅
+- `build`: ✅
+
+### 38. Flux financiar cu coadă internă înainte de SmartBill
+
+- A fost introdus statusul local `PREGĂTITĂ` pentru facturi
+- Din `/dashboard/billing`, `Trimite la financiar` creează facturi locale pentru ședințele finalizate fără factură
+- Registrul `/dashboard/invoices` afișează și filtrează coada `PREGĂTITĂ`
+- Din detaliul unei facturi `PREGĂTITĂ`, financiarul poate apăsa `Trimite în SmartBill`
+- Fluxul nou separă clar:
+  - calculul și pregătirea internă
+  - controlul financiar
+  - emiterea efectivă în SmartBill
+
+**Verificare**
+- `eslint`: ✅
+- `build`: ✅
 
 ### 35. P3 — Fișe Clinice Editabile + Editor Rapoarte _(PLANIFICAT)_
 

@@ -4,9 +4,10 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type InvoiceRow = Database["public"]["Tables"]["invoices"]["Row"];
 
-export type InvoiceStatus = "EMISĂ" | "PLĂTITĂ" | "RESTANTĂ" | "ANULATĂ";
+export type InvoiceStatus = "PREGĂTITĂ" | "EMISĂ" | "PLĂTITĂ" | "RESTANTĂ" | "ANULATĂ";
 
 export const INVOICE_STATUSES: InvoiceStatus[] = [
+  "PREGĂTITĂ",
   "EMISĂ",
   "PLĂTITĂ",
   "RESTANTĂ",
@@ -15,8 +16,9 @@ export const INVOICE_STATUSES: InvoiceStatus[] = [
 
 export const invoiceStatusVariant: Record<
   InvoiceStatus,
-  "default" | "success" | "warning" | "destructive" | "secondary"
+  "default" | "success" | "warning" | "destructive" | "secondary" | "info"
 > = {
+  PREGĂTITĂ: "info",
   EMISĂ: "secondary",
   PLĂTITĂ: "success",
   RESTANTĂ: "destructive",

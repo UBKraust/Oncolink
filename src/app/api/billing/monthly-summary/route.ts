@@ -2,24 +2,11 @@
 // Aggregates sessions, hours, revenue and per-client breakdown for a given month
 
 import { NextRequest, NextResponse } from "next/server";
-import { isPaidInvoiceStatus } from "@/lib/invoices/status";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { buildMonthlyBillingSummary } from "@/lib/billing/monthly-summary";
 
 export const runtime = "edge";
-
-type SummaryAppointmentRow = {
-  id: string;
-  client_id: string;
-  duration_minutes: number;
-  clients: { full_name: string | null }[] | { full_name: string | null } | null;
-};
-
-type SummaryInvoiceRow = {
-  appointment_id: string | null;
-  amount: number | null;
-  status: string | null;
-};
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -51,7 +38,7 @@ export async function GET(req: NextRequest) {
 
     const { data: appts, error: apptErr } = await supabase
       .from("appointments")
-      .select("id, client_id, duration_minutes, clients(full_name)")
+      .select("id, client_id, appointment_date, duration_minutes, clients(full_name)")
       .gte("appointment_date", startDate)
       .lt("appointment_date", endDate)
       .eq("status", "FINALIZAT")
@@ -72,7 +59,19 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: invoiceErr.message }, { status: 500 });
     }
 
-    return NextResponse.json(buildSummary(appts ?? [], invoices ?? [], year, month));
+    const summary = buildMonthlyBillingSummary(appts ?? [], invoices ?? [], year, month);
+    return NextResponse.json({
+      year: summary.year,
+      month: summary.month,
+      totalSessions: summary.totalSessions,
+      totalHours: summary.totalHours,
+      totalAmount: summary.totalAmount,
+      collectedAmount: summary.collectedAmount,
+      uncollectedAmount: summary.uncollectedAmount,
+      invoiceCandidatesCount: summary.invoiceCandidatesCount,
+      preparedInvoicesCount: summary.preparedInvoicesCount,
+      clients: summary.clients,
+    });
   }
 
   return NextResponse.json({
@@ -82,74 +81,9 @@ export async function GET(req: NextRequest) {
     totalAmount: 0,
     collectedAmount: 0,
     uncollectedAmount: 0,
+    invoiceCandidatesCount: 0,
+    preparedInvoicesCount: 0,
     clients: [],
     setupRequired: true,
   });
-}
-
-function buildSummary(
-  appts: SummaryAppointmentRow[],
-  invoices: SummaryInvoiceRow[],
-  year: number, month: number
-) {
-  const invoiceMap = new Map<string, SummaryInvoiceRow[]>();
-  for (const invoice of invoices) {
-    if (!invoice.appointment_id) continue;
-    const existing = invoiceMap.get(invoice.appointment_id) ?? [];
-    existing.push(invoice);
-    invoiceMap.set(invoice.appointment_id, existing);
-  }
-
-  const perClient: Record<string, {
-    clientId: string; clientName: string;
-    sessions: number; totalMinutes: number;
-    totalAmount: number; collectedAmount: number;
-    invoiceStatus: "ACHITAT" | "PARTIAL" | "NEEMIS";
-  }> = {};
-
-  for (const a of appts) {
-    const clientRelation = Array.isArray(a.clients) ? a.clients[0] : a.clients;
-    if (!perClient[a.client_id]) {
-      perClient[a.client_id] = {
-        clientId: a.client_id,
-        clientName: clientRelation?.full_name ?? "Client necunoscut",
-        sessions: 0, totalMinutes: 0,
-        totalAmount: 0, collectedAmount: 0,
-        invoiceStatus: "NEEMIS",
-      };
-    }
-    const row = perClient[a.client_id];
-    const appointmentInvoices = invoiceMap.get(a.id) ?? [];
-    const appointmentTotal = appointmentInvoices.reduce(
-      (sum, invoice) => sum + Number(invoice.amount ?? 0),
-      0,
-    );
-    const appointmentCollected = appointmentInvoices.reduce(
-      (sum, invoice) =>
-        sum + (isPaidInvoiceStatus(invoice.status) ? Number(invoice.amount ?? 0) : 0),
-      0,
-    );
-
-    row.sessions++;
-    row.totalMinutes += a.duration_minutes;
-    row.totalAmount += appointmentTotal;
-    row.collectedAmount += appointmentCollected;
-  }
-
-  for (const row of Object.values(perClient)) {
-    if (row.collectedAmount >= row.totalAmount) row.invoiceStatus = "ACHITAT";
-    else if (row.collectedAmount > 0)           row.invoiceStatus = "PARTIAL";
-    else                                         row.invoiceStatus = "NEEMIS";
-  }
-
-  const clientList = Object.values(perClient);
-  return {
-    year, month,
-    totalSessions:   clientList.reduce((s, c) => s + c.sessions, 0),
-    totalHours:      Math.round(clientList.reduce((s, c) => s + c.totalMinutes, 0) / 60 * 10) / 10,
-    totalAmount:     clientList.reduce((s, c) => s + c.totalAmount, 0),
-    collectedAmount: clientList.reduce((s, c) => s + c.collectedAmount, 0),
-    uncollectedAmount: clientList.reduce((s, c) => s + (c.totalAmount - c.collectedAmount), 0),
-    clients: clientList,
-  };
 }

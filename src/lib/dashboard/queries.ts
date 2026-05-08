@@ -1,3 +1,4 @@
+import { cache } from "react";
 import {
   addDays,
   differenceInDays,
@@ -290,7 +291,7 @@ function getTestName(
   return testRelation?.name?.trim() || fallback;
 }
 
-async function getDashboardCollections() {
+const getDashboardCollections = cache(async function getDashboardCollections() {
   if (!isSupabaseConfigured()) {
     return {
       clients: [] as DashboardClientRow[],
@@ -394,7 +395,7 @@ async function getDashboardCollections() {
     unpaidInvoices,
     vaultAlertsCount: vaultAlertsRes.count ?? 0,
   };
-}
+});
 
 export async function getDashboardStats(): Promise<DashboardStats> {
   if (!isSupabaseConfigured()) {
@@ -498,7 +499,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   }
 }
 
-export async function getUnpaidInvoices() {
+export const getUnpaidInvoices = cache(async function getUnpaidInvoices() {
   if (!isSupabaseConfigured()) {
     return [];
   }
@@ -543,7 +544,7 @@ export async function getUnpaidInvoices() {
   } catch {
     return [];
   }
-}
+});
 
 export async function getAppointmentsToday() {
   if (!isSupabaseConfigured()) {

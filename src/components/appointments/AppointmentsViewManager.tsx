@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Calendar as CalendarIcon, LayoutList } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -12,10 +12,24 @@ interface AppointmentsViewManagerProps {
   children: React.ReactNode; // This will be the table view
 }
 
-export function AppointmentsViewManager({ appointments, children }: AppointmentsViewManagerProps) {
+export function AppointmentsViewManager({
+  appointments,
+  children,
+}: AppointmentsViewManagerProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [view, setView] = useState<"calendar" | "list">("calendar");
+  const view: "calendar" | "list" =
+    searchParams.get("view") === "list" ? "list" : "calendar";
+
+  const setViewWithUrl = (nextView: "calendar" | "list") => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (nextView === "calendar") {
+      params.delete("view");
+    } else {
+      params.set("view", nextView);
+    }
+    router.replace(`/dashboard/appointments${params.toString() ? `?${params.toString()}` : ""}`);
+  };
 
   const handleSelectEvent = (id: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -34,7 +48,7 @@ export function AppointmentsViewManager({ appointments, children }: Appointments
         <div className="inline-flex items-center rounded-2xl border border-border/60 bg-muted/40 p-1 shadow-inner">
           <button
             type="button"
-            onClick={() => setView("calendar")}
+            onClick={() => setViewWithUrl("calendar")}
             aria-pressed={view === "calendar"}
             className={cn(
               "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-tight transition-all",
@@ -47,7 +61,7 @@ export function AppointmentsViewManager({ appointments, children }: Appointments
           </button>
           <button
             type="button"
-            onClick={() => setView("list")}
+            onClick={() => setViewWithUrl("list")}
             aria-pressed={view === "list"}
             className={cn(
               "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-tight transition-all",

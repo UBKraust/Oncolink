@@ -89,7 +89,7 @@ export default async function InvoicesPage({
 
       <SectionCard
         title="Lista facturilor"
-        description="e-Factura ANAF · VAT 0% · SmartBill Cloud"
+        description="Coada financiară locală + e-Factura ANAF · VAT 0% · SmartBill Cloud"
         icon={Receipt}
       >
         <CardContent className="p-0">

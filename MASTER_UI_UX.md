@@ -8,7 +8,7 @@ Document de referință complet pentru arhitectura UI, fluxurile utilizator, com
 
 | Layer | Tehnologie |
 |---|---|
-| Framework | Next.js 15 (App Router, RSC) |
+| Framework | Next.js 16 (App Router, RSC, Turbopack) |
 | Auth + DB | Supabase (PostgreSQL + Realtime) |
 | Styling | Tailwind CSS v4 + tailwindcss-animate |
 | Design tokens | OKLCH semantic tokens (`--primary`, `--destructive`, `--muted`, etc.) |
@@ -168,14 +168,29 @@ Secțiuni:
 
 ### `/dashboard/appointments` — Programări
 
-- Tabel toate programările (toate statusurile)
-- Coloane: dată+oră, client, locație (PRIVAT/ONLINE/POLICLINICĂ/CLINICĂ), status badge, notă ✓/✗, factură ✓/✗
-- Acțiuni: edit, view sesiune completă, adaugă notă
+- Workspace operațional local (`AppointmentsWorkspace`) cu state client-side pentru:
+  - `view`: calendar / listă
+  - `queue`: all / today / to-confirm / needs-note / needs-invoice / overdue / online
+  - `status`: toate statusurile programărilor
+  - `session`: drawer deschis din listă sau calendar
+- Schimbarea între filtre, queue-uri, taburi și drawer nu face refresh complet de pagină; URL-ul este sincronizat prin `history.replaceState`
+- Header operațional cu workflow cards:
+  - Confirmări
+  - Note lipsă
+  - Facturi
+  - Întârzieri
+- Snapshot-uri pentru:
+  - Agenda de azi
+  - Documentare
+  - Context extern
+- Tabel/registru cu coloane: dată+oră, client, locație (PRIVAT/ONLINE/POLICLINICĂ/CLINICĂ), status badge, notă ✓/✗, factură ✓/✗
+- În caz de eroare de rețea Supabase, pagina nu mai cade: afișează banner de fallback și încarcă workspace-ul cu listă goală
 
 ### `/dashboard/appointments/[id]` — Detaliu programare
 
 - Context clinic complet (service type, risc, contract, note, factură)
-- `SessionDrawer` dacă există
+- Pagina clasică de detaliu există în continuare, dar fluxul principal este mutat în `SessionDrawer`
+- `SessionDrawer` este suprafața principală pentru lucru rapid din `/dashboard/appointments` și `/dashboard/calendar`
 - Link spre nota clinică aferentă
 
 ### `/dashboard/appointments/new`
@@ -245,19 +260,29 @@ Summary bar deasupra tab-urilor: total notificări + badge severitate globală
 
 ### `/dashboard/invoices` — Facturi
 
-- Tabel facturi cu status (EMISĂ/PLĂTITĂ/RESTANTĂ/ANULATĂ)
-- Integrare SmartBill pentru e-facturare
-- Filtrare per status
+- Registru facturi cu status local + SmartBill:
+  - `PREGĂTITĂ`
+  - `EMISĂ`
+  - `PLĂTITĂ`
+  - `RESTANTĂ`
+  - `ANULATĂ`
+- `PREGĂTITĂ` reprezintă coada financiară internă: factura există local, dar nu a fost trimisă încă în SmartBill
+- Filtrare per status, inclusiv coada financiară
+- Din detaliul unei facturi `PREGĂTITĂ`, financiarul poate declanșa `Trimite în SmartBill`
 
 ### `/dashboard/invoices/new`
 
 - Formular factură nouă
 - Selectare client + appointment asociat
-- Generare SmartBill
+- Pentru fluxul manual, factura poate merge direct către SmartBill
+- Pentru fluxul lunar, facturile sunt generate mai întâi local din `/dashboard/billing` și trimise ulterior din registrul de facturi
 
 ### `/dashboard/invoices/[id]`
 
-- Detaliu factură + acțiuni (marchează plătită, anulează)
+- Detaliu factură + acțiuni:
+  - `Trimite în SmartBill` pentru facturi `PREGĂTITĂ`
+  - `Marchează plătită`
+  - `Anulează`
 
 ---
 
@@ -269,9 +294,24 @@ Summary bar deasupra tab-urilor: total notificări + badge severitate globală
 
 ### `/dashboard/billing` — Financiar lunar
 
-- Client component cu grafice
-- Metrici: ședințe, venit brut, cheltuieli, profit net
-- Vizualizare lunară cu comparație
+- Client component cu calcul lunar explicit
+- Sursa de adevăr server-side este `buildMonthlyBillingSummary`
+- Metrici:
+  - ședințe finalizate
+  - ore calculate
+  - total de încasat
+  - încasat
+  - restant
+- Secțiune `Închidere lunară`:
+  - `Calculează`
+  - `Trimite la financiar`
+  - `Exportă raportul lunii`
+  - link `Vezi coada financiară`
+- `Trimite la financiar` creează facturi locale `PREGĂTITĂ` pentru ședințele finalizate fără factură
+- Exportul lunar CSV folosește exact același calcul lunar ca UI-ul și include:
+  - sumar calculat
+  - detaliu pe clienți
+  - detaliu pe ședințe finalizate
 
 ### `/dashboard/review` — Raport clinic lunar
 

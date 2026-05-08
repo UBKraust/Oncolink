@@ -69,7 +69,6 @@ export default async function ClientDetailPage({
   // Fetch core data in parallel
   const [
     { data: assessmentsData },
-    { data: paymentsData },
     { data: docsData },
     { count: medicationCount },
     { count: crisisNotesCount },
@@ -85,7 +84,6 @@ export default async function ClientDetailPage({
           .eq("client_id", id)
           .order("created_at", { ascending: false })
           .limit(3),
-    supabase.from("invoices").select("*").eq("client_id", id),
     supabase
       .from("patient_documents")
       .select("id, file_name, document_type, storage_path, document_url, drive_link, created_at, uploaded_at")
@@ -100,6 +98,16 @@ export default async function ClientDetailPage({
     accessHistoryPromise,
     appointmentsPromise,
   ]);
+
+  const appointmentIds = appointments.map((appointment) => appointment.id);
+  const paymentsData =
+    appointmentIds.length > 0
+      ? await supabase
+          .from("invoices")
+          .select("*, appointments(appointment_date, duration_minutes)")
+          .in("appointment_id", appointmentIds)
+          .order("issued_at", { ascending: false })
+      : { data: [] as Array<ClientPayment & { appointments?: { appointment_date: string | null; duration_minutes: number | null } | { appointment_date: string | null; duration_minutes: number | null }[] | null }> };
 
   // Fetch P2 clinical tools conditionally per service_type
   const isCbt = serviceType === "CBT";
@@ -180,10 +188,25 @@ export default async function ClientDetailPage({
   ]);
 
   const assessments = clinicAssessments;
-  const payments = ((paymentsData || []) as Array<{ amount: number | null } & ClientPayment>).map((payment) => ({
-    ...payment,
-    amount: Number(payment.amount ?? 0),
-  }));
+  const payments = ((paymentsData.data || []) as Array<
+    { amount: number | null } & ClientPayment & {
+      appointments?:
+        | { appointment_date: string | null; duration_minutes: number | null }
+        | { appointment_date: string | null; duration_minutes: number | null }[]
+        | null;
+    }
+  >).map((payment) => {
+    const appointmentRelation = Array.isArray(payment.appointments)
+      ? payment.appointments[0]
+      : payment.appointments;
+
+    return {
+      ...payment,
+      amount: Number(payment.amount ?? 0),
+      appointment_date: appointmentRelation?.appointment_date ?? null,
+      duration_minutes: appointmentRelation?.duration_minutes ?? null,
+    };
+  });
   const clientDocs = clinicDocs;
   const clientMeds = clinicMeds;
   const isMinor = client.is_minor ?? false;

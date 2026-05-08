@@ -45,6 +45,13 @@ export interface TherapyReportRow {
   updated_at: string;
 }
 
+export type ClinicalFormsReadiness = {
+  state: "safe" | "partial" | "blocked";
+  formsAvailable: boolean;
+  reportsAvailable: boolean;
+  message: string | null;
+};
+
 function isP3TableMissing(error: { code?: string; message?: string } | null): boolean {
   if (!error) return false;
   return (
@@ -104,6 +111,52 @@ function revalidateClinicalPaths(clientId: string, reportId?: string) {
   if (reportId) {
     revalidatePath(`/dashboard/forms/report/${reportId}`);
   }
+}
+
+export async function getClinicalFormsReadiness(): Promise<ClinicalFormsReadiness> {
+  const supabase = await createClient();
+  const [formsProbe, reportsProbe] = await Promise.all([
+    supabase.from("clinical_forms").select("id", { count: "exact", head: true }).limit(1),
+    supabase.from("therapy_reports").select("id", { count: "exact", head: true }).limit(1),
+  ]);
+
+  const formsMissing = isP3TableMissing(formsProbe.error);
+  const reportsMissing = isP3TableMissing(reportsProbe.error);
+
+  if (formsMissing && reportsMissing) {
+    return {
+      state: "blocked",
+      formsAvailable: false,
+      reportsAvailable: false,
+      message: "Migrările P3 pentru fișe clinice și rapoarte nu sunt disponibile încă în baza curentă.",
+    };
+  }
+
+  if (formsMissing || reportsMissing) {
+    return {
+      state: "partial",
+      formsAvailable: !formsMissing,
+      reportsAvailable: !reportsMissing,
+      message: "Doar o parte din infrastructura P3 este disponibilă. Unele liste sau acțiuni clinice pot lipsi temporar.",
+    };
+  }
+
+  const firstError = formsProbe.error ?? reportsProbe.error;
+  if (firstError) {
+    return {
+      state: "blocked",
+      formsAvailable: false,
+      reportsAvailable: false,
+      message: firstError.message,
+    };
+  }
+
+  return {
+    state: "safe",
+    formsAvailable: true,
+    reportsAvailable: true,
+    message: null,
+  };
 }
 
 // ─── Clinical Forms ───────────────────────────────────────────────────────────

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { createClientOnboardingLink } from "@/app/dashboard/clients/onboarding-actions";
 import { CheckCircle2, Copy, ExternalLink, UserPlus, FileCheck, ShieldAlert, ArrowRight } from "lucide-react";
 import { toast } from "@/components/ui/toast";
@@ -59,18 +59,35 @@ interface ClientFormProps {
   action: (state: ClientFormState, formData: FormData) => Promise<ClientFormState>;
   defaults?: Defaults;
   submitLabel: string;
-  cancelHref: string;
+  cancelHref?: string;
+  onCancel?: () => void;
+  successMode?: "modal" | "toast";
+  onSuccess?: (clientId: string) => void;
 }
 
 const initialState: ClientFormState = { error: null, fieldErrors: {} };
 
-export function ClientForm({ action, defaults = {}, submitLabel, cancelHref }: ClientFormProps) {
+export function ClientForm({
+  action,
+  defaults = {},
+  submitLabel,
+  cancelHref,
+  onCancel,
+  successMode = "modal",
+  onSuccess,
+}: ClientFormProps) {
   const [state, formAction, pending] = useActionState(action, initialState);
   const [isMinor, setIsMinor] = useState(defaults.is_minor ?? false);
   const [billingType, setBillingType] = useState(defaults.billing_type ?? "INDIVIDUAL");
   const [dismissedSuccess, setDismissedSuccess] = useState(false);
-  const showSuccess = Boolean(state.success && state.clientId) && !dismissedSuccess;
+  const showSuccess = successMode === "modal" && Boolean(state.success && state.clientId) && !dismissedSuccess;
   const globalErrorId = state.error ? "client-form-error" : undefined;
+
+  useEffect(() => {
+    if (!state.success || !state.clientId || successMode !== "toast") return;
+    toast.success("Datele clientului au fost salvate.");
+    onSuccess?.(state.clientId);
+  }, [onSuccess, state.clientId, state.success, successMode]);
 
   const copyOnboardingLink = async () => {
     if (typeof window === "undefined" || !state.clientId) return;
@@ -462,9 +479,15 @@ export function ClientForm({ action, defaults = {}, submitLabel, cancelHref }: C
         </label>
 
         <div className="flex items-center justify-end gap-3 border-t pt-5">
-          <Button type="button" variant="outline" asChild>
-            <Link href={cancelHref}>Anulează</Link>
-          </Button>
+          {onCancel ? (
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Anulează
+            </Button>
+          ) : cancelHref ? (
+            <Button type="button" variant="outline" asChild>
+              <Link href={cancelHref}>Anulează</Link>
+            </Button>
+          ) : null}
           <Button type="submit" disabled={pending}>
             {pending ? "Se salvează…" : submitLabel}
           </Button>
@@ -537,7 +560,9 @@ export function ClientForm({ action, defaults = {}, submitLabel, cancelHref }: C
                 className="w-full justify-center h-10 text-xs font-bold gap-2"
                 onClick={() => {
                   setDismissedSuccess(true);
-                  window.location.href = "/dashboard/clients/new";
+                  if (typeof window !== "undefined") {
+                    window.location.href = "/dashboard/clients/new";
+                  }
                 }}
               >
                 <UserPlus className="h-4 w-4" />

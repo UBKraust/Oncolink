@@ -15,13 +15,24 @@ import {
 } from "@/components/ui/table";
 import { CardContent } from "@/components/ui/card";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { DashboardPage, EmptyState, PageHeader, SectionCard, SetupBanner } from "@/components/app/page-shell";
-import { listClinicalForms, listTherapyReports } from "@/app/dashboard/forms/forms-actions";
+import { DashboardPage, EmptyState, PageHeader, ReadinessBadge, SectionCard, SetupBanner, StatusBanner } from "@/components/app/page-shell";
+import {
+  getClinicalFormsReadiness,
+  listClinicalForms,
+  listTherapyReports,
+} from "@/app/dashboard/forms/forms-actions";
 import { FORM_TYPE_LABELS } from "@/components/clients/clinical-form-utils";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export default async function FormsPage() {
   const configured = isSupabaseConfigured();
+  let loadError: string | null = null;
+  let readiness: Awaited<ReturnType<typeof getClinicalFormsReadiness>> = {
+    state: "blocked",
+    formsAvailable: false,
+    reportsAvailable: false,
+    message: "Modulul nu a fost încă verificat.",
+  };
 
   let forms: Array<{
     id: string;
@@ -47,27 +58,39 @@ export default async function FormsPage() {
   }> = [];
 
   if (configured) {
-    const supabase = await createSupabaseServerClient();
+    try {
+      readiness = await getClinicalFormsReadiness();
+      const supabase = await createSupabaseServerClient();
 
-    const [rawForms, rawReports, { data: clientsData }] = await Promise.all([
-      listClinicalForms(),
-      listTherapyReports(),
-      supabase.from("clients").select("id, full_name"),
-    ]);
+      const [rawForms, rawReports, { data: clientsData, error: clientsError }] = await Promise.all([
+        listClinicalForms(),
+        listTherapyReports(),
+        supabase.from("clients").select("id, full_name"),
+      ]);
 
-    const clientMap = new Map((clientsData ?? []).map((c) => [c.id, c.full_name]));
+      if (clientsError) {
+        throw new Error(clientsError.message);
+      }
 
-    forms = rawForms.map((f) => ({
-      ...f,
-      status: f.status,
-      clientName: clientMap.get(f.client_id) ?? null,
-    }));
+      const clientMap = new Map((clientsData ?? []).map((c) => [c.id, c.full_name]));
 
-    reports = rawReports.map((r) => ({
-      ...r,
-      status: r.status,
-      clientName: clientMap.get(r.client_id) ?? null,
-    }));
+      forms = rawForms.map((f) => ({
+        ...f,
+        status: f.status,
+        clientName: clientMap.get(f.client_id) ?? null,
+      }));
+
+      reports = rawReports.map((r) => ({
+        ...r,
+        status: r.status,
+        clientName: clientMap.get(r.client_id) ?? null,
+      }));
+    } catch (error) {
+      loadError =
+        error instanceof Error
+          ? error.message
+          : "Nu am putut încărca fișele și rapoartele clinice în acest moment.";
+    }
   }
 
   return (
@@ -76,12 +99,20 @@ export default async function FormsPage() {
         title="Fișe & Rapoarte Clinice"
         description="Gestionează fișele clinice completate și rapoartele psihologice ale clienților."
         action={
-          <Button asChild>
-            <Link href="/dashboard/forms/report/new">
-              <Plus className="mr-2 h-4 w-4" />
-              Raport nou
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            {configured ? (
+              <ReadinessBadge
+                state={loadError ? "blocked" : readiness.state}
+                label={loadError ? "Blocked" : readiness.state === "safe" ? "Safe" : readiness.state === "partial" ? "Partial" : "Blocked"}
+              />
+            ) : null}
+            <Button asChild disabled={configured && (!readiness.reportsAvailable || Boolean(loadError))}>
+              <Link href="/dashboard/forms/report/new">
+                <Plus className="mr-2 h-4 w-4" />
+                Raport nou
+              </Link>
+            </Button>
+          </div>
         }
       />
 
@@ -89,13 +120,41 @@ export default async function FormsPage() {
         <SetupBanner description="Fișele și rapoartele clinice vor apărea aici după configurarea Supabase și aplicarea migrărilor P3." />
       )}
 
+      {configured && loadError && (
+        <StatusBanner
+          title="Fișele clinice nu au putut fi încărcate"
+          description={`Zona rămâne disponibilă, dar datele nu au putut fi citite acum. Dacă migrările P3 lipsesc sau conexiunea a eșuat, reîncearcă după remediere. Detaliu: ${loadError}`}
+          tone="error"
+        />
+      )}
+
+      {configured && !loadError && readiness.state !== "safe" && readiness.message ? (
+        <StatusBanner
+          title={readiness.state === "partial" ? "Modul clinic disponibil parțial" : "Modul clinic blocat"}
+          description={readiness.message}
+          tone={readiness.state === "partial" ? "warning" : "error"}
+        />
+      ) : null}
+
       <SectionCard
         title="Fișe clinice completate"
-        description="Anamneze, interviuri clinice, evaluări de risc, angajamente și planuri de consiliere."
+        description={`Anamneze, interviuri clinice, evaluări de risc, angajamente și planuri de consiliere.${configured ? ` Status: ${readiness.formsAvailable ? "ready" : "indisponibil"}.` : ""}`}
         icon={ClipboardList}
       >
         <CardContent className="p-0">
-          {forms.length === 0 ? (
+          {configured && !loadError && !readiness.formsAvailable ? (
+            <EmptyState
+              title="Fișele clinice nu sunt disponibile încă"
+              description="Tabelele P3 pentru fișe clinice nu există sau nu sunt accesibile în această bază."
+              icon={ClipboardList}
+            />
+          ) : configured && loadError ? (
+            <EmptyState
+              title="Nu am putut afișa fișele clinice"
+              description="Această stare indică o problemă de încărcare sau de setup P3, nu lipsa reală a fișelor."
+              icon={ClipboardList}
+            />
+          ) : forms.length === 0 ? (
             <EmptyState
               title="Nu există fișe clinice"
               description="Fișele se completează din fișa clientului, în secțiunea specifică tipului de serviciu."
@@ -152,11 +211,25 @@ export default async function FormsPage() {
 
       <SectionCard
         title="Rapoarte psihologice"
-        description="Rapoarte de evaluare finalizate sau în elaborare, cu export PDF."
+        description={`Rapoarte de evaluare finalizate sau în elaborare, cu export PDF.${configured ? ` Status: ${readiness.reportsAvailable ? "ready" : "indisponibil"}.` : ""}`}
         icon={FileEdit}
       >
         <CardContent className="p-0">
-          {reports.length === 0 ? (
+          {configured && !loadError && !readiness.reportsAvailable ? (
+            <EmptyState
+              title="Rapoartele nu sunt disponibile încă"
+              description="Infrastructura P3 pentru rapoarte psihologice nu este disponibilă în această bază."
+              icon={FileEdit}
+              action={{ label: "Vezi fișele clientului", href: "/dashboard/clients" }}
+            />
+          ) : configured && loadError ? (
+            <EmptyState
+              title="Nu am putut afișa rapoartele"
+              description="Datele nu au fost încărcate corect, deci această stare nu înseamnă neapărat că nu există rapoarte."
+              icon={FileEdit}
+              action={{ label: "Raport nou", href: "/dashboard/forms/report/new" }}
+            />
+          ) : reports.length === 0 ? (
             <EmptyState
               title="Nu există rapoarte"
               description="Creează primul raport psihologic folosind butonul Raport nou de mai sus."

@@ -20,7 +20,7 @@ import {
   DashboardWorkspaceTabs,
 } from "@/components/dashboard/DashboardWorkspaceTabs";
 import { Button } from "@/components/ui/button";
-import { DashboardPage as DashboardShell, PageHeader, SetupBanner } from "@/components/app/page-shell";
+import { DashboardPage as DashboardShell, PageHeader, StatusBanner } from "@/components/app/page-shell";
 import {
   getDashboardStats,
   getAppointmentsToday,
@@ -133,9 +133,10 @@ export default async function DashboardPage({
       {configured ? <RealtimeDashboard /> : null}
 
       {configured && loadWarnings.length > 0 ? (
-        <SetupBanner
+        <StatusBanner
           title="Unele widget-uri nu au putut fi încărcate"
           description={`Dashboardul rămâne utilizabil, dar unele panouri afișează momentan valori goale. Detalii: ${loadWarnings.join(" · ")}`}
+          tone="warning"
         />
       ) : null}
 

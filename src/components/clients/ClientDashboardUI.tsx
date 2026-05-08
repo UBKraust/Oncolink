@@ -106,6 +106,9 @@ const AssessmentDetailOverlay = dynamic(
 const ContractGeneratorModal = dynamic(
   () => import("@/components/clients/ContractGeneratorModal").then((mod) => mod.ContractGeneratorModal),
 );
+const ClientEditOverlay = dynamic(
+  () => import("@/components/clients/ClientEditOverlay").then((mod) => mod.ClientEditOverlay),
+);
 
 interface ClientDashboardUIProps {
   client: ClientProfile;
@@ -237,6 +240,7 @@ export function ClientDashboardUI({
   const router = useRouter();
   const [isLifecyclePending, startLifecycleTransition] = useTransition();
   const [isContractModalOpen, setIsContractModalOpen] = useState(false);
+  const [isEditOverlayOpen, setIsEditOverlayOpen] = useState(false);
   const [isCopyingOnboardingLink, setIsCopyingOnboardingLink] = useState(false);
   const initialClientUiState = resolveClientUiState(
     new URLSearchParams({
@@ -731,10 +735,13 @@ export function ClientDashboardUI({
                 </Button>
               </>
             )}
-            <Button asChild variant="outline" size="lg" className="rounded-2xl font-bold">
-              <Link href={`/dashboard/clients/${client.id}/edit`}>
-                <Pencil className="h-4 w-4" />
-              </Link>
+            <Button
+              variant="outline"
+              size="lg"
+              className="rounded-2xl font-bold"
+              onClick={() => setIsEditOverlayOpen(true)}
+            >
+              <Pencil className="h-4 w-4" />
             </Button>
           </div>
         }
@@ -1636,6 +1643,11 @@ export function ClientDashboardUI({
       <ContractGeneratorModal
         isOpen={isContractModalOpen}
         onClose={() => setIsContractModalOpen(false)}
+        client={client}
+      />
+      <ClientEditOverlay
+        isOpen={isEditOverlayOpen}
+        onClose={() => setIsEditOverlayOpen(false)}
         client={client}
       />
     </div>

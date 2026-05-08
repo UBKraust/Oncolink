@@ -4,7 +4,7 @@ import { CalendarPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { listAppointments, type AppointmentWithClient } from "@/lib/appointments/queries";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { DashboardPage, PageHeader, SetupBanner } from "@/components/app/page-shell";
+import { DashboardPage, PageHeader, SetupBanner, StatusBanner } from "@/components/app/page-shell";
 import { AppointmentsWorkspace } from "@/components/appointments/AppointmentsWorkspace";
 
 export default async function AppointmentsPage({
@@ -53,7 +53,11 @@ export default async function AppointmentsPage({
       ) : null}
 
       {configured && loadError ? (
-        <SetupBanner description={`Programările nu au putut fi încărcate acum. Poți reîncerca în câteva secunde. Detaliu: ${loadError}`} />
+        <StatusBanner
+          title="Programările nu au putut fi încărcate"
+          description={`Poți reîncerca în câteva secunde. Detaliu: ${loadError}`}
+          tone="error"
+        />
       ) : null}
 
       <AppointmentsWorkspace

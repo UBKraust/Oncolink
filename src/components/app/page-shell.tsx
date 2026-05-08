@@ -1,7 +1,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { AlertTriangle, ChevronRight, type LucideIcon } from "lucide-react";
+import { AlertCircle, AlertTriangle, CheckCircle2, ChevronRight, Info, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 export function DashboardPage({
@@ -53,18 +54,44 @@ export function PageHeader({
   );
 }
 
-export function SetupBanner({
-  title = "Setare necesară",
+export function StatusBanner({
+  title,
   description,
+  tone = "info",
 }: {
-  title?: string;
+  title: string;
   description: string;
+  tone?: "info" | "warning" | "success" | "error";
 }) {
+  const config = {
+    info: {
+      wrapper: "border-sky-200 bg-sky-50/70 dark:border-sky-900 dark:bg-sky-950/20",
+      iconWrap: "bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-200",
+      Icon: Info,
+    },
+    warning: {
+      wrapper: "border-amber-200 bg-amber-50/70 dark:border-amber-900 dark:bg-amber-950/20",
+      iconWrap: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-200",
+      Icon: AlertTriangle,
+    },
+    success: {
+      wrapper: "border-emerald-200 bg-emerald-50/70 dark:border-emerald-900 dark:bg-emerald-950/20",
+      iconWrap: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-200",
+      Icon: CheckCircle2,
+    },
+    error: {
+      wrapper: "border-rose-200 bg-rose-50/70 dark:border-rose-900 dark:bg-rose-950/20",
+      iconWrap: "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-200",
+      Icon: AlertCircle,
+    },
+  } as const;
+  const { wrapper, iconWrap, Icon } = config[tone];
+
   return (
-    <div className="rounded-3xl border border-border/60 bg-muted/40 px-5 py-4 shadow-sm">
+    <div className={cn("rounded-3xl border px-5 py-4 shadow-sm", wrapper)}>
       <div className="flex items-start gap-3">
-        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
-          <AlertTriangle className="h-4 w-4" />
+        <div className={cn("mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl", iconWrap)}>
+          <Icon className="h-4 w-4" />
         </div>
         <div className="space-y-1">
           <p className="text-sm font-semibold text-foreground">{title}</p>
@@ -73,6 +100,41 @@ export function SetupBanner({
       </div>
     </div>
   );
+}
+
+export function SetupBanner({
+  title = "Setare necesară",
+  description,
+}: {
+  title?: string;
+  description: string;
+}) {
+  return <StatusBanner title={title} description={description} tone="warning" />;
+}
+
+export function ReadinessBadge({
+  state,
+  label,
+}: {
+  state: "safe" | "partial" | "blocked";
+  label?: string;
+}) {
+  const config = {
+    safe: {
+      variant: "success" as const,
+      text: label ?? "Safe",
+    },
+    partial: {
+      variant: "warning" as const,
+      text: label ?? "Partial",
+    },
+    blocked: {
+      variant: "destructive" as const,
+      text: label ?? "Blocked",
+    },
+  };
+
+  return <Badge variant={config[state].variant}>{config[state].text}</Badge>;
 }
 
 export function SectionCard({

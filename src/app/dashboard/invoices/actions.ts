@@ -325,6 +325,234 @@ export async function sendPreparedInvoiceToSmartBill(
   return { ok: true, error: null };
 }
 
+export async function sendPreparedMonthlyInvoicesToSmartBill(
+  year: number,
+  month: number,
+  clientIds: string[],
+): Promise<{
+  ok: boolean;
+  error: string | null;
+  sentCount: number;
+  skippedCount: number;
+  failedCount: number;
+}> {
+  if (!isSupabaseConfigured()) {
+    return {
+      ok: false,
+      error: "Mod demo: configurează Supabase pentru emiterea facturilor.",
+      sentCount: 0,
+      skippedCount: 0,
+      failedCount: 0,
+    };
+  }
+
+  if (!isSmartBillConfigured()) {
+    return {
+      ok: false,
+      error: "SmartBill nu este configurat.",
+      sentCount: 0,
+      skippedCount: 0,
+      failedCount: 0,
+    };
+  }
+
+  if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) {
+    return {
+      ok: false,
+      error: "Luna selectată este invalidă.",
+      sentCount: 0,
+      skippedCount: 0,
+      failedCount: 0,
+    };
+  }
+
+  const normalizedClientIds = [...new Set(clientIds.filter(Boolean))];
+  if (normalizedClientIds.length === 0) {
+    return {
+      ok: false,
+      error: "Selectează cel puțin un client din coada financiară.",
+      sentCount: 0,
+      skippedCount: 0,
+      failedCount: 0,
+    };
+  }
+
+  const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+  const endDate = new Date(year, month, 1).toISOString().slice(0, 10);
+
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError) {
+    return {
+      ok: false,
+      error: userError.message,
+      sentCount: 0,
+      skippedCount: 0,
+      failedCount: 0,
+    };
+  }
+
+  if (!user) {
+    return {
+      ok: false,
+      error: "Unauthorized",
+      sentCount: 0,
+      skippedCount: 0,
+      failedCount: 0,
+    };
+  }
+
+  const { data: appointments, error: appointmentsError } = await supabase
+    .from("appointments")
+    .select("id, client_id")
+    .gte("appointment_date", startDate)
+    .lt("appointment_date", endDate)
+    .eq("therapist_id", user.id)
+    .in("client_id", normalizedClientIds);
+
+  if (appointmentsError) {
+    return {
+      ok: false,
+      error: appointmentsError.message,
+      sentCount: 0,
+      skippedCount: 0,
+      failedCount: 0,
+    };
+  }
+
+  const appointmentIds = (appointments ?? []).map((appointment) => appointment.id);
+  if (appointmentIds.length === 0) {
+    return {
+      ok: true,
+      error: null,
+      sentCount: 0,
+      skippedCount: normalizedClientIds.length,
+      failedCount: 0,
+    };
+  }
+
+  const { data: preparedInvoices, error: invoicesError } = await supabase
+    .from("invoices")
+    .select("id")
+    .eq("therapist_id", user.id)
+    .eq("status", "PREGĂTITĂ")
+    .in("appointment_id", appointmentIds);
+
+  if (invoicesError) {
+    return {
+      ok: false,
+      error: invoicesError.message,
+      sentCount: 0,
+      skippedCount: 0,
+      failedCount: 0,
+    };
+  }
+
+  const invoicesToSend = preparedInvoices ?? [];
+  if (invoicesToSend.length === 0) {
+    return {
+      ok: true,
+      error: null,
+      sentCount: 0,
+      skippedCount: normalizedClientIds.length,
+      failedCount: 0,
+    };
+  }
+
+  let sentCount = 0;
+  let failedCount = 0;
+
+  for (const invoice of invoicesToSend) {
+    const result = await sendPreparedInvoiceToSmartBill(invoice.id);
+    if (result.ok) {
+      sentCount += 1;
+    } else {
+      failedCount += 1;
+    }
+  }
+
+  revalidatePath("/dashboard/billing");
+  revalidatePath("/dashboard/invoices");
+
+  return {
+    ok: failedCount === 0,
+    error:
+      failedCount > 0
+        ? `${failedCount} facturi nu au putut fi trimise în SmartBill.`
+        : null,
+    sentCount,
+    skippedCount: normalizedClientIds.length - sentCount - failedCount < 0
+      ? 0
+      : normalizedClientIds.length - sentCount - failedCount,
+    failedCount,
+  };
+}
+
+export async function sendPreparedInvoicesBatch(
+  invoiceIds: string[],
+): Promise<{
+  ok: boolean;
+  error: string | null;
+  sentCount: number;
+  failedCount: number;
+}> {
+  if (!isSupabaseConfigured()) {
+    return {
+      ok: false,
+      error: "Mod demo: configurează Supabase pentru emiterea facturilor.",
+      sentCount: 0,
+      failedCount: 0,
+    };
+  }
+
+  if (!isSmartBillConfigured()) {
+    return {
+      ok: false,
+      error: "SmartBill nu este configurat.",
+      sentCount: 0,
+      failedCount: 0,
+    };
+  }
+
+  const normalizedInvoiceIds = [...new Set(invoiceIds.filter(Boolean))];
+  if (normalizedInvoiceIds.length === 0) {
+    return {
+      ok: false,
+      error: "Selectează cel puțin o factură pregătită.",
+      sentCount: 0,
+      failedCount: 0,
+    };
+  }
+
+  let sentCount = 0;
+  let failedCount = 0;
+
+  for (const invoiceId of normalizedInvoiceIds) {
+    const result = await sendPreparedInvoiceToSmartBill(invoiceId);
+    if (result.ok) {
+      sentCount += 1;
+    } else {
+      failedCount += 1;
+    }
+  }
+
+  revalidatePath("/dashboard/invoices");
+
+  return {
+    ok: failedCount === 0,
+    error:
+      failedCount > 0
+        ? `${failedCount} facturi nu au putut fi trimise în SmartBill.`
+        : null,
+    sentCount,
+    failedCount,
+  };
+}
+
 export async function markInvoicePaid(invoiceId: string): Promise<{ ok: boolean; error: string | null }> {
   if (!isSupabaseConfigured()) {
     return { ok: false, error: "Mod demo." };

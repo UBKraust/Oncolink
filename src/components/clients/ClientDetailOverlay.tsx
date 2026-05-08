@@ -65,7 +65,7 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
   const [isPending, setIsPending] = useState(false);
   const [isNotifying, setIsNotifying] = useState(false);
   const [isRevokingConsent, setIsRevokingConsent] = useState(false);
-  const [overrideScheduledState, setOverrideScheduledState] = useState<{
+  const [scheduledState, setScheduledState] = useState<{
     clientId: string | null;
     value: Date | null;
   }>({
@@ -113,9 +113,9 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
   const actualScheduledAt = currentClient.scheduled_anonymization_at
     ? new Date(currentClient.scheduled_anonymization_at)
     : null;
-  const overrideScheduledAt =
-    overrideScheduledState.clientId === currentClient.id ? overrideScheduledState.value : null;
-  const scheduledAt = overrideScheduledAt !== null ? overrideScheduledAt : actualScheduledAt;
+  const localScheduledAt =
+    scheduledState.clientId === currentClient.id ? scheduledState.value : null;
+  const scheduledAt = localScheduledAt !== null ? localScheduledAt : actualScheduledAt;
   const isScheduled = !!scheduledAt;
   
   const daysLeft = isScheduled && scheduledAt.getTime() > 10000
@@ -129,15 +129,13 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
     const res = await scheduleAnonymization(currentClient.id);
     setIsPending(false);
     if (res?.success) {
-      toast.success("Anonimizare programată în 15 zile.");
-    } else if (res?.error?.includes("Mod demo")) {
-      const mockDate = new Date();
-      mockDate.setDate(mockDate.getDate() + 15);
-      setOverrideScheduledState({
+      const nextDate = new Date();
+      nextDate.setDate(nextDate.getDate() + 15);
+      setScheduledState({
         clientId: currentClient.id,
-        value: mockDate,
+        value: nextDate,
       });
-      toast.success("Mod Demo: Anonimizare simulată.");
+      toast.success("Anonimizare programată în 15 zile.");
     } else {
       toast.error("Eroare: " + res?.error);
     }
@@ -148,14 +146,11 @@ export function ClientDetailOverlay({ client, onClose }: ClientDetailOverlayProp
     const res = await cancelAnonymization(currentClient.id);
     setIsPending(false);
     if (res?.success) {
-      toast.success("Anonimizare anulată. Datele au fost recuperate.");
-    } else if (res?.error?.includes("Mod demo")) {
-      // Simulate un-scheduling
-      setOverrideScheduledState({
+      setScheduledState({
         clientId: currentClient.id,
-        value: new Date(0),
-      }); // Use epoch to explicitly say "cleared" without matching null
-      toast.success("Mod Demo: Datele au fost recuperate.");
+        value: null,
+      });
+      toast.success("Anonimizare anulată. Datele au fost recuperate.");
     } else {
       toast.error("Eroare: " + res?.error);
     }

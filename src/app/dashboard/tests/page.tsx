@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { seededTests } from "@/lib/assessments/seededTests";
 import { internalForms } from "@/lib/assessments/internalForms";
-import { DashboardPage, PageHeader } from "@/components/app/page-shell";
+import { DashboardPage, PageHeader, ReadinessBadge, StatusBanner } from "@/components/app/page-shell";
 import type { TestTemplate, TestCategory, LicenseStatus } from "@/lib/assessments/types";
 
 // ─── Catalog metadata ────────────────────────────────────────────────────────
@@ -60,25 +60,44 @@ const AGE_LABELS: Record<string, string> = {
   all:        "Toate vârstele",
 };
 
+function hasTestPlaceholders(test: TestTemplate) {
+  return test.questions.some((q) =>
+    q.text?.includes("de completat") || q.text?.includes("placeholder")
+  );
+}
+
+function getTestReadiness(test: TestTemplate): "safe" | "partial" | "blocked" {
+  if (hasTestPlaceholders(test)) return "blocked";
+  if (test.meta?.licenseStatus === "INTERNAL_FORM") return "safe";
+  return "partial";
+}
+
 // ─── Test Card ───────────────────────────────────────────────────────────────
 
 function TestCard({ test }: { test: TestTemplate }) {
   const meta = test.meta;
   const licConfig = meta ? LICENSE_CONFIG[meta.licenseStatus] : null;
-  const hasPlaceholders = test.questions.some((q) =>
-    q.text?.includes("de completat") || q.text?.includes("placeholder")
-  );
+  const hasPlaceholders = hasTestPlaceholders(test);
+  const readiness = getTestReadiness(test);
 
   return (
     <Card className="flex flex-col rounded-2xl">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-base leading-snug">{test.name}</CardTitle>
-          {licConfig && (
-            <Badge variant={licConfig.variant} className="shrink-0 text-[10px] uppercase tracking-wide">
-              {licConfig.label}
-            </Badge>
-          )}
+          <div className="space-y-2">
+            <CardTitle className="text-base leading-snug">{test.name}</CardTitle>
+            <div className="flex flex-wrap gap-2">
+              {licConfig && (
+                <Badge variant={licConfig.variant} className="shrink-0 text-[10px] uppercase tracking-wide">
+                  {licConfig.label}
+                </Badge>
+              )}
+              <ReadinessBadge
+                state={readiness}
+                label={readiness === "safe" ? "Safe" : readiness === "partial" ? "Partial" : "Blocked"}
+              />
+            </div>
+          </div>
         </div>
         <CardDescription className="line-clamp-2 mt-1 text-xs">
           {test.description}
@@ -143,12 +162,19 @@ function TestCard({ test }: { test: TestTemplate }) {
       </CardContent>
 
       <CardFooter className="border-t pt-3 gap-2">
-        <Button variant="outline" size="sm" className="flex-1" asChild>
-          <Link href={`/dashboard/assessments/new?testId=${test.id}`}>
-            <FlaskConical className="mr-1.5 h-3.5 w-3.5" />
-            Administrează
-          </Link>
-        </Button>
+        {hasPlaceholders ? (
+          <Button variant="outline" size="sm" className="flex-1" disabled>
+            <AlertTriangle className="mr-1.5 h-3.5 w-3.5" />
+            Blocat până la completare
+          </Button>
+        ) : (
+          <Button variant="outline" size="sm" className="flex-1" asChild>
+            <Link href={`/dashboard/assessments/new?testId=${test.id}`}>
+              <FlaskConical className="mr-1.5 h-3.5 w-3.5" />
+              Administrează
+            </Link>
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );
@@ -160,6 +186,9 @@ type FilterCategory = TestCategory | "ALL";
 
 export default function TestsCatalogPage() {
   const [activeFilter, setActiveFilter] = useState<FilterCategory>("ALL");
+  const blockedCount = ALL_TESTS.filter((test) => getTestReadiness(test) === "blocked").length;
+  const partialCount = ALL_TESTS.filter((test) => getTestReadiness(test) === "partial").length;
+  const safeCount = ALL_TESTS.filter((test) => getTestReadiness(test) === "safe").length;
 
   // Collect categories that have at least one test
   const usedCategories = Array.from(
@@ -179,7 +208,10 @@ export default function TestsCatalogPage() {
         title="Catalog teste psihologice"
         description={`${ALL_TESTS.length} instrumente — screening, formulare interne CBT/DBT și instrumente clinice.`}
         action={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <ReadinessBadge state="safe" label={`Safe ${safeCount}`} />
+            <ReadinessBadge state="partial" label={`Partial ${partialCount}`} />
+            <ReadinessBadge state="blocked" label={`Blocked ${blockedCount}`} />
             <Button variant="outline" asChild>
               <Link href="/dashboard/tests/new">
                 <Plus className="mr-2 h-4 w-4" />
@@ -195,6 +227,14 @@ export default function TestsCatalogPage() {
           </div>
         }
       />
+
+      {blockedCount > 0 ? (
+        <StatusBanner
+          title="Catalog disponibil parțial clinic"
+          description={`${blockedCount} instrumente sunt blocate din administrare deoarece conțin itemi placeholder. Ele rămân vizibile pentru planificare, dar nu pot fi folosite clinic până la completare.`}
+          tone="warning"
+        />
+      ) : null}
 
       {/* License legend */}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-border/60 bg-muted/30 px-4 py-3 text-xs text-muted-foreground">

@@ -11,7 +11,10 @@ import { CardContent, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { queueMonthlyInvoices } from "@/app/dashboard/invoices/actions";
+import {
+  queueMonthlyInvoices,
+  sendPreparedMonthlyInvoicesToSmartBill,
+} from "@/app/dashboard/invoices/actions";
 import { toast } from "@/components/ui/toast";
 import {
   DashboardPage,
@@ -82,7 +85,7 @@ function asNumber(value: unknown): number {
 }
 
 function isInvoiceStatus(value: unknown): value is ClientRow["invoiceStatus"] {
-  return value === "ACHITAT" || value === "PARTIAL" || value === "NEEMIS";
+  return value === "ACHITAT" || value === "PARTIAL" || value === "NEEMIS" || value === "PREGĂTITĂ";
 }
 
 function normalizeMonthlySummary(payload: unknown, fallbackYear: number, fallbackMonth: number): MonthlySummary {
@@ -131,6 +134,7 @@ export default function BillingPage() {
   const [forecast, setForecast] = useState<ForecastPayload | null>(null);
   const [loading, setLoading] = useState(false);
   const [queuePending, startQueueTransition] = useTransition();
+  const [bulkPending, startBulkTransition] = useTransition();
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const loadSummary = useCallback(async () => {
@@ -170,17 +174,46 @@ export default function BillingPage() {
     });
   }
 
-  function selectAllUnpaid() {
-    const unpaid = (data?.clients ?? []).filter(c => c.invoiceStatus !== "ACHITAT").map(c => c.clientId);
-    setSelected(new Set(unpaid));
+  function selectAllPrepared() {
+    const prepared = (data?.clients ?? [])
+      .filter((client) => client.invoiceStatus === "PREGĂTITĂ")
+      .map((client) => client.clientId);
+    setSelected(new Set(prepared));
   }
 
   function handleBulkInvoice() {
-    const names = (data?.clients ?? [])
-      .filter(c => selected.has(c.clientId))
-      .map(c => c.clientName)
-      .join(", ");
-    alert(`[SmartBill] Se vor emite facturi pentru:\n${names}\n\nIntegrarea SmartBill va procesa secvențial.`);
+    if (!data) return;
+
+    const preparedClientIds = (data.clients ?? [])
+      .filter((client) => selected.has(client.clientId) && client.invoiceStatus === "PREGĂTITĂ")
+      .map((client) => client.clientId);
+
+    if (preparedClientIds.length === 0) {
+      toast.error("Selecția curentă nu conține facturi pregătite pentru SmartBill.");
+      return;
+    }
+
+    startBulkTransition(async () => {
+      const result = await sendPreparedMonthlyInvoicesToSmartBill(
+        data.year,
+        data.month,
+        preparedClientIds,
+      );
+
+      if (result.sentCount > 0 && result.failedCount === 0) {
+        toast.success(`Au fost trimise ${result.sentCount} facturi în SmartBill.`);
+      } else if (result.sentCount > 0 && result.failedCount > 0) {
+        toast.error(
+          `Au fost trimise ${result.sentCount} facturi, dar ${result.failedCount} au eșuat.`,
+        );
+      } else if (!result.ok) {
+        toast.error(result.error ?? "Nu am putut trimite facturile în SmartBill.");
+      } else {
+        toast.error("Nu există facturi pregătite de trimis pentru selecția curentă.");
+      }
+
+      await loadSummary();
+    });
   }
 
   function handleMonthlyExport() {
@@ -211,11 +244,24 @@ export default function BillingPage() {
 
   const clients = data?.clients ?? [];
   const unpaidClients = clients.filter(c => c.invoiceStatus !== "ACHITAT");
+  const preparedClients = clients.filter((client) => client.invoiceStatus === "PREGĂTITĂ");
+  const selectedPreparedClients = clients.filter(
+    (client) => selected.has(client.clientId) && client.invoiceStatus === "PREGĂTITĂ",
+  );
+  const selectedUnreadyClients = clients.filter(
+    (client) =>
+      selected.has(client.clientId) &&
+      client.invoiceStatus !== "PREGĂTITĂ" &&
+      client.invoiceStatus !== "ACHITAT",
+  );
   const collectionRate = data ? Math.round((data.collectedAmount / (data.totalAmount || 1)) * 100) : 0;
   const setupRequired = Boolean(data?.setupRequired || forecast?.setupRequired);
   const canExportMonthly = Boolean(data && data.totalHours > 0 && !setupRequired);
   const canSendToFinancial = Boolean(
     data && data.totalHours > 0 && data.invoiceCandidatesCount > 0 && !setupRequired,
+  );
+  const canBulkSendToSmartBill = Boolean(
+    selectedPreparedClients.length > 0 && !setupRequired,
   );
 
   return (
@@ -335,23 +381,40 @@ export default function BillingPage() {
           {/* Bulk actions */}
           {unpaidClients.length > 0 && (
             <SectionCard
-              title="Facturare în masă"
-              description="Lucrează pe clienții cu sold deschis fără să concurezi cu tabelul principal."
+              title="Trimitere în SmartBill în masă"
+              description="Trimite doar facturile deja pregătite în coada financiară, fără să sari peste pasul de validare."
               icon={AlertCircle}
             >
               <div className="flex flex-wrap items-center gap-3 px-6 py-5">
-                <Badge variant="warning">{unpaidClients.length} solduri deschise</Badge>
+                <Badge variant="warning">{preparedClients.length} clienți în coada financiară</Badge>
                 <span className="flex-1 text-sm text-muted-foreground">
-                  {unpaidClients.length} client{unpaidClients.length !== 1 ? "ți" : ""} cu sume nefacturate sau parțial încasate.
+                  {preparedClients.length} client{preparedClients.length !== 1 ? "ți" : ""} au deja facturi `PREGĂTITĂ`. Clienții rămași pe `De facturat` trebuie trimiși mai întâi la financiar.
                 </span>
-                <Button variant="outline" size="sm" onClick={selectAllUnpaid}>
-                  Selectează toți
+                <Button variant="outline" size="sm" onClick={selectAllPrepared}>
+                  Selectează coada financiară
                 </Button>
                 {selected.size > 0 && (
-                  <Button size="sm" onClick={handleBulkInvoice} className="gap-1.5">
-                    <FileCheck2 className="h-3.5 w-3.5" />
-                    Emite {selected.size} Factur{selected.size === 1 ? "ă" : "i"} SmartBill
-                  </Button>
+                  <>
+                    <span className="text-xs text-muted-foreground">
+                      {selectedPreparedClients.length} pregătit{selectedPreparedClients.length === 1 ? "" : "e"} pentru SmartBill
+                      {selectedUnreadyClients.length > 0
+                        ? ` · ${selectedUnreadyClients.length} încă neeligibil${selectedUnreadyClients.length === 1 ? "" : "e"}`
+                        : ""}
+                    </span>
+                    <Button
+                      size="sm"
+                      onClick={handleBulkInvoice}
+                      disabled={!canBulkSendToSmartBill || bulkPending}
+                      className="gap-1.5"
+                    >
+                      {bulkPending ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <FileCheck2 className="h-3.5 w-3.5" />
+                      )}
+                      Trimite în SmartBill
+                    </Button>
+                  </>
                 )}
               </div>
             </SectionCard>

@@ -10,38 +10,38 @@ Acest bloc înlocuiește ordinea de lucru imediată după auditul transversal al
 
 ### În curs acum
 
-- [ ] Dashboard rezilient la erori parțiale de încărcare
+- [x] Dashboard rezilient la erori parțiale de încărcare
   Context: dacă un singur query Supabase eșuează, nu trebuie să cadă întregul `/dashboard`.
-- [ ] Detaliu programare rezilient la `fetch failed`
+- [x] Detaliu programare rezilient la `fetch failed`
   Context: `/dashboard/appointments/[id]` trebuie să arate banner de eroare și cale de întoarcere, nu runtime crash.
 
 ### Următoarele P0
 
-- [ ] Înlocuiește acțiunea bulk SmartBill placeholder cu flux real server-side
+- [x] Înlocuiește acțiunea bulk SmartBill placeholder cu flux real server-side
   Context: `alert(...)` în billing induce că emiterea s-a făcut, dar nu execută nimic real.
-- [ ] Separă clar `empty state` de `error state` în zonele `forms`, `clients`, `invoices`
+- [x] Separă clar `empty state` de `error state` în zonele `forms`, `clients`, `invoices`
   Context: listele goale și erorile de infrastructură sunt afișate prea similar.
-- [ ] Elimină fallback-urile care mimează succesul pe `PatientDocuments`
+- [x] Elimină fallback-urile care mimează succesul pe `PatientDocuments`
   Context: uploadul local după eșecul API creează impresia falsă că documentul a fost salvat real.
 
 ## P1 — Date reale și coerență operațională
 
-- [ ] Înlocuiește mock data din `ClientFinancialHistory` cu date reale din appointments + invoices + payments
-- [ ] Elimină ultimele ramuri `Mod Demo` din `ClientDetailOverlay`
-- [ ] Adaugă workspace financiar dedicat pentru facturi `PREGĂTITĂ`
-- [ ] Batch select + batch send către SmartBill din `/dashboard/invoices`
-- [ ] Istoric vizibil `PREGĂTITĂ -> EMISĂ -> PLĂTITĂ / ANULATĂ`
+- [x] Înlocuiește mock data din `ClientFinancialHistory` cu date reale din appointments + invoices + payments
+- [x] Elimină ultimele ramuri `Mod Demo` din `ClientDetailOverlay`
+- [x] Adaugă workspace financiar dedicat pentru facturi `PREGĂTITĂ`
+- [x] Batch select + batch send către SmartBill din `/dashboard/invoices`
+- [x] Istoric vizibil `PREGĂTITĂ -> EMISĂ -> PLĂTITĂ / ANULATĂ`
 
 ## P2 — Readiness clinic și conformitate
 
-- [ ] Blochează administrarea testelor care au itemi placeholder
-- [ ] Afișează explicit când P3/forms nu sunt disponibile sau migrările lipsesc
-- [ ] Marchează modulele cu stare de readiness: `safe`, `partial`, `demo`, `blocked`
-- [ ] Unifică bannerele de setup, warning și error într-un pattern UX comun
+- [x] Blochează administrarea testelor care au itemi placeholder
+- [x] Afișează explicit când P3/forms nu sunt disponibile sau migrările lipsesc
+- [x] Marchează modulele cu stare de readiness: `safe`, `partial`, `demo`, `blocked`
+- [x] Unifică bannerele de setup, warning și error într-un pattern UX comun
 
 ## P3 — Extinderea pattern-ului bun din Programări
 
-- [ ] Mută mai multe acțiuni din `Clients` în overlay-uri locale, fără scoatere din context
+- [x] Mută mai multe acțiuni din `Clients` în overlay-uri locale, fără scoatere din context
 - [ ] Aplică același model de lucru local pentru `Facturi`, `Forms`, `Documents`
 - [ ] Reduce zonele unde `router.refresh()` e încă reflexul principal după acțiuni mici
 

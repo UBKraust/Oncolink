@@ -12,6 +12,7 @@ import { EmptyState } from "@/components/app/page-shell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { toast } from "@/components/ui/toast";
 import { useOverlayA11y } from "@/components/ui/use-overlay-a11y";
 import {
   MockPatientDocument, DocumentType,
@@ -78,35 +79,49 @@ export function PatientDocuments({ clientId, isMinor, documents }: Props) {
       if (notes.trim()) fd.append("notes", notes.trim());
 
       const res = await fetch("/api/uploads/document", { method: "POST", body: fd });
-      const json = await res.json() as { success?: boolean; error?: string; id?: string };
+      const json = await res.json() as {
+        success?: boolean;
+        error?: string;
+        id?: string;
+        document_url?: string | null;
+      };
 
-      if (!res.ok || !json.success) throw new Error(json.error ?? "Upload eșuat.");
-    } catch {
-      // fallback: add locally in demo mode
+      if (!res.ok || !json.success) {
+        throw new Error(json.error ?? "Upload eșuat.");
+      }
+
+      const newDoc: MockPatientDocument = {
+        id: json.id ?? `doc-${Date.now()}`,
+        client_id: clientId,
+        file_name: selectedFile.name,
+        file_size_kb: Math.round(selectedFile.size / 1024),
+        mime_type: selectedFile.type as MockPatientDocument["mime_type"],
+        document_url: json.document_url ?? null,
+        document_type: selectedType,
+        notes: notes.trim() || null,
+        uploaded_at: new Date().toISOString(),
+      };
+
+      setDocs((prev) => [newDoc, ...prev]);
+      setSelectedFile(null);
+      setNotes("");
+      if (fileRef.current) fileRef.current.value = "";
+      toast.success(`Documentul "${selectedFile.name}" a fost încărcat.`);
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Nu am putut încărca documentul în acest moment.",
+      );
+    } finally {
+      setUploading(false);
     }
-
-    const newDoc: MockPatientDocument = {
-      id: `doc-${Date.now()}`,
-      client_id: clientId,
-      file_name: selectedFile.name,
-      file_size_kb: Math.round(selectedFile.size / 1024),
-      mime_type: selectedFile.type as MockPatientDocument["mime_type"],
-      document_url: null,
-      document_type: selectedType,
-      notes: notes.trim() || null,
-      uploaded_at: new Date().toISOString(),
-    };
-
-    setDocs((prev) => [newDoc, ...prev]);
-    setSelectedFile(null);
-    setNotes("");
-    setUploading(false);
-    if (fileRef.current) fileRef.current.value = "";
   }
 
 
   function handleRemove(id: string) {
-    setDocs((prev) => prev.filter((d) => d.id !== id));
+    void id;
+    toast.error("Ștergerea documentelor nu este încă conectată la backend.");
   }
 
   return (
@@ -174,7 +189,7 @@ export function PatientDocuments({ clientId, isMinor, documents }: Props) {
               : "border-muted-foreground/30 hover:border-primary/50 hover:bg-muted/20"
             }`}
           >
-            <input ref={fileRef} type="file" accept=".pdf,.jpg,.jpeg,.png" className="sr-only"
+            <input ref={fileRef} type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" className="sr-only"
               onChange={(e) => { const f = e.target.files?.[0]; if (f) setSelectedFile(f); }} />
             {selectedFile ? (
               <>

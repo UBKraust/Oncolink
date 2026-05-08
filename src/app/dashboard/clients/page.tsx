@@ -1,9 +1,9 @@
 import { Users, UserCheck, UserRoundPlus, TrendingUp, AlertCircle } from "lucide-react";
-import { listClients } from "@/lib/clients/queries";
+import { listClients, type ClientWithLifecycleRow } from "@/lib/clients/queries";
 import { deriveClientLifecycle } from "@/lib/clients/lifecycle";
 import { ClientsClient } from "@/components/clients/ClientsClient";
 import { Card, CardContent } from "@/components/ui/card";
-import { DashboardPage, EmptyState, MetricCard, PageHeader, SetupBanner } from "@/components/app/page-shell";
+import { DashboardPage, EmptyState, MetricCard, PageHeader, SetupBanner, StatusBanner } from "@/components/app/page-shell";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import {
   isServiceType,
@@ -31,7 +31,17 @@ export default async function ClientsPage({
 }) {
   const params = await searchParams;
   const configured = isSupabaseConfigured();
-  const clients = await listClients();
+  let clients: ClientWithLifecycleRow[] = [];
+  let loadError: string | null = null;
+
+  try {
+    clients = await listClients();
+  } catch (error) {
+    loadError =
+      error instanceof Error
+        ? error.message
+        : "Nu am putut încărca registrul de pacienți în acest moment.";
+  }
   const initialSearchQuery = params.q?.trim() ?? "";
   const initialServiceFilter: ServiceType | "ALL" =
     isServiceType(params.service) && params.service !== "MIXED"
@@ -94,6 +104,14 @@ export default async function ClientsPage({
         <SetupBanner description="Pacienții reali apar aici după configurarea Supabase. Am eliminat datele demo din această secțiune." />
       ) : null}
 
+      {configured && loadError ? (
+        <StatusBanner
+          title="Pacienții nu au putut fi încărcați"
+          description={`Consola rămâne disponibilă, dar lista de pacienți nu a putut fi încărcată acum. Reîncearcă în câteva secunde. Detaliu: ${loadError}`}
+          tone="error"
+        />
+      ) : null}
+
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
@@ -114,13 +132,22 @@ export default async function ClientsPage({
       </div>
 
 
-      {configured ? (
+      {configured && !loadError ? (
         <ClientsClient
           initialClients={clients}
           initialSearchQuery={initialSearchQuery}
           initialServiceFilter={initialServiceFilter}
           initialOperationalFilter={initialOperationalFilter}
         />
+      ) : configured ? (
+        <Card className="rounded-[1.75rem] border-border/60 shadow-sm">
+          <CardContent className="p-0">
+            <EmptyState
+              title="Nu am putut afișa registrul de pacienți"
+              description="Această stare indică o problemă de încărcare, nu faptul că registrul este gol. Revino după ce conexiunea la date își revine."
+            />
+          </CardContent>
+        </Card>
       ) : (
         <Card className="rounded-[1.75rem] border-border/60 shadow-sm">
           <CardContent className="p-0">

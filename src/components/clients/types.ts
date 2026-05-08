@@ -103,6 +103,8 @@ export interface ClientPayment {
   status: string | null;
   issued_at: string | null;
   appointment_id: string | null;
+  appointment_date?: string | null;
+  duration_minutes?: number | null;
   smartbill_series?: string | null;
   smartbill_number?: string | null;
   client_name?: string | null;

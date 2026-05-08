@@ -4,22 +4,23 @@ import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
 import {
-  Banknote, CreditCard, ArrowLeftRight, FileCheck2,
+  FileCheck2,
   Clock, TrendingUp, AlertCircle, CheckCircle2,
   XCircle, Receipt, Plus, X, Download, StickyNote,
 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import type { MockSessionPayment } from "@/lib/mock/payments";
+import type { ClientPayment } from "@/components/clients/types";
 
 // ── Icon helpers ──────────────────────────────────────────────────────────────
 
-const METHOD_CONFIG: Record<string, { label: string; icon: React.ReactNode; class: string }> = {
-  CASH:        { label: "Cash",         icon: <Banknote className="h-3.5 w-3.5" />,      class: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300" },
-  CARD:        { label: "Card",         icon: <CreditCard className="h-3.5 w-3.5" />,    class: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300" },
-  TRANSFER:    { label: "Transfer",     icon: <ArrowLeftRight className="h-3.5 w-3.5" />,class: "bg-violet-100 text-violet-800 dark:bg-violet-950 dark:text-violet-300" },
-  B2B_FACTURA: { label: "Factură B2B",  icon: <FileCheck2 className="h-3.5 w-3.5" />,   class: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300" },
+const STATUS_FILTER_CONFIG: Record<string, { label: string; icon: React.ReactNode; class: string }> = {
+  PREGĂTITĂ: { label: "Pregătită", icon: <FileCheck2 className="h-3.5 w-3.5" />, class: "bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300" },
+  EMISĂ:     { label: "Emisă",     icon: <Receipt className="h-3.5 w-3.5" />,   class: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300" },
+  PLĂTITĂ:   { label: "Plătită",   icon: <CheckCircle2 className="h-3.5 w-3.5" />, class: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300" },
+  RESTANTĂ:  { label: "Restantă",  icon: <AlertCircle className="h-3.5 w-3.5" />, class: "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300" },
+  ANULATĂ:   { label: "Anulată",   icon: <XCircle className="h-3.5 w-3.5" />, class: "bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-300" },
 };
 
 const INVOICE_CONFIG: Record<string, { label: string; icon: React.ReactNode; class: string }> = {
@@ -35,27 +36,27 @@ export function ClientFinancialHistory({
   payments,
   clientName,
 }: {
-  payments: MockSessionPayment[];
+  payments: ClientPayment[];
   clientName: string;
 }) {
-  const [filter, setFilter] = useState<"ALL" | "CASH" | "CARD" | "TRANSFER" | "B2B_FACTURA">("ALL");
-  const [selected, setSelected] = useState<MockSessionPayment | null>(null);
+  const [filter, setFilter] = useState<"ALL" | "PREGĂTITĂ" | "EMISĂ" | "PLĂTITĂ" | "RESTANTĂ" | "ANULATĂ">("ALL");
+  const [selected, setSelected] = useState<ClientPayment | null>(null);
 
   const sorted = useMemo(
     () => [...payments].sort((a, b) =>
-      new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime()
+      new Date(b.issued_at ?? b.appointment_date ?? 0).getTime() - new Date(a.issued_at ?? a.appointment_date ?? 0).getTime()
     ),
     [payments]
   );
 
-  const filtered = filter === "ALL" ? sorted : sorted.filter(p => p.payment_method === filter);
+  const filtered = filter === "ALL" ? sorted : sorted.filter(p => p.status === filter);
 
   // Summary stats
-  const totalAmount   = payments.reduce((s, p) => s + p.amount, 0);
+  const totalAmount   = payments.filter((p) => p.status === "PLĂTITĂ").reduce((s, p) => s + p.amount, 0);
   const totalSessions = payments.length;
-  const totalMinutes  = payments.reduce((s, p) => s + p.duration_minutes, 0);
-  const unpaidCount   = payments.filter(p => p.invoice_status === "EMISĂ").length;
-  const cashCount     = payments.filter(p => p.payment_method === "CASH").length;
+  const totalMinutes  = payments.reduce((s, p) => s + Number(p.duration_minutes ?? 0), 0);
+  const unpaidCount   = payments.filter(p => p.status === "EMISĂ" || p.status === "RESTANTĂ").length;
+  const preparedCount = payments.filter(p => p.status === "PREGĂTITĂ").length;
 
   if (payments.length === 0) {
     return (
@@ -77,8 +78,8 @@ export function ClientFinancialHistory({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold tracking-tight">Istoric Financiar & Plăți</h2>
-        <Button variant="outline" size="sm">
-          <Plus className="h-4 w-4 mr-1" /> Înregistrează Plată
+        <Button variant="outline" size="sm" disabled>
+          <Plus className="h-4 w-4 mr-1" /> Sincronizare din facturi
         </Button>
       </div>
 
@@ -92,7 +93,7 @@ export function ClientFinancialHistory({
 
       {/* Filter Tabs */}
       <div className="flex flex-wrap gap-2">
-        {(["ALL", "CASH", "CARD", "TRANSFER", "B2B_FACTURA"] as const).map((m) => (
+        {(["ALL", "PREGĂTITĂ", "EMISĂ", "PLĂTITĂ", "RESTANTĂ", "ANULATĂ"] as const).map((m) => (
           <button
             key={m}
             onClick={() => setFilter(m)}
@@ -102,9 +103,9 @@ export function ClientFinancialHistory({
                 : "bg-background text-muted-foreground hover:border-border hover:bg-muted/30"
             }`}
           >
-            {m === "ALL" ? "Toate" : METHOD_CONFIG[m]?.label ?? m}
+            {m === "ALL" ? "Toate" : STATUS_FILTER_CONFIG[m]?.label ?? m}
             <span className="ml-1.5 opacity-60">
-              {m === "ALL" ? payments.length : payments.filter(p => p.payment_method === m).length}
+              {m === "ALL" ? payments.length : payments.filter(p => p.status === m).length}
             </span>
           </button>
         ))}
@@ -115,8 +116,8 @@ export function ClientFinancialHistory({
         <CardContent className="p-0">
           <div className="divide-y">
             {filtered.map((p) => {
-              const method = METHOD_CONFIG[p.payment_method];
-              const invoice = INVOICE_CONFIG[p.invoice_status];
+              const statusTone = STATUS_FILTER_CONFIG[p.status ?? "EMISĂ"] ?? STATUS_FILTER_CONFIG.EMISĂ;
+              const invoice = INVOICE_CONFIG[p.status as keyof typeof INVOICE_CONFIG] ?? INVOICE_CONFIG.EMISĂ;
 
               return (
                 <button
@@ -127,18 +128,20 @@ export function ClientFinancialHistory({
                   {/* Date */}
                   <div className="w-24 shrink-0">
                     <p className="text-xs font-medium">
-                      {format(new Date(p.appointment_date), "d MMM yyyy", { locale: ro })}
+                      {format(new Date(p.issued_at ?? p.appointment_date ?? new Date()), "d MMM yyyy", { locale: ro })}
                     </p>
                     <p className="text-[11px] text-muted-foreground">
-                      {format(new Date(p.appointment_date), "HH:mm")} · {p.duration_minutes}min
+                      {p.appointment_date
+                        ? `${format(new Date(p.appointment_date), "HH:mm")} · ${p.duration_minutes ?? 0}min`
+                        : "Dată emitere"}
                     </p>
                   </div>
 
-                  {/* Method badge */}
+                  {/* Status badge */}
                   <div className="w-32 shrink-0">
-                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${method.class}`}>
-                      {method.icon}
-                      {method.label}
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${statusTone.class}`}>
+                      {statusTone.icon}
+                      {statusTone.label}
                     </span>
                   </div>
 
@@ -146,15 +149,18 @@ export function ClientFinancialHistory({
                   <div className="w-32 shrink-0">
                     <span className={`inline-flex items-center gap-1 text-[11px] font-medium ${invoice.class}`}>
                       {invoice.icon}
-                      {p.invoice_number ?? invoice.label}
+                      {p.smartbill_series && p.smartbill_number
+                        ? `${p.smartbill_series}-${p.smartbill_number}`
+                        : invoice.label}
                     </span>
                   </div>
 
                   {/* Notes */}
                   <div className="flex-1 min-w-0">
-                    {p.notes && (
-                      <p className="text-xs text-muted-foreground truncate">{p.notes}</p>
-                    )}
+                    <p className="text-xs text-muted-foreground truncate">
+                      {p.client_name ?? clientName}
+                      {p.appointment_id ? " · legată de o programare" : ""}
+                    </p>
                   </div>
 
                   {/* Amount */}
@@ -173,10 +179,10 @@ export function ClientFinancialHistory({
         </CardContent>
       </Card>
 
-      {cashCount > 0 && (
+      {preparedCount > 0 && (
         <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Banknote className="h-3.5 w-3.5" />
-          {cashCount} plăți în numerar (cash) — neincluse automat în facturare digitală.
+          <FileCheck2 className="h-3.5 w-3.5" />
+          {preparedCount} facturi sunt încă în coada financiară și nu au fost trimise în SmartBill.
         </p>
       )}
 
@@ -193,7 +199,11 @@ export function ClientFinancialHistory({
               <div className="space-y-1">
                 <p className="font-semibold">Detalii Plată</p>
                 <p className="text-xs text-muted-foreground">
-                  {format(new Date(selected.appointment_date), "d MMMM yyyy, HH:mm", { locale: ro })}
+                  {format(
+                    new Date(selected.issued_at ?? selected.appointment_date ?? new Date()),
+                    "d MMMM yyyy, HH:mm",
+                    { locale: ro },
+                  )}
                 </p>
                 <p className="text-xs text-muted-foreground">{clientName}</p>
               </div>
@@ -219,52 +229,59 @@ export function ClientFinancialHistory({
               {/* Details grid */}
               <div className="divide-y rounded-xl border border-border/60 bg-card">
                 <DetailRow label="Metodă plată">
-                  <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${METHOD_CONFIG[selected.payment_method]?.class}`}>
-                    {METHOD_CONFIG[selected.payment_method]?.icon}
-                    {METHOD_CONFIG[selected.payment_method]?.label}
+                  <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_FILTER_CONFIG[selected.status ?? "EMISĂ"]?.class}`}>
+                    {STATUS_FILTER_CONFIG[selected.status ?? "EMISĂ"]?.icon}
+                    {STATUS_FILTER_CONFIG[selected.status ?? "EMISĂ"]?.label}
                   </span>
                 </DetailRow>
                 <DetailRow label="Status factură">
-                  <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${INVOICE_CONFIG[selected.invoice_status]?.class}`}>
-                    {INVOICE_CONFIG[selected.invoice_status]?.icon}
-                    {INVOICE_CONFIG[selected.invoice_status]?.label}
+                  <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${(INVOICE_CONFIG[selected.status as keyof typeof INVOICE_CONFIG] ?? INVOICE_CONFIG.EMISĂ).class}`}>
+                    {(INVOICE_CONFIG[selected.status as keyof typeof INVOICE_CONFIG] ?? INVOICE_CONFIG.EMISĂ).icon}
+                    {(INVOICE_CONFIG[selected.status as keyof typeof INVOICE_CONFIG] ?? INVOICE_CONFIG.EMISĂ).label}
                   </span>
                 </DetailRow>
-                {selected.invoice_number && (
+                {selected.smartbill_series && selected.smartbill_number && (
                   <DetailRow label="Număr factură">
-                    <span className="text-sm font-mono">{selected.invoice_number}</span>
+                    <span className="text-sm font-mono">{selected.smartbill_series}-{selected.smartbill_number}</span>
                   </DetailRow>
                 )}
                 <DetailRow label="Dată & oră">
                   <span className="text-sm">
-                    {format(new Date(selected.appointment_date), "d MMM yyyy, HH:mm", { locale: ro })}
+                    {format(new Date(selected.issued_at ?? selected.appointment_date ?? new Date()), "d MMM yyyy, HH:mm", { locale: ro })}
                   </span>
                 </DetailRow>
                 <DetailRow label="Durată ședință">
-                  <span className="text-sm">{selected.duration_minutes} min</span>
+                  <span className="text-sm">{selected.duration_minutes ?? 0} min</span>
                 </DetailRow>
               </div>
 
-              {/* Notes */}
-              {selected.notes && (
-                <div className="space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                    <StickyNote className="h-3.5 w-3.5" />
-                    Observații
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                  <StickyNote className="h-3.5 w-3.5" />
+                  Context financiar
+                </p>
+                <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
+                  <p className="text-sm leading-relaxed">
+                    {selected.status === "PREGĂTITĂ"
+                      ? "Factura este pregătită local și așteaptă trimiterea în SmartBill."
+                      : selected.status === "PLĂTITĂ"
+                        ? "Factura este marcată ca încasată."
+                        : selected.status === "RESTANTĂ"
+                          ? "Factura este emisă, dar încă restantă."
+                          : selected.status === "ANULATĂ"
+                            ? "Factura a fost anulată și nu mai intră în sold."
+                            : "Factura este emisă și în așteptarea încasării."}
                   </p>
-                  <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
-                    <p className="text-sm leading-relaxed">{selected.notes}</p>
-                  </div>
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Footer */}
-            {selected.invoice_number && (
+            {selected.smartbill_series && selected.smartbill_number && (
               <div className="border-t px-5 py-4">
                 <button className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 font-medium transition-colors">
                   <Download className="h-4 w-4" />
-                  Descarcă factură {selected.invoice_number}
+                  Descarcă factură {selected.smartbill_series}-{selected.smartbill_number}
                 </button>
               </div>
             )}

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import {
   BookOpen,
   Check,
@@ -31,25 +30,25 @@ interface HomeworkCardProps {
 }
 
 export function HomeworkCard({ clientId, items }: HomeworkCardProps) {
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [showAdd, setShowAdd] = useState(false);
   const [newDesc, setNewDesc] = useState("");
   const [newDue, setNewDue] = useState("");
+  const [itemsState, setItemsState] = useState(items);
 
-  const pending = items.filter((i) => !i.completed_at);
-  const completed = items.filter((i) => i.completed_at);
+  const pending = itemsState.filter((i) => !i.completed_at);
+  const completed = itemsState.filter((i) => i.completed_at);
 
   function handleAdd() {
     if (!newDesc.trim()) return;
     startTransition(async () => {
       const result = await createHomeworkItem(clientId, newDesc, newDue || undefined);
-      if (result.success) {
+      if (result.success && result.item) {
+        setItemsState((prev) => [result.item!, ...prev]);
         toast.success("Temă adăugată.");
         setNewDesc("");
         setNewDue("");
         setShowAdd(false);
-        router.refresh();
       } else {
         toast.error(result.error ?? "Nu am putut adăuga tema.");
       }
@@ -60,7 +59,16 @@ export function HomeworkCard({ clientId, items }: HomeworkCardProps) {
     startTransition(async () => {
       const result = await toggleHomeworkItem(item.id, clientId, !item.completed_at);
       if (result.success) {
-        router.refresh();
+        setItemsState((prev) =>
+          prev.map((entry) =>
+            entry.id === item.id
+              ? {
+                  ...entry,
+                  completed_at: item.completed_at ? null : new Date().toISOString(),
+                }
+              : entry,
+          ),
+        );
       } else {
         toast.error(result.error ?? "Eroare la actualizare.");
       }
@@ -72,7 +80,7 @@ export function HomeworkCard({ clientId, items }: HomeworkCardProps) {
       const result = await deleteHomeworkItem(item.id, clientId);
       if (result.success) {
         toast.success("Temă ștearsă.");
-        router.refresh();
+        setItemsState((prev) => prev.filter((entry) => entry.id !== item.id));
       } else {
         toast.error(result.error ?? "Eroare la ștergere.");
       }
@@ -157,7 +165,7 @@ export function HomeworkCard({ clientId, items }: HomeworkCardProps) {
       )}
 
       <div className="divide-y divide-border/30 px-5">
-        {items.length === 0 && !showAdd ? (
+        {itemsState.length === 0 && !showAdd ? (
           <div className="py-8 text-center">
             <p className="text-sm text-muted-foreground">Nicio temă adăugată.</p>
             <Button

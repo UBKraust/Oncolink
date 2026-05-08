@@ -216,7 +216,6 @@ export function ReportEditor({
       if (error) { toast.error(error); return; }
       setStatus("FINAL");
       toast.success("Raport finalizat.");
-      router.refresh();
     });
   }
 

@@ -459,21 +459,37 @@ export async function createHomeworkItem(
   clientId: string,
   description: string,
   dueDate?: string,
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{
+  success: boolean;
+  error?: string;
+  item?: {
+    id: string;
+    client_id: string;
+    description: string;
+    due_date: string | null;
+    completed_at: string | null;
+    therapist_notes: string | null;
+    created_at: string;
+  };
+}> {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Neautentificat." };
 
-  const { error } = await supabase.from("homework_items").insert({
-    client_id: clientId,
-    therapist_id: user.id,
-    description: description.trim(),
-    due_date: dueDate ?? null,
-  });
+  const { data, error } = await supabase
+    .from("homework_items")
+    .insert({
+      client_id: clientId,
+      therapist_id: user.id,
+      description: description.trim(),
+      due_date: dueDate ?? null,
+    })
+    .select("id, client_id, description, due_date, completed_at, therapist_notes, created_at")
+    .single();
 
   if (error) return { success: false, error: "Nu am putut adăuga tema." };
   revalidatePath(`/dashboard/clients/${clientId}`);
-  return { success: true };
+  return { success: true, item: data };
 }
 
 export async function toggleHomeworkItem(
@@ -543,19 +559,36 @@ export async function upsertDbtDiaryCard(
     target_behaviors?: Array<{ name: string; count: number }>;
     therapist_notes?: string;
   },
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{
+  success: boolean;
+  error?: string;
+  card?: {
+    id: string;
+    client_id: string;
+    week_start: string;
+    emotion_scores: Record<string, unknown> | null;
+    skills_used: string[] | null;
+    target_behaviors: Array<{ name: string; count: number }> | null;
+    therapist_notes: string | null;
+    created_at: string;
+  };
+}> {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Neautentificat." };
 
-  const { error } = await supabase.from("dbt_diary_cards").upsert(
-    { client_id: clientId, therapist_id: user.id, week_start: weekStart, ...data },
-    { onConflict: "client_id,week_start" },
-  );
+  const { data: savedCard, error } = await supabase
+    .from("dbt_diary_cards")
+    .upsert(
+      { client_id: clientId, therapist_id: user.id, week_start: weekStart, ...data },
+      { onConflict: "client_id,week_start" },
+    )
+    .select("id, client_id, week_start, emotion_scores, skills_used, target_behaviors, therapist_notes, created_at")
+    .single();
 
   if (error) return { success: false, error: "Nu am putut salva diary card-ul." };
   revalidatePath(`/dashboard/clients/${clientId}`);
-  return { success: true };
+  return { success: true, card: savedCard };
 }
 
 // ─── P2: safety_plans ─────────────────────────────────────────────────────────
@@ -571,19 +604,39 @@ export async function upsertSafetyPlan(
     professional_contacts?: Array<{ name: string; phone: string }>;
     safe_environment?: string;
   },
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{
+  success: boolean;
+  error?: string;
+  plan?: {
+    id: string;
+    client_id: string;
+    warning_signs: string | null;
+    internal_coping: string | null;
+    social_distractions: string | null;
+    reasons_for_living: string | null;
+    support_contacts: Array<{ name: string; phone: string; relation?: string }> | null;
+    professional_contacts: Array<{ name: string; phone: string }> | null;
+    safe_environment: string | null;
+    created_at: string;
+    updated_at: string;
+  };
+}> {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Neautentificat." };
 
-  const { error } = await supabase.from("safety_plans").upsert(
-    { client_id: clientId, therapist_id: user.id, ...data, updated_at: new Date().toISOString() },
-    { onConflict: "client_id" },
-  );
+  const { data: savedPlan, error } = await supabase
+    .from("safety_plans")
+    .upsert(
+      { client_id: clientId, therapist_id: user.id, ...data, updated_at: new Date().toISOString() },
+      { onConflict: "client_id" },
+    )
+    .select("id, client_id, warning_signs, internal_coping, social_distractions, reasons_for_living, support_contacts, professional_contacts, safe_environment, created_at, updated_at")
+    .single();
 
   if (error) return { success: false, error: "Nu am putut salva planul de siguranță." };
   revalidatePath(`/dashboard/clients/${clientId}`);
-  return { success: true };
+  return { success: true, plan: savedPlan };
 }
 
 export async function anonymizeClient(id: string, formData: FormData) {

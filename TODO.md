@@ -42,7 +42,7 @@ Acest bloc înlocuiește ordinea de lucru imediată după auditul transversal al
 ## P3 — Extinderea pattern-ului bun din Programări
 
 - [x] Mută mai multe acțiuni din `Clients` în overlay-uri locale, fără scoatere din context
-- [ ] Aplică același model de lucru local pentru `Facturi`, `Forms`, `Documents`
+- [x] Aplică același model de lucru local pentru `Facturi`, `Forms`, `Documents`
 - [ ] Reduce zonele unde `router.refresh()` e încă reflexul principal după acțiuni mici
 
 ---

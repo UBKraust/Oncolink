@@ -1,7 +1,6 @@
 "use client";
 
 import { useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { Check, Loader2, Send, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -11,15 +10,15 @@ import {
   markInvoicePaid,
   sendPreparedInvoiceToSmartBill,
 } from "@/app/dashboard/invoices/actions";
-import type { InvoiceRow } from "@/lib/invoices/queries";
+import type { InvoiceRow } from "@/lib/invoices/shared";
 
 interface InvoiceActionsProps {
   invoice: InvoiceRow;
+  onUpdated?: (patch: Partial<InvoiceRow>) => void;
 }
 
-export function InvoiceActions({ invoice }: InvoiceActionsProps) {
+export function InvoiceActions({ invoice, onUpdated }: InvoiceActionsProps) {
   const [pending, startTransition] = useTransition();
-  const router = useRouter();
 
   const canSendToSmartBill = invoice.status === "PREGĂTITĂ";
   const canMarkPaid = invoice.status === "EMISĂ" || invoice.status === "RESTANTĂ";
@@ -41,7 +40,7 @@ export function InvoiceActions({ invoice }: InvoiceActionsProps) {
                 return;
               }
               toast.success("Factura a fost trimisă în SmartBill.");
-              router.refresh();
+              onUpdated?.(result.invoice ?? { status: "EMISĂ" });
             })
           }
         >
@@ -66,7 +65,7 @@ export function InvoiceActions({ invoice }: InvoiceActionsProps) {
                 return;
               }
               toast.success("Factura a fost marcată ca plătită.");
-              router.refresh();
+              onUpdated?.(result.invoice ?? { status: "PLĂTITĂ" });
             })
           }
         >
@@ -92,7 +91,7 @@ export function InvoiceActions({ invoice }: InvoiceActionsProps) {
                 return;
               }
               toast.success("Factura a fost anulată.");
-              router.refresh();
+              onUpdated?.(result.invoice ?? { status: "ANULATĂ" });
             })
           }
         >

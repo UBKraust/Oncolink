@@ -2,10 +2,8 @@ import Link from "next/link";
 import { FilePlus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import {
-  listInvoices,
-  type InvoiceRow,
-} from "@/lib/invoices/queries";
+import { listInvoices } from "@/lib/invoices/queries";
+import type { InvoiceRow } from "@/lib/invoices/shared";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isSmartBillConfigured } from "@/lib/smartbill/client";
 import { DashboardPage, PageHeader, SetupBanner, StatusBanner } from "@/components/app/page-shell";
@@ -70,6 +68,7 @@ export default async function InvoicesPage({
       )}
 
       <InvoicesWorkspace
+        key={`${status ?? "all"}:${invoices.length}:${loadError ?? "ok"}`}
         invoices={invoices}
         activeStatus={status}
         smartbillConfigured={smartbillOk}

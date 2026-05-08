@@ -849,6 +849,7 @@ export function ClientDashboardUI({
       </section>
 
       <ServiceTrackCard
+        key={`${client.id}:${client.service_track_status ?? "unset"}:${client.risk_level ?? "none"}`}
         clientId={client.id}
         serviceType={client.service_type ?? null}
         serviceTrackStatus={client.service_track_status ?? null}
@@ -869,7 +870,17 @@ export function ClientDashboardUI({
       )}
 
       {!anonymized && (
-        <ClinicalContextCard client={client} />
+        <ClinicalContextCard
+          key={[
+            client.id,
+            client.main_complaint ?? "",
+            client.risk_level ?? "",
+            client.treatment_plan ?? "",
+            JSON.stringify(client.clinical_focus ?? []),
+            JSON.stringify(client.treatment_goals ?? []),
+          ].join(":")}
+          client={client}
+        />
       )}
 
       {!anonymized && (
@@ -1451,7 +1462,11 @@ export function ClientDashboardUI({
 
           {!anonymized && client.service_type === "CBT" && hasLoadedClinicData ? (
             <>
-              <HomeworkCard clientId={client.id} items={homeworkItemsState} />
+              <HomeworkCard
+                key={homeworkItemsState.map((item) => `${item.id}:${item.completed_at ?? "open"}`).join("|")}
+                clientId={client.id}
+                items={homeworkItemsState}
+              />
               <CbtCaseFormulationCard clientId={client.id} formulation={cbtFormulationState} />
               <CbtProgressCard clientId={client.id} form={cbtProgressFormState} />
             </>
@@ -1459,8 +1474,16 @@ export function ClientDashboardUI({
 
           {!anonymized && client.service_type === "DBT" && hasLoadedClinicData ? (
             <>
-              <SafetyPlanCard clientId={client.id} plan={safetyPlanState} />
-              <DbtDiaryCardsPanel clientId={client.id} cards={dbtDiaryCardsState} />
+              <SafetyPlanCard
+                key={safetyPlanState?.updated_at ?? "safety-empty"}
+                clientId={client.id}
+                plan={safetyPlanState}
+              />
+              <DbtDiaryCardsPanel
+                key={dbtDiaryCardsState.map((card) => `${card.id}:${card.week_start}`).join("|") || "dbt-empty"}
+                clientId={client.id}
+                cards={dbtDiaryCardsState}
+              />
               <RiskAssessmentCard clientId={client.id} form={riskAssessmentFormState} currentRiskLevel={client.risk_level as import("@/lib/clients/service-track").RiskLevel | null} />
               <DbtCommitmentCard clientId={client.id} form={dbtCommitmentFormState} />
               <DbtProgressCard clientId={client.id} form={dbtProgressFormState} />
@@ -1469,7 +1492,11 @@ export function ClientDashboardUI({
 
           {!anonymized && client.service_type === "CLINICAL_PSYCHOLOGY" && hasLoadedClinicData ? (
             <>
-              <SafetyPlanCard clientId={client.id} plan={safetyPlanState} />
+              <SafetyPlanCard
+                key={safetyPlanState?.updated_at ?? "safety-empty"}
+                clientId={client.id}
+                plan={safetyPlanState}
+              />
               <AnamnesisCard clientId={client.id} form={anamnesisFormState} />
               <ClinicalInterviewCard clientId={client.id} form={clinicalInterviewFormState} />
               <RiskAssessmentCard clientId={client.id} form={riskAssessmentFormState} currentRiskLevel={client.risk_level as import("@/lib/clients/service-track").RiskLevel | null} />

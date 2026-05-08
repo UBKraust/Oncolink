@@ -1,29 +1,6 @@
-import type { Database } from "@/lib/supabase/types";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-
-export type InvoiceRow = Database["public"]["Tables"]["invoices"]["Row"];
-
-export type InvoiceStatus = "PREGĂTITĂ" | "EMISĂ" | "PLĂTITĂ" | "RESTANTĂ" | "ANULATĂ";
-
-export const INVOICE_STATUSES: InvoiceStatus[] = [
-  "PREGĂTITĂ",
-  "EMISĂ",
-  "PLĂTITĂ",
-  "RESTANTĂ",
-  "ANULATĂ",
-];
-
-export const invoiceStatusVariant: Record<
-  InvoiceStatus,
-  "default" | "success" | "warning" | "destructive" | "secondary" | "info"
-> = {
-  PREGĂTITĂ: "info",
-  EMISĂ: "secondary",
-  PLĂTITĂ: "success",
-  RESTANTĂ: "destructive",
-  ANULATĂ: "warning",
-};
+import { type InvoiceRow } from "@/lib/invoices/shared";
 
 export async function listInvoices(filters: {
   status?: string;

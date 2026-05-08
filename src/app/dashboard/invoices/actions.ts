@@ -241,7 +241,19 @@ export async function queueMonthlyInvoices(
 
 export async function sendPreparedInvoiceToSmartBill(
   invoiceId: string,
-): Promise<{ ok: boolean; error: string | null }> {
+): Promise<{
+  ok: boolean;
+  error: string | null;
+  invoice?: {
+    status: "EMISĂ";
+    smartbill_series: string;
+    smartbill_number: string;
+    smartbill_id: string;
+    payment_link: string | null;
+    pdf_url: string | null;
+    issued_at: string;
+  };
+}> {
   if (!isSupabaseConfigured()) {
     return { ok: false, error: "Mod demo." };
   }
@@ -302,27 +314,29 @@ export async function sendPreparedInvoiceToSmartBill(
       isDraft: false,
     });
 
+    const updatedInvoice = {
+      status: "EMISĂ" as const,
+      smartbill_series: result.series,
+      smartbill_number: result.number,
+      smartbill_id: `${result.series}-${result.number}`,
+      payment_link: result.paymentLink || null,
+      pdf_url: result.url,
+      issued_at: now.toISOString(),
+    };
+
     const { error: updateError } = await supabase
       .from("invoices")
-      .update({
-        status: "EMISĂ",
-        smartbill_series: result.series,
-        smartbill_number: result.number,
-        smartbill_id: `${result.series}-${result.number}`,
-        payment_link: result.paymentLink || null,
-        pdf_url: result.url,
-        issued_at: now.toISOString(),
-      })
+      .update(updatedInvoice)
       .eq("id", invoiceId);
 
     if (updateError) return { ok: false, error: updateError.message };
+
+    revalidatePath("/dashboard/invoices");
+    revalidatePath(`/dashboard/invoices/${invoiceId}`);
+    return { ok: true, error: null, invoice: updatedInvoice };
   } catch (error) {
     return { ok: false, error: (error as Error).message };
   }
-
-  revalidatePath("/dashboard/invoices");
-  revalidatePath(`/dashboard/invoices/${invoiceId}`);
-  return { ok: true, error: null };
 }
 
 export async function sendPreparedMonthlyInvoicesToSmartBill(
@@ -499,6 +513,8 @@ export async function sendPreparedInvoicesBatch(
   error: string | null;
   sentCount: number;
   failedCount: number;
+  sentInvoiceIds: string[];
+  failedInvoiceIds: string[];
 }> {
   if (!isSupabaseConfigured()) {
     return {
@@ -506,6 +522,8 @@ export async function sendPreparedInvoicesBatch(
       error: "Mod demo: configurează Supabase pentru emiterea facturilor.",
       sentCount: 0,
       failedCount: 0,
+      sentInvoiceIds: [],
+      failedInvoiceIds: [],
     };
   }
 
@@ -515,6 +533,8 @@ export async function sendPreparedInvoicesBatch(
       error: "SmartBill nu este configurat.",
       sentCount: 0,
       failedCount: 0,
+      sentInvoiceIds: [],
+      failedInvoiceIds: [],
     };
   }
 
@@ -525,18 +545,24 @@ export async function sendPreparedInvoicesBatch(
       error: "Selectează cel puțin o factură pregătită.",
       sentCount: 0,
       failedCount: 0,
+      sentInvoiceIds: [],
+      failedInvoiceIds: [],
     };
   }
 
   let sentCount = 0;
   let failedCount = 0;
+  const sentInvoiceIds: string[] = [];
+  const failedInvoiceIds: string[] = [];
 
   for (const invoiceId of normalizedInvoiceIds) {
     const result = await sendPreparedInvoiceToSmartBill(invoiceId);
     if (result.ok) {
       sentCount += 1;
+      sentInvoiceIds.push(invoiceId);
     } else {
       failedCount += 1;
+      failedInvoiceIds.push(invoiceId);
     }
   }
 
@@ -550,10 +576,16 @@ export async function sendPreparedInvoicesBatch(
         : null,
     sentCount,
     failedCount,
+    sentInvoiceIds,
+    failedInvoiceIds,
   };
 }
 
-export async function markInvoicePaid(invoiceId: string): Promise<{ ok: boolean; error: string | null }> {
+export async function markInvoicePaid(invoiceId: string): Promise<{
+  ok: boolean;
+  error: string | null;
+  invoice?: { status: "PLĂTITĂ" };
+}> {
   if (!isSupabaseConfigured()) {
     return { ok: false, error: "Mod demo." };
   }
@@ -567,10 +599,15 @@ export async function markInvoicePaid(invoiceId: string): Promise<{ ok: boolean;
   if (error) return { ok: false, error: error.message };
 
   revalidatePath("/dashboard/invoices");
-  return { ok: true, error: null };
+  revalidatePath(`/dashboard/invoices/${invoiceId}`);
+  return { ok: true, error: null, invoice: { status: "PLĂTITĂ" } };
 }
 
-export async function cancelInvoice(invoiceId: string): Promise<{ ok: boolean; error: string | null }> {
+export async function cancelInvoice(invoiceId: string): Promise<{
+  ok: boolean;
+  error: string | null;
+  invoice?: { status: "ANULATĂ" };
+}> {
   if (!isSupabaseConfigured()) {
     return { ok: false, error: "Mod demo." };
   }
@@ -584,5 +621,6 @@ export async function cancelInvoice(invoiceId: string): Promise<{ ok: boolean; e
   if (error) return { ok: false, error: error.message };
 
   revalidatePath("/dashboard/invoices");
-  return { ok: true, error: null };
+  revalidatePath(`/dashboard/invoices/${invoiceId}`);
+  return { ok: true, error: null, invoice: { status: "ANULATĂ" } };
 }

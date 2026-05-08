@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { Brain, Pencil, X, Check, ShieldAlert, Plus, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -80,19 +79,22 @@ function RiskBadge({ level }: { level: string }) {
 }
 
 export function ClinicalContextCard({ client }: ClinicalContextCardProps) {
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [editing, setEditing] = useState(false);
-
-  const [mainComplaint, setMainComplaint] = useState(client.main_complaint ?? "");
-  const [clinicalFocus, setClinicalFocus] = useState<string[]>(
+  const [savedMainComplaint, setSavedMainComplaint] = useState(client.main_complaint ?? "");
+  const [savedClinicalFocus, setSavedClinicalFocus] = useState<string[]>(
     Array.isArray(client.clinical_focus) ? (client.clinical_focus as string[]) : [],
   );
-  const [riskLevel, setRiskLevel] = useState(client.risk_level ?? "");
-  const [treatmentPlan, setTreatmentPlan] = useState(client.treatment_plan ?? "");
-  const [goals, setGoals] = useState<string[]>(
-    Array.isArray(client.treatment_goals) ? (client.treatment_goals as string[]) : []
+  const [savedRiskLevel, setSavedRiskLevel] = useState(client.risk_level ?? "");
+  const [savedTreatmentPlan, setSavedTreatmentPlan] = useState(client.treatment_plan ?? "");
+  const [savedGoals, setSavedGoals] = useState<string[]>(
+    Array.isArray(client.treatment_goals) ? (client.treatment_goals as string[]) : [],
   );
+  const [mainComplaint, setMainComplaint] = useState(savedMainComplaint);
+  const [clinicalFocus, setClinicalFocus] = useState<string[]>(savedClinicalFocus);
+  const [riskLevel, setRiskLevel] = useState(savedRiskLevel);
+  const [treatmentPlan, setTreatmentPlan] = useState(savedTreatmentPlan);
+  const [goals, setGoals] = useState<string[]>(savedGoals);
 
   const serviceType: ServiceType = isServiceType(client.service_type) ? client.service_type : "UNDECIDED";
 
@@ -105,45 +107,43 @@ export function ClinicalContextCard({ client }: ClinicalContextCardProps) {
   const focusSuggestions = CLINICAL_FOCUS_SUGGESTIONS[serviceType];
 
   const hasAnyData =
-    client.main_complaint ||
-    (showFocus && clinicalFocus.length > 0) ||
-    (showRisk && client.risk_level) ||
-    (showPlan && client.treatment_plan) ||
-    (showGoals && goals.length > 0);
+    savedMainComplaint ||
+    (showFocus && savedClinicalFocus.length > 0) ||
+    (showRisk && savedRiskLevel) ||
+    (showPlan && savedTreatmentPlan) ||
+    (showGoals && savedGoals.length > 0);
 
   function handleCancel() {
-    setMainComplaint(client.main_complaint ?? "");
-    setClinicalFocus(Array.isArray(client.clinical_focus) ? (client.clinical_focus as string[]) : []);
-    setRiskLevel(client.risk_level ?? "");
-    setTreatmentPlan(client.treatment_plan ?? "");
-    setGoals(Array.isArray(client.treatment_goals) ? (client.treatment_goals as string[]) : []);
+    setMainComplaint(savedMainComplaint);
+    setClinicalFocus(savedClinicalFocus);
+    setRiskLevel(savedRiskLevel);
+    setTreatmentPlan(savedTreatmentPlan);
+    setGoals(savedGoals);
     setEditing(false);
   }
 
   function handleSave() {
     startTransition(async () => {
       const payload: Parameters<typeof updateServiceTrack>[1] = {};
-      if (mainComplaint !== (client.main_complaint ?? "")) payload.main_complaint = mainComplaint;
+      if (mainComplaint !== savedMainComplaint) payload.main_complaint = mainComplaint;
       if (showFocus) {
-        const currentFocus = Array.isArray(client.clinical_focus) ? (client.clinical_focus as string[]) : [];
         const filteredFocus = clinicalFocus.map((item) => item.trim()).filter(Boolean);
         const changed =
-          filteredFocus.length !== currentFocus.length ||
-          filteredFocus.some((item, i) => item !== currentFocus[i]);
+          filteredFocus.length !== savedClinicalFocus.length ||
+          filteredFocus.some((item, i) => item !== savedClinicalFocus[i]);
         if (changed) payload.clinical_focus = filteredFocus;
       }
-      if (showRisk && riskLevel !== (client.risk_level ?? "")) {
+      if (showRisk && riskLevel !== savedRiskLevel) {
         payload.risk_level = riskLevel || null;
       }
-      if (showPlan && treatmentPlan !== (client.treatment_plan ?? "")) {
+      if (showPlan && treatmentPlan !== savedTreatmentPlan) {
         payload.treatment_plan = treatmentPlan;
       }
       if (showGoals) {
-        const currentGoals = Array.isArray(client.treatment_goals) ? (client.treatment_goals as string[]) : [];
         const filteredGoals = goals.map((g) => g.trim()).filter(Boolean);
         const changed =
-          filteredGoals.length !== currentGoals.length ||
-          filteredGoals.some((g, i) => g !== currentGoals[i]);
+          filteredGoals.length !== savedGoals.length ||
+          filteredGoals.some((g, i) => g !== savedGoals[i]);
         if (changed) payload.treatment_goals = filteredGoals;
       }
 
@@ -154,9 +154,17 @@ export function ClinicalContextCard({ client }: ClinicalContextCardProps) {
 
       const result = await updateServiceTrack(client.id, payload);
       if (result.success) {
+        const nextFocus = showFocus ? clinicalFocus.map((item) => item.trim()).filter(Boolean) : savedClinicalFocus;
+        const nextGoals = showGoals ? goals.map((goal) => goal.trim()).filter(Boolean) : savedGoals;
+        setSavedMainComplaint(mainComplaint);
+        setSavedClinicalFocus(nextFocus);
+        setSavedRiskLevel(riskLevel);
+        setSavedTreatmentPlan(treatmentPlan);
+        setSavedGoals(nextGoals);
+        setClinicalFocus(nextFocus);
+        setGoals(nextGoals);
         toast.success("Context clinic actualizat.");
         setEditing(false);
-        router.refresh();
       } else {
         toast.error(result.error ?? "Nu am putut salva contextul clinic.");
       }
@@ -177,8 +185,8 @@ export function ClinicalContextCard({ client }: ClinicalContextCardProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          {showRisk && client.risk_level && !editing && (
-            <RiskBadge level={client.risk_level} />
+          {showRisk && savedRiskLevel && !editing && (
+            <RiskBadge level={savedRiskLevel} />
           )}
           {!editing ? (
             <Button
@@ -231,7 +239,7 @@ export function ClinicalContextCard({ client }: ClinicalContextCardProps) {
               className="text-sm"
             />
           ) : client.main_complaint ? (
-            <p className="text-sm text-foreground">{client.main_complaint}</p>
+            <p className="text-sm text-foreground">{savedMainComplaint}</p>
           ) : (
             <p className="text-sm text-muted-foreground italic">Necompletat</p>
           )}
@@ -334,8 +342,8 @@ export function ClinicalContextCard({ client }: ClinicalContextCardProps) {
                   ))}
                 </Select>
               </div>
-            ) : client.risk_level ? (
-              <RiskBadge level={client.risk_level} />
+            ) : savedRiskLevel ? (
+              <RiskBadge level={savedRiskLevel} />
             ) : (
               <p className={cn(
                 "text-sm italic",
@@ -369,8 +377,8 @@ export function ClinicalContextCard({ client }: ClinicalContextCardProps) {
                 rows={4}
                 className="text-sm"
               />
-            ) : client.treatment_plan ? (
-              <p className="text-sm text-foreground whitespace-pre-line">{client.treatment_plan}</p>
+            ) : savedTreatmentPlan ? (
+              <p className="text-sm text-foreground whitespace-pre-line">{savedTreatmentPlan}</p>
             ) : (
               <p className="text-sm text-muted-foreground italic">Necompletat</p>
             )}
@@ -420,9 +428,9 @@ export function ClinicalContextCard({ client }: ClinicalContextCardProps) {
                   Adaugă obiectiv
                 </Button>
               </div>
-            ) : goals.length > 0 ? (
+            ) : savedGoals.length > 0 ? (
               <ul className="space-y-1">
-                {goals.map((goal, i) => (
+                {savedGoals.map((goal, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm">
                     <span className="mt-1 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
                     <span>{goal}</span>

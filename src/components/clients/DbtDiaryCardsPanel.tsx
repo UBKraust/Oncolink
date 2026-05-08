@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import {
   BookMarked,
   Plus,
@@ -33,18 +32,21 @@ function isoMonday(date: Date): string {
 }
 
 export function DbtDiaryCardsPanel({ clientId, cards }: DbtDiaryCardsPanelProps) {
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [cardsState, setCardsState] = useState(cards);
   const [expanded, setExpanded] = useState<string | null>(cards[0]?.id ?? null);
 
   const thisWeek = isoMonday(new Date());
-  const hasCurrentWeek = cards.some((c) => c.week_start === thisWeek);
+  const hasCurrentWeek = cardsState.some((c) => c.week_start === thisWeek);
 
   function handleAddThisWeek() {
     startTransition(async () => {
       const result = await upsertDbtDiaryCard(clientId, thisWeek, {});
-      if (result.success) {
-        router.refresh();
+      if (result.success && result.card) {
+        setCardsState((prev) =>
+          [result.card!, ...prev].sort((a, b) => b.week_start.localeCompare(a.week_start)),
+        );
+        setExpanded(result.card.id);
       } else {
         toast.error(result.error ?? "Eroare la creare.");
       }
@@ -61,7 +63,7 @@ export function DbtDiaryCardsPanel({ clientId, cards }: DbtDiaryCardsPanelProps)
           <div>
             <p className="text-sm font-semibold leading-tight">Diary Cards DBT</p>
             <p className="text-[11px] text-muted-foreground">
-              {cards.length} înregistrări
+              {cardsState.length} înregistrări
             </p>
           </div>
         </div>
@@ -79,7 +81,7 @@ export function DbtDiaryCardsPanel({ clientId, cards }: DbtDiaryCardsPanelProps)
         )}
       </div>
 
-      {cards.length === 0 ? (
+      {cardsState.length === 0 ? (
         <div className="px-5 py-8 text-center">
           <p className="text-sm text-muted-foreground">Niciun diary card adăugat.</p>
           <Button
@@ -94,11 +96,16 @@ export function DbtDiaryCardsPanel({ clientId, cards }: DbtDiaryCardsPanelProps)
         </div>
       ) : (
         <div className="divide-y divide-border/30">
-          {cards.map((card) => (
+          {cardsState.map((card) => (
             <DiaryCardRow
               key={card.id}
               clientId={clientId}
               card={card}
+              onSaved={(nextCard) =>
+                setCardsState((prev) =>
+                  prev.map((entry) => (entry.id === nextCard.id ? nextCard : entry)),
+                )
+              }
               expanded={expanded === card.id}
               onToggle={() => setExpanded(expanded === card.id ? null : card.id)}
             />
@@ -112,15 +119,16 @@ export function DbtDiaryCardsPanel({ clientId, cards }: DbtDiaryCardsPanelProps)
 function DiaryCardRow({
   clientId,
   card,
+  onSaved,
   expanded,
   onToggle,
 }: {
   clientId: string;
   card: DbtDiaryCard;
+  onSaved: (card: DbtDiaryCard) => void;
   expanded: boolean;
   onToggle: () => void;
 }) {
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [editing, setEditing] = useState(false);
   const [notes, setNotes] = useState(card.therapist_notes ?? "");
@@ -143,10 +151,10 @@ function DiaryCardRow({
         skills_used: skills,
         target_behaviors: behaviors.filter((b) => b.name),
       });
-      if (result.success) {
+      if (result.success && result.card) {
         toast.success("Diary card salvat.");
+        onSaved(result.card);
         setEditing(false);
-        router.refresh();
       } else {
         toast.error(result.error ?? "Eroare la salvare.");
       }

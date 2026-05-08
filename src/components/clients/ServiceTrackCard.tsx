@@ -2,7 +2,6 @@
 
 import { ArrowRight, ChevronRight, Stethoscope, ListTree } from "lucide-react";
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
@@ -40,35 +39,35 @@ export function ServiceTrackCard({
   hasAppointments,
   riskLevel,
 }: ServiceTrackCardProps) {
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [showJump, setShowJump] = useState(false);
+  const [currentServiceTrackStatus, setCurrentServiceTrackStatus] = useState(serviceTrackStatus);
 
   const resolved: ServiceType = isServiceType(serviceType) ? serviceType : "UNDECIDED";
   const label = SERVICE_TYPE_LABELS[resolved];
   const badgeVariant = SERVICE_TYPE_BADGE_VARIANTS[resolved];
   const statuses = SERVICE_TRACK_STATUSES[resolved];
-  const nextStatus = getNextTrackStatus(resolved, serviceTrackStatus);
+  const nextStatus = getNextTrackStatus(resolved, currentServiceTrackStatus);
 
   const nextAction = computeServiceTrackNextAction({
     serviceType: resolved,
     lifecycleStatus,
-    serviceTrackStatus,
+    serviceTrackStatus: currentServiceTrackStatus,
     gdprSigned,
     onboardingComplete,
     hasAppointments,
     riskLevel,
   });
 
-  const currentIdx = serviceTrackStatus ? statuses.indexOf(serviceTrackStatus) : -1;
+  const currentIdx = currentServiceTrackStatus ? statuses.indexOf(currentServiceTrackStatus) : -1;
 
   function handleAdvanceTrack() {
     if (!nextStatus) return;
     startTransition(async () => {
       const result = await updateServiceTrack(clientId, { service_track_status: nextStatus });
       if (result.success) {
+        setCurrentServiceTrackStatus(nextStatus);
         toast.success(`Etapă avansată: ${nextStatus}`);
-        router.refresh();
       } else {
         toast.error(result.error ?? "Nu am putut actualiza etapa.");
       }
@@ -76,16 +75,16 @@ export function ServiceTrackCard({
   }
 
   function handleJumpToStage(stage: string) {
-    if (!stage || stage === serviceTrackStatus) {
+    if (!stage || stage === currentServiceTrackStatus) {
       setShowJump(false);
       return;
     }
     startTransition(async () => {
       const result = await updateServiceTrack(clientId, { service_track_status: stage });
       if (result.success) {
+        setCurrentServiceTrackStatus(stage);
         toast.success(`Etapă setată: ${stage}`);
         setShowJump(false);
-        router.refresh();
       } else {
         toast.error(result.error ?? "Nu am putut actualiza etapa.");
       }
@@ -128,7 +127,7 @@ export function ServiceTrackCard({
           {showJump && (
             <div className="mb-3">
               <Select
-                value={serviceTrackStatus ?? ""}
+                value={currentServiceTrackStatus ?? ""}
                 onChange={(e) => handleJumpToStage(e.target.value)}
                 disabled={isPending}
                 aria-label="Sari direct la etapă"
@@ -161,9 +160,9 @@ export function ServiceTrackCard({
           {/* Current stage */}
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              {serviceTrackStatus ? (
+              {currentServiceTrackStatus ? (
                 <p className="text-sm font-semibold text-foreground truncate">
-                  {serviceTrackStatus}
+                  {currentServiceTrackStatus}
                 </p>
               ) : (
                 <p className="text-sm text-muted-foreground italic">Etapă nesetată</p>

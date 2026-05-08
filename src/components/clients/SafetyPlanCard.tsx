@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { ShieldAlert, Pencil, X, Check, Plus, Trash2, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -20,9 +19,9 @@ type SupportContact = { name: string; phone: string; relation?: string };
 type ProfContact = { name: string; phone: string };
 
 export function SafetyPlanCard({ clientId, plan }: SafetyPlanCardProps) {
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [editing, setEditing] = useState(!plan);
+  const [savedPlan, setSavedPlan] = useState<SafetyPlan | null>(plan);
 
   const [warningSigns, setWarningSigns] = useState(plan?.warning_signs ?? "");
   const [internalCoping, setInternalCoping] = useState(plan?.internal_coping ?? "");
@@ -37,13 +36,13 @@ export function SafetyPlanCard({ clientId, plan }: SafetyPlanCardProps) {
   );
 
   function handleCancel() {
-    setWarningSigns(plan?.warning_signs ?? "");
-    setInternalCoping(plan?.internal_coping ?? "");
-    setSocialDistractions(plan?.social_distractions ?? "");
-    setReasonsForLiving(plan?.reasons_for_living ?? "");
-    setSafeEnvironment(plan?.safe_environment ?? "");
-    setSupportContacts(plan?.support_contacts ?? []);
-    setProfContacts(plan?.professional_contacts ?? []);
+    setWarningSigns(savedPlan?.warning_signs ?? "");
+    setInternalCoping(savedPlan?.internal_coping ?? "");
+    setSocialDistractions(savedPlan?.social_distractions ?? "");
+    setReasonsForLiving(savedPlan?.reasons_for_living ?? "");
+    setSafeEnvironment(savedPlan?.safe_environment ?? "");
+    setSupportContacts(savedPlan?.support_contacts ?? []);
+    setProfContacts(savedPlan?.professional_contacts ?? []);
     setEditing(false);
   }
 
@@ -58,10 +57,17 @@ export function SafetyPlanCard({ clientId, plan }: SafetyPlanCardProps) {
         support_contacts: supportContacts.filter((c) => c.name || c.phone),
         professional_contacts: profContacts.filter((c) => c.name || c.phone),
       });
-      if (result.success) {
+      if (result.success && result.plan) {
+        setSavedPlan(result.plan);
+        setWarningSigns(result.plan.warning_signs ?? "");
+        setInternalCoping(result.plan.internal_coping ?? "");
+        setSocialDistractions(result.plan.social_distractions ?? "");
+        setReasonsForLiving(result.plan.reasons_for_living ?? "");
+        setSafeEnvironment(result.plan.safe_environment ?? "");
+        setSupportContacts(result.plan.support_contacts ?? []);
+        setProfContacts(result.plan.professional_contacts ?? []);
         toast.success("Plan de siguranță salvat.");
         setEditing(false);
-        router.refresh();
       } else {
         toast.error(result.error ?? "Nu am putut salva.");
       }
@@ -69,13 +75,13 @@ export function SafetyPlanCard({ clientId, plan }: SafetyPlanCardProps) {
   }
 
   const hasData =
-    plan?.warning_signs ||
-    plan?.internal_coping ||
-    plan?.social_distractions ||
-    plan?.reasons_for_living ||
-    plan?.safe_environment ||
-    (plan?.support_contacts?.length ?? 0) > 0 ||
-    (plan?.professional_contacts?.length ?? 0) > 0;
+    savedPlan?.warning_signs ||
+    savedPlan?.internal_coping ||
+    savedPlan?.social_distractions ||
+    savedPlan?.reasons_for_living ||
+    savedPlan?.safe_environment ||
+    (savedPlan?.support_contacts?.length ?? 0) > 0 ||
+    (savedPlan?.professional_contacts?.length ?? 0) > 0;
 
   return (
     <section className="overflow-hidden rounded-[1.75rem] border border-border/70 bg-card shadow-sm">

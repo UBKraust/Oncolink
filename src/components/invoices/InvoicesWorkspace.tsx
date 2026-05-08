@@ -2,7 +2,6 @@
 
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
 import { CheckCircle2, FileCheck2, Loader2, Receipt, Send, Wallet } from "lucide-react";
@@ -23,7 +22,7 @@ import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 import {
   type InvoiceRow,
-} from "@/lib/invoices/queries";
+} from "@/lib/invoices/shared";
 import { sendPreparedInvoicesBatch } from "@/app/dashboard/invoices/actions";
 
 const INVOICE_STATUSES = ["PREGĂTITĂ", "EMISĂ", "PLĂTITĂ", "RESTANTĂ", "ANULATĂ"] as const;
@@ -52,25 +51,33 @@ export function InvoicesWorkspace({
   smartbillConfigured,
   loadError,
 }: InvoicesWorkspaceProps) {
-  const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [invoicesState, setInvoicesState] = useState(invoices);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const visibleInvoices = useMemo(
+    () =>
+      activeStatus
+        ? invoicesState.filter((invoice) => invoice.status === activeStatus)
+        : invoicesState,
+    [activeStatus, invoicesState],
+  );
 
   const totals = useMemo(
     () =>
       INVOICE_STATUSES.reduce(
         (acc, status) => {
-          acc[status] = invoices.filter((invoice) => invoice.status === status).length;
+          acc[status] = invoicesState.filter((invoice) => invoice.status === status).length;
           return acc;
         },
         {} as Record<string, number>,
       ),
-    [invoices],
+    [invoicesState],
   );
 
   const preparedInvoices = useMemo(
-    () => invoices.filter((invoice) => invoice.status === "PREGĂTITĂ"),
-    [invoices],
+    () => invoicesState.filter((invoice) => invoice.status === "PREGĂTITĂ"),
+    [invoicesState],
   );
 
   const selectedPreparedInvoices = useMemo(
@@ -80,10 +87,10 @@ export function InvoicesWorkspace({
 
   const totalCollected = useMemo(
     () =>
-      invoices
+      invoicesState
         .filter((invoice) => invoice.status === "PLĂTITĂ")
         .reduce((sum, invoice) => sum + Number(invoice.amount ?? 0), 0),
-    [invoices],
+    [invoicesState],
   );
 
   const totalPrepared = useMemo(
@@ -136,8 +143,18 @@ export function InvoicesWorkspace({
         );
       }
 
+      if (result.sentInvoiceIds.length > 0) {
+        const sentIds = new Set(result.sentInvoiceIds);
+        setInvoicesState((prev) =>
+          prev.map((invoice) =>
+            sentIds.has(invoice.id)
+              ? { ...invoice, status: "EMISĂ" }
+              : invoice,
+          ),
+        );
+      }
+
       clearSelection();
-      router.refresh();
     });
   }
 
@@ -253,7 +270,7 @@ export function InvoicesWorkspace({
               action={{ label: "Factură nouă", href: "/dashboard/invoices/new" }}
               icon={Receipt}
             />
-          ) : invoices.length === 0 ? (
+          ) : visibleInvoices.length === 0 ? (
             <EmptyState
               title="Nu există facturi înregistrate"
               description="Prima factură emisă va apărea aici împreună cu statusul ei de încasare."
@@ -274,7 +291,7 @@ export function InvoicesWorkspace({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {invoices.map((invoice) => {
+                {visibleInvoices.map((invoice) => {
                   const isPrepared = invoice.status === "PREGĂTITĂ";
                   const isSelected = selectedIds.has(invoice.id);
 
